@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Support — RAVEN</title>
+  <meta name="description" content="RAVEN Support — commands, FAQs, and how to get help.">
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0a0a;
+      --surface: #111111;
+      --border: #1e1e1e;
+      --accent: #e8e0d0;
+      --muted: #555;
+      --text: #c8c0b0;
+      --white: #f0ece4;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 300;
+      line-height: 1.75;
+      min-height: 100vh;
+    }
+
+    nav {
+      border-bottom: 1px solid var(--border);
+      padding: 1.25rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      background: rgba(10,10,10,0.95);
+      backdrop-filter: blur(8px);
+      z-index: 100;
+    }
+    .nav-logo {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.85rem;
+      letter-spacing: 0.15em;
+      color: var(--white);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .nav-logo span { opacity: 0.5; font-size: 1rem; }
+    .nav-back {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.7rem;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .nav-back:hover { color: var(--accent); }
+
+    .hero {
+      border-bottom: 1px solid var(--border);
+      padding: 5rem 2rem 3.5rem;
+      max-width: 860px;
+      margin: 0 auto;
+    }
+    .tag {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.2em;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-bottom: 1.25rem;
+    }
+    h1 {
+      font-family: 'Space Mono', monospace;
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      color: var(--white);
+      line-height: 1.2;
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+    .hero-sub {
+      font-size: 1rem;
+      color: var(--text);
+      max-width: 500px;
+    }
+
+    /* CONTACT STRIP */
+    .contact-strip {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 2rem 2rem 0;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1rem;
+    }
+    .contact-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      text-decoration: none;
+      transition: border-color 0.2s;
+    }
+    .contact-card:hover { border-color: var(--accent); }
+    .contact-card-label {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.6rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .contact-card-value {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.85rem;
+      color: var(--white);
+    }
+    .contact-card-sub {
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    /* CONTENT */
+    .content {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 3.5rem 2rem 6rem;
+    }
+
+    .section {
+      margin-bottom: 3rem;
+      padding-bottom: 3rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .section:last-child { border-bottom: none; }
+
+    h2 {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.75rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    h2::before {
+      content: '';
+      display: inline-block;
+      width: 20px;
+      height: 1px;
+      background: var(--accent);
+      opacity: 0.4;
+    }
+
+    p { margin-bottom: 1rem; color: var(--text); font-size: 0.95rem; }
+
+    /* COMMAND TABLE */
+    .cmd-grid {
+      display: grid;
+      gap: 0.75rem;
+    }
+    .cmd-row {
+      display: grid;
+      grid-template-columns: 1fr 2fr;
+      gap: 1rem;
+      align-items: start;
+      padding: 1rem 1.25rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+    }
+    .cmd-name {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.8rem;
+      color: var(--white);
+      letter-spacing: 0.05em;
+    }
+    .cmd-example {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--muted);
+      margin-top: 0.25rem;
+    }
+    .cmd-desc {
+      font-size: 0.88rem;
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    /* FAQ */
+    .faq-item {
+      border: 1px solid var(--border);
+      margin-bottom: 0.75rem;
+      overflow: hidden;
+    }
+    .faq-q {
+      padding: 1.1rem 1.25rem;
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 500;
+      font-size: 0.92rem;
+      color: var(--white);
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      user-select: none;
+      background: var(--surface);
+      transition: background 0.2s;
+    }
+    .faq-q:hover { background: #181818; }
+    .faq-q .arrow {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--muted);
+      transition: transform 0.2s;
+    }
+    .faq-a {
+      display: none;
+      padding: 1rem 1.25rem 1.25rem;
+      font-size: 0.9rem;
+      color: var(--text);
+      border-top: 1px solid var(--border);
+      background: var(--bg);
+      line-height: 1.7;
+    }
+    .faq-item.open .faq-a { display: block; }
+    .faq-item.open .arrow { transform: rotate(180deg); }
+
+    a { color: var(--accent); text-decoration: none; border-bottom: 1px solid rgba(232,224,208,0.25); transition: border-color 0.2s; }
+    a:hover { border-color: var(--accent); }
+
+    code {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.82em;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 0.1em 0.4em;
+      color: var(--accent);
+    }
+
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .footer-logo {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.75rem;
+      letter-spacing: 0.15em;
+      color: var(--muted);
+    }
+    .footer-links { display: flex; gap: 2rem; }
+    .footer-links a {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+      border: none;
+      transition: color 0.2s;
+    }
+    .footer-links a:hover { color: var(--accent); }
+
+    @media (max-width: 540px) {
+      .cmd-row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <a href="/" class="nav-logo"><span>🪶</span> RAVEN</a>
+    <a href="/" class="nav-back">← Back to home</a>
+  </nav>
+
+  <div class="hero">
+    <div class="tag">Support · Help Center</div>
+    <h1>We've got you.</h1>
+    <p class="hero-sub">Commands, FAQs, and direct support — everything you need to get RAVEN working for your group.</p>
+  </div>
+
+  <div class="contact-strip">
+    <a href="sms:+15162347187&body=HELP" class="contact-card">
+      <div class="contact-card-label">Text us</div>
+      <div class="contact-card-value">+1 (516) 234-7187</div>
+      <div class="contact-card-sub">Text HELP for instant help</div>
+    </a>
+    <a href="/cdn-cgi/l/email-protection#bccfc9ccccd3cec8fcdbd9c8ceddcad9d292ddcccc" class="contact-card">
+      <div class="contact-card-label">Email</div>
+      <div class="contact-card-value"><span class="__cf_email__" data-cfemail="4e3d3b3e3e213c3a0e292b3a3c2f382b20602f3e3e">[email&#160;protected]</span></div>
+      <div class="contact-card-sub">We reply within 24 hours</div>
+    </a>
+    <a href="#" class="contact-card">
+      <div class="contact-card-label">Discord</div>
+      <div class="contact-card-value">Join our server</div>
+      <div class="contact-card-sub">Community help & updates</div>
+    </a>
+  </div>
+
+  <div class="content">
+
+    <!-- COMMANDS -->
+    <div class="section">
+      <h2>Commands — SMS & iMessage</h2>
+      <div class="cmd-grid">
+        <div class="cmd-row">
+          <div>
+            <div class="cmd-name">SPLIT</div>
+            <div class="cmd-example">SPLIT $120 Dinner @Jake @Mia</div>
+          </div>
+          <div class="cmd-desc">Create a new bill. Include the total amount, a name for the bill, and tag each person who owes.</div>
+        </div>
+        <div class="cmd-row">
+          <div>
+            <div class="cmd-name">PAID [ID]</div>
+            <div class="cmd-example">PAID B7K2</div>
+          </div>
+          <div class="cmd-desc">Mark yourself as paid on a bill. Use the bill ID from the original SPLIT reply.</div>
+        </div>
+        <div class="cmd-row">
+          <div>
+            <div class="cmd-name">REMIND [ID]</div>
+            <div class="cmd-example">REMIND B7K2</div>
+          </div>
+          <div class="cmd-desc">Ping everyone who still owes on a bill. Only the bill creator can send reminders.</div>
+        </div>
+        <div class="cmd-row">
+          <div>
+            <div class="cmd-name">STATUS [ID]</div>
+            <div class="cmd-example">STATUS B7K2</div>
+          </div>
+          <div class="cmd-desc">Get the current breakdown — who's paid and who still owes.</div>
+        </div>
+        <div class="cmd-row">
+          <div>
+            <div class="cmd-name">BILLS</div>
+            <div class="cmd-example">BILLS</div>
+          </div>
+          <div class="cmd-desc">See all your active bills and their IDs.</div>
+        </div>
+        <div class="cmd-row">
+          <div>
+            <div class="cmd-name">HELP</div>
+            <div class="cmd-example">HELP</div>
+          </div>
+          <div class="cmd-desc">Get a quick command reference sent to you directly.</div>
+        </div>
+        <div class="cmd-row">
+          <div>
+            <div class="cmd-name">DELETE [ID]</div>
+            <div class="cmd-example">DELETE B7K2</div>
+          </div>
+          <div class="cmd-desc">Close and remove a bill. Only the bill creator can delete.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DISCORD COMMANDS -->
+    <div class="section">
+      <h2>Commands — Discord</h2>
+      <div class="cmd-grid">
+        <div class="cmd-row">
+          <div>
+            <div class="cmd-name">/split</div>
+            <div class="cmd-example">/split name:Airbnb total:540 people:@Alex @Priya</div>
+          </div>
+          <div class="cmd-desc">Create a new bill in your Discord server. Tags each person directly in the channel.</div>
+        </div>
+        <div class="cmd-row">
+          <div>
+            <div class="cmd-name">/paid</div>
+            <div class="cmd-example">/paid A4FX2</div>
+          </div>
+          <div class="cmd-desc">Mark yourself as paid on a Discord bill.</div>
+        </div>
+        <div class="cmd-row">
+          <div>
+            <div class="cmd-name">/remind</div>
+            <div class="cmd-example">/remind A4FX2</div>
+          </div>
+          <div class="cmd-desc">Ping unpaid members on a bill. Creator-only.</div>
+        </div>
+        <div class="cmd-row">
+          <div>
+            <div class="cmd-name">/status</div>
+            <div class="cmd-example">/status A4FX2</div>
+          </div>
+          <div class="cmd-desc">See the current payment status for a bill.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FAQ -->
+    <div class="section">
+      <h2>Frequently Asked Questions</h2>
+      <div id="faq">
+
+        <div class="faq-item">
+          <div class="faq-q">How do I get started? <span class="arrow">↓</span></div>
+          <div class="faq-a">Just text <code>SPLIT</code> to <strong>+1 (516) 234-7187</strong>. No app download, no sign-up, no account needed. Add the number to your group chat and you're ready.</div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-q">Does RAVEN work on Android? <span class="arrow">↓</span></div>
+          <div class="faq-a">Yes. RAVEN works over standard SMS, so any phone — iPhone or Android — can text the RAVEN number. The iMessage experience is richest on iPhone-only group chats, but SMS works universally.</div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-q">Does RAVEN actually send money? <span class="arrow">↓</span></div>
+          <div class="faq-a">No. RAVEN tracks who owes what and sends reminders — it does not process payments. You still settle up through Venmo, Zelle, Cash App, or cash. RAVEN just removes the awkwardness of asking.</div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-q">What's the difference between Free and Pro? <span class="arrow">↓</span></div>
+          <div class="faq-a">The Free plan gives you 1 RAVEN number, up to 5 active bills, and manual reminders. Pro ($9/group/month) unlocks unlimited bills, scheduled auto-reminders, full bill history and export, and custom reminder messages.</div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-q">Can I use RAVEN with an existing group chat? <span class="arrow">↓</span></div>
+          <div class="faq-a">Yes — just add RAVEN's number to your existing group chat. Everyone in the chat can interact with it immediately.</div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-q">Someone in my group isn't getting messages. What should I do? <span class="arrow">↓</span></div>
+          <div class="faq-a">Make sure they haven't blocked the RAVEN number, and that their carrier supports SMS from short codes or 10DLC numbers. If issues persist, text HELP to +1 (516) 234-7187 or email <a href="/cdn-cgi/l/email-protection#fb888e8b8b94898fbb9c9e8f899a8d9e95d59a8b8b"><span class="__cf_email__" data-cfemail="8cfff9fcfce3fef8ccebe9f8feedfae9e2a2edfcfc">[email&#160;protected]</span></a>.</div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-q">How do I cancel my Pro subscription? <span class="arrow">↓</span></div>
+          <div class="faq-a">Text <code>CANCEL</code> to +1 (516) 234-7187 or email <a href="/cdn-cgi/l/email-protection#8cfff9fcfce3fef8ccebe9f8feedfae9e2a2edfcfc"><span class="__cf_email__" data-cfemail="c8bbbdb8b8a7babc88afadbcbaa9beada6e6a9b8b8">[email&#160;protected]</span></a>. Your access continues until the end of the current billing period.</div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-q">How do I delete my data? <span class="arrow">↓</span></div>
+          <div class="faq-a">Text <code>DELETE ACCOUNT</code> to +1 (516) 234-7187. All your bills and associated data will be permanently removed. See our <a href="/privacy.html">Privacy Policy</a> for more details.</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- STILL NEED HELP -->
+    <div class="section">
+      <h2>Still Need Help?</h2>
+      <p>Text <code>HELP</code> to <a href="sms:+15162347187&body=HELP">+1 (516) 234-7187</a> for an instant command reference, or reach us at <a href="/cdn-cgi/l/email-protection#40333530302f323400272534322136252e6e213030"><span class="__cf_email__" data-cfemail="62111712120d101622050716100314070c4c031212">[email&#160;protected]</span></a> and we'll get back to you within 24 hours.</p>
+    </div>
+
+  </div>
+
+  <footer>
+    <div class="footer-logo">© 2026 RAVEN</div>
+    <div class="footer-links">
+      <a href="/priva

@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Terms of Service — RAVEN</title>
+  <meta name="description" content="RAVEN Terms of Service — the rules of the road.">
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0a0a;
+      --surface: #111111;
+      --border: #1e1e1e;
+      --accent: #e8e0d0;
+      --muted: #555;
+      --text: #c8c0b0;
+      --white: #f0ece4;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 300;
+      line-height: 1.75;
+      min-height: 100vh;
+    }
+
+    nav {
+      border-bottom: 1px solid var(--border);
+      padding: 1.25rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      background: rgba(10,10,10,0.95);
+      backdrop-filter: blur(8px);
+      z-index: 100;
+    }
+    .nav-logo {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.85rem;
+      letter-spacing: 0.15em;
+      color: var(--white);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .nav-logo span { opacity: 0.5; font-size: 1rem; }
+    .nav-back {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.7rem;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .nav-back:hover { color: var(--accent); }
+
+    .hero {
+      border-bottom: 1px solid var(--border);
+      padding: 5rem 2rem 3.5rem;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    .tag {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.2em;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-bottom: 1.25rem;
+    }
+    h1 {
+      font-family: 'Space Mono', monospace;
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      color: var(--white);
+      line-height: 1.2;
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+    .effective {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+    }
+
+    .content {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 3.5rem 2rem 6rem;
+    }
+
+    .section {
+      margin-bottom: 3rem;
+      padding-bottom: 3rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .section:last-child { border-bottom: none; }
+
+    h2 {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.75rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    h2::before {
+      content: '';
+      display: inline-block;
+      width: 20px;
+      height: 1px;
+      background: var(--accent);
+      opacity: 0.4;
+    }
+
+    p { margin-bottom: 1rem; color: var(--text); font-size: 0.95rem; }
+
+    ul { list-style: none; margin: 0.75rem 0 1rem 0; }
+    ul li {
+      padding: 0.4rem 0 0.4rem 1.25rem;
+      position: relative;
+      font-size: 0.95rem;
+      color: var(--text);
+    }
+    ul li::before {
+      content: '—';
+      position: absolute;
+      left: 0;
+      color: var(--muted);
+      font-family: 'Space Mono', monospace;
+    }
+
+    .highlight-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--accent);
+      padding: 1.25rem 1.5rem;
+      margin: 1.5rem 0;
+      font-size: 0.9rem;
+    }
+
+    a { color: var(--accent); text-decoration: none; border-bottom: 1px solid rgba(232,224,208,0.25); transition: border-color 0.2s; }
+    a:hover { border-color: var(--accent); }
+
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .footer-logo {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.75rem;
+      letter-spacing: 0.15em;
+      color: var(--muted);
+    }
+    .footer-links { display: flex; gap: 2rem; }
+    .footer-links a {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+      border: none;
+      transition: color 0.2s;
+    }
+    .footer-links a:hover { color: var(--accent); }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <a href="/" class="nav-logo"><span>🪶</span> RAVEN</a>
+    <a href="/" class="nav-back">← Back to home</a>
+  </nav>
+
+  <div class="hero">
+    <div class="tag">Legal · Terms</div>
+    <h1>Terms of Service</h1>
+    <p class="effective">Effective: March 1, 2026 &nbsp;·&nbsp; Last updated: March 1, 2026</p>
+  </div>
+
+  <div class="content">
+
+    <div class="section">
+      <h2>Agreement</h2>
+      <p>By texting RAVEN's number or using the RAVEN Discord bot, you agree to these Terms of Service. If you do not agree, please discontinue use of the service.</p>
+      <p>These terms apply to all users of RAVEN, including free and Pro tier subscribers.</p>
+    </div>
+
+    <div class="section">
+      <h2>The Service</h2>
+      <p>RAVEN provides a bill-splitting and expense-tracking service accessible via SMS, iMessage, and Discord. The service allows you to:</p>
+      <ul>
+        <li>Create and manage shared bills with a group</li>
+        <li>Track who has and has not paid</li>
+        <li>Send automated payment reminders to group members</li>
+        <li>View real-time bill status</li>
+      </ul>
+      <div class="highlight-box">
+        RAVEN facilitates tracking of payments between people. We are not a payment processor and do not move or hold funds on your behalf.
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Your Account & Use</h2>
+      <p>By using RAVEN, you represent that:</p>
+      <ul>
+        <li>You are at least 13 years of age</li>
+        <li>You have the legal right to use the phone number or Discord account you're accessing RAVEN with</li>
+        <li>You will only use RAVEN for lawful purposes</li>
+        <li>You will not use RAVEN to harass, spam, or deceive others</li>
+        <li>You are responsible for all activity that occurs under your number or account</li>
+      </ul>
+    </div>
+
+    <div class="section">
+      <h2>Acceptable Use</h2>
+      <p>You agree not to:</p>
+      <ul>
+        <li>Use RAVEN to send unsolicited messages or spam</li>
+        <li>Attempt to reverse-engineer, hack, or disrupt the service</li>
+        <li>Use RAVEN for fraudulent, abusive, or illegal activity</li>
+        <li>Impersonate another person or entity</li>
+        <li>Circumvent rate limits or usage restrictions</li>
+      </ul>
+      <p>Violation of these terms may result in immediate termination of your access to RAVEN.</p>
+    </div>
+
+    <div class="section">
+      <h2>Pro Subscription</h2>
+      <p>The Pro plan is billed at $9 per group per month. By subscribing, you authorize recurring charges to your payment method. Subscriptions renew automatically unless cancelled.</p>
+      <ul>
+        <li>You may cancel at any time; access continues through the end of the billing period</li>
+        <li>Refunds are issued at our discretion for unused periods</li>
+        <li>We reserve the right to change Pro pricing with 30 days' notice to active subscribers</li>
+      </ul>
+    </div>
+
+    <div class="section">
+      <h2>Disclaimers & Limitations</h2>
+      <p>RAVEN is provided "as is" without warranty of any kind. We do not guarantee uninterrupted availability, delivery of all messages, or error-free operation.</p>
+      <p>To the maximum extent permitted by law, RAVEN shall not be liable for any indirect, incidental, or consequential damages arising from your use of the service, including but not limited to disputes between bill participants.</p>
+      <p>RAVEN is a convenience tool. You are responsible for confirming actual payments through your own means (Venmo, Zelle, cash, etc.).</p>
+    </div>
+
+    <div class="section">
+      <h2>Intellectual Property</h2>
+      <p>All RAVEN branding, code, and content is owned by RAVEN. You may not reproduce, redistribute, or create derivative works without our written consent.</p>
+    </div>
+
+    <div class="section">
+      <h2>Changes to Terms</h2>
+      <p>We may update these terms at any time. Continued use of RAVEN after changes are posted constitutes acceptance. We will notify active users of material changes via SMS.</p>
+    </div>
+
+    <div class="section">
+      <h2>Governing Law</h2>
+      <p>These terms are governed by the laws of the State of New York. Any disputes shall be resolved in the courts of New York.</p>
+    </div>
+
+    <div class="section">
+      <h2>Contact</h2>
+      <p>Questions about these terms?</p>
+      <ul>
+        <li>Email: <a href="/cdn-cgi/l/email-protection#cbb8bebbbba4b9bf8bacaebfb9aabdaea5e5aabbbb"><span class="__cf_email__" data-cfemail="ccbfb9bcbca3beb88caba9b8beadbaa9a2e2adbcbc">[email&#160;protected]</span></a></li>
+        <li>SMS: Text HELP to <a href="sms:+15162347187">+1 (516) 234-7187</a></li>
+      </ul>
+    </div>
+
+  </div>
+
+  <footer>
+    <div class="footer-logo">© 2026 RAVEN</div>
+    <div class="footer-links">
+      <a href="/privacy.html">Privacy</a>
+      <a h

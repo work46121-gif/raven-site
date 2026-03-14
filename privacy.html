@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Privacy Policy — RAVEN</title>
+  <meta name="description" content="RAVEN Privacy Policy — how we handle your data.">
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0a0a;
+      --surface: #111111;
+      --border: #1e1e1e;
+      --accent: #e8e0d0;
+      --muted: #555;
+      --text: #c8c0b0;
+      --white: #f0ece4;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 300;
+      line-height: 1.75;
+      min-height: 100vh;
+    }
+
+    /* NAV */
+    nav {
+      border-bottom: 1px solid var(--border);
+      padding: 1.25rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      background: rgba(10,10,10,0.95);
+      backdrop-filter: blur(8px);
+      z-index: 100;
+    }
+    .nav-logo {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.85rem;
+      letter-spacing: 0.15em;
+      color: var(--white);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .nav-logo span { opacity: 0.5; font-size: 1rem; }
+    .nav-back {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.7rem;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .nav-back:hover { color: var(--accent); }
+
+    /* HERO */
+    .hero {
+      border-bottom: 1px solid var(--border);
+      padding: 5rem 2rem 3.5rem;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    .tag {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.2em;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-bottom: 1.25rem;
+    }
+    h1 {
+      font-family: 'Space Mono', monospace;
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      color: var(--white);
+      line-height: 1.2;
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+    .effective {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+    }
+
+    /* CONTENT */
+    .content {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 3.5rem 2rem 6rem;
+    }
+
+    .section {
+      margin-bottom: 3rem;
+      padding-bottom: 3rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .section:last-child {
+      border-bottom: none;
+    }
+
+    h2 {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.75rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    h2::before {
+      content: '';
+      display: inline-block;
+      width: 20px;
+      height: 1px;
+      background: var(--accent);
+      opacity: 0.4;
+    }
+
+    p {
+      margin-bottom: 1rem;
+      color: var(--text);
+      font-size: 0.95rem;
+    }
+
+    ul {
+      list-style: none;
+      margin: 0.75rem 0 1rem 0;
+    }
+    ul li {
+      padding: 0.4rem 0 0.4rem 1.25rem;
+      position: relative;
+      font-size: 0.95rem;
+      color: var(--text);
+    }
+    ul li::before {
+      content: '—';
+      position: absolute;
+      left: 0;
+      color: var(--muted);
+      font-family: 'Space Mono', monospace;
+    }
+
+    .highlight-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--accent);
+      padding: 1.25rem 1.5rem;
+      margin: 1.5rem 0;
+      font-size: 0.9rem;
+    }
+
+    a { color: var(--accent); text-decoration: none; border-bottom: 1px solid rgba(232,224,208,0.25); transition: border-color 0.2s; }
+    a:hover { border-color: var(--accent); }
+
+    /* FOOTER */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .footer-logo {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.75rem;
+      letter-spacing: 0.15em;
+      color: var(--muted);
+    }
+    .footer-links {
+      display: flex;
+      gap: 2rem;
+    }
+    .footer-links a {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+      border: none;
+      transition: color 0.2s;
+    }
+    .footer-links a:hover { color: var(--accent); }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <a href="/" class="nav-logo"><span>🪶</span> RAVEN</a>
+    <a href="/" class="nav-back">← Back to home</a>
+  </nav>
+
+  <div class="hero">
+    <div class="tag">Legal · Privacy</div>
+    <h1>Privacy Policy</h1>
+    <p class="effective">Effective: March 1, 2026 &nbsp;·&nbsp; Last updated: March 1, 2026</p>
+  </div>
+
+  <div class="content">
+
+    <div class="section">
+      <h2>Overview</h2>
+      <p>RAVEN ("we", "us", "our") is a bill-splitting service that operates via SMS, iMessage, and Discord. We take your privacy seriously. This policy explains what data we collect, why we collect it, and how we protect it.</p>
+      <div class="highlight-box">
+        We do not sell your data. We do not share your data with advertisers. We collect only what is necessary to provide the service.
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Information We Collect</h2>
+      <p>When you interact with RAVEN, we may collect:</p>
+      <ul>
+        <li><strong>Phone numbers</strong> — to send and receive SMS/iMessage communications</li>
+        <li><strong>Message content</strong> — the text commands you send (e.g. SPLIT, PAID, REMIND) to process your requests</li>
+        <li><strong>Bill and transaction data</strong> — amounts, participant names, and payment statuses you provide</li>
+        <li><strong>Discord user IDs</strong> — when you use the RAVEN Discord bot</li>
+        <li><strong>Usage data</strong> — command frequency and feature usage to improve the service</li>
+      </ul>
+      <p>We do not collect financial account information, payment credentials, or government IDs.</p>
+    </div>
+
+    <div class="section">
+      <h2>How We Use Your Information</h2>
+      <p>We use collected information solely to:</p>
+      <ul>
+        <li>Process SPLIT, PAID, REMIND, and STATUS commands</li>
+        <li>Deliver bill breakdowns and reminders to your group</li>
+        <li>Maintain bill history and track payment status</li>
+        <li>Improve service reliability and feature quality</li>
+        <li>Respond to support requests</li>
+      </ul>
+    </div>
+
+    <div class="section">
+      <h2>Data Retention</h2>
+      <p>Bill and transaction data is retained for as long as your account is active. Free tier users have access to up to 5 active bills at a time. Pro users retain full bill history.</p>
+      <p>You may request deletion of your data at any time by texting <strong>DELETE</strong> to +1 (516) 234-7187 or by contacting us at <a href="/cdn-cgi/l/email-protection#9deee8ededf2efe9ddfaf8e9effcebf8f3b3fceded"><span class="__cf_email__" data-cfemail="5e2d2b2e2e312c2a1e393b2a2c3f283b30703f2e2e">[email&#160;protected]</span></a>.</p>
+    </div>
+
+    <div class="section">
+      <h2>Third-Party Services</h2>
+      <p>RAVEN uses the following third-party services to operate:</p>
+      <ul>
+        <li><strong>Twilio</strong> — SMS and iMessage delivery</li>
+        <li><strong>Discord API</strong> — bot functionality on Discord servers</li>
+        <li><strong>Railway</strong> — backend infrastructure and hosting</li>
+      </ul>
+      <p>Each of these services has its own privacy policy. We encourage you to review them.</p>
+    </div>
+
+    <div class="section">
+      <h2>Security</h2>
+      <p>We use industry-standard measures to protect your data, including encrypted connections (HTTPS/TLS) for all data in transit. We do not store message content beyond what is necessary to process your active bills.</p>
+    </div>
+
+    <div class="section">
+      <h2>Children's Privacy</h2>
+      <p>RAVEN is not directed at individuals under the age of 13. We do not knowingly collect personal information from children. If you believe a child has provided us with information, please contact us immediately.</p>
+    </div>
+
+    <div class="section">
+      <h2>Changes to This Policy</h2>
+      <p>We may update this policy from time to time. We'll notify active users via SMS when material changes occur. Continued use of RAVEN after changes constitutes acceptance of the updated policy.</p>
+    </div>
+
+    <div class="section">
+      <h2>Contact</h2>
+      <p>Questions about this policy? Reach us at:</p>
+      <ul>
+        <li>Email: <a href="/cdn-cgi/l/email-protection#5b282e2b2b34292f1b3c3e2f293a2d3e35753a2b2b"><span class="__cf_email__" data-cfemail="770402070718050337101203051601121959160707">[email&#160;protected]</span></a></li>
+        <li>SMS: Text HELP to <a href="sms:+15162347187">+1 (516) 234-7187</a></li>
+      </ul>
+    </div>
+
+  </div>
+
+  <foo
