@@ -235,7 +235,7 @@
   <div class="tab-content active" id="tab-dinner">
 
     <div class="bill-info animate-in">
-      <div class="bill-name">Saturday Night Out</div>
+      <input type="text" id="d-bill-name" value="Saturday Night Out" maxlength="40" autocomplete="off" autocorrect="off" style="font-family:'Bebas Neue',sans-serif;font-size:34px;letter-spacing:0.04em;line-height:1;margin-bottom:6px;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--white);outline:none;width:100%;cursor:text;transition:border-color 0.2s;" onfocus="this.style.borderColor='var(--raven2)'" onblur="this.style.borderColor='transparent'" placeholder="Name your bill..." />
       <div class="bill-meta">
         <div class="bill-tag">Total <span id="d-bill-total">$187.40</span></div>
         <div class="bill-tag" id="d-item-count-tag">8 items</div>
@@ -356,7 +356,7 @@
   <div class="tab-content" id="tab-airbnb">
 
     <div class="bill-info animate-in">
-      <div class="bill-name">Fort Lauderdale Airbnb 🌴</div>
+      <input type="text" id="a-bill-name" value="Fort Lauderdale Airbnb 🌴" maxlength="40" autocomplete="off" autocorrect="off" style="font-family:'Bebas Neue',sans-serif;font-size:34px;letter-spacing:0.04em;line-height:1;margin-bottom:6px;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--white);outline:none;width:100%;cursor:text;transition:border-color 0.2s;" onfocus="this.style.borderColor='var(--raven2)'" onblur="this.style.borderColor='transparent'" placeholder="Name your bill..." />
       <div class="bill-meta">
         <div class="bill-tag">Created by <span>Melad</span></div>
         <div class="bill-tag"><span id="a-people-count">4</span> people</div>
@@ -1061,7 +1061,7 @@
 
           payload = {
             type: 'itemized',
-            name: 'Saturday Night Out',
+            name: document.getElementById('d-bill-name').value.trim() || 'Saturday Night Out',
             items: dItems.map(i => ({ name: i.name, price: i.price })),
             total: actualTotal,
             tax: actualTax,
@@ -1075,7 +1075,7 @@
           const equalShare = n > 0 ? total / n : total;
           payload = {
             type: 'simple',
-            name: 'Fort Lauderdale Airbnb 🌴',
+            name: document.getElementById('a-bill-name').value.trim() || 'Simple Split',
             total,
             people: aPeople.map((p, i) => ({
               name: p.name,
@@ -1118,7 +1118,9 @@
       const tabId = activeTab === 'dinner' ? 'tab-dinner' : 'tab-airbnb';
       const tab = document.getElementById(tabId);
 
-      const billName = activeTab === 'dinner' ? 'Saturday Night Out' : 'Fort Lauderdale Airbnb 🌴';
+      const billName = activeTab === 'dinner'
+        ? (document.getElementById('d-bill-name').value.trim() || 'Saturday Night Out')
+        : (document.getElementById('a-bill-name').value.trim() || 'Simple Split');
       const iMessageText = `You have been spotted by R.A.V.E.N 🪶\n\n📋 ${billName}\n\nTap the link to pick what you ordered and see what you owe:\n${billUrl}`;
       const iMessageUrl = `sms:&body=${encodeURIComponent(iMessageText)}`;
 
