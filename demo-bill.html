@@ -466,7 +466,7 @@
           <div class="pay-icon zelle">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M13.618 2H10.38L2 12l8.382 10h3.236L5.236 12zm5.146 0h-3.236L23.764 12l-8.236 10H18.764L27 12z" transform="scale(0.8) translate(1.5,0)"/></svg>
           </div>
-          <div class="pay-info"><div class="pay-name">Zelle</div><div class="pay-handle">jordan@raven.app</div></div>
+          <div class="pay-info"><div class="pay-name">Zelle</div><div class="pay-handle"><span class="__cf_email__" data-cfemail="9cf6f3eef8fdf2dceefdeaf9f2b2fdecec">[email&#160;protected]</span></div></div>
           <div class="pay-arrow">→</div>
         </a>
         <a class="pay-method" href="#" onclick="payClicked('Apple Pay'); return false;">
@@ -483,7 +483,7 @@
 
   <div class="toast" id="toast"></div>
 
-  <script>
+  <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
     // ── STATE ──
     let activeTab = 'dinner';
     let splitType = 'equal';
@@ -1112,7 +1112,8 @@
     }
 
     function showConfirmation(billId, billUrl) {
-      document.getElementById('submitWrap').style.display = 'none';
+      const submitWrap = document.querySelector('.submit-wrap');
+      if (submitWrap) submitWrap.style.display = 'none';
 
       const tabId = activeTab === 'dinner' ? 'tab-dinner' : 'tab-airbnb';
       const tab = document.getElementById(tabId);
@@ -1211,12 +1212,13 @@
       t.textContent = msg;
       t.className = `toast show ${type}`;
       clearTimeout(t._timer);
-      t._timer = setTimeout(() => { t.className = 'toast'; }, 3500);
+      t._timer = setTimeout(() => { t.className = 'toast'; }, 3000);
     }
 
     // ── INIT ──
-    renderDinnerPeopleList();
     renderDinner();
+    renderDinnerPeopleList();
+    dinnerCalc();
     renderAirbnb();
   </script>
 </body>
