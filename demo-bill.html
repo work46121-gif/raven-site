@@ -1275,7 +1275,7 @@
       const billName = activeTab === 'dinner'
         ? (document.getElementById('d-bill-name').value.trim() || 'Saturday Night Out')
         : (document.getElementById('a-bill-name').value.trim() || 'Simple Split');
-      const iMessageText = `https://work46121-gif.github.io/raven-site/raven-hero.png\n\nYou have been spotted by R.A.V.E.N 🪶\n\n📋 ${billName}\n\nTap the link to pick what you ordered and see what you owe:\n${billUrl}`;
+      const iMessageText = `You have been spotted by R.A.V.E.N 🪶\n\n📋 ${billName}\n\nTap the link to pick what you ordered and see what you owe:\n${billUrl}`;
       const iMessageUrl = `sms:&body=${encodeURIComponent(iMessageText)}`;
 
       const banner = document.createElement('div');
