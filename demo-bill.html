@@ -235,7 +235,11 @@
   <div class="tab-content active" id="tab-dinner">
 
     <div class="bill-info animate-in">
-      <input type="text" id="d-bill-name" value="Saturday Night Out" maxlength="40" autocomplete="off" autocorrect="off" style="font-family:'Bebas Neue',sans-serif;font-size:34px;letter-spacing:0.04em;line-height:1;margin-bottom:6px;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--white);outline:none;width:100%;cursor:text;transition:border-color 0.2s;" onfocus="this.style.borderColor='var(--raven2)'" onblur="this.style.borderColor='transparent'" placeholder="Name your bill..." />
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+        <div id="d-bill-name-display" class="bill-name" style="cursor:pointer;" onclick="editBillName('d')">Saturday Night Out</div>
+        <button onclick="editBillName('d')" style="background:rgba(168,85,247,0.1);border:1px solid rgba(168,85,247,0.2);color:var(--raven3);font-size:11px;padding:3px 10px;border-radius:8px;cursor:pointer;font-family:'Epilogue',sans-serif;font-weight:600;flex-shrink:0;">✏️ Edit</button>
+      </div>
+      <input type="text" id="d-bill-name" value="Saturday Night Out" maxlength="40" autocomplete="off" autocorrect="off" style="display:none;font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:0.04em;background:var(--dark2);border:1px solid var(--raven2);border-radius:10px;color:var(--white);outline:none;width:100%;padding:8px 12px;margin-bottom:6px;" placeholder="Name your bill..." onblur="saveBillName('d')" onkeydown="if(event.key==='Enter')saveBillName('d')" />
       <div class="bill-meta">
         <div class="bill-tag">Total <span id="d-bill-total">$187.40</span></div>
         <div class="bill-tag" id="d-item-count-tag">8 items</div>
@@ -317,21 +321,56 @@
 
     <div class="items-list" id="d-items-list"></div>
 
+    <!-- MANUAL ITEM ENTRY -->
+    <div style="max-width:480px;margin:8px auto 0;padding:0 20px;">
+      <button onclick="toggleManualEntry()" style="width:100%;padding:10px;background:transparent;border:1px dashed var(--border2);border-radius:10px;color:var(--muted);font-family:'Epilogue',sans-serif;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all 0.18s;" onmouseover="this.style.borderColor='var(--raven2)';this.style.color='var(--raven3)'" onmouseout="this.style.borderColor='var(--border2)';this.style.color='var(--muted)'">＋ Add item manually</button>
+      <div id="manual-entry" style="display:none;margin-top:8px;background:var(--dark2);border:1px solid var(--border2);border-radius:12px;padding:14px;display:none;">
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input type="text" id="manual-name" placeholder="Item name..." style="flex:1;padding:10px 12px;background:var(--dark3);border:1px solid var(--border2);border-radius:8px;color:var(--white);font-family:'Epilogue',sans-serif;font-size:14px;outline:none;" onkeydown="if(event.key==='Enter')document.getElementById('manual-price').focus()" />
+          <div style="display:flex;align-items:center;background:var(--dark3);border:1px solid var(--border2);border-radius:8px;overflow:hidden;">
+            <span style="padding:0 8px;color:var(--muted);font-size:14px;">$</span>
+            <input type="number" id="manual-price" placeholder="0.00" min="0" step="0.01" style="width:80px;padding:10px 8px 10px 0;background:transparent;border:none;color:var(--white);font-family:'Epilogue',sans-serif;font-size:14px;outline:none;" onkeydown="if(event.key==='Enter')addManualItem()" />
+          </div>
+          <button onclick="addManualItem()" style="padding:10px 14px;background:var(--raven);border:none;border-radius:8px;color:#fff;font-family:'Epilogue',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">Add</button>
+        </div>
+      </div>
+    </div>
+
     <div class="section-wrap animate-in">
       <div class="section-label-row"><div class="section-label-text">Shared charges</div></div>
       <div class="extras-card">
         <div class="extra-row">
-          <div class="extra-label">Tax <span class="extra-note">(split evenly)</span></div>
-          <div style="text-align:right;">
-            <div class="extra-value">$14.40 total</div>
-            <div style="font-size:11px;color:var(--sms);margin-top:2px;">$<span id="d-tax-share">3.60</span> / person</div>
+          <div style="flex:1;">
+            <div class="extra-label">Tax <span class="extra-note" id="d-tax-note">(split evenly)</span></div>
+            <div style="font-size:11px;color:var(--sms);margin-top:2px;" id="d-tax-share-row">$<span id="d-tax-share">3.60</span> / person</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;">
+            <div style="text-align:right;">
+              <div class="extra-value" id="d-tax-total-display">$14.40 total</div>
+            </div>
+            <label style="display:flex;align-items:center;gap:0;cursor:pointer;" title="Toggle tax split">
+              <input type="checkbox" id="tax-toggle" checked onchange="toggleCharge('tax')" style="display:none;" />
+              <div id="tax-toggle-track" style="width:36px;height:20px;background:var(--sms);border-radius:10px;position:relative;transition:background 0.2s;flex-shrink:0;">
+                <div id="tax-toggle-thumb" style="position:absolute;top:2px;left:18px;width:16px;height:16px;background:#fff;border-radius:50%;transition:left 0.2s;"></div>
+              </div>
+            </label>
           </div>
         </div>
         <div class="extra-row">
-          <div class="extra-label">Tip <span class="extra-note">(split evenly)</span></div>
-          <div style="text-align:right;">
-            <div class="extra-value">$28.00 total</div>
-            <div style="font-size:11px;color:var(--sms);margin-top:2px;">$<span id="d-tip-share">7.00</span> / person</div>
+          <div style="flex:1;">
+            <div class="extra-label">Tip <span class="extra-note" id="d-tip-note">(split evenly)</span></div>
+            <div style="font-size:11px;color:var(--sms);margin-top:2px;" id="d-tip-share-row">$<span id="d-tip-share">7.00</span> / person</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;">
+            <div style="text-align:right;">
+              <div class="extra-value" id="d-tip-total-display">$28.00 total</div>
+            </div>
+            <label style="display:flex;align-items:center;gap:0;cursor:pointer;" title="Toggle tip split">
+              <input type="checkbox" id="tip-toggle" checked onchange="toggleCharge('tip')" style="display:none;" />
+              <div id="tip-toggle-track" style="width:36px;height:20px;background:var(--sms);border-radius:10px;position:relative;transition:background 0.2s;flex-shrink:0;">
+                <div id="tip-toggle-thumb" style="position:absolute;top:2px;left:18px;width:16px;height:16px;background:#fff;border-radius:50%;transition:left 0.2s;"></div>
+              </div>
+            </label>
           </div>
         </div>
       </div>
@@ -341,8 +380,8 @@
       <div class="section-label-row"><div class="section-label-text">Your summary</div></div>
       <div class="summary-card">
         <div class="summary-row"><div class="summary-label">Your items</div><div class="summary-value" id="d-items-total">$0.00</div></div>
-        <div class="summary-row"><div class="summary-label">Tax (your share)</div><div class="summary-value" id="d-tax-row">$3.60</div></div>
-        <div class="summary-row"><div class="summary-label">Tip (your share)</div><div class="summary-value" id="d-tip-row">$7.00</div></div>
+        <div class="summary-row" id="summary-tax-row"><div class="summary-label">Tax (your share)</div><div class="summary-value" id="d-tax-row">$3.60</div></div>
+        <div class="summary-row" id="summary-tip-row"><div class="summary-label">Tip (your share)</div><div class="summary-value" id="d-tip-row">$7.00</div></div>
         <div class="summary-total">
           <div class="summary-total-label">Your Total</div>
           <div class="summary-total-value" id="d-my-total">$10.60</div>
@@ -356,7 +395,11 @@
   <div class="tab-content" id="tab-airbnb">
 
     <div class="bill-info animate-in">
-      <input type="text" id="a-bill-name" value="Fort Lauderdale Airbnb 🌴" maxlength="40" autocomplete="off" autocorrect="off" style="font-family:'Bebas Neue',sans-serif;font-size:34px;letter-spacing:0.04em;line-height:1;margin-bottom:6px;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--white);outline:none;width:100%;cursor:text;transition:border-color 0.2s;" onfocus="this.style.borderColor='var(--raven2)'" onblur="this.style.borderColor='transparent'" placeholder="Name your bill..." />
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+        <div id="a-bill-name-display" class="bill-name" style="cursor:pointer;" onclick="editBillName('a')">Fort Lauderdale Airbnb 🌴</div>
+        <button onclick="editBillName('a')" style="background:rgba(168,85,247,0.1);border:1px solid rgba(168,85,247,0.2);color:var(--raven3);font-size:11px;padding:3px 10px;border-radius:8px;cursor:pointer;font-family:'Epilogue',sans-serif;font-weight:600;flex-shrink:0;">✏️ Edit</button>
+      </div>
+      <input type="text" id="a-bill-name" value="Fort Lauderdale Airbnb 🌴" maxlength="40" autocomplete="off" autocorrect="off" style="display:none;font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:0.04em;background:var(--dark2);border:1px solid var(--raven2);border-radius:10px;color:var(--white);outline:none;width:100%;padding:8px 12px;margin-bottom:6px;" placeholder="Name your bill..." onblur="saveBillName('a')" onkeydown="if(event.key==='Enter')saveBillName('a')" />
       <div class="bill-meta">
         <div class="bill-tag">Created by <span>Melad</span></div>
         <div class="bill-tag"><span id="a-people-count">4</span> people</div>
@@ -775,6 +818,7 @@
               <div class="item-price">$${item.price.toFixed(2)}</div>
               ${shareHTML}${assignedShareHTML}
             </div>
+            <button onclick="event.stopPropagation();removeItem('${item.id}')" style="margin-left:8px;width:24px;height:24px;border-radius:50%;border:1px solid var(--border2);background:transparent;color:var(--muted);font-size:14px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.15s;" onmouseover="this.style.background='rgba(255,68,68,0.12)';this.style.color='#FF6B6B';this.style.borderColor='rgba(255,68,68,0.3)'" onmouseout="this.style.background='transparent';this.style.color='var(--muted)';this.style.borderColor='var(--border2)'">×</button>
           </div>
           ${actionsHTML}
         </div>`;
@@ -814,6 +858,19 @@
         }
       }
       renderDinner(); dinnerCalc();
+    }
+
+    function removeItem(id) {
+      const idx = dItems.findIndex(i => i.id === id);
+      if (idx === -1) return;
+      const name = dItems[idx].name;
+      dItems.splice(idx, 1);
+      delete dSelections[id];
+      delete dAssigned[id];
+      updateBillTotals();
+      renderDinner();
+      dinnerCalc();
+      showToast(`${name} removed`, 'ok');
     }
 
     // ── ASSIGN MODAL ──
@@ -881,15 +938,13 @@
       });
       const taxTotal = window._D_TAX_OVERRIDE !== undefined ? window._D_TAX_OVERRIDE : D_TAX_TOTAL;
       const tipTotal = window._D_TIP_OVERRIDE !== undefined ? window._D_TIP_OVERRIDE : D_TIP_TOTAL;
-      const taxShare = taxTotal / dPeopleCount;
-      const tipShare = tipTotal / dPeopleCount;
+      const taxShare = taxEnabled ? taxTotal / dPeopleCount : 0;
+      const tipShare = tipEnabled ? tipTotal / dPeopleCount : 0;
       document.getElementById('d-items-total').textContent = '$' + itemsTotal.toFixed(2);
       document.getElementById('d-tax-row').textContent = '$' + taxShare.toFixed(2);
       document.getElementById('d-tip-row').textContent = '$' + tipShare.toFixed(2);
       document.getElementById('d-my-total').textContent = '$' + (itemsTotal + taxShare + tipShare).toFixed(2);
-      // Update shared charges display
-      document.getElementById('d-tax-share').textContent = taxShare.toFixed(2);
-      document.getElementById('d-tip-share').textContent = tipShare.toFixed(2);
+      updateBillTotals();
     }
 
     // ── AIRBNB STATE ──
@@ -1007,6 +1062,105 @@
       showToast(`${name} removed`, 'ok');
     }
 
+    // ── MANUAL ITEM ENTRY ──
+    let manualEntryOpen = false;
+    function toggleManualEntry() {
+      manualEntryOpen = !manualEntryOpen;
+      const el = document.getElementById('manual-entry');
+      el.style.display = manualEntryOpen ? 'block' : 'none';
+      if (manualEntryOpen) document.getElementById('manual-name').focus();
+    }
+
+    function addManualItem() {
+      const nameEl = document.getElementById('manual-name');
+      const priceEl = document.getElementById('manual-price');
+      const name = nameEl.value.trim();
+      const price = parseFloat(priceEl.value);
+      if (!name) { showToast('Enter an item name ☝️', 'error'); nameEl.focus(); return; }
+      if (!price || price <= 0) { showToast('Enter a valid price ☝️', 'error'); priceEl.focus(); return; }
+      const newId = String(Date.now());
+      dItems.push({ id: newId, name, price, claimers: [] });
+      nameEl.value = '';
+      priceEl.value = '';
+      nameEl.focus();
+      updateBillTotals();
+      renderDinner();
+      dinnerCalc();
+      showToast(`${name} added ✓`, 'ok');
+    }
+
+    function updateBillTotals() {
+      const subtotal = dItems.reduce((s, i) => s + i.price, 0);
+      const taxTotal = window._D_TAX_OVERRIDE !== undefined ? window._D_TAX_OVERRIDE : D_TAX_TOTAL;
+      const tipTotal = window._D_TIP_OVERRIDE !== undefined ? window._D_TIP_OVERRIDE : D_TIP_TOTAL;
+      const grandTotal = subtotal + (taxEnabled ? taxTotal : 0) + (tipEnabled ? tipTotal : 0);
+
+      // Header totals
+      document.getElementById('d-bill-total').textContent = '$' + grandTotal.toFixed(2);
+      document.getElementById('d-item-count-tag').textContent = dItems.length + ' items';
+
+      // Shared charges display
+      document.getElementById('d-tax-total-display').textContent = taxEnabled ? '$' + taxTotal.toFixed(2) + ' total' : 'off';
+      document.getElementById('d-tip-total-display').textContent = tipEnabled ? '$' + tipTotal.toFixed(2) + ' total' : 'off';
+      document.getElementById('d-tax-share').textContent = taxEnabled ? (taxTotal / dPeopleCount).toFixed(2) : '0.00';
+      document.getElementById('d-tip-share').textContent = tipEnabled ? (tipTotal / dPeopleCount).toFixed(2) : '0.00';
+    }
+
+    // ── TAX / TIP TOGGLES ──
+    let taxEnabled = true;
+    let tipEnabled = true;
+
+    function toggleCharge(type) {
+      if (type === 'tax') {
+        taxEnabled = !taxEnabled;
+        const track = document.getElementById('tax-toggle-track');
+        const thumb = document.getElementById('tax-toggle-thumb');
+        const shareRow = document.getElementById('d-tax-share-row');
+        const note = document.getElementById('d-tax-note');
+        track.style.background = taxEnabled ? 'var(--sms)' : 'var(--muted)';
+        thumb.style.left = taxEnabled ? '18px' : '2px';
+        shareRow.style.opacity = taxEnabled ? '1' : '0.35';
+        note.textContent = taxEnabled ? '(split evenly)' : '(excluded)';
+        document.getElementById('summary-tax-row').style.display = taxEnabled ? '' : 'none';
+      } else {
+        tipEnabled = !tipEnabled;
+        const track = document.getElementById('tip-toggle-track');
+        const thumb = document.getElementById('tip-toggle-thumb');
+        const shareRow = document.getElementById('d-tip-share-row');
+        const note = document.getElementById('d-tip-note');
+        track.style.background = tipEnabled ? 'var(--sms)' : 'var(--muted)';
+        thumb.style.left = tipEnabled ? '18px' : '2px';
+        shareRow.style.opacity = tipEnabled ? '1' : '0.35';
+        note.textContent = tipEnabled ? '(split evenly)' : '(excluded)';
+        document.getElementById('summary-tip-row').style.display = tipEnabled ? '' : 'none';
+      }
+      updateBillTotals();
+      dinnerCalc();
+    }
+
+    // ── BILL NAME EDITING ──
+    function editBillName(tab) {
+      const display = document.getElementById(`${tab}-bill-name-display`);
+      const input = document.getElementById(`${tab}-bill-name`);
+      display.previousElementSibling && display.parentElement.querySelector('button') && (display.parentElement.querySelector('button').style.display = 'none');
+      display.style.display = 'none';
+      display.parentElement.querySelector('button').style.display = 'none';
+      input.style.display = 'block';
+      input.focus();
+      input.select();
+    }
+
+    function saveBillName(tab) {
+      const display = document.getElementById(`${tab}-bill-name-display`);
+      const input = document.getElementById(`${tab}-bill-name`);
+      const val = input.value.trim();
+      if (val) display.textContent = val;
+      else input.value = display.textContent;
+      input.style.display = 'none';
+      display.style.display = 'block';
+      display.parentElement.querySelector('button').style.display = 'flex';
+    }
+
     // ── TAB SWITCHING ──
     function switchTab(tab) {
       activeTab = tab;
@@ -1054,8 +1208,8 @@
               return { name: item.name, price: item.price };
             });
 
-          const actualTax = window._D_TAX_OVERRIDE !== undefined ? window._D_TAX_OVERRIDE : D_TAX_TOTAL;
-          const actualTip = window._D_TIP_OVERRIDE !== undefined ? window._D_TIP_OVERRIDE : D_TIP_TOTAL;
+          const actualTax = taxEnabled ? (window._D_TAX_OVERRIDE !== undefined ? window._D_TAX_OVERRIDE : D_TAX_TOTAL) : 0;
+          const actualTip = tipEnabled ? (window._D_TIP_OVERRIDE !== undefined ? window._D_TIP_OVERRIDE : D_TIP_TOTAL) : 0;
           const actualSubtotal = dItems.reduce((s, i) => s + i.price, 0);
           const actualTotal = actualSubtotal + actualTax + actualTip;
 
