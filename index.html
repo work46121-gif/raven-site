@@ -316,7 +316,16 @@ footer { border-top: 1px solid var(--border); padding: 34px 52px; display: flex;
     <li><a href="#features">Features</a></li>
     <li><a href="#how">How It Works</a></li>
     <li><a href="#pricing">Pricing</a></li>
-    <li><a href="dashboard.html" style="color:var(--muted);text-decoration:none;font-size:13px;letter-spacing:0.04em;transition:color 0.2s" onmouseover="this.style.color='var(--white)'" onmouseout="this.style.color='var(--muted)'">Sign In</a></li><li><a href="dashboard.html" class="nav-cta">Create Account →</a></li>
+    <li id="nav-auth-links">
+      <a href="dashboard.html" style="color:var(--muted);text-decoration:none;font-size:13px;letter-spacing:0.04em;transition:color 0.2s" onmouseover="this.style.color='var(--white)'" onmouseout="this.style.color='var(--muted)'">Sign In</a>
+    </li>
+    <li id="nav-create-link"><a href="dashboard.html" class="nav-cta">Create Account →</a></li>
+    <li id="nav-user-greeting" style="display:none">
+      <a href="dashboard.html" style="color:var(--muted);text-decoration:none;font-size:13px;letter-spacing:0.04em;transition:color 0.2s" onmouseover="this.style.color='var(--white)'" onmouseout="this.style.color='var(--muted)'">Dashboard</a>
+    </li>
+    <li id="nav-user-cta" style="display:none">
+      <a href="dashboard.html" class="nav-cta" id="nav-welcome-btn">Welcome 🪶</a>
+    </li>
   </ul>
 </nav>
 
@@ -913,5 +922,41 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+(async function() {
+  const SUPABASE_URL = 'https://ffjpzkpdumdcwnakpaje.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZmanB6a3BkdW1kY3duYWtwYWplIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5ODc4OTcsImV4cCI6MjA4ODU2Mzg5N30.JtDLVu4K1TJ8emcN_mvSHBu6e0y8-jPQv-ypoc9p0RU';
+  const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  try {
+    const { data: { session } } = await db.auth.getSession();
+    if (session?.user) {
+      // Logged in — show welcome, hide sign in / create account
+      document.getElementById('nav-auth-links').style.display = 'none';
+      document.getElementById('nav-create-link').style.display = 'none';
+      document.getElementById('nav-user-greeting').style.display = 'list-item';
+      document.getElementById('nav-user-cta').style.display = 'list-item';
+
+      // Try to get first name from profile
+      let firstName = '';
+      try {
+        const local = JSON.parse(localStorage.getItem('raven_profile') || '{}');
+        firstName = local.first_name || '';
+        if (!firstName) {
+          const { data: profile } = await db.from('profiles').select('first_name').eq('id', session.user.id).single();
+          firstName = profile?.first_name || '';
+        }
+      } catch(e) {}
+
+      const greeting = firstName ? `Welcome, ${firstName} 🪶` : 'Dashboard 🪶';
+      document.getElementById('nav-welcome-btn').textContent = greeting;
+    }
+  } catch(e) {
+    console.log('Auth check failed:', e);
+  }
+})();
+</script>
 </body>
 </html>
