@@ -878,21 +878,36 @@ async function init() {
   // Handle email confirmation tokens in URL hash
   const hash = window.location.hash;
   if (hash && (hash.includes('access_token') || hash.includes('type=signup') || hash.includes('type=recovery'))) {
-    const { data, error } = await db.auth.getSession();
-    if (error) showToast('Confirmation link expired. Please sign in.', 'error');
+    await db.auth.getSession();
   }
 
   const { data: { session } } = await db.auth.getSession();
   if (session?.user) {
     currentUser = session.user;
     if (window.location.hash) history.replaceState(null, '', window.location.pathname);
+
+    // Check if onboarding is complete
+    const { data: profile } = await db.from('profiles').select('onboarding_complete').eq('id', currentUser.id).single();
+    if (!profile || !profile.onboarding_complete) {
+      window.location.href = 'onboarding.html';
+      return;
+    }
+
     showDashboard();
   }
 
-  db.auth.onAuthStateChange((event, session) => {
+  db.auth.onAuthStateChange(async (event, session) => {
     if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session?.user) {
       currentUser = session.user;
       if (window.location.hash) history.replaceState(null, '', window.location.pathname);
+
+      // Check onboarding
+      const { data: profile } = await db.from('profiles').select('onboarding_complete').eq('id', session.user.id).single();
+      if (!profile || !profile.onboarding_complete) {
+        window.location.href = 'onboarding.html';
+        return;
+      }
+
       showDashboard();
     } else if (event === 'SIGNED_OUT') {
       currentUser = null;
