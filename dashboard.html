@@ -888,17 +888,23 @@ async function init() {
 
     // Check if onboarding is complete
     try {
+      // Check localStorage first (fast, reliable)
+      const localProfile = JSON.parse(localStorage.getItem('raven_profile') || '{}');
+      if (localProfile.onboarding_complete && localProfile.user_id === currentUser.id) {
+        showDashboard();
+        return;
+      }
+      // Then check Supabase
       const { data: profile, error } = await db.from('profiles').select('onboarding_complete').eq('id', currentUser.id).single();
-      if (!error && profile && !profile.onboarding_complete) {
-        window.location.href = 'onboarding.html';
+      if (!error && profile?.onboarding_complete) {
+        showDashboard();
         return;
       }
-      if (!error && !profile) {
-        window.location.href = 'onboarding.html';
-        return;
-      }
+      window.location.href = 'onboarding.html';
+      return;
     } catch(e) {
       console.log('Profile check failed, showing dashboard anyway:', e);
+      showDashboard();
     }
 
     showDashboard();
@@ -911,17 +917,21 @@ async function init() {
 
       // Check onboarding
       try {
+        const localProfile = JSON.parse(localStorage.getItem('raven_profile') || '{}');
+        if (localProfile.onboarding_complete && localProfile.user_id === session.user.id) {
+          showDashboard();
+          return;
+        }
         const { data: profile, error } = await db.from('profiles').select('onboarding_complete').eq('id', session.user.id).single();
-        if (!error && profile && !profile.onboarding_complete) {
-          window.location.href = 'onboarding.html';
+        if (!error && profile?.onboarding_complete) {
+          showDashboard();
           return;
         }
-        if (!error && !profile) {
-          window.location.href = 'onboarding.html';
-          return;
-        }
+        window.location.href = 'onboarding.html';
+        return;
       } catch(e) {
         console.log('Profile check failed:', e);
+        showDashboard();
       }
 
       showDashboard();
