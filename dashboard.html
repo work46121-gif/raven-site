@@ -599,7 +599,25 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
     <div style="background:var(--dark);border:1px solid var(--border2);border-radius:20px;padding:32px;width:100%;max-width:480px">
       <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:0.05em;margin-bottom:4px">New Trip</div>
       <div style="font-size:13px;color:var(--muted);margin-bottom:24px">Create a shared hub for group receipts</div>
+
+      <!-- COVER PHOTO -->
+      <div class="form-group">
+        <label class="form-label">Cover Photo <span style="color:var(--muted);font-weight:400;font-size:10px">(optional)</span></label>
+        <div id="trip-cover-dropzone" style="border:2px dashed rgba(124,58,237,0.3);border-radius:12px;background:rgba(124,58,237,0.03);cursor:pointer;overflow:hidden;transition:all 0.2s" onclick="document.getElementById('trip-cover-input').click()">
+          <div id="trip-cover-empty" style="padding:20px;text-align:center;color:var(--muted);font-size:13px">🖼 Tap to add a cover photo</div>
+          <img id="trip-cover-preview" style="display:none;width:100%;height:120px;object-fit:cover">
+        </div>
+        <input id="trip-cover-input" type="file" accept="image/*" style="display:none" onchange="handleTripCover(event)">
+      </div>
+
       <div class="form-group"><label class="form-label">Trip Name</label><input id="trip-name-input" type="text" class="form-input" placeholder="e.g. Fort Lauderdale 2026 🌴"></div>
+
+      <!-- TRIP DATE -->
+      <div class="form-group">
+        <label class="form-label">Trip Date <span style="color:var(--muted);font-weight:400;font-size:10px">(shows countdown)</span></label>
+        <input id="trip-date-input" type="date" class="form-input">
+      </div>
+
       <div class="form-group">
         <label class="form-label">People on this trip</label>
         <div style="display:flex;gap:8px;margin-bottom:10px">
@@ -1184,20 +1202,51 @@ function renderTripPeopleChips() {
   ).join('');
 }
 
+let tripCoverBase64 = null;
+
+function handleTripCover(event) {
+  const file = event.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async e => {
+    const resized = await new Promise(res => {
+      const img = new Image(); img.onload = function() {
+        let {width:w,height:h} = img;
+        const maxW = 800, maxH = 400;
+        if (w > maxW) { h = Math.round(h*maxW/w); w = maxW; }
+        if (h > maxH) { w = Math.round(w*maxH/h); h = maxH; }
+        const c = document.createElement('canvas'); c.width=w; c.height=h;
+        c.getContext('2d').drawImage(img,0,0,w,h); res(c.toDataURL('image/jpeg',0.85));
+      }; img.src = e.target.result;
+    });
+    tripCoverBase64 = resized.split(',')[1];
+    document.getElementById('trip-cover-preview').src = resized;
+    document.getElementById('trip-cover-preview').style.display = 'block';
+    document.getElementById('trip-cover-empty').style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+}
+
 async function createTrip() {
   const name = document.getElementById('trip-name-input').value.trim();
+  const tripDate = document.getElementById('trip-date-input').value;
   if (!name) return showToast('Enter a trip name', 'error');
   if (tripPeople.length === 0) return showToast('Add at least one person', 'error');
   const tripId = generateId();
   const shareToken = Array.from({length:16}, () => 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'[Math.floor(Math.random()*62)]).join('');
-  const { error } = await db.from('trips').insert({
+  const inviteToken = Array.from({length:12}, () => 'abcdefghijklmnopqrstuvwxyz0123456789'[Math.floor(Math.random()*36)]).join('');
+  const insertData = {
     id: tripId, creator_email: currentUser.email, name,
     people: JSON.stringify(tripPeople), share_token: shareToken,
+    invite_token: inviteToken,
     total: 0, receipt_count: 0, status: 'active',
     created_at: new Date().toISOString()
-  });
+  };
+  if (tripDate) insertData.trip_date = tripDate;
+  if (tripCoverBase64) insertData.cover_image = tripCoverBase64;
+  const { error } = await db.from('trips').insert(insertData);
   if (error) { console.error(error); return showToast('Error creating trip: ' + error.message, 'error'); }
   closeCreateTrip();
+  tripCoverBase64 = null;
   showToast('✈️ Trip "' + name + '" created!', 'success');
   const tripUrl = BACKEND + '/trip/' + tripId + '?t=' + shareToken;
   setTimeout(() => { if (confirm('Trip created! Copy the share link now?')) copyTripLink(tripUrl); }, 500);
