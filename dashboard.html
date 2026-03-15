@@ -875,14 +875,24 @@ let people = [];
 
 // ── INIT ──
 async function init() {
+  // Handle email confirmation tokens in URL hash
+  const hash = window.location.hash;
+  if (hash && (hash.includes('access_token') || hash.includes('type=signup') || hash.includes('type=recovery'))) {
+    const { data, error } = await db.auth.getSession();
+    if (error) showToast('Confirmation link expired. Please sign in.', 'error');
+  }
+
   const { data: { session } } = await db.auth.getSession();
   if (session?.user) {
     currentUser = session.user;
+    if (window.location.hash) history.replaceState(null, '', window.location.pathname);
     showDashboard();
   }
+
   db.auth.onAuthStateChange((event, session) => {
-    if (event === 'SIGNED_IN' && session?.user) {
+    if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session?.user) {
       currentUser = session.user;
+      if (window.location.hash) history.replaceState(null, '', window.location.pathname);
       showDashboard();
     } else if (event === 'SIGNED_OUT') {
       currentUser = null;
