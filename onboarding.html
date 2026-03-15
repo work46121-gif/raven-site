@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RAVEN — Welcome</title>
+<link rel="icon" type="image/x-icon" href="favicon.ico">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Epilogue:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --black: #06060A;
+  --dark: #0C0C12;
+  --dark2: #13131A;
+  --dark3: #1A1A24;
+  --border: rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.12);
+  --white: #F0EEF8;
+  --muted: #6E6B80;
+  --muted2: #9896A8;
+  --purple: #7C3AED;
+  --purple2: #A855F7;
+  --purple3: #C084FC;
+  --green: #30D158;
+  --green-glow: rgba(48,209,88,0.2);
+  --red: #FF4444;
+}
+html, body { min-height: 100vh; font-family: 'Epilogue', sans-serif; background: var(--black); color: var(--white); overflow-x: hidden; }
+
+/* Background */
+body::before {
+  content: '';
+  position: fixed;
+  top: -200px; left: 50%; transform: translateX(-50%);
+  width: 900px; height: 700px;
+  background: radial-gradient(ellipse, rgba(124,58,237,0.12) 0%, transparent 65%);
+  pointer-events: none;
+  z-index: 0;
+}
+body::after {
+  content: '';
+  position: fixed;
+  bottom: -100px; right: -200px;
+  width: 600px; height: 500px;
+  background: radial-gradient(ellipse, rgba(48,209,88,0.07) 0%, transparent 65%);
+  pointer-events: none;
+  z-index: 0;
+}
+.grid-bg {
+  position: fixed; inset: 0; z-index: 0;
+  background-image: linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+  background-size: 60px 60px;
+  mask-image: radial-gradient(ellipse 80% 80% at 50% 20%, black 20%, transparent 100%);
+}
+
+/* Layout */
+.container {
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+}
+
+/* Logo */
+.logo {
+  text-align: center;
+  margin-bottom: 40px;
+  animation: fadeUp 0.6s ease both;
+}
+.logo-icon { font-size: 36px; display: block; margin-bottom: 8px; filter: drop-shadow(0 0 20px rgba(124,58,237,0.6)); }
+.logo-name {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 38px;
+  letter-spacing: 0.18em;
+  background: linear-gradient(135deg, var(--white) 30%, var(--purple3));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.logo-sub { font-size: 12px; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; margin-top: 3px; }
+
+/* Card */
+.card {
+  width: 100%;
+  max-width: 480px;
+  background: var(--dark);
+  border: 1px solid var(--border2);
+  border-radius: 24px;
+  padding: 40px;
+  box-shadow: 0 40px 100px rgba(0,0,0,0.5), 0 0 0 1px rgba(124,58,237,0.08);
+  animation: fadeUp 0.6s 0.1s ease both;
+  opacity: 0;
+  animation-fill-mode: forwards;
+}
+
+/* Progress */
+.progress-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 32px;
+}
+.progress-step {
+  flex: 1;
+  height: 3px;
+  background: var(--dark3);
+  border-radius: 2px;
+  overflow: hidden;
+  transition: background 0.3s;
+}
+.progress-step.done { background: var(--green); }
+.progress-step.active { background: linear-gradient(90deg, var(--purple), var(--green)); }
+.progress-label {
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+
+/* Step header */
+.step-header { margin-bottom: 28px; }
+.step-tag {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--purple3);
+  display: block;
+  margin-bottom: 8px;
+}
+.step-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 32px;
+  letter-spacing: 0.05em;
+  line-height: 1;
+  margin-bottom: 6px;
+}
+.step-title span { color: var(--green); }
+.step-sub { font-size: 13px; color: var(--muted); line-height: 1.6; }
+
+/* Form */
+.form { display: flex; flex-direction: column; gap: 16px; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.field { display: flex; flex-direction: column; gap: 6px; }
+.label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted2);
+}
+.input {
+  padding: 13px 16px;
+  background: var(--dark2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--white);
+  font-family: 'Epilogue', sans-serif;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  width: 100%;
+}
+.input:focus {
+  border-color: var(--purple);
+  box-shadow: 0 0 0 3px rgba(124,58,237,0.12);
+}
+.input::placeholder { color: var(--muted); }
+.input-hint { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+/* Phone input with flag */
+.phone-wrap { position: relative; }
+.phone-prefix {
+  position: absolute;
+  left: 16px; top: 50%; transform: translateY(-50%);
+  font-size: 14px; color: var(--muted2);
+  pointer-events: none;
+}
+.input-phone { padding-left: 44px; }
+
+/* DOB */
+.dob-row { display: grid; grid-template-columns: 2fr 2fr 3fr; gap: 8px; }
+.select {
+  padding: 13px 12px;
+  background: var(--dark2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--white);
+  font-family: 'Epilogue', sans-serif;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%236E6B80'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+}
+.select:focus { border-color: var(--purple); }
+
+/* Agreement */
+.agreement {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px;
+  background: var(--dark2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+}
+.agreement input[type="checkbox"] { margin-top: 2px; accent-color: var(--green); width: 15px; height: 15px; flex-shrink: 0; cursor: pointer; }
+.agreement-text { font-size: 12px; color: var(--muted); line-height: 1.6; }
+.agreement-text a { color: var(--purple3); text-decoration: none; }
+.agreement-text a:hover { text-decoration: underline; }
+
+/* Buttons */
+.btn-next {
+  width: 100%;
+  padding: 15px;
+  background: var(--green);
+  color: #000;
+  border: none;
+  border-radius: 10px;
+  font-family: 'Epilogue', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 20px var(--green-glow);
+  margin-top: 4px;
+  letter-spacing: 0.02em;
+}
+.btn-next:hover { background: #3ddd68; transform: translateY(-1px); box-shadow: 0 8px 32px var(--green-glow); }
+.btn-next:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+.btn-skip {
+  width: 100%;
+  padding: 11px;
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-family: 'Epilogue', sans-serif;
+  font-size: 13px;
+  cursor: pointer;
+  transition: color 0.2s;
+  margin-top: 2px;
+}
+.btn-skip:hover { color: var(--muted2); }
+
+/* Error */
+.error-msg {
+  background: rgba(255,68,68,0.1);
+  border: 1px solid rgba(255,68,68,0.25);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: #FF8888;
+  display: none;
+}
+
+/* Step 2 — phone verification */
+.otp-inputs {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin: 8px 0;
+}
+.otp-input {
+  width: 52px; height: 58px;
+  text-align: center;
+  font-size: 22px;
+  font-weight: 700;
+  background: var(--dark2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--white);
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  font-family: 'Epilogue', sans-serif;
+}
+.otp-input:focus {
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px rgba(48,209,88,0.12);
+}
+
+/* Success step */
+.success-wrap { text-align: center; padding: 10px 0; }
+.success-icon { font-size: 52px; display: block; margin-bottom: 20px; animation: popIn 0.5s cubic-bezier(0.34,1.56,0.64,1); }
+@keyframes popIn { from{transform:scale(0);opacity:0} to{transform:scale(1);opacity:1} }
+.success-title { font-family: 'Bebas Neue', sans-serif; font-size: 36px; letter-spacing: 0.05em; margin-bottom: 10px; }
+.success-sub { color: var(--muted); font-size: 14px; line-height: 1.7; margin-bottom: 28px; }
+
+/* Animations */
+@keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+.step-anim { animation: fadeUp 0.3s ease both; }
+
+/* Loading overlay */
+.loading-overlay {
+  position: fixed; inset: 0;
+  background: rgba(6,6,10,0.85);
+  backdrop-filter: blur(8px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+  flex-direction: column;
+  gap: 16px;
+}
+.loading-overlay.show { display: flex; }
+.spinner { width: 36px; height: 36px; border: 3px solid var(--border2); border-top-color: var(--purple); border-radius: 50%; animation: spin 0.8s linear infinite; }
+@keyframes spin { to{transform:rotate(360deg)} }
+.loading-text { font-size: 14px; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<div class="grid-bg"></div>
+
+<div class="loading-overlay" id="loading-overlay">
+  <div class="spinner"></div>
+  <div class="loading-text">Setting up your account...</div>
+</div>
+
+<div class="container">
+  <div class="logo">
+    <span class="logo-icon">🪶</span>
+    <div class="logo-name">RAVEN</div>
+    <div class="logo-sub">Let's set up your account</div>
+  </div>
+
+  <div class="card" id="main-card">
+
+    <!-- PROGRESS BAR -->
+    <div class="progress-wrap">
+      <div class="progress-step active" id="prog-1"></div>
+      <div class="progress-step" id="prog-2"></div>
+      <div class="progress-step" id="prog-3"></div>
+      <span class="progress-label" id="prog-label">Step 1 of 3</span>
+    </div>
+
+    <!-- STEP 1: Personal Info -->
+    <div id="step-1" class="step-anim">
+      <div class="step-header">
+        <span class="step-tag">Your profile</span>
+        <div class="step-title">Tell us about <span>yourself</span></div>
+        <div class="step-sub">This helps RAVEN personalize your experience and identify you in group bills.</div>
+      </div>
+      <div class="form">
+        <div class="form-row">
+          <div class="field">
+            <label class="label">First Name</label>
+            <input id="first-name" type="text" class="input" placeholder="Jake" autocomplete="given-name">
+          </div>
+          <div class="field">
+            <label class="label">Last Name</label>
+            <input id="last-name" type="text" class="input" placeholder="Rivera" autocomplete="family-name">
+          </div>
+        </div>
+        <div class="field">
+          <label class="label">Date of Birth</label>
+          <div class="dob-row">
+            <select id="dob-month" class="select">
+              <option value="">Month</option>
+              <option value="01">January</option>
+              <option value="02">February</option>
+              <option value="03">March</option>
+              <option value="04">April</option>
+              <option value="05">May</option>
+              <option value="06">June</option>
+              <option value="07">July</option>
+              <option value="08">August</option>
+              <option value="09">September</option>
+              <option value="10">October</option>
+              <option value="11">November</option>
+              <option value="12">December</option>
+            </select>
+            <select id="dob-day" class="select">
+              <option value="">Day</option>
+              ${Array.from({length:31},(_,i)=>`<option value="${String(i+1).padStart(2,'0')}">${i+1}</option>`).join('')}
+            </select>
+            <select id="dob-year" class="select">
+              <option value="">Year</option>
+              ${Array.from({length:80},(_,i)=>{const y=new Date().getFullYear()-18-i;return`<option value="${y}">${y}</option>`}).join('')}
+            </select>
+          </div>
+          <div class="input-hint">You must be 18+ to use RAVEN</div>
+        </div>
+        <div id="error-1" class="error-msg"></div>
+        <button class="btn-next" onclick="submitStep1()">Continue →</button>
+      </div>
+    </div>
+
+    <!-- STEP 2: Phone Number -->
+    <div id="step-2" class="step-anim" style="display:none">
+      <div class="step-header">
+        <span class="step-tag">Contact info</span>
+        <div class="step-title">Your <span>phone</span> number</div>
+        <div class="step-sub">RAVEN uses your number to tag you in group bills when others text SPLIT.</div>
+      </div>
+      <div class="form">
+        <div class="field">
+          <label class="label">Mobile Number</label>
+          <div class="phone-wrap">
+            <span class="phone-prefix">🇺🇸 +1</span>
+            <input id="phone-number" type="tel" class="input input-phone" placeholder="(555) 867-5309" maxlength="14" oninput="formatPhone(this)" autocomplete="tel">
+          </div>
+          <div class="input-hint">US numbers only. Used to identify you in group splits.</div>
+        </div>
+        <div id="error-2" class="error-msg"></div>
+        <button class="btn-next" onclick="submitStep2()">Continue →</button>
+        <button class="btn-skip" onclick="skipStep2()">Skip for now</button>
+      </div>
+    </div>
+
+    <!-- STEP 3: Payment preferences -->
+    <div id="step-3" class="step-anim" style="display:none">
+      <div class="step-header">
+        <span class="step-tag">Get paid</span>
+        <div class="step-title">How do you <span>get paid?</span></div>
+        <div class="step-sub">Add your payment handles so people can pay you directly from the bill. You can always add these later.</div>
+      </div>
+      <div class="form">
+        <div class="field">
+          <label class="label">Venmo Username</label>
+          <input id="venmo" type="text" class="input" placeholder="@your-venmo">
+        </div>
+        <div class="field">
+          <label class="label">Cash App $Cashtag</label>
+          <input id="cashapp" type="text" class="input" placeholder="$YourCashtag">
+        </div>
+        <div class="field">
+          <label class="label">Zelle (email or phone)</label>
+          <input id="zelle" type="text" class="input" placeholder="email or phone number">
+        </div>
+        <div class="agreement">
+          <input type="checkbox" id="terms-agree">
+          <div class="agreement-text">
+            I agree to RAVEN's <a href="terms.html" target="_blank">Terms of Service</a> and <a href="privacy.html" target="_blank">Privacy Policy</a>. I confirm I am 18 years of age or older.
+          </div>
+        </div>
+        <div id="error-3" class="error-msg"></div>
+        <button class="btn-next" onclick="submitStep3()">🪶 Enter RAVEN</button>
+        <button class="btn-skip" onclick="skipStep3()">Set up payment later</button>
+      </div>
+    </div>
+
+    <!-- SUCCESS -->
+    <div id="step-success" class="step-anim" style="display:none">
+      <div class="success-wrap">
+        <span class="success-icon">🪶</span>
+        <div class="success-title">You're in, <span id="welcome-name">friend</span>!</div>
+        <div class="success-sub">Your RAVEN account is ready. Start splitting bills instantly — no one needs to download anything.</div>
+        <button class="btn-next" onclick="goToDashboard()" style="max-width:280px;margin:0 auto;display:block">Open Dashboard →</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ── SUPABASE ──
+const SUPABASE_URL = 'https://ffjpzkpdumdcwnakpaje.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZmanB6a3BkdW1kY3duYWtwYWplIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5ODc4OTcsImV4cCI6MjA4ODU2Mzg5N30.JtDLVu4K1TJ8emcN_mvSHBu6e0y8-jPQv-ypoc9p0RU';
+const { createClient } = supabase;
+const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let currentUser = null;
+let profileData = {};
+
+// ── INIT ──
+async function init() {
+  const hash = window.location.hash;
+  if (hash && hash.includes('access_token')) {
+    await db.auth.getSession();
+  }
+
+  const { data: { session } } = await db.auth.getSession();
+  if (!session?.user) {
+    // Not logged in — redirect to dashboard login
+    window.location.href = 'dashboard.html';
+    return;
+  }
+
+  currentUser = session.user;
+
+  // Check if profile already complete
+  const { data: profile } = await db.from('profiles').select('*').eq('id', currentUser.id).single();
+  if (profile?.onboarding_complete) {
+    window.location.href = 'dashboard.html';
+    return;
+  }
+
+  // Pre-fill if partial data exists
+  if (profile) {
+    if (profile.first_name) document.getElementById('first-name').value = profile.first_name;
+    if (profile.last_name) document.getElementById('last-name').value = profile.last_name;
+    if (profile.phone) document.getElementById('phone-number').value = profile.phone;
+    if (profile.venmo) document.getElementById('venmo').value = profile.venmo;
+    if (profile.cashapp) document.getElementById('cashapp').value = profile.cashapp;
+    if (profile.zelle) document.getElementById('zelle').value = profile.zelle;
+  }
+}
+
+// ── STEP 1: Personal Info ──
+async function submitStep1() {
+  const firstName = document.getElementById('first-name').value.trim();
+  const lastName = document.getElementById('last-name').value.trim();
+  const month = document.getElementById('dob-month').value;
+  const day = document.getElementById('dob-day').value;
+  const year = document.getElementById('dob-year').value;
+  const err = document.getElementById('error-1');
+
+  if (!firstName || !lastName) { showError('error-1', 'Please enter your first and last name.'); return; }
+  if (!month || !day || !year) { showError('error-1', 'Please enter your full date of birth.'); return; }
+
+  const dob = `${year}-${month}-${day}`;
+  const age = Math.floor((new Date() - new Date(dob)) / (365.25 * 24 * 60 * 60 * 1000));
+  if (age < 18) { showError('error-1', 'You must be 18 or older to use RAVEN.'); return; }
+
+  hideError('error-1');
+  profileData = { ...profileData, first_name: firstName, last_name: lastName, date_of_birth: dob };
+
+  // Save to Supabase
+  await saveProfile({ first_name: firstName, last_name: lastName, date_of_birth: dob });
+
+  document.getElementById('welcome-name').textContent = firstName + '!';
+  goToStep(2);
+}
+
+// ── STEP 2: Phone ──
+async function submitStep2() {
+  const raw = document.getElementById('phone-number').value.replace(/\D/g, '');
+  if (raw.length < 10) { showError('error-2', 'Please enter a valid 10-digit US phone number.'); return; }
+
+  const phone = `+1${raw.slice(-10)}`;
+  hideError('error-2');
+  profileData = { ...profileData, phone };
+  await saveProfile({ phone });
+  goToStep(3);
+}
+
+function skipStep2() {
+  goToStep(3);
+}
+
+// ── STEP 3: Payments ──
+async function submitStep3() {
+  const agreed = document.getElementById('terms-agree').checked;
+  if (!agreed) { showError('error-3', 'Please agree to the Terms of Service to continue.'); return; }
+
+  const venmo = document.getElementById('venmo').value.trim();
+  const cashapp = document.getElementById('cashapp').value.trim();
+  const zelle = document.getElementById('zelle').value.trim();
+
+  showLoading();
+  await saveProfile({ venmo, cashapp, zelle, onboarding_complete: true });
+  hideLoading();
+  goToStep('success');
+}
+
+function skipStep3() {
+  showLoading();
+  saveProfile({ onboarding_complete: true }).then(() => {
+    hideLoading();
+    goToStep('success');
+  });
+}
+
+// ── HELPERS ──
+async function saveProfile(data) {
+  const payload = { id: currentUser.id, email: currentUser.email, updated_at: new Date().toISOString(), ...data };
+  await db.from('profiles').upsert(payload);
+}
+
+function goToStep(step) {
+  document.querySelectorAll('[id^="step-"]').forEach(s => s.style.display = 'none');
+  const el = document.getElementById(`step-${step}`);
+  if (el) { el.style.display = 'block'; el.classList.remove('step-anim'); void el.offsetWidth; el.classList.add('step-anim'); }
+
+  // Update progress
+  const steps = [1,2,3];
+  steps.forEach(s => {
+    const bar = document.getElementById(`prog-${s}`);
+    if (!bar) return;
+    if (s < step) { bar.className = 'progress-step done'; }
+    else if (s === step) { bar.className = 'progress-step active'; }
+    else { bar.className = 'progress-step'; }
+  });
+
+  const labels = {1:'Step 1 of 3', 2:'Step 2 of 3', 3:'Step 3 of 3', success:'All done!'};
+  document.getElementById('prog-label').textContent = labels[step] || '';
+  if (step === 'success') {
+    document.querySelectorAll('.progress-step').forEach(b => b.className = 'progress-step done');
+  }
+}
+
+function goToDashboard() {
+  window.location.href = 'dashboard.html';
+}
+
+function showError(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+function hideError(id) {
+  document.getElementById(id).style.display = 'none';
+}
+function showLoading() { document.getElementById('loading-overlay').classList.add('show'); }
+function hideLoading() { document.getElementById('loading-overlay').classList.remove('show'); }
+
+function formatPhone(input) {
+  let v = input.value.replace(/\D/g, '').slice(0,10);
+  if (v.length >= 6) v = `(${v.slice(0,3)}) ${v.slice(3,6)}-${v.slice(6)}`;
+  else if (v.length >= 3) v = `(${v.slice(0,3)}) ${v.slice(3)}`;
+  input.value = v;
+}
+
+// ── START ──
+init();
+</script>
+</body>
+</html>
