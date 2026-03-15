@@ -586,32 +586,36 @@ async function init() {
   const hash = window.location.hash;
   if (hash && hash.includes('access_token')) {
     await db.auth.getSession();
+    if (window.location.hash) history.replaceState(null, '', window.location.pathname);
   }
 
   const { data: { session } } = await db.auth.getSession();
   if (!session?.user) {
-    // Not logged in — redirect to dashboard login
     window.location.href = 'dashboard.html';
     return;
   }
 
   currentUser = session.user;
 
-  // Check if profile already complete
-  const { data: profile } = await db.from('profiles').select('*').eq('id', currentUser.id).single();
-  if (profile?.onboarding_complete) {
-    window.location.href = 'dashboard.html';
-    return;
-  }
-
-  // Pre-fill if partial data exists
-  if (profile) {
-    if (profile.first_name) document.getElementById('first-name').value = profile.first_name;
-    if (profile.last_name) document.getElementById('last-name').value = profile.last_name;
-    if (profile.phone) document.getElementById('phone-number').value = profile.phone;
-    if (profile.venmo) document.getElementById('venmo').value = profile.venmo;
-    if (profile.cashapp) document.getElementById('cashapp').value = profile.cashapp;
-    if (profile.zelle) document.getElementById('zelle').value = profile.zelle;
+  // Try to check profile — if table doesn't exist yet, just show onboarding
+  try {
+    const { data: profile, error } = await db.from('profiles').select('*').eq('id', currentUser.id).single();
+    if (!error && profile?.onboarding_complete) {
+      window.location.href = 'dashboard.html';
+      return;
+    }
+    // Pre-fill if partial data exists
+    if (profile && !error) {
+      if (profile.first_name) document.getElementById('first-name').value = profile.first_name;
+      if (profile.last_name) document.getElementById('last-name').value = profile.last_name;
+      if (profile.phone) document.getElementById('phone-number').value = profile.phone;
+      if (profile.venmo) document.getElementById('venmo').value = profile.venmo;
+      if (profile.cashapp) document.getElementById('cashapp').value = profile.cashapp;
+      if (profile.zelle) document.getElementById('zelle').value = profile.zelle;
+    }
+  } catch(e) {
+    // Table may not exist yet — continue with onboarding
+    console.log('Profile table not ready yet:', e);
   }
 }
 
