@@ -597,14 +597,21 @@ async function init() {
 
   currentUser = session.user;
 
-  // Try to check profile — if table doesn't exist yet, just show onboarding
+  // Check localStorage first (fast)
+  const localProfile = JSON.parse(localStorage.getItem('raven_profile') || '{}');
+  if (localProfile.onboarding_complete && localProfile.user_id === currentUser.id) {
+    window.location.href = 'dashboard.html';
+    return;
+  }
+
+  // Try Supabase
   try {
     const { data: profile, error } = await db.from('profiles').select('*').eq('id', currentUser.id).single();
     if (!error && profile?.onboarding_complete) {
+      localStorage.setItem('raven_profile', JSON.stringify({ ...profile, user_id: currentUser.id }));
       window.location.href = 'dashboard.html';
       return;
     }
-    // Pre-fill if partial data exists
     if (profile && !error) {
       if (profile.first_name) document.getElementById('first-name').value = profile.first_name;
       if (profile.last_name) document.getElementById('last-name').value = profile.last_name;
@@ -614,8 +621,7 @@ async function init() {
       if (profile.zelle) document.getElementById('zelle').value = profile.zelle;
     }
   } catch(e) {
-    // Table may not exist yet — continue with onboarding
-    console.log('Profile table not ready yet:', e);
+    console.log('Profile check failed:', e);
   }
 }
 
@@ -683,8 +689,16 @@ function skipStep3() {
 
 // ── HELPERS ──
 async function saveProfile(data) {
-  const payload = { id: currentUser.id, email: currentUser.email, updated_at: new Date().toISOString(), ...data };
-  await db.from('profiles').upsert(payload);
+  try {
+    const payload = { id: currentUser.id, email: currentUser.email, updated_at: new Date().toISOString(), ...data };
+    const { error } = await db.from('profiles').upsert(payload, { onConflict: 'id' });
+    if (error) console.error('Supabase save error:', error);
+  } catch(e) {
+    console.error('saveProfile failed:', e);
+  }
+  // Always save locally as backup
+  const existing = JSON.parse(localStorage.getItem('raven_profile') || '{}');
+  localStorage.setItem('raven_profile', JSON.stringify({ ...existing, ...data, user_id: currentUser.id }));
 }
 
 function goToStep(step) {
