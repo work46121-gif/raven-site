@@ -299,7 +299,10 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
 <!-- MOBILE HEADER (only shows on mobile) -->
 <div id="mobile-header">
   <a href="index.html" style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:0.15em;text-decoration:none;background:linear-gradient(135deg,var(--white),var(--purple3));-webkit-background-clip:text;-webkit-text-fill-color:transparent;">🪶 RAVEN</a>
-  <div id="mob-user-avatar" style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--purple),var(--green));display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff">?</div>
+  <div style="display:flex;align-items:center;gap:10px">
+    <button onclick="handleLogout()" style="padding:6px 12px;background:rgba(255,68,68,0.08);border:1px solid rgba(255,68,68,0.18);border-radius:8px;color:#FF6B6B;font-family:'Epilogue',sans-serif;font-size:11px;font-weight:600;cursor:pointer;-webkit-tap-highlight-color:transparent">⎋ Sign Out</button>
+    <div id="mob-user-avatar" onclick="showPage('settings');setMobNav('mob-settings')" style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--purple),var(--green));display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;cursor:pointer;overflow:hidden">?</div>
+  </div>
 </div>
 
 <!-- DASHBOARD SCREEN -->
