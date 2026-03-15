@@ -1328,7 +1328,7 @@ function cbClosePayModal() {
   payModalBillId = null;
 }
 
-function shareBill(billId, billName) {
+async function shareBill(billId, billName) {
   // Fetch the share token for this bill
   let url = `https://raven-backend-production-fb1f.up.railway.app/bill/${billId}`;
   try {
