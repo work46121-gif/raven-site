@@ -708,6 +708,14 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
 }
 .cb-item-remove:hover { opacity: 1; color: var(--red); }
 
+
+.pay-method-row { display:flex;align-items:center;gap:14px;padding:14px 16px;border:2px solid rgba(255,255,255,0.06);border-radius:14px;text-decoration:none;transition:all 0.18s;margin-bottom:0; }
+.pay-method-row:hover { border-color:rgba(255,255,255,0.15);transform:translateX(3px); }
+.pay-method-icon { width:42px;height:42px;border-radius:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700;font-size:16px;color:#fff; }
+.pay-method-info { flex:1; }
+.pay-method-name { font-size:15px;font-weight:600;color:#fff; }
+.pay-method-handle { font-size:12px;color:rgba(255,255,255,0.5);margin-top:2px; }
+.pay-method-arrow { font-size:16px;color:rgba(255,255,255,0.4); }
 </style>
 </head>
 <body>
@@ -777,13 +785,23 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
       <button class="nav-item" onclick="showPage('active-bills')"><span class="ni">📋</span> Active Bills <span class="nav-badge" id="active-count">0</span></button>
       <button class="nav-item" onclick="showPage('create-bill')"><span class="ni">➕</span> Create Bill</button>
       <button class="nav-item" onclick="showPage('history')"><span class="ni">🕐</span> History</button>
+      <button class="nav-item" onclick="showPage('settings')"><span class="ni">⚙️</span> Settings</button>
     </nav>
     <div class="sidebar-user">
       <div class="user-avatar" id="user-avatar">?</div>
       <div class="user-info">
         <div class="user-email" id="user-email-display">Loading...</div>
       </div>
-      <button class="logout-btn" onclick="handleLogout()" title="Sign out">⎋</button>
+      <div style="border-top:1px solid var(--border);padding-top:12px;margin-top:8px">
+        <button onclick="showPage('settings')" style="width:100%;display:flex;align-items:center;gap:10px;padding:10px 12px;background:transparent;border:none;border-radius:10px;cursor:pointer;transition:background 0.2s;text-align:left" onmouseover="this.style.background='var(--dark3)'" onmouseout="this.style.background='transparent'">
+          <div id="sidebar-avatar" style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--purple),var(--green));display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0">?</div>
+          <div style="flex:1;min-width:0">
+            <div id="sidebar-name" style="font-size:13px;font-weight:600;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">My Account</div>
+            <div style="font-size:11px;color:var(--muted)">Settings & payments</div>
+          </div>
+        </button>
+        <button class="logout-btn" onclick="handleLogout()" title="Sign out" style="width:100%;margin-top:4px">⎋ Sign Out</button>
+      </div>
     </div>
   </aside>
 
@@ -1039,6 +1057,76 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
     </div>
 
 
+    <!-- SETTINGS PAGE -->
+    <div id="page-settings" class="page">
+      <div class="page-header">
+        <h1 class="page-title">Account <span>Settings</span></h1>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:900px">
+
+        <!-- Profile info -->
+        <div class="form-card" style="padding:28px">
+          <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted2);margin-bottom:18px">Profile</div>
+          <div class="form-group">
+            <label class="form-label">First Name</label>
+            <input id="set-first" type="text" class="form-input" placeholder="John">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Last Name</label>
+            <input id="set-last" type="text" class="form-input" placeholder="Smith">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Phone Number</label>
+            <input id="set-phone" type="tel" class="form-input" placeholder="+1 (555) 000-0000">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email</label>
+            <input id="set-email" type="text" class="form-input" disabled style="opacity:0.5;cursor:not-allowed">
+          </div>
+        </div>
+
+        <!-- Payment methods -->
+        <div class="form-card" style="padding:28px">
+          <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted2);margin-bottom:6px">Payment Methods</div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:18px">When people click Pay on your bills, they'll see these options</div>
+          <div class="form-group">
+            <label class="form-label" style="display:flex;align-items:center;gap:8px">
+              <span style="width:20px;height:20px;background:#008CFF;border-radius:4px;display:inline-flex;align-items:center;justify-content:center;font-size:10px">V</span>
+              Venmo Username
+            </label>
+            <input id="set-venmo" type="text" class="form-input" placeholder="@your-venmo">
+          </div>
+          <div class="form-group">
+            <label class="form-label" style="display:flex;align-items:center;gap:8px">
+              <span style="width:20px;height:20px;background:#00D632;border-radius:4px;display:inline-flex;align-items:center;justify-content:center;font-size:10px">$</span>
+              Cash App $Cashtag
+            </label>
+            <input id="set-cashapp" type="text" class="form-input" placeholder="$YourCashtag">
+          </div>
+          <div class="form-group">
+            <label class="form-label" style="display:flex;align-items:center;gap:8px">
+              <span style="width:20px;height:20px;background:#6D1ED4;border-radius:4px;display:inline-flex;align-items:center;justify-content:center;font-size:10px">Z</span>
+              Zelle (email or phone)
+            </label>
+            <input id="set-zelle" type="text" class="form-input" placeholder="email or phone number">
+          </div>
+          <div class="form-group">
+            <label class="form-label" style="display:flex;align-items:center;gap:8px">
+              <span style="width:20px;height:20px;background:#1a1a1a;border:1px solid #444;border-radius:4px;display:inline-flex;align-items:center;justify-content:center;font-size:9px;color:#fff">Pay</span>
+              Apple Pay (your name/number)
+            </label>
+            <input id="set-applepay" type="text" class="form-input" placeholder="e.g. John or +15551234567">
+          </div>
+        </div>
+      </div>
+
+      <!-- Save button -->
+      <div style="max-width:900px;margin-top:20px">
+        <button onclick="saveSettings()" class="submit-btn" id="save-settings-btn" style="max-width:220px">💾 Save Settings</button>
+        <div id="settings-saved" style="display:none;margin-top:12px;color:var(--green);font-size:13px;font-weight:600">✅ Settings saved!</div>
+      </div>
+    </div>
+
     <!-- HISTORY PAGE -->
     <div id="page-history" class="page">
       <div class="page-header">
@@ -1226,7 +1314,6 @@ async function handleSignup() {
   }
 }
 
-async 
 // ─── PAYMENT MODAL ──────────────────────────────────────────────────────────
 
 let payModalParticipantId = null;
@@ -1236,84 +1323,67 @@ async function openPayModal(participantId, billId, amount) {
   payModalParticipantId = participantId;
   payModalBillId = billId;
 
-  document.getElementById('pay-modal-amount').textContent = '$' + parseFloat(amount).toFixed(2);
+  const amtFormatted = '$' + parseFloat(amount).toFixed(2);
+  document.getElementById('pay-modal-amount').textContent = amtFormatted;
 
-  // Get bill creator profile to find their payment preferences
-  const { data: bill } = await db.from('bills').select('creator_phone, name').eq('id', billId).single();
-  const creatorName = bill?.name || 'Bill Creator';
-
+  // Get bill info
+  const { data: bill } = await db.from('bills').select('name, creator_phone').eq('id', billId).single();
   document.getElementById('pay-modal-title').textContent = 'Pay for ' + (bill?.name || 'Bill');
-  document.getElementById('pay-modal-sub').textContent = 'Choose how to send $' + parseFloat(amount).toFixed(2);
 
-  // Try to get creator payment methods from profiles
-  let venmo = '', cashapp = '', zelle = '';
+  // Get creator payment methods
+  let profile = null;
   try {
-    const { data: profile } = await db.from('profiles').select('venmo, cashapp, zelle, first_name').eq('email', bill?.creator_phone).single();
-    venmo = profile?.venmo || '';
-    cashapp = profile?.cashapp || '';
-    zelle = profile?.zelle || '';
-    if (profile?.first_name) document.getElementById('pay-modal-sub').textContent = 'Send $' + parseFloat(amount).toFixed(2) + ' to ' + profile.first_name;
+    const res = await db.from('profiles').select('first_name, venmo, cashapp, zelle, applepay').eq('email', bill?.creator_phone).single();
+    profile = res.data;
   } catch(e) {}
 
+  const creatorName = profile?.first_name || 'the bill creator';
+  document.getElementById('pay-modal-sub').textContent = 'Send ' + amtFormatted + ' to ' + creatorName;
+
   const methods = [];
-  const amt = parseFloat(amount).toFixed(2);
 
-  if (venmo) {
-    const handle = venmo.startsWith('@') ? venmo : '@' + venmo;
-    methods.push(`
-      <a href="https://venmo.com/${venmo.replace('@','')}" target="_blank" style="display:flex;align-items:center;gap:14px;padding:15px 16px;background:var(--dark3);border:2px solid var(--border);border-radius:14px;text-decoration:none;transition:all 0.18s" onmouseover="this.style.borderColor='#008CFF';this.style.transform='translateX(3px)'" onmouseout="this.style.borderColor='var(--border)';this.style.transform='none'">
-        <div style="width:42px;height:42px;border-radius:11px;background:#008CFF;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M19.488 1.37C18.02 .462 16.554 0 14.953 0 11.419 0 9.584 2.19 9.584 4.966c0 2.152 1.248 3.497 2.893 4.744-1.083.822-1.934 1.908-1.934 3.302 0 1.38.855 2.47 2.31 2.47 1.83 0 2.927-1.3 3.98-3.01C17.867 15.22 18.53 18 18.53 18c-.8 2.15-2.63 3.42-4.65 3.42-1.95 0-3.31-1.02-4.29-2.49l-3.01 1.93C8.25 23.15 10.68 24 13.58 24c4.92 0 8.8-3.19 10.19-7.76.51-1.67.77-3.41.77-5.16 0-4.07-1.58-7.17-5.05-9.71z"/></svg>
-        </div>
-        <div style="flex:1"><div style="font-size:15px;font-weight:600;color:#fff">Venmo</div><div style="font-size:12px;color:#6E6B80;margin-top:2px">${handle}</div></div>
-        <div style="font-size:15px;color:#6E6B80">→</div>
-      </a>`);
+  if (profile?.venmo) {
+    const handle = profile.venmo.startsWith('@') ? profile.venmo : '@' + profile.venmo;
+    const url = 'https://venmo.com/' + profile.venmo.replace('@','') + '?txn=pay&note=Bill%20Payment&amount=' + parseFloat(amount).toFixed(2);
+    methods.push('<a href="' + url + '" target="_blank" class="pay-method-row" style="background:#003d7a">' +
+      '<div class="pay-method-icon" style="background:#008CFF">V</div>' +
+      '<div class="pay-method-info"><div class="pay-method-name">Venmo</div><div class="pay-method-handle">' + handle + '</div></div>' +
+      '<div class="pay-method-arrow">→</div></a>');
   }
 
-  if (cashapp) {
-    const tag = cashapp.startsWith('$') ? cashapp : '$' + cashapp;
-    methods.push(`
-      <a href="https://cash.app/${cashapp.replace('$','')}" target="_blank" style="display:flex;align-items:center;gap:14px;padding:15px 16px;background:var(--dark3);border:2px solid var(--border);border-radius:14px;text-decoration:none;transition:all 0.18s" onmouseover="this.style.borderColor='#00D632';this.style.transform='translateX(3px)'" onmouseout="this.style.borderColor='var(--border)';this.style.transform='none'">
-        <div style="width:42px;height:42px;border-radius:11px;background:#00D632;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm3.11 7.41l-.9 4.24h.96l-.29 1.35H13.9l-.16.77h-.01l-.84 3.9H11.4l.84-3.9h-.96l.29-1.35h.96l.16-.77.9-4.24H12.4l.29-1.35h3.72l-.29 1.35H15.1z"/></svg>
-        </div>
-        <div style="flex:1"><div style="font-size:15px;font-weight:600;color:#fff">Cash App</div><div style="font-size:12px;color:#6E6B80;margin-top:2px">${tag}</div></div>
-        <div style="font-size:15px;color:#6E6B80">→</div>
-      </a>`);
+  if (profile?.cashapp) {
+    const tag = profile.cashapp.startsWith('$') ? profile.cashapp : '$' + profile.cashapp;
+    const url = 'https://cash.app/' + profile.cashapp.replace('$','') + '/' + parseFloat(amount).toFixed(2);
+    methods.push('<a href="' + url + '" target="_blank" class="pay-method-row" style="background:#004d12">' +
+      '<div class="pay-method-icon" style="background:#00D632">$</div>' +
+      '<div class="pay-method-info"><div class="pay-method-name">Cash App</div><div class="pay-method-handle">' + tag + '</div></div>' +
+      '<div class="pay-method-arrow">→</div></a>');
   }
 
-  if (zelle) {
-    methods.push(`
-      <a href="#" onclick="navigator.clipboard.writeText('${zelle}').then(()=>showToast('Zelle info copied!','success'));return false" style="display:flex;align-items:center;gap:14px;padding:15px 16px;background:var(--dark3);border:2px solid var(--border);border-radius:14px;text-decoration:none;transition:all 0.18s" onmouseover="this.style.borderColor='#6D1ED4';this.style.transform='translateX(3px)'" onmouseout="this.style.borderColor='var(--border)';this.style.transform='none'">
-        <div style="width:42px;height:42px;border-radius:11px;background:#6D1ED4;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M13.618 2H10.38L2 12l8.382 10h3.236L5.236 12zm5.146 0h-3.236L23.764 12l-8.236 10H18.764L27 12z" transform="scale(0.85) translate(1.5,0)"/></svg>
-        </div>
-        <div style="flex:1"><div style="font-size:15px;font-weight:600;color:#fff">Zelle</div><div style="font-size:12px;color:#6E6B80;margin-top:2px">${zelle} · tap to copy</div></div>
-        <div style="font-size:15px;color:#6E6B80">→</div>
-      </a>`);
+  if (profile?.zelle) {
+    methods.push('<a href="#" onclick="navigator.clipboard.writeText('' + profile.zelle + '').then(()=>showToast('Zelle info copied!','success'));return false" class="pay-method-row" style="background:#2a0a52">' +
+      '<div class="pay-method-icon" style="background:#6D1ED4">Z</div>' +
+      '<div class="pay-method-info"><div class="pay-method-name">Zelle</div><div class="pay-method-handle">' + profile.zelle + ' · tap to copy</div></div>' +
+      '<div class="pay-method-arrow">→</div></a>');
   }
 
-  // Apple Pay deeplink
-  methods.push(`
-    <a href="https://applepay.apple.com" target="_blank" style="display:flex;align-items:center;gap:14px;padding:15px 16px;background:var(--dark3);border:2px solid var(--border);border-radius:14px;text-decoration:none;transition:all 0.18s" onmouseover="this.style.borderColor='#555';this.style.transform='translateX(3px)'" onmouseout="this.style.borderColor='var(--border)';this.style.transform='none'">
-      <div style="width:42px;height:42px;border-radius:11px;background:#1a1a1a;border:1px solid #333;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-        <svg width="28" height="18" viewBox="0 0 50 30" fill="white"><text x="2" y="22" font-family="Arial" font-size="14" font-weight="bold"> Pay</text></svg>
-      </div>
-      <div style="flex:1"><div style="font-size:15px;font-weight:600;color:#fff">Apple Pay</div><div style="font-size:12px;color:#6E6B80;margin-top:2px">Via iMessage or Safari</div></div>
-      <div style="font-size:15px;color:#6E6B80">→</div>
-    </a>`);
+  if (profile?.applepay) {
+    methods.push('<a href="#" onclick="navigator.clipboard.writeText('' + profile.applepay + '').then(()=>showToast('Apple Pay info copied!','success'));return false" class="pay-method-row" style="background:#1a1a1a">' +
+      '<div class="pay-method-icon" style="background:#333;border:1px solid #555;font-size:9px"> Pay</div>' +
+      '<div class="pay-method-info"><div class="pay-method-name">Apple Pay</div><div class="pay-method-handle">' + profile.applepay + ' · tap to copy</div></div>' +
+      '<div class="pay-method-arrow">→</div></a>');
+  }
 
-  if (methods.length === 1) {
-    // Only Apple Pay — add a note
-    const note = document.createElement('div');
-    note.style.cssText = 'font-size:12px;color:var(--muted);text-align:center;margin-bottom:8px';
-    note.textContent = 'Bill creator has not added payment methods yet';
+  if (methods.length === 0) {
+    methods.push('<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">No payment methods set up yet.<br>Ask ' + creatorName + ' to add them in Settings.</div>');
   }
 
   document.getElementById('pay-modal-methods').innerHTML = methods.join('');
+
   const modal = document.getElementById('cb-pay-modal');
   modal.style.display = 'flex';
 }
+
 
 async function cbMarkPaidOther() {
   if (!payModalParticipantId || !payModalBillId) return;
@@ -1326,6 +1396,70 @@ function cbClosePayModal() {
   document.getElementById('cb-pay-modal').style.display = 'none';
   payModalParticipantId = null;
   payModalBillId = null;
+}
+
+
+// ─── SETTINGS ────────────────────────────────────────────────────────────────
+
+async function loadSettings() {
+  document.getElementById('set-email').value = currentUser.email;
+  try {
+    const local = JSON.parse(localStorage.getItem('raven_profile') || '{}');
+    if (local.first_name) document.getElementById('set-first').value = local.first_name;
+    if (local.last_name) document.getElementById('set-last').value = local.last_name;
+    if (local.phone) document.getElementById('set-phone').value = local.phone;
+    if (local.venmo) document.getElementById('set-venmo').value = local.venmo;
+    if (local.cashapp) document.getElementById('set-cashapp').value = local.cashapp;
+    if (local.zelle) document.getElementById('set-zelle').value = local.zelle;
+    if (local.applepay) document.getElementById('set-applepay').value = local.applepay;
+
+    // Also fetch fresh from Supabase
+    const { data: profile } = await db.from('profiles').select('*').eq('id', currentUser.id).single();
+    if (profile) {
+      if (profile.first_name) document.getElementById('set-first').value = profile.first_name;
+      if (profile.last_name) document.getElementById('set-last').value = profile.last_name;
+      if (profile.phone) document.getElementById('set-phone').value = profile.phone;
+      if (profile.venmo) document.getElementById('set-venmo').value = profile.venmo;
+      if (profile.cashapp) document.getElementById('set-cashapp').value = profile.cashapp;
+      if (profile.zelle) document.getElementById('set-zelle').value = profile.zelle;
+      if (profile.applepay) document.getElementById('set-applepay').value = profile.applepay || '';
+    }
+  } catch(e) { console.log('loadSettings error:', e); }
+}
+
+async function saveSettings() {
+  const btn = document.getElementById('save-settings-btn');
+  btn.textContent = 'Saving...'; btn.disabled = true;
+
+  const data = {
+    id: currentUser.id,
+    email: currentUser.email,
+    first_name: document.getElementById('set-first').value.trim(),
+    last_name: document.getElementById('set-last').value.trim(),
+    phone: document.getElementById('set-phone').value.trim(),
+    venmo: document.getElementById('set-venmo').value.trim(),
+    cashapp: document.getElementById('set-cashapp').value.trim(),
+    zelle: document.getElementById('set-zelle').value.trim(),
+    applepay: document.getElementById('set-applepay').value.trim(),
+    onboarding_complete: true,
+    updated_at: new Date().toISOString()
+  };
+
+  try {
+    await db.from('profiles').upsert(data, { onConflict: 'id' });
+    // Update localStorage cache
+    const existing = JSON.parse(localStorage.getItem('raven_profile') || '{}');
+    localStorage.setItem('raven_profile', JSON.stringify({ ...existing, ...data }));
+    document.getElementById('settings-saved').style.display = 'block';
+    setTimeout(() => document.getElementById('settings-saved').style.display = 'none', 3000);
+    // Update greeting
+    if (data.first_name) {
+      const greetEl = document.getElementById('greeting-name');
+      if (greetEl) greetEl.textContent = data.first_name.charAt(0).toUpperCase() + data.first_name.slice(1);
+    }
+  } catch(e) { showToast('Error saving settings', 'error'); }
+
+  btn.textContent = '💾 Save Settings'; btn.disabled = false;
 }
 
 async function shareBill(billId, billName) {
@@ -1372,6 +1506,9 @@ async function showDashboard() {
   document.getElementById('user-email-display').textContent = email;
   document.getElementById('user-avatar').textContent = email[0].toUpperCase();
 
+  // Update sidebar avatar
+  document.getElementById('sidebar-avatar').textContent = currentUser.email[0].toUpperCase();
+
   // Get first name — check localStorage first, then Supabase
   let firstName = null;
   try {
@@ -1392,6 +1529,8 @@ async function showDashboard() {
   const greetingEl = document.getElementById('greeting-name');
   if (firstName) {
     greetingEl.textContent = firstName.charAt(0).toUpperCase() + firstName.slice(1);
+    document.getElementById('sidebar-name').textContent = firstName.charAt(0).toUpperCase() + firstName.slice(1) + ' (me)';
+    document.getElementById('sidebar-avatar').textContent = firstName[0].toUpperCase();
   } else {
     greetingEl.closest('h1').innerHTML = 'Welcome Back <span style="color:var(--green)">🪶</span>';
   }
@@ -1403,10 +1542,11 @@ function showPage(page) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById(`page-${page}`).classList.add('active');
-  const navMap = { 'overview': 0, 'active-bills': 1, 'create-bill': 2, 'history': 3 };
+  const navMap = { 'overview': 0, 'active-bills': 1, 'create-bill': 2, 'history': 3, 'settings': 4 };
   document.querySelectorAll('.nav-item')[navMap[page]]?.classList.add('active');
   if (page === 'active-bills') loadActiveBills();
   if (page === 'history') loadHistory();
+  if (page === 'settings') loadSettings();
 }
 
 // ── DATA LOADING ──
@@ -1601,7 +1741,7 @@ async function openBillModal(billId) {
   // Show receipt image if available
   let receiptHTML = '';
   if (bill.receipt_image) {
-    receiptHTML = `<div style="margin-bottom:16px"><div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted2);margin-bottom:8px">Receipt</div><img src="data:image/jpeg;base64,${bill.receipt_image}" style="width:100%;border-radius:10px;display:block"></div>`;
+    receiptHTML = `<div style="margin-bottom:16px"><div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted2);margin-bottom:8px">Receipt</div><img src="data:image/jpeg;base64,${bill.receipt_image}" style="width:100%;border-radius:10px;display:block" onerror="this.src='data:image/png;base64,'+this.src.split(',')[1]"></div>`;
   }
   const receiptEl = document.getElementById('modal-receipt');
   if (receiptEl) receiptEl.innerHTML = receiptHTML;
@@ -2031,7 +2171,14 @@ async function cbCreateFinalBill() {
   const billId = generateId();
 
   // Store receipt image as base64 in the bill record if available
-  const receiptData = cbImageBase64 ? cbImageBase64.substring(0, 50000) : null; // cap size
+  // Compress receipt for storage - resize to max 800px
+  let receiptData = null;
+  if (cbImageBase64) {
+    try {
+      const compressed = await cbResizeImage('data:image/jpeg;base64,' + cbImageBase64, 800);
+      receiptData = compressed.split(',')[1];
+    } catch(e) { receiptData = cbImageBase64; }
+  }
 
   // Generate a secure share token
   const shareToken = Array.from({length:16}, () => 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'[Math.floor(Math.random()*62)]).join('');
