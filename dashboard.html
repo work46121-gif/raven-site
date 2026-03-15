@@ -975,19 +975,21 @@ async function handleSignup() {
   const password = document.getElementById('signup-password').value;
   const confirm = document.getElementById('signup-confirm').value;
   if (!email || !password) return showAuthError('Please fill in all fields.');
-  if (password !== confirm) return showAuthError('Passwords don\'t match.');
+  if (password !== confirm) return showAuthError("Passwords don't match.");
   if (password.length < 6) return showAuthError('Password must be at least 6 characters.');
   const btn = document.querySelector('#signup-form .auth-btn');
   btn.textContent = 'Creating account...'; btn.disabled = true;
-  const { error } = await db.auth.signUp({ email, password });
+  const { data, error } = await db.auth.signUp({ email, password });
   btn.textContent = 'Create Account →'; btn.disabled = false;
-  if (error) showAuthError(error.message);
-  else {
-    showAuthError('');
+  if (error) {
+    showAuthError(error.message);
+  } else if (data?.user) {
+    window.location.href = 'onboarding.html';
+  } else {
     document.getElementById('auth-error').style.background = 'rgba(48,209,88,0.1)';
     document.getElementById('auth-error').style.borderColor = 'rgba(48,209,88,0.25)';
     document.getElementById('auth-error').style.color = 'var(--green)';
-    document.getElementById('auth-error').textContent = '✅ Account created! Check your email to confirm, then sign in.';
+    document.getElementById('auth-error').textContent = '✅ Check your email to confirm your account, then sign in.';
     document.getElementById('auth-error').style.display = 'block';
   }
 }
