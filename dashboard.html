@@ -887,10 +887,18 @@ async function init() {
     if (window.location.hash) history.replaceState(null, '', window.location.pathname);
 
     // Check if onboarding is complete
-    const { data: profile } = await db.from('profiles').select('onboarding_complete').eq('id', currentUser.id).single();
-    if (!profile || !profile.onboarding_complete) {
-      window.location.href = 'onboarding.html';
-      return;
+    try {
+      const { data: profile, error } = await db.from('profiles').select('onboarding_complete').eq('id', currentUser.id).single();
+      if (!error && profile && !profile.onboarding_complete) {
+        window.location.href = 'onboarding.html';
+        return;
+      }
+      if (!error && !profile) {
+        window.location.href = 'onboarding.html';
+        return;
+      }
+    } catch(e) {
+      console.log('Profile check failed, showing dashboard anyway:', e);
     }
 
     showDashboard();
@@ -902,10 +910,18 @@ async function init() {
       if (window.location.hash) history.replaceState(null, '', window.location.pathname);
 
       // Check onboarding
-      const { data: profile } = await db.from('profiles').select('onboarding_complete').eq('id', session.user.id).single();
-      if (!profile || !profile.onboarding_complete) {
-        window.location.href = 'onboarding.html';
-        return;
+      try {
+        const { data: profile, error } = await db.from('profiles').select('onboarding_complete').eq('id', session.user.id).single();
+        if (!error && profile && !profile.onboarding_complete) {
+          window.location.href = 'onboarding.html';
+          return;
+        }
+        if (!error && !profile) {
+          window.location.href = 'onboarding.html';
+          return;
+        }
+      } catch(e) {
+        console.log('Profile check failed:', e);
       }
 
       showDashboard();
