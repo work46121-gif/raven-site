@@ -990,7 +990,9 @@ async function handleSignup() {
 }
 
 async function handleLogout() {
+  localStorage.removeItem('raven_profile');
   await db.auth.signOut();
+  window.location.href = 'index.html';
 }
 
 // ── SCREEN SWITCH ──
@@ -1005,28 +1007,28 @@ async function showDashboard() {
   document.getElementById('user-email-display').textContent = email;
   document.getElementById('user-avatar').textContent = email[0].toUpperCase();
 
-  // Try to get first name from profile
+  // Get first name — check localStorage first, then Supabase
   let firstName = null;
   try {
     const local = JSON.parse(localStorage.getItem('raven_profile') || '{}');
-    if (local.first_name) firstName = local.first_name;
-    else {
+    if (local.first_name && local.user_id === currentUser.id) {
+      firstName = local.first_name;
+    } else {
       const { data: profile } = await db.from('profiles').select('first_name').eq('id', currentUser.id).single();
       if (profile?.first_name) {
         firstName = profile.first_name;
-        // Cache it
         const existing = JSON.parse(localStorage.getItem('raven_profile') || '{}');
-        localStorage.setItem('raven_profile', JSON.stringify({ ...existing, first_name: firstName }));
+        localStorage.setItem('raven_profile', JSON.stringify({ ...existing, first_name: firstName, user_id: currentUser.id }));
       }
     }
   } catch(e) {}
 
-  // Show first name only — no email fallback
+  // Show first name only — never show email
+  const greetingEl = document.getElementById('greeting-name');
   if (firstName) {
-    document.getElementById('greeting-name').textContent = firstName.charAt(0).toUpperCase() + firstName.slice(1);
+    greetingEl.textContent = firstName.charAt(0).toUpperCase() + firstName.slice(1);
   } else {
-    document.getElementById('greeting-name').textContent = '';
-    document.querySelector('.page-title').innerHTML = 'Welcome Back 🪶';
+    greetingEl.closest('h1').innerHTML = 'Welcome Back <span style="color:var(--green)">🪶</span>';
   }
   loadAllData();
 }
