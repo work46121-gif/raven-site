@@ -1150,14 +1150,14 @@ async function loadTrips() {
   container.innerHTML = trips.map(t => {
     const people = Array.isArray(t.people) ? t.people : JSON.parse(t.people || '[]');
     const tripUrl = BACKEND + '/trip/' + t.id + '?t=' + t.share_token;
-    return '<div class="bill-card" onclick="openTrip(\'' + t.id + '\')">'
-      + '<div><div class="bill-name">' + t.name + ' <span class="bill-id">' + t.id + '</span></div>'
-      + '<div class="bill-meta"><span>' + people.length + ' people</span><span>' + (t.receipt_count || 0) + ' receipts</span></div></div>'
-      + '<div class="bill-amount">$' + parseFloat(t.total || 0).toFixed(2) + '</div>'
+    return '<div class="bill-card">'
+      + '<div onclick="openTrip(\'' + t.id + '\')" style="cursor:pointer"><div class="bill-name">✈️ ' + t.name + ' <span class="bill-id">' + t.id + '</span></div>'
+      + '<div class="bill-meta"><span>' + people.length + ' people</span><span>' + (t.receipt_count || 0) + ' receipts</span><span style="color:var(--green)">$' + parseFloat(t.total || 0).toFixed(2) + '</span></div></div>'
+      + '<div class="bill-amount" onclick="openTrip(\'' + t.id + '\')" style="cursor:pointer">$' + parseFloat(t.total || 0).toFixed(2) + '</div>'
       + '<div class="bill-progress-wrap"><div class="bill-progress-label">Active</div><div class="bill-progress"><div class="bill-progress-fill" style="width:100%"></div></div></div>'
       + '<div class="bill-actions" onclick="event.stopPropagation()">'
       + '<button class="bill-action-btn btn-remind" onclick="copyTripLink(\'' + tripUrl + '\')">🔗 Share</button>'
-      + '<button class="bill-action-btn btn-view" onclick="openTrip(\'' + t.id + '\')">View →</button>'
+      + '<button class="bill-action-btn btn-view" onclick="openTrip(\'' + t.id + '\')">Open Trip →</button>'
       + '</div></div>';
   }).join('');
 }
@@ -1207,37 +1207,8 @@ async function createTrip() {
 async function openTrip(tripId) {
   const { data: trip } = await db.from('trips').select('*').eq('id', tripId).single();
   if (!trip) return;
-  const people = Array.isArray(trip.people) ? trip.people : JSON.parse(trip.people || '[]');
   const tripUrl = BACKEND + '/trip/' + tripId + '?t=' + trip.share_token;
-  // Load receipts for this trip
-  const { data: receipts } = await db.from('trip_receipts').select('*').eq('trip_id', tripId).order('created_at', { ascending: false });
-  // Build per-person totals
-  const totals = {};
-  people.forEach(p => { totals[p.toLowerCase()] = 0; });
-  (receipts || []).forEach(r => {
-    const splits = JSON.parse(r.splits || '{}');
-    Object.entries(splits).forEach(([person, amt]) => {
-      const key = person.toLowerCase();
-      if (totals[key] !== undefined) totals[key] += parseFloat(amt) || 0;
-    });
-  });
-
-  document.getElementById('modal-bill-name').textContent = trip.name;
-  document.getElementById('modal-bill-meta').textContent = tripId + '  ·  ' + people.length + ' people  ·  ' + (receipts?.length || 0) + ' receipts';
-  const receiptEl = document.getElementById('modal-receipt');
-  receiptEl.innerHTML = '<div style="margin-bottom:16px">'
-    + '<div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted2);margin-bottom:10px">Running Totals</div>'
-    + people.map(p => '<div style="display:flex;justify-content:space-between;padding:10px 14px;background:var(--dark2);border-radius:8px;margin-bottom:6px"><span style="font-weight:600">' + p + '</span><span style="color:var(--green);font-weight:700;font-family:\'JetBrains Mono\',monospace">$' + (totals[p.toLowerCase()] || 0).toFixed(2) + '</span></div>').join('')
-    + '</div>'
-    + '<div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted2);margin-bottom:10px">Receipts (' + (receipts?.length || 0) + ')</div>'
-    + (receipts?.length ? receipts.map(r => '<div style="padding:10px 14px;background:var(--dark2);border-radius:8px;margin-bottom:6px;font-size:13px"><div style="font-weight:600">' + (r.name || 'Receipt') + '</div><div style="color:var(--muted);font-size:12px;margin-top:2px">$' + parseFloat(r.total || 0).toFixed(2) + ' · ' + new Date(r.created_at).toLocaleDateString() + '</div></div>').join('') : '<div style="color:var(--muted);font-size:13px">No receipts yet — share the link so people can add receipts</div>');
-
-  document.getElementById('modal-participants').innerHTML = '';
-  document.getElementById('modal-view-btn').textContent = '🔗 Copy Trip Link';
-  document.getElementById('modal-view-btn').onclick = () => copyTripLink(tripUrl);
-  document.getElementById('modal-remind-btn').style.display = 'none';
-  document.getElementById('modal-delete-btn').onclick = () => deleteTrip(tripId);
-  document.getElementById('bill-modal').classList.add('open');
+  window.open(tripUrl, '_blank');
 }
 
 function copyTripLink(url) {
