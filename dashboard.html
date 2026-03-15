@@ -1157,6 +1157,8 @@ function closeContactsPicker() {
 
 let tripPeople = [];
 
+const tripUrlMap = {};
+
 async function loadTrips() {
   const container = document.getElementById('trips-list');
   container.innerHTML = '<div class="loading"><div class="spinner"></div> Loading...</div>';
@@ -1165,9 +1167,13 @@ async function loadTrips() {
     container.innerHTML = '<div class="empty-state"><span class="empty-icon">✈️</span><div class="empty-title">No trips yet</div><div class="empty-sub">Create a trip hub to start splitting group expenses</div></div>';
     return;
   }
+  // Pre-store all URLs synchronously
+  trips.forEach(t => {
+    tripUrlMap[t.id] = BACKEND + '/trip/' + t.id + '?t=' + t.share_token;
+  });
   container.innerHTML = trips.map(t => {
     const people = Array.isArray(t.people) ? t.people : JSON.parse(t.people || '[]');
-    const tripUrl = BACKEND + '/trip/' + t.id + '?t=' + t.share_token;
+    const tripUrl = tripUrlMap[t.id];
     return '<div class="bill-card">'
       + '<div onclick="openTrip(\'' + t.id + '\')" style="cursor:pointer"><div class="bill-name">✈️ ' + t.name + ' <span class="bill-id">' + t.id + '</span></div>'
       + '<div class="bill-meta"><span>' + people.length + ' people</span><span>' + (t.receipt_count || 0) + ' receipts</span><span style="color:var(--green)">$' + parseFloat(t.total || 0).toFixed(2) + '</span></div></div>'
@@ -1253,11 +1259,11 @@ async function createTrip() {
   loadTrips();
 }
 
-async function openTrip(tripId) {
-  const { data: trip } = await db.from('trips').select('*').eq('id', tripId).single();
-  if (!trip) return;
-  const tripUrl = BACKEND + '/trip/' + tripId + '?t=' + trip.share_token;
-  window.open(tripUrl, '_blank');
+function openTrip(tripId) {
+  const url = tripUrlMap[tripId];
+  if (url) {
+    window.location.href = url; // same tab works better on iOS than _blank
+  }
 }
 
 function copyTripLink(url) {
