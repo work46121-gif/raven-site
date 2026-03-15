@@ -1171,14 +1171,31 @@ function showAuthError(msg) {
 function hideAuthError() { document.getElementById('auth-error').style.display = 'none'; }
 
 async function handleLogin() {
-  const email = document.getElementById('login-email').value.trim();
-  const password = document.getElementById('login-password').value;
-  if (!email || !password) return showAuthError('Please fill in all fields.');
+  const emailEl = document.getElementById('login-email');
+  const passwordEl = document.getElementById('login-password');
+  const email = emailEl.value.trim();
+  const password = passwordEl.value;
+
+  console.log('Login attempt:', email, password.length + ' chars');
+
+  if (!email) return showAuthError('Please enter your email.');
+  if (!password) return showAuthError('Please enter your password.');
+
   const btn = document.querySelector('#login-form .auth-btn');
   btn.textContent = 'Signing in...'; btn.disabled = true;
-  const { error } = await db.auth.signInWithPassword({ email, password });
+  hideAuthError();
+
+  const { data, error } = await db.auth.signInWithPassword({ email, password });
+  console.log('Login result:', data?.user?.email, error?.message);
+
   btn.textContent = 'Sign In →'; btn.disabled = false;
-  if (error) showAuthError(error.message);
+
+  if (error) {
+    showAuthError(error.message);
+  } else if (data?.user) {
+    currentUser = data.user;
+    await checkOnboardingAndShow(data.user.id);
+  }
 }
 
 async function handleSignup() {
@@ -1523,8 +1540,7 @@ init();
 
 // ─── CREATE BILL ITEMIZED ───────────────────────────────────────────────────
 
-let cbPeople = [];
-let cbItems = [];
+
 
 function switchBillTab(tab) {
   document.getElementById('cb-itemized').style.display = tab === 'itemized' ? 'block' : 'none';
