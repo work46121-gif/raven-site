@@ -1455,16 +1455,9 @@ async function shareBill(billId, billName) {
     if (bill?.share_token) url += `?t=${bill.share_token}`;
   } catch(e) {}
 
-  // On mobile, navigator.share appends the URL automatically — so just use text without URL
-  // to avoid duplication like "message
-URL
-URL"
+  // Just share the URL — iMessage link preview handles the rich card
   if (navigator.share) {
-    navigator.share({
-      title: `🪶 ${billName}`,
-      text: `🪶 ${billName} — tap to see what you owe:`,
-      url
-    }).catch(() => cbCopyLink(url));
+    navigator.share({ url }).catch(() => cbCopyLink(url));
   } else {
     cbCopyLink(url);
   }
