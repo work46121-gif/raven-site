@@ -1079,71 +1079,78 @@ let people = [];
 
 // ── INIT ──
 async function init() {
-  // Handle email confirmation tokens in URL hash
   const hash = window.location.hash;
-  if (hash && (hash.includes('access_token') || hash.includes('type=signup') || hash.includes('type=recovery'))) {
+  if (hash && hash.includes('access_token')) {
     await db.auth.getSession();
+    history.replaceState(null, '', window.location.pathname);
   }
 
   const { data: { session } } = await db.auth.getSession();
   if (session?.user) {
     currentUser = session.user;
-    if (window.location.hash) history.replaceState(null, '', window.location.pathname);
-
-    // Check if onboarding is complete
-    try {
-      // Check localStorage first (fast, reliable)
-      const localProfile = JSON.parse(localStorage.getItem('raven_profile') || '{}');
-      if (localProfile.onboarding_complete && localProfile.user_id === currentUser.id) {
-        showDashboard();
-        return;
-      }
-      // Then check Supabase
-      const { data: profile, error } = await db.from('profiles').select('onboarding_complete').eq('id', currentUser.id).single();
-      if (!error && profile?.onboarding_complete) {
-        showDashboard();
-        return;
-      }
-      window.location.href = 'onboarding.html';
-      return;
-    } catch(e) {
-      console.log('Profile check failed, showing dashboard anyway:', e);
-      showDashboard();
-    }
-
-    showDashboard();
+    await checkOnboardingAndShow(currentUser.id);
   }
 
   db.auth.onAuthStateChange(async (event, session) => {
     if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session?.user) {
       currentUser = session.user;
       if (window.location.hash) history.replaceState(null, '', window.location.pathname);
-
-      // Check onboarding
-      try {
-        const localProfile = JSON.parse(localStorage.getItem('raven_profile') || '{}');
-        if (localProfile.onboarding_complete && localProfile.user_id === session.user.id) {
-          showDashboard();
-          return;
-        }
-        const { data: profile, error } = await db.from('profiles').select('onboarding_complete').eq('id', session.user.id).single();
-        if (!error && profile?.onboarding_complete) {
-          showDashboard();
-          return;
-        }
-        window.location.href = 'onboarding.html';
-        return;
-      } catch(e) {
-        console.log('Profile check failed:', e);
-        showDashboard();
-      }
-
-      showDashboard();
+      await checkOnboardingAndShow(session.user.id);
     } else if (event === 'SIGNED_OUT') {
       currentUser = null;
       showAuth();
     }
   });
+}
+
+async function checkOnboardingAndShow(userId) {
+  // 1. Check localStorage — fastest, most reliable
+  try {
+    const local = JSON.parse(localStorage.getItem('raven_profile') || '{}');
+    if (local.user_id === userId && local.onboarding_complete) {
+      showDashboard();
+      return;
+    }
+  } catch(e) {}
+
+  // 2. Check Supabase profiles table
+  try {
+    const { data: profile, error } = await db
+      .from('profiles')
+      .select('onboarding_complete, first_name')
+      .eq('id', userId)
+      .single();
+
+    if (!error && profile) {
+      if (profile.onboarding_complete) {
+        // Cache it locally
+        const existing = JSON.parse(localStorage.getItem('raven_profile') || '{}');
+        localStorage.setItem('raven_profile', JSON.stringify({
+          ...existing,
+          user_id: userId,
+          onboarding_complete: true,
+          first_name: profile.first_name || existing.first_name || ''
+        }));
+        showDashboard();
+        return;
+      } else {
+        // Profile exists but onboarding not done
+        window.location.href = 'onboarding.html';
+        return;
+      }
+    }
+  } catch(e) {
+    console.log('Profile check error:', e);
+  }
+
+  // 3. If no profile found at all → new user, send to onboarding
+  // But if they've signed in before (have any local data), just show dashboard
+  const hasLocalData = localStorage.getItem('raven_profile');
+  if (hasLocalData) {
+    showDashboard();
+  } else {
+    window.location.href = 'onboarding.html';
+  }
 }
 
 // ── AUTH ──
