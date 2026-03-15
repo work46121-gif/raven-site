@@ -714,7 +714,7 @@ async function loadActiveBills() {
 }
 
 async function loadHistory() {
-  const { data: bills } = await db.from('bills').select('*, participants(*)').eq('creator_phone', currentUser.email).neq('status', 'deleted').order('created_at', { ascending: false });
+  const { data: bills } = await db.from('bills').select('*, participants(*)').eq('creator_phone', currentUser.email).order('created_at', { ascending: false });
   const container = document.getElementById('history-content');
   if (!bills || bills.length === 0) { container.innerHTML = '<div class="empty-state"><span class="empty-icon">🕐</span><div class="empty-title">No history yet</div></div>'; return; }
   container.innerHTML = '<table class="history-table"><thead><tr><th>Bill</th><th>Total</th><th>People</th><th>Collected</th><th>Status</th><th>Date</th></tr></thead><tbody>' + bills.map(b => {
@@ -722,7 +722,7 @@ async function loadHistory() {
     const total = b.participants?.length || 0;
     const collected = b.participants?.filter(p => p.paid).reduce((s, p) => s + parseFloat(p.amount || 0), 0) || 0;
     const date = new Date(b.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-    return '<tr onclick="openBillModal(\'' + b.id + '\')" style="cursor:pointer"><td>' + b.name + '</td><td>$' + parseFloat(b.total).toFixed(2) + '</td><td>' + total + ' people</td><td style="color:var(--green)">$' + collected.toFixed(2) + '</td><td><span class="status-badge ' + (b.status === 'active' ? 'status-active' : 'status-completed') + '">' + (b.status === 'active' ? '● Active' : '✓ Done') + '</span></td><td>' + date + '</td></tr>';
+    return '<tr onclick="openBillModal(\'' + b.id + '\')" style="cursor:pointer"><td>' + b.name + '</td><td>$' + parseFloat(b.total).toFixed(2) + '</td><td>' + total + ' people</td><td style="color:var(--green)">$' + collected.toFixed(2) + '</td><td><span class="status-badge ' + (b.status === 'active' ? 'status-active' : 'status-completed') + '" style="' + (b.status === 'deleted' ? 'background:rgba(255,68,68,0.1);color:#FF6B6B;border-color:rgba(255,68,68,0.2)' : '') + '">' + (b.status === 'active' ? '● Active' : b.status === 'deleted' ? '✕ Deleted' : '✓ Done') + '</span></td><td>' + date + '</td></tr>';
   }).join('') + '</tbody></table>';
 }
 
