@@ -714,7 +714,8 @@ async function loadActiveBills() {
 }
 
 async function loadHistory() {
-  const { data: bills } = await db.from('bills').select('*, participants(*)').eq('creator_phone', currentUser.email).order('created_at', { ascending: false });
+  const { data: bills, error } = await db.from('bills').select('*, participants(*)').eq('creator_phone', currentUser.email).order('created_at', { ascending: false });
+  console.log('History bills:', bills?.length, 'statuses:', bills?.map(b => b.status), 'error:', error);
   const container = document.getElementById('history-content');
   if (!bills || bills.length === 0) { container.innerHTML = '<div class="empty-state"><span class="empty-icon">🕐</span><div class="empty-title">No history yet</div></div>'; return; }
   container.innerHTML = '<table class="history-table"><thead><tr><th>Bill</th><th>Total</th><th>People</th><th>Collected</th><th>Status</th><th>Date</th></tr></thead><tbody>' + bills.map(b => {
