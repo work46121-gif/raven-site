@@ -1307,7 +1307,7 @@ async function openPayModal(participantId, billId, amount) {
     // Only Apple Pay — add a note
     const note = document.createElement('div');
     note.style.cssText = 'font-size:12px;color:var(--muted);text-align:center;margin-bottom:8px';
-    note.textContent = 'Bill creator hasn't added payment methods yet';
+    note.textContent = 'Bill creator has not added payment methods yet';
   }
 
   document.getElementById('pay-modal-methods').innerHTML = methods.join('');
