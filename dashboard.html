@@ -1698,6 +1698,34 @@ async function createBill() {
 
   await db.from('participants').insert(rows);
 
+  // Save receipt items and assignments to Supabase so bill page can show them
+  if (cbItems.length > 0) {
+    // Insert receipt_items and get back their IDs
+    const { data: savedItems } = await db.from('receipt_items').insert(
+      cbItems.map(item => ({ bill_id: billId, name: item.name, price: item.price }))
+    ).select();
+
+    // Save item_selections (who ordered what)
+    if (savedItems && savedItems.length > 0) {
+      const selectionRows = [];
+      savedItems.forEach((savedItem, idx) => {
+        const originalItem = cbItems[idx];
+        if (originalItem && originalItem.assignees.length > 0) {
+          originalItem.assignees.forEach(person => {
+            selectionRows.push({
+              bill_id: billId,
+              item_id: savedItem.id,
+              participant_name: person.toLowerCase()
+            });
+          });
+        }
+      });
+      if (selectionRows.length > 0) {
+        await db.from('item_selections').insert(selectionRows);
+      }
+    }
+  }
+
   btn.textContent = '🪶 Create Bill'; btn.disabled = false;
   showToast(`✅ Bill "${name}" created! ID: ${billId}`, 'success');
   people = [];
@@ -2212,6 +2240,34 @@ async function cbCreateFinalBill() {
   });
 
   await db.from('participants').insert(rows);
+
+  // Save receipt items and assignments to Supabase so bill page can show them
+  if (cbItems.length > 0) {
+    // Insert receipt_items and get back their IDs
+    const { data: savedItems } = await db.from('receipt_items').insert(
+      cbItems.map(item => ({ bill_id: billId, name: item.name, price: item.price }))
+    ).select();
+
+    // Save item_selections (who ordered what)
+    if (savedItems && savedItems.length > 0) {
+      const selectionRows = [];
+      savedItems.forEach((savedItem, idx) => {
+        const originalItem = cbItems[idx];
+        if (originalItem && originalItem.assignees.length > 0) {
+          originalItem.assignees.forEach(person => {
+            selectionRows.push({
+              bill_id: billId,
+              item_id: savedItem.id,
+              participant_name: person.toLowerCase()
+            });
+          });
+        }
+      });
+      if (selectionRows.length > 0) {
+        await db.from('item_selections').insert(selectionRows);
+      }
+    }
+  }
 
   btn.textContent = '🪶 Create Bill'; btn.disabled = false;
   showToast(`✅ "${name}" created! ID: ${billId}`, 'success');
