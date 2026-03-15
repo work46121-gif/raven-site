@@ -983,14 +983,9 @@ async function handleSignup() {
   btn.textContent = 'Create Account →'; btn.disabled = false;
   if (error) {
     showAuthError(error.message);
-  } else if (data?.user) {
-    window.location.href = 'onboarding.html';
   } else {
-    document.getElementById('auth-error').style.background = 'rgba(48,209,88,0.1)';
-    document.getElementById('auth-error').style.borderColor = 'rgba(48,209,88,0.25)';
-    document.getElementById('auth-error').style.color = 'var(--green)';
-    document.getElementById('auth-error').textContent = '✅ Check your email to confirm your account, then sign in.';
-    document.getElementById('auth-error').style.display = 'block';
+    // Always go to onboarding after signup regardless of email confirmation state
+    window.location.href = 'onboarding.html';
   }
 }
 
