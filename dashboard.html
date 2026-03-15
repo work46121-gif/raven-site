@@ -714,7 +714,7 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
       </div>
     </div>
     <div class="auth-footer">
-      <a href="index.html" style="color:var(--muted);text-decoration:none">← Back to getraven.app</a>
+      <a href="index.html" style="color:var(--muted);text-decoration:none" onclick="localStorage.setItem('raven_logged_in','true')">← Back to getraven.app</a>
     </div>
   </div>
 </div>
@@ -748,7 +748,7 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
     <!-- OVERVIEW PAGE -->
     <div id="page-overview" class="page active">
       <div class="page-header">
-        <h1 class="page-title">Good to see you, <span id="greeting-name">Raven</span> 🪶</h1>
+        <h1 class="page-title">Welcome, <span id="greeting-name"></span></h1>
       </div>
       <div class="stats-row">
         <div class="stat-card">
@@ -998,14 +998,36 @@ function showAuth() {
   document.getElementById('auth-screen').style.display = 'flex';
   document.getElementById('dashboard-screen').style.display = 'none';
 }
-function showDashboard() {
+async function showDashboard() {
   document.getElementById('auth-screen').style.display = 'none';
   document.getElementById('dashboard-screen').style.display = 'block';
   const email = currentUser.email;
   document.getElementById('user-email-display').textContent = email;
   document.getElementById('user-avatar').textContent = email[0].toUpperCase();
-  const name = email.split('@')[0];
-  document.getElementById('greeting-name').textContent = name.charAt(0).toUpperCase() + name.slice(1);
+
+  // Try to get first name from profile
+  let firstName = null;
+  try {
+    const local = JSON.parse(localStorage.getItem('raven_profile') || '{}');
+    if (local.first_name) firstName = local.first_name;
+    else {
+      const { data: profile } = await db.from('profiles').select('first_name').eq('id', currentUser.id).single();
+      if (profile?.first_name) {
+        firstName = profile.first_name;
+        // Cache it
+        const existing = JSON.parse(localStorage.getItem('raven_profile') || '{}');
+        localStorage.setItem('raven_profile', JSON.stringify({ ...existing, first_name: firstName }));
+      }
+    }
+  } catch(e) {}
+
+  // Show first name only — no email fallback
+  if (firstName) {
+    document.getElementById('greeting-name').textContent = firstName.charAt(0).toUpperCase() + firstName.slice(1);
+  } else {
+    document.getElementById('greeting-name').textContent = '';
+    document.querySelector('.page-title').innerHTML = 'Welcome Back 🪶';
+  }
   loadAllData();
 }
 
