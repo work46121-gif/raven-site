@@ -723,7 +723,7 @@ async function loadHistory() {
     const total = b.participants?.length || 0;
     const collected = b.participants?.filter(p => p.paid).reduce((s, p) => s + parseFloat(p.amount || 0), 0) || 0;
     const date = new Date(b.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-    return '<tr onclick="openBillModal(\'' + b.id + '\')" style="cursor:pointer"><td>' + b.name + '</td><td>$' + parseFloat(b.total).toFixed(2) + '</td><td>' + total + ' people</td><td style="color:var(--green)">$' + collected.toFixed(2) + '</td><td><span class="status-badge ' + (b.status === 'active' ? 'status-active' : 'status-completed') + '" style="' + (b.status === 'deleted' ? 'background:rgba(255,68,68,0.1);color:#FF6B6B;border-color:rgba(255,68,68,0.2)' : '') + '">' + (b.status === 'active' ? '● Active' : b.status === 'deleted' ? '✕ Deleted' : '✓ Done') + '</span></td><td>' + date + '</td></tr>';
+    return '<tr style="cursor:pointer"><td onclick="openBillModal(\'' + b.id + '\')">' + b.name + '</td><td onclick="openBillModal(\'' + b.id + '\')">$' + parseFloat(b.total).toFixed(2) + '</td><td onclick="openBillModal(\'' + b.id + '\')">'+total+' people</td><td onclick="openBillModal(\'' + b.id + '\')" style="color:var(--green)">$' + collected.toFixed(2) + '</td><td><span class="status-badge ' + (b.status === 'active' ? 'status-active' : 'status-completed') + '" style="cursor:' + (b.status === 'deleted' ? 'pointer' : 'default') + ';' + (b.status === 'deleted' ? 'background:rgba(255,68,68,0.1);color:#FF6B6B;border-color:rgba(255,68,68,0.2)' : '') + '" onclick="' + (b.status === 'deleted' ? 'permanentDelete(\'' + b.id + '\')' : '') + '" title="' + (b.status === 'deleted' ? 'Click to permanently delete' : '') + '">' + (b.status === 'active' ? '● Active' : b.status === 'deleted' ? '✕ Deleted' : '✓ Done') + '</span></td><td onclick="openBillModal(\'' + b.id + '\')">' + date + '</td></tr>';
   }).join('') + '</tbody></table>';
 }
 
@@ -779,6 +779,17 @@ async function sendReminder(billId) {
 }
 
 // ── FIX: deleteBill removes from overview immediately ──
+async function permanentDelete(billId) {
+  if (!confirm('Permanently delete this bill? It will be gone forever and cannot be recovered.')) return;
+  await db.from('item_selections').delete().eq('bill_id', billId);
+  await db.from('receipt_items').delete().eq('bill_id', billId);
+  await db.from('participants').delete().eq('bill_id', billId);
+  await db.from('bill_comments').delete().eq('bill_id', billId);
+  await db.from('bills').delete().eq('id', billId);
+  showToast('Bill permanently deleted', 'success');
+  loadHistory();
+}
+
 async function deleteBill(billId) {
   if (!confirm('Delete this bill? This cannot be undone.')) return;
   await db.from('bills').update({ status: 'deleted' }).eq('id', billId);
