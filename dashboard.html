@@ -1048,6 +1048,7 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
     <div id="modal-receipt"></div>
     <div id="modal-participants" class="participants-list"></div>
     <div class="modal-actions">
+      <button class="modal-btn" id="modal-share-btn" style="background:rgba(48,209,88,0.12);color:var(--green);border:1px solid rgba(48,209,88,0.25)">🔗 Share Bill</button>
       <button class="modal-btn modal-btn-remind" id="modal-remind-btn">🔔 Remind Unpaid</button>
       <button class="modal-btn modal-btn-delete" id="modal-delete-btn">🗑 Delete Bill</button>
     </div>
@@ -1208,6 +1209,32 @@ async function handleSignup() {
     // Always go to onboarding after signup regardless of email confirmation state
     window.location.href = 'onboarding.html';
   }
+}
+
+async function shareBill(billId, billName) {
+  // Fetch the share token for this bill
+  let url = `https://raven-backend-production-fb1f.up.railway.app/bill/${billId}`;
+  try {
+    const { data: bill } = await db.from('bills').select('share_token').eq('id', billId).single();
+    if (bill?.share_token) url += `?t=${bill.share_token}`;
+  } catch(e) {}
+
+  const msg = `🪶 ${billName} — tap to see what you owe:\n${url}`;
+
+  if (navigator.share) {
+    navigator.share({ title: `🪶 ${billName}`, text: msg, url }).catch(() => cbCopyLink(url));
+  } else {
+    cbCopyLink(url);
+  }
+}
+
+function cbCopyLink(url) {
+  navigator.clipboard.writeText(url).then(() => {
+    showToast('🔗 Bill link copied! Send it to your group.', 'success');
+  }).catch(() => {
+    // Fallback — show the URL
+    prompt('Copy this link and send to your group:', url);
+  });
 }
 
 async function handleLogout() {
@@ -1457,7 +1484,7 @@ async function openBillModal(billId) {
   // Show receipt image if available
   let receiptHTML = '';
   if (bill.receipt_image) {
-    receiptHTML = `<div style="margin-bottom:16px"><div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted2);margin-bottom:8px">Receipt</div><img src="data:image/jpeg;base64,${bill.receipt_image}" style="width:100%;border-radius:10px;object-fit:contain;background:#000;max-height:280px;cursor:pointer" onclick="this.style.maxHeight=this.style.maxHeight==='none'?'280px':'none'" title="Click to expand"></div>`;
+    receiptHTML = `<div style="margin-bottom:16px"><div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted2);margin-bottom:8px">Receipt</div><img src="data:image/jpeg;base64,${bill.receipt_image}" style="width:100%;border-radius:10px;display:block;object-fit:contain;background:#111"></div>`;
   }
   const receiptEl = document.getElementById('modal-receipt');
   if (receiptEl) receiptEl.innerHTML = receiptHTML;
@@ -1480,6 +1507,7 @@ async function openBillModal(billId) {
     </div>
   `).join('');
 
+  document.getElementById('modal-share-btn').onclick = () => shareBill(billId, bill.name);
   document.getElementById('modal-remind-btn').onclick = () => sendReminder(billId);
   document.getElementById('modal-delete-btn').onclick = () => deleteBill(billId);
   document.getElementById('bill-modal').classList.add('open');
@@ -1888,6 +1916,9 @@ async function cbCreateFinalBill() {
   // Store receipt image as base64 in the bill record if available
   const receiptData = cbImageBase64 ? cbImageBase64.substring(0, 50000) : null; // cap size
 
+  // Generate a secure share token
+  const shareToken = Array.from({length:16}, () => 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'[Math.floor(Math.random()*62)]).join('');
+
   const { error } = await db.from('bills').insert({
     id: billId,
     creator_phone: currentUser.email,
@@ -1895,7 +1926,8 @@ async function cbCreateFinalBill() {
     total,
     per_person: total / cbPeople.length,
     status: 'active',
-    receipt_image: receiptData
+    receipt_image: receiptData,
+    share_token: shareToken
   });
 
   if (error) {
@@ -1906,7 +1938,8 @@ async function cbCreateFinalBill() {
       name,
       total,
       per_person: total / cbPeople.length,
-      status: 'active'
+      status: 'active',
+      share_token: shareToken
     });
     if (err2) {
       btn.textContent = '🪶 Create Bill'; btn.disabled = false;
