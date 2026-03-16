@@ -276,8 +276,34 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
       <div id="auth-error" class="auth-error"></div>
       <div id="login-form" class="auth-form">
         <div><label class="auth-label">Email</label><input id="login-email" type="email" class="auth-input" placeholder="your@email.com" autocomplete="email"></div>
-        <div><label class="auth-label">Password</label><input id="login-password" type="password" class="auth-input" placeholder="••••••••" autocomplete="current-password"></div>
+        <div style="position:relative">
+          <label class="auth-label">Password</label>
+          <input id="login-password" type="password" class="auth-input" placeholder="••••••••" autocomplete="current-password" style="padding-right:44px">
+          <button type="button" onclick="togglePasswordVis('login-password',this)" style="position:absolute;right:12px;bottom:12px;background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:0">👁</button>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:-4px">
+          <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:12px;color:var(--muted)">
+            <input type="checkbox" id="remember-me" style="width:15px;height:15px;accent-color:var(--green);cursor:pointer" onchange="handleRememberMe()">
+            Remember me
+          </label>
+          <button type="button" onclick="showForgotPassword()" style="background:none;border:none;color:var(--purple3);font-size:12px;font-weight:600;cursor:pointer;font-family:'Epilogue',sans-serif;padding:0">Forgot password?</button>
+        </div>
         <button class="auth-btn" onclick="handleLogin()">Sign In →</button>
+      </div>
+
+      <!-- Forgot Password form — hidden by default -->
+      <div id="forgot-form" class="auth-form" style="display:none">
+        <div style="text-align:center;margin-bottom:4px">
+          <div style="font-size:32px;margin-bottom:8px">🔑</div>
+          <div style="font-size:15px;font-weight:700;color:var(--white);margin-bottom:4px">Reset your password</div>
+          <div style="font-size:13px;color:var(--muted)">Enter your email and we'll send you a reset link</div>
+        </div>
+        <div><label class="auth-label">Email</label><input id="forgot-email" type="email" class="auth-input" placeholder="your@email.com" autocomplete="email"></div>
+        <button class="auth-btn" id="forgot-btn" onclick="handleForgotPassword()">Send Reset Link →</button>
+        <div id="forgot-success" style="display:none;padding:12px 16px;background:rgba(48,209,88,0.07);border:1px solid rgba(48,209,88,0.2);border-radius:10px;font-size:13px;color:var(--green);text-align:center">
+          ✅ Reset link sent! Check your email inbox (and spam folder).
+        </div>
+        <button type="button" onclick="showLoginForm()" style="background:none;border:none;color:var(--muted);font-size:13px;cursor:pointer;font-family:'Epilogue',sans-serif;text-align:center;width:100%;padding:4px 0">← Back to Sign In</button>
       </div>
       <div id="signup-form" class="auth-form" style="display:none">
         <div><label class="auth-label">First Name</label><input id="signup-firstname" type="text" class="auth-input" placeholder="Your first name"></div>
@@ -948,7 +974,69 @@ let currentBillId = null;
 let people = [];
 
 // ── JOIN TRIP STATE ──────────────────────────────────────────────────────────
-// Detect ?join_trip=X&join_token=Y and ?add=ravenId on page load
+// Handle Supabase password reset redirect — fires when user clicks the reset link in email
+// Supabase sets the session automatically via the URL hash fragment
+db.auth.onAuthStateChange(async (event, session) => {
+  if (event === 'PASSWORD_RECOVERY') {
+    // User clicked the reset link — show new password form
+    showPasswordResetForm();
+  }
+});
+
+function showPasswordResetForm() {
+  document.getElementById('auth-screen').style.display = 'flex';
+  document.getElementById('dashboard-screen').style.display = 'none';
+  // Hide all auth forms, show reset form
+  document.getElementById('login-form').style.display = 'none';
+  document.getElementById('signup-form').style.display = 'none';
+  try { document.getElementById('forgot-form').style.display = 'none'; } catch(e) {}
+  // Build or show the reset password form
+  let rf = document.getElementById('reset-password-form');
+  if (!rf) {
+    rf = document.createElement('div');
+    rf.id = 'reset-password-form';
+    rf.className = 'auth-form';
+    rf.innerHTML =
+      '<div style="text-align:center;margin-bottom:4px"><div style="font-size:32px;margin-bottom:8px">🔒</div>' +
+      '<div style="font-size:15px;font-weight:700;color:var(--white);margin-bottom:4px">Set new password</div>' +
+      '<div style="font-size:13px;color:var(--muted)">Choose a strong password for your account</div></div>' +
+      '<div style="position:relative"><label class="auth-label">New Password</label>' +
+      '<input id="reset-new-password" type="password" class="auth-input" placeholder="At least 6 characters" autocomplete="new-password" style="padding-right:44px">' +
+      '<button type="button" onclick="togglePasswordVis(\'reset-new-password\',this)" style="position:absolute;right:12px;bottom:12px;background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:0">👁</button></div>' +
+      '<div><label class="auth-label">Confirm New Password</label>' +
+      '<input id="reset-confirm-password" type="password" class="auth-input" placeholder="••••••••" autocomplete="new-password"></div>' +
+      '<button class="auth-btn" id="reset-save-btn" onclick="handlePasswordReset()">Save New Password →</button>' +
+      '<div id="reset-success" style="display:none;padding:12px 16px;background:rgba(48,209,88,0.07);border:1px solid rgba(48,209,88,0.2);border-radius:10px;font-size:13px;color:var(--green);text-align:center">✅ Password updated! Signing you in...</div>';
+    const card = document.querySelector('.auth-card');
+    if (card) card.appendChild(rf);
+  }
+  rf.style.display = 'flex';
+  // Hide the tab buttons — this is a special flow
+  const tabs = document.querySelector('.auth-tabs');
+  if (tabs) tabs.style.display = 'none';
+}
+
+async function handlePasswordReset() {
+  const newPass = document.getElementById('reset-new-password').value;
+  const confirm = document.getElementById('reset-confirm-password').value;
+  if (!newPass || newPass.length < 6) return showAuthError('Password must be at least 6 characters.');
+  if (newPass !== confirm) return showAuthError("Passwords don't match.");
+  const btn = document.getElementById('reset-save-btn');
+  btn.textContent = 'Saving...'; btn.disabled = true; hideAuthError();
+  const { data, error } = await db.auth.updateUser({ password: newPass });
+  btn.textContent = 'Save New Password →'; btn.disabled = false;
+  if (error) {
+    showAuthError(error.message);
+  } else {
+    document.getElementById('reset-success').style.display = 'block';
+    btn.style.display = 'none';
+    // Auto sign in — session is already active after password reset
+    setTimeout(async () => {
+      const { data: { user } } = await db.auth.getUser();
+      if (user) { currentUser = user; await checkOnboardingAndShow(user.id); }
+    }, 1500);
+  }
+}
 (function detectJoinParams() {
   const params = new URLSearchParams(window.location.search);
   const joinTrip  = params.get('join_trip');
@@ -1102,9 +1190,73 @@ async function handleLogin() {
   btn.textContent = 'Signing in...'; btn.disabled = true; hideAuthError();
   const { data, error } = await db.auth.signInWithPassword({ email, password });
   btn.textContent = 'Sign In →'; btn.disabled = false;
-  if (error) showAuthError(error.message);
-  else if (data?.user) { currentUser = data.user; await checkOnboardingAndShow(data.user.id); }
+  if (error) { showAuthError(error.message); return; }
+  if (data?.user) {
+    if (document.getElementById('remember-me')?.checked) {
+      localStorage.setItem('raven_remembered_email', email);
+    } else {
+      localStorage.removeItem('raven_remembered_email');
+    }
+    currentUser = data.user; await checkOnboardingAndShow(data.user.id);
+  }
 }
+
+function handleRememberMe() {
+  const email = document.getElementById('login-email').value.trim();
+  if (document.getElementById('remember-me')?.checked && email) {
+    localStorage.setItem('raven_remembered_email', email);
+  }
+}
+
+function togglePasswordVis(inputId, btn) {
+  const input = document.getElementById(inputId);
+  if (!input) return;
+  const isHidden = input.type === 'password';
+  input.type = isHidden ? 'text' : 'password';
+  btn.textContent = isHidden ? '🙈' : '👁';
+}
+
+function showForgotPassword() {
+  document.getElementById('login-form').style.display = 'none';
+  document.getElementById('forgot-form').style.display = 'flex';
+  const loginEmail = document.getElementById('login-email').value.trim();
+  if (loginEmail) document.getElementById('forgot-email').value = loginEmail;
+  hideAuthError();
+}
+
+function showLoginForm() {
+  document.getElementById('forgot-form').style.display = 'none';
+  document.getElementById('login-form').style.display = 'flex';
+  document.getElementById('forgot-success').style.display = 'none';
+  hideAuthError();
+}
+
+async function handleForgotPassword() {
+  const email = document.getElementById('forgot-email').value.trim();
+  if (!email) return showAuthError('Please enter your email address.');
+  const btn = document.getElementById('forgot-btn');
+  btn.textContent = 'Sending...'; btn.disabled = true; hideAuthError();
+  const redirectUrl = window.location.origin + window.location.pathname + '?reset=1';
+  const { error } = await db.auth.resetPasswordForEmail(email, { redirectTo: redirectUrl });
+  btn.textContent = 'Send Reset Link →'; btn.disabled = false;
+  if (error) {
+    showAuthError(error.message);
+  } else {
+    document.getElementById('forgot-success').style.display = 'block';
+    btn.style.display = 'none';
+  }
+}
+
+// Pre-fill remembered email on page load
+try {
+  const remembered = localStorage.getItem('raven_remembered_email');
+  if (remembered) {
+    const ei = document.getElementById('login-email');
+    const cb = document.getElementById('remember-me');
+    if (ei) ei.value = remembered;
+    if (cb) cb.checked = true;
+  }
+} catch(e) {}
 
 async function handleSignup() {
   const firstName = document.getElementById('signup-firstname').value.trim();
