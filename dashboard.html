@@ -2441,33 +2441,42 @@ async function cbScanReceipt() {
       }
 
       const data = await res.json();
-      if (!data.success || !data.items?.length) {
-        // If it's a genuine "no items" result (not a server crash), don't retry
-        if (data.error && !data.error.includes('timeout') && !data.error.includes('network')) {
-          throw new Error('no_items');
-        }
-        if (attempt < MAX_RETRIES) continue;
-        throw new Error('no_items');
+
+      // Handle success even with partial results
+      if (data.success && data.items && data.items.length > 0) {
+        // ── SUCCESS ──
+        clearInterval(iv);
+        if (data.bill_name && !document.getElementById('cb-name').value) document.getElementById('cb-name').value = data.bill_name;
+        cbItems = data.items.map((item, i) => ({ id: Date.now() + i, name: item.name, price: parseFloat(item.price) || 0, assignees: [] }));
+        if (data.tax) document.getElementById('cb-tax').value = parseFloat(data.tax).toFixed(2);
+        if (data.tip) document.getElementById('cb-tip').value = parseFloat(data.tip).toFixed(2);
+        document.getElementById('cb-scanning').style.display = 'none';
+        const badge = document.getElementById('cb-scanned-badge');
+        if (badge) { badge.style.display = 'flex'; }
+        document.getElementById('cb-scan-summary').textContent = 'Found ' + cbItems.length + ' items · Tax $' + (data.tax||0).toFixed(2) + ' · Tip $' + (data.tip||0).toFixed(2);
+        document.getElementById('cb-scan-result').style.display = 'block';
+        document.getElementById('cb-scan-result').innerHTML =
+          '<div style="display:flex;align-items:center;gap:10px;padding:12px 16px;background:rgba(48,209,88,0.07);border:1px solid rgba(48,209,88,0.2);border-radius:10px">' +
+          '<span>✅</span><span style="font-size:13px;color:var(--green);font-weight:600">' + cbItems.length + ' items found! Moving to next step...</span></div>';
+        cbRenderItems(); cbUpdateSummary();
+        showToast('✅ ' + cbItems.length + ' items scanned!', 'success');
+        setTimeout(() => cbGoToStep(2), 800);
+        return; // done
       }
 
-      // ── SUCCESS ──
-      clearInterval(iv);
-      if (data.bill_name && !document.getElementById('cb-name').value) document.getElementById('cb-name').value = data.bill_name;
-      cbItems = data.items.map((item, i) => ({ id: Date.now() + i, name: item.name, price: parseFloat(item.price) || 0, assignees: [] }));
-      if (data.tax) document.getElementById('cb-tax').value = parseFloat(data.tax).toFixed(2);
-      if (data.tip) document.getElementById('cb-tip').value = parseFloat(data.tip).toFixed(2);
-      document.getElementById('cb-scanning').style.display = 'none';
-      const badge = document.getElementById('cb-scanned-badge');
-      if (badge) { badge.style.display = 'flex'; }
-      document.getElementById('cb-scan-summary').textContent = 'Found ' + cbItems.length + ' items · Tax $' + (data.tax||0).toFixed(2) + ' · Tip $' + (data.tip||0).toFixed(2);
-      document.getElementById('cb-scan-result').style.display = 'block';
-      document.getElementById('cb-scan-result').innerHTML =
-        '<div style="display:flex;align-items:center;gap:10px;padding:12px 16px;background:rgba(48,209,88,0.07);border:1px solid rgba(48,209,88,0.2);border-radius:10px">' +
-        '<span>✅</span><span style="font-size:13px;color:var(--green);font-weight:600">' + cbItems.length + ' items found! Moving to next step...</span></div>';
-      cbRenderItems(); cbUpdateSummary();
-      showToast('✅ ' + cbItems.length + ' items scanned!', 'success');
-      setTimeout(() => cbGoToStep(2), 800);
-      return; // done
+      // Got a response but no items — check if server gave specific error
+      if (data.error) {
+        if (data.error.includes('API key') || data.error.includes('Rate limit')) {
+          throw new Error(data.error);
+        }
+      }
+
+      // No items detected — retry if attempts remain
+      if (attempt < MAX_RETRIES) {
+        setStatus('No items found yet, retrying with higher detail...');
+        continue;
+      }
+      throw new Error('no_items');
 
     } catch(err) {
       clearInterval(iv);
@@ -2481,7 +2490,16 @@ async function cbScanReceipt() {
         return;
       }
       if (err.message === 'no_items') {
-        showScanError('No items detected. Try a clearer photo with better lighting.');
+        clearInterval(iv);
+        document.getElementById('cb-scanning').style.display = 'none';
+        document.getElementById('cb-scan-wrap').style.display = 'block';
+        document.getElementById('cb-scan-result').style.display = 'block';
+        document.getElementById('cb-scan-result').innerHTML =
+          '<div style="padding:14px 16px;background:rgba(255,107,53,0.07);border:1px solid rgba(255,107,53,0.25);border-radius:10px">' +
+          '<div style="font-size:13px;color:#FF6B35;font-weight:600;margin-bottom:4px">⚠️ Could not read items from this image</div>' +
+          '<div style="font-size:12px;color:var(--muted);margin-bottom:10px">Tips: make sure the receipt/order summary is clearly visible. Screenshots of apps (Uber Eats, DoorDash) work best when the items and prices are fully visible.</div>' +
+          '<button onclick="cbGoToStep(2)" style="padding:7px 14px;background:rgba(124,58,237,0.12);border:1px solid rgba(124,58,237,0.25);border-radius:8px;color:var(--purple3);font-family:\'Epilogue\',sans-serif;font-size:12px;font-weight:600;cursor:pointer">→ Enter items manually</button>' +
+          '</div>';
         return;
       }
       if (attempt < MAX_RETRIES) continue;
