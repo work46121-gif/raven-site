@@ -2377,10 +2377,54 @@ function cbRenderItems() {
   const container = document.getElementById('cb-items-list');
   document.getElementById('cb-item-count').textContent = cbItems.length + ' item' + (cbItems.length !== 1 ? 's' : '');
   if (cbItems.length === 0) { container.innerHTML = '<div style="text-align:center;padding:18px;color:var(--muted);font-size:13px;border:1px dashed var(--border);border-radius:10px">No items yet</div>'; return; }
-  container.innerHTML = cbItems.map(item => {
-    const assignedHTML = item.assignees.length > 0 ? '<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:5px">' + item.assignees.map(a => '<span style="padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;background:rgba(168,85,247,0.12);border:1px solid rgba(168,85,247,0.2);color:var(--purple3)">' + a + '</span>').join('') + '</div>' : '';
-    return '<div style="background:var(--dark2);border:1px solid ' + (item.assignees.length > 0 ? 'rgba(168,85,247,0.3)' : 'var(--border)') + ';border-radius:10px;overflow:hidden"><div style="display:flex;align-items:center;gap:10px;padding:11px 14px"><div style="flex:1"><div style="font-size:13px;font-weight:500">' + item.name + '</div>' + assignedHTML + '</div><div style="font-family:\'JetBrains Mono\',monospace;font-size:13px;color:var(--muted2)">$' + item.price.toFixed(2) + '</div>' + (cbPeople.length > 0 ? '<button onclick="cbOpenAssign(' + item.id + ')" style="padding:4px 10px;background:rgba(168,85,247,0.1);border:1px solid rgba(168,85,247,0.2);border-radius:6px;color:var(--purple3);font-size:11px;font-weight:600;cursor:pointer;font-family:\'Epilogue\',sans-serif;white-space:nowrap">→ Assign</button>' : '') + '<button onclick="cbRemoveItem(' + item.id + ')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;opacity:0.5;padding:0">×</button></div></div>';
-  }).join('');
+  container.innerHTML = '';
+  cbItems.forEach(item => {
+    const assignedHTML = item.assignees.length > 0
+      ? '<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:5px">' + item.assignees.map(a => '<span style="padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;background:rgba(168,85,247,0.12);border:1px solid rgba(168,85,247,0.2);color:var(--purple3)">' + a + '</span>').join('') + '</div>'
+      : '';
+    const row = document.createElement('div');
+    row.style.cssText = 'background:var(--dark2);border:1px solid ' + (item.assignees.length > 0 ? 'rgba(168,85,247,0.3)' : 'var(--border)') + ';border-radius:10px;overflow:hidden';
+
+    const inner = document.createElement('div');
+    inner.style.cssText = 'display:flex;align-items:center;gap:10px;padding:11px 14px';
+
+    const nameWrap = document.createElement('div');
+    nameWrap.style.cssText = 'flex:1;min-width:0';
+
+    // Editable name input
+    const nameInput = document.createElement('input');
+    nameInput.type = 'text';
+    nameInput.value = item.name;
+    nameInput.style.cssText = 'width:100%;font-size:13px;font-weight:500;background:transparent;border:none;border-bottom:1px solid transparent;color:var(--white);font-family:inherit;padding:2px 0;outline:none;cursor:text';
+    nameInput.addEventListener('focus', () => { nameInput.style.borderBottomColor = 'rgba(124,58,237,0.4)'; });
+    nameInput.addEventListener('blur', () => { nameInput.style.borderBottomColor = 'transparent'; item.name = nameInput.value.trim() || item.name; cbUpdateSummary(); });
+    nameWrap.appendChild(nameInput);
+    if (assignedHTML) { const ad = document.createElement('div'); ad.innerHTML = assignedHTML; nameWrap.appendChild(ad); }
+
+    const priceEl = document.createElement('div');
+    priceEl.style.cssText = "font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--muted2);flex-shrink:0";
+    priceEl.textContent = '$' + item.price.toFixed(2);
+
+    inner.appendChild(nameWrap);
+    inner.appendChild(priceEl);
+
+    if (cbPeople.length > 0) {
+      const assignBtn = document.createElement('button');
+      assignBtn.textContent = '→ Assign';
+      assignBtn.style.cssText = "padding:4px 10px;background:rgba(168,85,247,0.1);border:1px solid rgba(168,85,247,0.2);border-radius:6px;color:var(--purple3);font-size:11px;font-weight:600;cursor:pointer;font-family:'Epilogue',sans-serif;white-space:nowrap;flex-shrink:0";
+      assignBtn.addEventListener('click', () => cbOpenAssign(item.id));
+      inner.appendChild(assignBtn);
+    }
+
+    const delBtn = document.createElement('button');
+    delBtn.textContent = '×';
+    delBtn.style.cssText = 'background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;opacity:0.5;padding:0;flex-shrink:0';
+    delBtn.addEventListener('click', () => { cbRemoveItem(item.id); });
+    inner.appendChild(delBtn);
+
+    row.appendChild(inner);
+    container.appendChild(row);
+  });
 }
 
 function cbOpenAssign(itemId) {
