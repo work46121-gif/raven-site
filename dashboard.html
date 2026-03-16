@@ -882,10 +882,23 @@ async function saveSettings() {
 }
 
 // ── FIX: View bill page directly ──
+const billUrlMap = {};
+
 async function viewBillPage(billId) {
+  // Use cached URL if available (set during loadActiveBills/loadOverview)
+  if (billUrlMap[billId]) {
+    window.location.href = billUrlMap[billId];
+    return;
+  }
+  // Fallback: fetch token then navigate
   const { data: bill } = await db.from('bills').select('share_token').eq('id', billId).single();
   const token = bill?.share_token ? '?t=' + bill.share_token : '';
-  window.open(BACKEND + '/bill/' + billId + token, '_blank');
+  let url = BACKEND + '/bill/' + billId + token;
+  try {
+    const profile = JSON.parse(localStorage.getItem('raven_profile') || '{}');
+    if (profile.first_name) url += (token ? '&' : '?') + 'name=' + encodeURIComponent(profile.first_name);
+  } catch(e) {}
+  window.location.href = url;
 }
 
 async function shareBill(billId, billName) {
@@ -997,13 +1010,20 @@ function renderBillCard(b) {
   const total = b.participants?.length || 0;
   const pct = total > 0 ? Math.round((paid / total) * 100) : 0;
   const owed = b.participants?.filter(p => !p.paid).reduce((s, p) => s + parseFloat(p.amount || 0), 0) || 0;
+  // Cache the URL synchronously so viewBillPage works on iOS
+  let billUrl = BACKEND + '/bill/' + b.id + (b.share_token ? '?t=' + b.share_token : '');
+  try {
+    const profile = JSON.parse(localStorage.getItem('raven_profile') || '{}');
+    if (profile.first_name) billUrl += (b.share_token ? '&' : '?') + 'name=' + encodeURIComponent(profile.first_name);
+  } catch(e) {}
+  billUrlMap[b.id] = billUrl;
   return '<div class="bill-card" onclick="openBillModal(\'' + b.id + '\')">' +
     '<div><div class="bill-name">' + b.name + ' <span class="bill-id">' + b.id + '</span></div><div class="bill-meta"><span>' + total + ' people</span><span>' + paid + '/' + total + ' paid</span><span style="color:var(--orange)">$' + owed.toFixed(2) + ' owed</span></div></div>' +
     '<div class="bill-amount">$' + parseFloat(b.total).toFixed(2) + '</div>' +
     '<div class="bill-progress-wrap"><div class="bill-progress-label">' + pct + '% paid</div><div class="bill-progress"><div class="bill-progress-fill" style="width:' + pct + '%"></div></div></div>' +
     '<div class="bill-actions" onclick="event.stopPropagation()">' +
     '<button class="bill-action-btn btn-remind" onclick="sendReminder(\'' + b.id + '\')">🔔 Remind</button>' +
-    '<button class="bill-action-btn btn-view" onclick="viewBillPage(\'' + b.id + '\')">View Bill →</button>' +
+    '<a class="bill-action-btn btn-view" href="' + billUrl + '" style="display:inline-flex;align-items:center;text-decoration:none">View Bill →</a>' +
     '</div></div>';
 }
 
@@ -1167,21 +1187,19 @@ async function loadTrips() {
     container.innerHTML = '<div class="empty-state"><span class="empty-icon">✈️</span><div class="empty-title">No trips yet</div><div class="empty-sub">Create a trip hub to start splitting group expenses</div></div>';
     return;
   }
-  // Pre-store all URLs synchronously
-  trips.forEach(t => {
-    tripUrlMap[t.id] = BACKEND + '/trip/' + t.id + '?t=' + t.share_token;
-  });
   container.innerHTML = trips.map(t => {
     const people = Array.isArray(t.people) ? t.people : JSON.parse(t.people || '[]');
-    const tripUrl = tripUrlMap[t.id];
+    const tripUrl = BACKEND + '/trip/' + t.id + '?t=' + t.share_token;
+    const tripUrlReceipt = tripUrl + '&action=receipt';
+    tripUrlMap[t.id] = tripUrl;
     return '<div class="bill-card">'
-      + '<div onclick="openTrip(\'' + t.id + '\')" style="cursor:pointer"><div class="bill-name">✈️ ' + t.name + ' <span class="bill-id">' + t.id + '</span></div>'
+      + '<div style="cursor:pointer" onclick="openTrip(\'' + t.id + '\')"><div class="bill-name">✈️ ' + t.name + ' <span class="bill-id">' + t.id + '</span></div>'
       + '<div class="bill-meta"><span>' + people.length + ' people</span><span>' + (t.receipt_count || 0) + ' receipts</span><span style="color:var(--green)">$' + parseFloat(t.total || 0).toFixed(2) + '</span></div></div>'
-      + '<div class="bill-amount" onclick="openTrip(\'' + t.id + '\')" style="cursor:pointer">$' + parseFloat(t.total || 0).toFixed(2) + '</div>'
+      + '<div class="bill-amount" style="cursor:pointer" onclick="openTrip(\'' + t.id + '\')">$' + parseFloat(t.total || 0).toFixed(2) + '</div>'
       + '<div class="bill-progress-wrap"><div class="bill-progress-label">Active</div><div class="bill-progress"><div class="bill-progress-fill" style="width:100%"></div></div></div>'
       + '<div class="bill-actions" onclick="event.stopPropagation()">'
-      + '<button class="bill-action-btn btn-remind" onclick="copyTripLink(\'' + tripUrl + '\')">🔗 Share</button>'
-      + '<button class="bill-action-btn btn-view" onclick="openTrip(\'' + t.id + '\')">Open Trip →</button>'
+      + '<a class="bill-action-btn btn-remind" href="' + tripUrlReceipt + '" style="display:inline-flex;align-items:center;text-decoration:none;background:rgba(48,209,88,0.1);color:var(--green);border-color:rgba(48,209,88,0.25)">📸 Receipt</a>'
+      + '<a class="bill-action-btn btn-view" href="' + tripUrl + '" style="display:inline-flex;align-items:center;text-decoration:none">Open Trip →</a>'
       + '</div></div>';
   }).join('');
 }
@@ -1260,9 +1278,16 @@ async function createTrip() {
 }
 
 function openTrip(tripId) {
-  const url = tripUrlMap[tripId];
-  if (url) {
-    window.location.href = url; // same tab works better on iOS than _blank
+  const base = tripUrlMap[tripId];
+  if (!base) return;
+  // Append user's name so the trip hub can pre-fill it
+  try {
+    const profile = JSON.parse(localStorage.getItem('raven_profile') || '{}');
+    const name = (profile.first_name || '').trim();
+    const url = name ? base + '&name=' + encodeURIComponent(name) : base;
+    window.location.href = url;
+  } catch(e) {
+    window.location.href = base;
   }
 }
 
