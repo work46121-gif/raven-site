@@ -172,6 +172,10 @@ footer{border-top:1px solid var(--border);padding:36px 52px;display:flex;align-i
 ::-webkit-scrollbar-track{background:var(--black)}
 ::-webkit-scrollbar-thumb{background:var(--dark4);border-radius:2px}
 
+/* NAV profile pic */
+#nav-uc a{display:inline-flex;align-items:center;gap:0}
+#nav-uc a img,#nav-uc a .nav-av{flex-shrink:0}
+
 @media(max-width:768px){
   .cur,.cur-ring{display:none}body{cursor:auto}
   nav{padding:0 16px;height:56px}
@@ -245,8 +249,13 @@ footer{border-top:1px solid var(--border);padding:36px 52px;display:flex;align-i
   <a href="#how" class="mml" onclick="toggleMob()">How It Works</a>
   <a href="#features" class="mml" onclick="toggleMob()">Features</a>
   <a href="#trips" class="mml" onclick="toggleMob()">Trip Hub</a>
-  <a href="dashboard.html" class="mml">Sign In</a>
-  <a href="dashboard.html" class="mml-cta">Get Started Free →</a>
+  <div id="mob-auth-links">
+    <a href="dashboard.html" class="mml">Sign In</a>
+    <a href="dashboard.html" class="mml-cta">Get Started Free →</a>
+  </div>
+  <div id="mob-user-link" style="display:none">
+    <a href="dashboard.html" class="mml-cta" id="mob-wb">Dashboard →</a>
+  </div>
 </div>
 
 <!-- HERO -->
@@ -324,8 +333,6 @@ footer{border-top:1px solid var(--border);padding:36px 52px;display:flex;align-i
     <h2 class="sec-h">Built for real groups.<br>Real situations.</h2>
   </div>
   <div class="bento reveal">
-
-    <!-- AI SCANNING BIG -->
     <div class="bc big cg">
       <span class="bi">✨</span>
       <div class="bt">AI Receipt Scanning</div>
@@ -336,16 +343,12 @@ footer{border-top:1px solid var(--border);padding:36px 52px;display:flex;align-i
         <div style="background:var(--dark2);border:1px solid var(--border);border-radius:10px;padding:12px 14px"><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px;font-weight:600">Scan time</div><div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--green)">3s</div></div>
       </div>
     </div>
-
-    <!-- SHAREABLE LINKS -->
     <div class="bc cp">
       <span class="bi">🔗</span>
       <div class="bt">One Link, Everyone's In</div>
       <p class="bd">Every bill gets a secure shareable link. Send it in your group chat — no account needed to view or pay. Works on any device, any browser.</p>
       <div class="b-accent ap">No signup for guests</div>
     </div>
-
-    <!-- TRIP HUB TALL -->
     <div class="bc tall co" id="trips">
       <span class="bi">✈️</span>
       <div class="bt">Trip Hub</div>
@@ -361,15 +364,11 @@ footer{border-top:1px solid var(--border);padding:36px 52px;display:flex;align-i
         <div style="padding:8px;border-top:1px solid var(--border)"><div style="font-size:10px;color:var(--muted);text-align:center">4 receipts · $345.20 total so far</div></div>
       </div>
     </div>
-
-    <!-- TRACKING -->
     <div class="bc cg">
       <span class="bi">📊</span>
       <div class="bt">Live Payment Tracking</div>
       <p class="bd">Your dashboard shows every bill in real time — who's paid, who hasn't, and how much you've collected. Across all your bills at once.</p>
     </div>
-
-    <!-- PAYMENT METHODS -->
     <div class="bc cp">
       <span class="bi">💳</span>
       <div class="bt">Pay Any Way</div>
@@ -381,14 +380,11 @@ footer{border-top:1px solid var(--border);padding:36px 52px;display:flex;align-i
         <div class="pchip"><div class="pci" style="background:#222;border:1px solid #444;font-size:8px">Pay</div>Apple Pay</div>
       </div>
     </div>
-
-    <!-- CONTACTS -->
     <div class="bc co">
       <span class="bi">👥</span>
       <div class="bt">Contacts & History</div>
       <p class="bd">Save your people. Add them to any bill in one tap from your contacts. Full history of every bill — paid, active, settled, or archived.</p>
     </div>
-
   </div>
 </section>
 
@@ -484,12 +480,39 @@ document.addEventListener('DOMContentLoaded',()=>{const i=document.getElementByI
   try{
     const{data:{session}}=await db.auth.getSession();
     if(session?.user){
+      // Hide sign-in / sign-up, show dashboard link
       document.getElementById('nav-si').style.display='none';
       document.getElementById('nav-cr').style.display='none';
       document.getElementById('nav-uc').style.display='list-item';
-      let fn='';
-      try{const local=JSON.parse(localStorage.getItem('raven_profile')||'{}');fn=local.first_name||'';if(!fn){const{data:p}=await db.from('profiles').select('first_name').eq('id',session.user.id).single();fn=p?.first_name||'';}}catch(e){}
-      document.getElementById('nav-wb').textContent=fn?`Hey, ${fn} →`:'Dashboard →';
+      document.getElementById('mob-auth-links').style.display='none';
+      document.getElementById('mob-user-link').style.display='block';
+
+      let fn='', avatarUrl='';
+      try{
+        const local=JSON.parse(localStorage.getItem('raven_profile')||'{}');
+        fn=local.first_name||'';
+        avatarUrl=local.avatar_url||'';
+        if(!fn||!avatarUrl){
+          const{data:p}=await db.from('profiles').select('first_name,avatar_url').eq('id',session.user.id).single();
+          fn=fn||p?.first_name||'';
+          avatarUrl=avatarUrl||p?.avatar_url||'';
+        }
+      }catch(e){}
+
+      const wb=document.getElementById('nav-wb');
+      const mwb=document.getElementById('mob-wb');
+      const greeting=fn?'Hey, '+fn:'Dashboard';
+
+      // Build avatar element
+      let avHtml='';
+      if(avatarUrl){
+        avHtml=`<img src="${avatarUrl}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;border:2px solid rgba(48,209,88,0.5);vertical-align:middle;margin-right:8px">`;
+      } else if(fn) {
+        avHtml=`<span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#7C3AED,#30D158);font-size:12px;font-weight:700;color:#fff;vertical-align:middle;margin-right:8px;flex-shrink:0">${fn[0].toUpperCase()}</span>`;
+      }
+
+      if(wb) wb.innerHTML=avHtml+greeting+' →';
+      if(mwb) mwb.innerHTML=avHtml+greeting+' →';
     }
   }catch(e){}
 })();
