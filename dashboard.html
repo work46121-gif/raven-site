@@ -465,14 +465,28 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
             </div>
             <div style="background:var(--dark);border:1px solid var(--border);border-radius:16px;padding:24px">
               <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-                <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted2)">Menu Items</div>
+                <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted2)">Split Method</div>
                 <div id="cb-item-count" style="font-size:12px;color:var(--muted)">0 items</div>
               </div>
-              <div id="cb-items-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px"></div>
-              <div style="display:flex;gap:8px;border-top:1px solid var(--border);padding-top:14px">
-                <input id="cb-item-name" type="text" class="add-person-input" placeholder="Add item" style="flex:1" onkeydown="if(event.key==='Enter')cbAddItem()">
-                <div style="position:relative;display:flex;align-items:center"><span style="position:absolute;left:10px;color:var(--muted);font-size:13px">$</span><input id="cb-item-price" type="number" class="add-person-input" placeholder="0.00" step="0.01" style="width:90px;padding-left:22px" onkeydown="if(event.key==='Enter')cbAddItem()"></div>
-                <button class="add-person-btn" onclick="cbAddItem()">+ Add</button>
+              <!-- Even / Itemized toggle -->
+              <div style="display:flex;gap:8px;margin-bottom:16px">
+                <button id="cb-split-even-btn" onclick="cbSetSplitMode('even')" style="flex:1;padding:10px;border-radius:9px;font-family:'Epilogue',sans-serif;font-size:13px;font-weight:700;cursor:pointer;background:rgba(48,209,88,0.12);border:1px solid rgba(48,209,88,0.3);color:var(--green)">⚖️ Split Evenly</button>
+                <button id="cb-split-item-btn" onclick="cbSetSplitMode('itemized')" style="flex:1;padding:10px;border-radius:9px;font-family:'Epilogue',sans-serif;font-size:13px;font-weight:700;cursor:pointer;background:var(--dark2);border:1px solid var(--border);color:var(--muted)">📋 Itemized</button>
+              </div>
+              <!-- Even split total input -->
+              <div id="cb-even-total-wrap" style="margin-bottom:14px">
+                <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:7px;font-weight:600">Total Amount</label>
+                <div style="position:relative"><span style="position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:14px">$</span><input id="cb-even-total" type="number" class="form-input" placeholder="0.00" step="0.01" style="padding-left:30px" oninput="cbUpdateSummary()"></div>
+                <div id="cb-even-preview" style="margin-top:10px;display:flex;flex-direction:column;gap:6px"></div>
+              </div>
+              <!-- Itemized items list -->
+              <div id="cb-itemized-wrap" style="display:none">
+                <div id="cb-items-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px"></div>
+                <div style="display:flex;gap:8px;border-top:1px solid var(--border);padding-top:14px">
+                  <input id="cb-item-name" type="text" class="add-person-input" placeholder="Add item" style="flex:1" onkeydown="if(event.key==='Enter')cbAddItem()">
+                  <div style="position:relative;display:flex;align-items:center"><span style="position:absolute;left:10px;color:var(--muted);font-size:13px">$</span><input id="cb-item-price" type="number" class="add-person-input" placeholder="0.00" step="0.01" style="width:90px;padding-left:22px" onkeydown="if(event.key==='Enter')cbAddItem()"></div>
+                  <button class="add-person-btn" onclick="cbAddItem()">+ Add</button>
+                </div>
               </div>
             </div>
             <button onclick="cbGoToStep(1)" style="background:none;border:none;color:var(--muted);font-family:'Epilogue',sans-serif;font-size:13px;cursor:pointer;text-align:left;padding:4px 0">← Back</button>
@@ -1087,20 +1101,74 @@ async function openPayModal(participantId, billId, amount) {
   payModalParticipantId = participantId; payModalBillId = billId;
   const amt = parseFloat(amount).toFixed(2);
   document.getElementById('pay-modal-amount').textContent = '$' + amt;
-  const { data: bill } = await db.from('bills').select('name, creator_phone').eq('id', billId).single();
-  document.getElementById('pay-modal-title').textContent = 'Pay for ' + (bill?.name || 'Bill');
-  let profile = null;
-  try { const res = await db.from('profiles').select('first_name,venmo,cashapp,zelle,applepay').eq('email', bill?.creator_phone).single(); profile = res.data; } catch(e) {}
-  const creatorName = profile?.first_name || 'the bill creator';
-  document.getElementById('pay-modal-sub').textContent = 'Send $' + amt + ' to ' + creatorName;
-  const methods = [];
-  if (profile?.venmo) { const handle = profile.venmo.startsWith('@') ? profile.venmo : '@' + profile.venmo; const clean = profile.venmo.replace('@',''); methods.push(`<a href="https://venmo.com/${clean}?txn=pay&note=Bill%20Payment&amount=${amt}" target="_blank" class="pay-method-row" style="background:#003d7a"><div class="pay-method-icon" style="background:#008CFF">V</div><div class="pay-method-info"><div class="pay-method-name">Venmo</div><div class="pay-method-handle">${handle}</div></div><div class="pay-method-arrow">→</div></a>`); }
-  if (profile?.cashapp) { const tag = profile.cashapp.startsWith('$') ? profile.cashapp : '$' + profile.cashapp; const clean = profile.cashapp.replace('$',''); methods.push(`<a href="https://cash.app/${clean}/${amt}" target="_blank" class="pay-method-row" style="background:#004d12"><div class="pay-method-icon" style="background:#00D632">$</div><div class="pay-method-info"><div class="pay-method-name">Cash App</div><div class="pay-method-handle">${tag}</div></div><div class="pay-method-arrow">→</div></a>`); }
-  if (profile?.zelle) { const zel = profile.zelle; methods.push(`<a href="#" onclick="navigator.clipboard.writeText(${JSON.stringify(zel)}).then(()=>showToast('Zelle info copied!','success'));return false" class="pay-method-row" style="background:#2a0a52"><div class="pay-method-icon" style="background:#6D1ED4">Z</div><div class="pay-method-info"><div class="pay-method-name">Zelle</div><div class="pay-method-handle">${zel} &middot; tap to copy</div></div><div class="pay-method-arrow">→</div></a>`); }
-  if (profile?.applepay) { const ap = profile.applepay; methods.push(`<a href="#" onclick="navigator.clipboard.writeText(${JSON.stringify(ap)}).then(()=>showToast('Apple Pay info copied!','success'));return false" class="pay-method-row" style="background:#1a1a1a"><div class="pay-method-icon" style="background:#333;border:1px solid #555;font-size:9px">Pay</div><div class="pay-method-info"><div class="pay-method-name">Apple Pay</div><div class="pay-method-handle">${ap} &middot; tap to copy</div></div><div class="pay-method-arrow">→</div></a>`); }
-  if (methods.length === 0) methods.push(`<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">No payment methods added yet.</div>`);
-  document.getElementById('pay-modal-methods').innerHTML = methods.join('');
+  document.getElementById('pay-modal-methods').innerHTML = '<div style="text-align:center;padding:16px;color:var(--muted);font-size:13px">Loading payment options...</div>';
   document.getElementById('cb-pay-modal').style.display = 'flex';
+
+  const { data: bill } = await db.from('bills').select('name, creator_phone').eq('id', billId).single();
+  document.getElementById('pay-modal-title').textContent = 'Pay ' + (bill?.name || 'Bill');
+
+  let profile = null;
+  const creatorEmail = bill?.creator_phone;
+
+  // Strategy 1: look up by email column
+  if (creatorEmail) {
+    try {
+      const { data } = await db.from('profiles').select('first_name,venmo,cashapp,zelle,applepay').eq('email', creatorEmail).maybeSingle();
+      if (data) profile = data;
+    } catch(e) {}
+  }
+
+  // Strategy 2: if current user IS the creator (viewing own bill), use their localStorage
+  if (!profile || (!profile.venmo && !profile.cashapp && !profile.zelle && !profile.applepay)) {
+    if (creatorEmail === currentUser?.email) {
+      try {
+        const local = JSON.parse(localStorage.getItem('raven_profile') || '{}');
+        if (local.venmo || local.cashapp || local.zelle || local.applepay) {
+          profile = { ...profile, ...local };
+        }
+      } catch(e) {}
+    }
+  }
+
+  // Strategy 3: fetch from DB by user id (look up auth user by email via admin-safe query)
+  if (!profile || (!profile.venmo && !profile.cashapp && !profile.zelle && !profile.applepay)) {
+    try {
+      const { data: rows } = await db.from('profiles').select('first_name,venmo,cashapp,zelle,applepay').neq('id', '00000000-0000-0000-0000-000000000000').limit(50);
+      // Find the profile whose email matches (email may be stored differently)
+      if (rows) {
+        const match = rows.find(r => r.email === creatorEmail);
+        if (match) profile = match;
+      }
+    } catch(e) {}
+  }
+
+  const creatorName = profile?.first_name || creatorEmail?.split('@')[0] || 'Bill creator';
+  document.getElementById('pay-modal-sub').textContent = 'Send $' + amt + ' to ' + creatorName;
+
+  const methods = [];
+  if (profile?.venmo) {
+    const handle = profile.venmo.startsWith('@') ? profile.venmo : '@' + profile.venmo;
+    const clean = profile.venmo.replace('@','');
+    methods.push(`<a href="venmo://paycharge?txn=pay&recipients=${clean}&amount=${amt}&note=Bill Payment" class="pay-method-row" style="background:#003d7a"><div class="pay-method-icon" style="background:#008CFF">V</div><div class="pay-method-info"><div class="pay-method-name">Venmo</div><div class="pay-method-handle">${handle}</div></div><div class="pay-method-arrow">→</div></a>`);
+  }
+  if (profile?.cashapp) {
+    const tag = profile.cashapp.startsWith('$') ? profile.cashapp : '$' + profile.cashapp;
+    const clean = profile.cashapp.replace('$','');
+    methods.push(`<a href="https://cash.app/$${clean}/${amt}" target="_blank" class="pay-method-row" style="background:#004d12"><div class="pay-method-icon" style="background:#00D632">$</div><div class="pay-method-info"><div class="pay-method-name">Cash App</div><div class="pay-method-handle">${tag}</div></div><div class="pay-method-arrow">→</div></a>`);
+  }
+  if (profile?.zelle) {
+    const zel = profile.zelle;
+    methods.push(`<a href="#" onclick="navigator.clipboard.writeText(${JSON.stringify(zel)}).then(()=>showToast('Zelle info copied!','success'));return false" class="pay-method-row" style="background:#2a0a52"><div class="pay-method-icon" style="background:#6D1ED4">Z</div><div class="pay-method-info"><div class="pay-method-name">Zelle</div><div class="pay-method-handle">${zel} · tap to copy</div></div><div class="pay-method-arrow">→</div></a>`);
+  }
+  if (profile?.applepay) {
+    const ap = profile.applepay;
+    methods.push(`<a href="#" onclick="navigator.clipboard.writeText(${JSON.stringify(ap)}).then(()=>showToast('Apple Pay info copied!','success'));return false" class="pay-method-row" style="background:#1a1a1a"><div class="pay-method-icon" style="background:#333;border:1px solid #555;font-size:9px"> Pay</div><div class="pay-method-info"><div class="pay-method-name">Apple Pay</div><div class="pay-method-handle">${ap} · tap to copy</div></div><div class="pay-method-arrow">→</div></a>`);
+  }
+
+  if (methods.length === 0) {
+    methods.push(`<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">No payment methods set up yet for ${creatorName}.<br><span style="font-size:11px">They need to add Venmo, Cash App, Zelle or Apple Pay in Settings.</span></div>`);
+  }
+  document.getElementById('pay-modal-methods').innerHTML = methods.join('');
 }
 
 async function cbMarkPaidOther() {
@@ -2319,7 +2387,29 @@ function cbGoToStep(step) {
   if (step === 3) cbBuildStep3();
 }
 
-function cbSkipToStep2() { cbGoToStep(2); cbRenderItems(); cbRenderPeople(); }
+let cbSplitMode = 'even'; // 'even' or 'itemized'
+
+function cbSetSplitMode(mode) {
+  cbSplitMode = mode;
+  const evenBtn = document.getElementById('cb-split-even-btn');
+  const itemBtn = document.getElementById('cb-split-item-btn');
+  const evenWrap = document.getElementById('cb-even-total-wrap');
+  const itemWrap = document.getElementById('cb-itemized-wrap');
+  if (mode === 'even') {
+    evenBtn.style.cssText = 'flex:1;padding:10px;border-radius:9px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;background:rgba(48,209,88,0.12);border:1px solid rgba(48,209,88,0.3);color:var(--green)';
+    itemBtn.style.cssText = 'flex:1;padding:10px;border-radius:9px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;background:var(--dark2);border:1px solid var(--border);color:var(--muted)';
+    if (evenWrap) evenWrap.style.display = 'block';
+    if (itemWrap) itemWrap.style.display = 'none';
+  } else {
+    evenBtn.style.cssText = 'flex:1;padding:10px;border-radius:9px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;background:var(--dark2);border:1px solid var(--border);color:var(--muted)';
+    itemBtn.style.cssText = 'flex:1;padding:10px;border-radius:9px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;background:rgba(124,58,237,0.12);border:1px solid rgba(124,58,237,0.3);color:var(--purple3)';
+    if (evenWrap) evenWrap.style.display = 'none';
+    if (itemWrap) itemWrap.style.display = 'block';
+  }
+  cbUpdateSummary();
+}
+
+function cbSkipToStep2() { cbGoToStep(2); cbRenderItems(); cbRenderPeople(); cbSetSplitMode(cbItems.length > 0 ? 'itemized' : 'even'); }
 function cbHandleFile(event) { const file = event.target.files[0]; if (file) cbLoadPhoto(file); }
 function cbHandleDrop(event) { event.preventDefault(); event.currentTarget.style.borderColor = 'rgba(48,209,88,0.3)'; const file = event.dataTransfer.files[0]; if (file) cbLoadPhoto(file); }
 
@@ -2461,6 +2551,7 @@ async function cbScanReceipt() {
         clearInterval(iv);
         if (data.bill_name && !document.getElementById('cb-name').value) document.getElementById('cb-name').value = data.bill_name;
         cbItems = data.items.map((item, i) => ({ id: Date.now() + i, name: item.name, price: parseFloat(item.price) || 0, assignees: [] }));
+        cbSplitMode = 'itemized'; // AI found items — switch to itemized mode
         if (data.tax) document.getElementById('cb-tax').value = parseFloat(data.tax).toFixed(2);
         if (data.tip) document.getElementById('cb-tip').value = parseFloat(data.tip).toFixed(2);
         document.getElementById('cb-scanning').style.display = 'none';
@@ -2608,9 +2699,22 @@ function cbToggleAssign(itemId, personName) {
 function cbCloseAssign() { document.getElementById('cb-assign-modal').style.display = 'none'; }
 
 function cbUpdateSummary() {
-  const subtotal = cbItems.reduce((s, i) => s + i.price, 0);
   const tax = parseFloat(document.getElementById('cb-tax')?.value) || 0;
   const tip = parseFloat(document.getElementById('cb-tip')?.value) || 0;
+  let subtotal = 0;
+  if (cbSplitMode === 'even') {
+    subtotal = parseFloat(document.getElementById('cb-even-total')?.value) || 0;
+    // Update even split preview
+    const preview = document.getElementById('cb-even-preview');
+    if (preview && cbPeople.length > 0 && subtotal > 0) {
+      const perPerson = (subtotal + tax + tip) / cbPeople.length;
+      preview.innerHTML = cbPeople.map(p =>
+        '<div style="display:flex;justify-content:space-between;font-size:13px;padding:6px 0;border-bottom:1px solid var(--border)"><span style="color:var(--muted)">@' + p + '</span><span style="color:var(--green);font-weight:700">$' + perPerson.toFixed(2) + '</span></div>'
+      ).join('');
+    } else if (preview) { preview.innerHTML = ''; }
+  } else {
+    subtotal = cbItems.reduce((s, i) => s + i.price, 0);
+  }
   const total = subtotal + tax + tip;
   if (document.getElementById('cb-subtotal')) document.getElementById('cb-subtotal').textContent = '$' + subtotal.toFixed(2);
   if (document.getElementById('cb-tax-display')) document.getElementById('cb-tax-display').textContent = '$' + tax.toFixed(2);
@@ -2620,32 +2724,61 @@ function cbUpdateSummary() {
 
 function cbBuildStep3() {
   const name = document.getElementById('cb-name').value || 'Untitled Bill';
-  const subtotal = cbItems.reduce((s, i) => s + i.price, 0);
   const tax = parseFloat(document.getElementById('cb-tax')?.value) || 0;
   const tip = parseFloat(document.getElementById('cb-tip')?.value) || 0;
-  const total = subtotal + tax + tip;
-  const sharedPer = cbPeople.length > 0 ? (tax + tip) / cbPeople.length : 0;
+  let total, personAmounts = {};
+
+  if (cbSplitMode === 'even') {
+    const base = parseFloat(document.getElementById('cb-even-total')?.value) || 0;
+    total = base + tax + tip;
+    const per = cbPeople.length > 0 ? total / cbPeople.length : 0;
+    cbPeople.forEach(p => { personAmounts[p] = per; });
+  } else {
+    const subtotal = cbItems.reduce((s, i) => s + i.price, 0);
+    total = subtotal + tax + tip;
+    const sharedPer = cbPeople.length > 0 ? (tax + tip) / cbPeople.length : 0;
+    cbPeople.forEach(p => {
+      let pt = sharedPer;
+      cbItems.forEach(item => { if (item.assignees.includes(p)) pt += item.price / item.assignees.length; else if (item.assignees.length === 0) pt += item.price / cbPeople.length; });
+      personAmounts[p] = pt;
+    });
+  }
+
   document.getElementById('cb-final-name').textContent = name;
-  document.getElementById('cb-final-meta').textContent = cbItems.length + ' items · $' + total.toFixed(2);
+  document.getElementById('cb-final-meta').textContent = (cbSplitMode === 'even' ? 'Split evenly' : cbItems.length + ' items') + ' · $' + total.toFixed(2);
   document.getElementById('cb-final-total').textContent = '$' + total.toFixed(2);
   const list = document.getElementById('cb-per-person-list');
-  if (cbPeople.length === 0) { list.innerHTML = '<div style="color:var(--muted);font-size:13px">No people added — go back and add people</div>'; return; }
-  list.innerHTML = cbPeople.map(person => {
-    let personTotal = sharedPer;
-    cbItems.forEach(item => { if (item.assignees.includes(person)) personTotal += item.price / item.assignees.length; else if (item.assignees.length === 0) personTotal += item.price / cbPeople.length; });
-    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--dark2);border:1px solid var(--border);border-radius:10px"><div><div style="font-weight:600;font-size:14px">@' + person + '</div><div style="font-size:11px;color:var(--muted);margin-top:2px">items + shared charges</div></div><div style="font-family:\'Bebas Neue\',sans-serif;font-size:24px;color:var(--green)">$' + personTotal.toFixed(2) + '</div></div>';
-  }).join('');
+  if (cbPeople.length === 0) { list.innerHTML = '<div style="color:var(--muted);font-size:13px">No people added</div>'; return; }
+  list.innerHTML = cbPeople.map(person =>
+    '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--dark2);border:1px solid var(--border);border-radius:10px"><div><div style="font-weight:600;font-size:14px">@' + person + '</div><div style="font-size:11px;color:var(--muted);margin-top:2px">' + (cbSplitMode === 'even' ? 'even share' : 'items + shared charges') + '</div></div><div style="font-family:\'Bebas Neue\',sans-serif;font-size:24px;color:var(--green)">$' + (personAmounts[person]||0).toFixed(2) + '</div></div>'
+  ).join('');
 }
 
 async function cbCreateFinalBill() {
   const name = document.getElementById('cb-name').value.trim();
   if (!name) return showToast('Enter a bill name', 'error');
   if (cbPeople.length === 0) return showToast('Add at least one person', 'error');
-  const subtotal = cbItems.reduce((s, i) => s + i.price, 0);
   const tax = parseFloat(document.getElementById('cb-tax')?.value) || 0;
   const tip = parseFloat(document.getElementById('cb-tip')?.value) || 0;
-  const total = subtotal + tax + tip;
-  const sharedPer = (tax + tip) / cbPeople.length;
+  let total, personAmounts = {};
+
+  if (cbSplitMode === 'even') {
+    const base = parseFloat(document.getElementById('cb-even-total')?.value) || 0;
+    if (base <= 0) return showToast('Enter the total amount', 'error');
+    total = base + tax + tip;
+    const per = total / cbPeople.length;
+    cbPeople.forEach(p => { personAmounts[p] = per; });
+  } else {
+    const subtotal = cbItems.reduce((s, i) => s + i.price, 0);
+    if (subtotal <= 0 && cbItems.length === 0) return showToast('Add at least one item', 'error');
+    total = subtotal + tax + tip;
+    const sharedPer = (tax + tip) / cbPeople.length;
+    cbPeople.forEach(p => {
+      let pt = sharedPer;
+      cbItems.forEach(item => { if (item.assignees.includes(p)) pt += item.price / item.assignees.length; else if (item.assignees.length === 0) pt += item.price / cbPeople.length; });
+      personAmounts[p] = pt;
+    });
+  }
   const btn = document.getElementById('cb-final-btn');
   btn.textContent = 'Creating...'; btn.disabled = true;
   const billId = generateId();
@@ -2657,7 +2790,13 @@ async function cbCreateFinalBill() {
     const { error: err2 } = await db.from('bills').insert({ id: billId, creator_phone: currentUser.email, name, total, per_person: total / cbPeople.length, status: 'active', share_token: shareToken });
     if (err2) { btn.textContent = '🪶 Create Bill'; btn.disabled = false; return showToast('Error creating bill', 'error'); }
   }
-  const rows = cbPeople.map(person => { let personTotal = sharedPer; cbItems.forEach(item => { if (item.assignees.includes(person)) personTotal += item.price / item.assignees.length; else if (item.assignees.length === 0) personTotal += item.price / cbPeople.length; }); return { bill_id: billId, phone: 'unknown_' + person.toLowerCase().replace(/\s+/g,'_') + '_' + billId, name: person, amount: personTotal, paid: false }; });
+  const rows = cbPeople.map(person => ({
+    bill_id: billId,
+    phone: 'unknown_' + person.toLowerCase().replace(/\s+/g,'_') + '_' + billId,
+    name: person,
+    amount: personAmounts[person] || 0,
+    paid: false
+  }));
   await db.from('participants').insert(rows);
   if (cbItems.length > 0) {
     const { data: savedItems } = await db.from('receipt_items').insert(cbItems.map(item => ({ bill_id: billId, name: item.name, price: item.price }))).select();
@@ -2669,7 +2808,7 @@ async function cbCreateFinalBill() {
   }
   btn.textContent = '🪶 Create Bill'; btn.disabled = false;
   showToast('✅ "' + name + '" created! ID: ' + billId, 'success');
-  cbItems = []; cbPeople = []; cbImageBase64 = null;
+  cbItems = []; cbPeople = []; cbImageBase64 = null; cbSplitMode = 'even';
   document.getElementById('cb-name').value = '';
   if (document.getElementById('cb-tax')) document.getElementById('cb-tax').value = '';
   if (document.getElementById('cb-tip')) document.getElementById('cb-tip').value = '';
