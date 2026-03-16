@@ -2327,7 +2327,12 @@ function cbLoadPhoto(file) {
   cbImageMediaType = file.type || 'image/jpeg';
   const reader = new FileReader();
   reader.onload = async e => {
-    const resized = await cbResizeImage(e.target.result, 1600);
+    // For screenshots (PNG), keep as PNG to preserve text clarity
+    // For photos (JPEG), resize to 2048px at high quality
+    const isPNG = file.type === 'image/png';
+    const resized = await cbResizeImage(e.target.result, 2048, isPNG ? 'image/png' : 'image/jpeg', isPNG ? 1.0 : 0.92);
+    // Update media type in case we kept PNG
+    cbImageMediaType = isPNG ? 'image/png' : 'image/jpeg';
     cbImageBase64 = resized.split(',')[1];
     document.getElementById('cb-preview-img').src = resized;
     document.getElementById('cb-empty-state').style.display = 'none';
@@ -2337,13 +2342,21 @@ function cbLoadPhoto(file) {
   reader.readAsDataURL(file);
 }
 
-function cbResizeImage(dataUrl, maxSize) {
+function cbResizeImage(dataUrl, maxSize, outputType, quality) {
+  outputType = outputType || 'image/jpeg';
+  quality = quality || 0.92;
   return new Promise(resolve => {
     const img = new Image();
     img.onload = function() {
       let { width, height } = img;
-      if (width > maxSize || height > maxSize) { if (width > height) { height = Math.round(height * maxSize / width); width = maxSize; } else { width = Math.round(width * maxSize / height); height = maxSize; } }
-      const canvas = document.createElement('canvas'); canvas.width = width; canvas.height = height; canvas.getContext('2d').drawImage(img, 0, 0, width, height); resolve(canvas.toDataURL('image/jpeg', 0.88));
+      if (width > maxSize || height > maxSize) {
+        if (width > height) { height = Math.round(height * maxSize / width); width = maxSize; }
+        else { width = Math.round(width * maxSize / height); height = maxSize; }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width; canvas.height = height;
+      canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+      resolve(canvas.toDataURL(outputType, quality));
     };
     img.src = dataUrl;
   });
