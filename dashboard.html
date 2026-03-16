@@ -312,6 +312,7 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
       <button class="nav-item" onclick="showPage('active-bills')"><span class="ni">📋</span> Active Bills <span class="nav-badge" id="active-count">0</span></button>
       <button class="nav-item" onclick="showPage('create-bill')"><span class="ni">➕</span> Create Bill</button>
       <button class="nav-item" onclick="showPage('trip-hub')"><span class="ni">✈️</span> Trip Hub</button>
+      <button class="nav-item" onclick="showPage('friends')"><span class="ni">👥</span> Friends</button>
       <button class="nav-item" onclick="showPage('history')"><span class="ni">🕐</span> History</button>
       <button class="nav-item" onclick="showPage('settings')"><span class="ni">⚙️</span> Settings</button>
     </nav>
@@ -560,7 +561,65 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
     </div>
 
     <!-- SETTINGS -->
-    <div id="page-settings" class="page">
+    <!-- FRIENDS PAGE -->
+    <div id="page-friends" class="page">
+      <div class="page-header"><h1 class="page-title">Friends <span>& Contacts</span></h1></div>
+
+      <!-- Your Raven ID card -->
+      <div style="background:linear-gradient(135deg,rgba(124,58,237,0.15),rgba(48,209,88,0.08));border:1px solid rgba(124,58,237,0.25);border-radius:16px;padding:20px 24px;margin-bottom:24px;max-width:520px">
+        <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--purple3);margin-bottom:10px">🪶 Your Raven ID</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+          <div>
+            <div id="my-raven-id-display" style="font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:0.05em;color:var(--white)">@loading...</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:2px">Share this ID so friends can find you on RAVEN</div>
+          </div>
+          <button onclick="copyRavenId()" style="padding:9px 16px;background:rgba(124,58,237,0.15);border:1px solid rgba(124,58,237,0.3);border-radius:9px;color:var(--purple3);font-family:'Epilogue',sans-serif;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap">📋 Copy</button>
+        </div>
+      </div>
+
+      <!-- Search -->
+      <div style="max-width:520px;margin-bottom:24px">
+        <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted2);margin-bottom:10px">Find People</div>
+        <div style="display:flex;gap:10px">
+          <input id="friend-search-input" type="text" placeholder="Search by @ravenid or name..." class="form-input" style="flex:1" onkeydown="if(event.key==='Enter')searchFriends()">
+          <button onclick="searchFriends()" style="padding:12px 18px;background:var(--purple);border:none;border-radius:10px;color:#fff;font-family:'Epilogue',sans-serif;font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap">Search</button>
+        </div>
+        <div id="friend-search-results" style="margin-top:12px;display:flex;flex-direction:column;gap:8px"></div>
+      </div>
+
+      <!-- Pending requests -->
+      <div style="max-width:520px;margin-bottom:24px" id="friend-requests-section" style="display:none">
+        <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted2);margin-bottom:10px">Friend Requests <span id="friend-req-count" style="background:var(--purple);color:#fff;border-radius:8px;padding:2px 7px;font-size:10px;margin-left:4px"></span></div>
+        <div id="friend-requests-list" style="display:flex;flex-direction:column;gap:8px"></div>
+      </div>
+
+      <!-- Friends list -->
+      <div style="max-width:520px">
+        <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted2);margin-bottom:10px">My Friends</div>
+        <div id="friends-list" style="display:flex;flex-direction:column;gap:8px">
+          <div class="loading"><div class="spinner"></div> Loading...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROFILE CARD MODAL -->
+    <div id="profile-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);backdrop-filter:blur(12px);z-index:700;align-items:center;justify-content:center;padding:20px" onclick="if(event.target.id==='profile-modal')closeProfileModal()">
+      <div style="background:var(--dark);border:1px solid var(--border2);border-radius:20px;width:100%;max-width:400px;overflow:hidden">
+        <div style="height:80px;background:linear-gradient(135deg,var(--purple),var(--green));position:relative">
+          <button onclick="closeProfileModal()" style="position:absolute;top:12px;right:12px;background:rgba(0,0,0,0.3);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:14px">✕</button>
+        </div>
+        <div style="padding:0 24px 28px;margin-top:-36px">
+          <div id="pm-avatar" style="width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,var(--purple),var(--green));border:3px solid var(--dark);display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:700;color:#fff;overflow:hidden;margin-bottom:12px"></div>
+          <div id="pm-name" style="font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:0.04em;margin-bottom:2px"></div>
+          <div id="pm-raven-id" style="font-size:13px;color:var(--purple3);font-weight:600;margin-bottom:6px"></div>
+          <div id="pm-email" style="font-size:12px;color:var(--muted);margin-bottom:18px"></div>
+          <div id="pm-payment-methods" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px"></div>
+          <div id="pm-action-btn"></div>
+        </div>
+      </div>
+    </div>
+
+<div id="page-settings" class="page">
       <div class="page-header"><h1 class="page-title">Account <span>Settings</span></h1></div>
       <div id="mob-quick-nav" style="display:none;margin-bottom:20px">
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:20px">
@@ -595,6 +654,15 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
           <div class="form-group"><label class="form-label">Last Name</label><input id="set-last" type="text" class="form-input" placeholder="Smith"></div>
           <div class="form-group"><label class="form-label">Phone Number</label><input id="set-phone" type="tel" class="form-input" placeholder="+1 (555) 000-0000"></div>
           <div class="form-group"><label class="form-label">Email</label><input id="set-email" type="text" class="form-input" disabled style="opacity:0.5;cursor:not-allowed"></div>
+          <div class="form-group">
+            <label class="form-label" style="display:flex;align-items:center;gap:8px">🪶 Raven ID <span style="font-size:11px;color:var(--muted);font-weight:400">— how friends find you</span></label>
+            <div style="display:flex;gap:8px;align-items:center">
+              <span style="color:var(--purple3);font-size:16px;font-weight:700;flex-shrink:0">@</span>
+              <input id="set-raven-id" type="text" class="form-input" placeholder="yourhandle" style="flex:1" oninput="this.value=this.value.toLowerCase().replace(/[^a-z0-9_]/g,'')">
+              <button onclick="checkRavenId()" style="padding:10px 14px;background:rgba(124,58,237,0.12);border:1px solid rgba(124,58,237,0.25);border-radius:9px;color:var(--purple3);font-family:'Epilogue',sans-serif;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">Check</button>
+            </div>
+            <div id="raven-id-status" style="font-size:12px;margin-top:6px"></div>
+          </div>
         </div>
       </div>
       <div style="max-width:520px;margin-bottom:20px">
@@ -1034,6 +1102,7 @@ async function loadSettings() {
       if (profile.cashapp) document.getElementById('set-cashapp').value = profile.cashapp;
       if (profile.zelle) document.getElementById('set-zelle').value = profile.zelle;
       if (profile.applepay) document.getElementById('set-applepay').value = profile.applepay || '';
+      if (profile.raven_id) document.getElementById('set-raven-id').value = profile.raven_id;
       if (profile.avatar_url) renderAvatar(profile.avatar_url, profile.first_name);
       else if (profile.first_name) renderAvatar(null, profile.first_name);
       const displayName = [profile.first_name, profile.last_name].filter(Boolean).join(' ') || currentUser.email;
@@ -1094,7 +1163,9 @@ async function handleAvatarUpload(event) {
 async function saveSettings() {
   const btn = document.getElementById('save-settings-btn');
   btn.textContent = 'Saving...'; btn.disabled = true;
+  const ravenIdInput = document.getElementById('set-raven-id').value.trim().toLowerCase().replace(/[^a-z0-9_]/g,'');
   const data = { id: currentUser.id, email: currentUser.email, first_name: document.getElementById('set-first').value.trim(), last_name: document.getElementById('set-last').value.trim(), phone: document.getElementById('set-phone').value.trim(), venmo: document.getElementById('set-venmo').value.trim(), cashapp: document.getElementById('set-cashapp').value.trim(), zelle: document.getElementById('set-zelle').value.trim(), applepay: document.getElementById('set-applepay').value.trim(), onboarding_complete: true, updated_at: new Date().toISOString() };
+  if (ravenIdInput) data.raven_id = ravenIdInput;
   try {
     await db.from('profiles').upsert(data, { onConflict: 'id' });
     const existing = JSON.parse(localStorage.getItem('raven_profile') || '{}');
@@ -1183,14 +1254,15 @@ function showPage(page) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('page-' + page).classList.add('active');
-  const navMap = { 'overview': 0, 'active-bills': 1, 'create-bill': 2, 'trip-hub': 3, 'history': 4, 'settings': 5 };
+  const navMap = { 'overview': 0, 'active-bills': 1, 'create-bill': 2, 'trip-hub': 3, 'friends': 4, 'history': 5, 'settings': 6 };
   document.querySelectorAll('.nav-item')[navMap[page]]?.classList.add('active');
-  const mobMap = { 'overview':'mob-overview','active-bills':'mob-bills','create-bill':'mob-create','trip-hub':'mob-trip','settings':'mob-settings','history':'mob-settings' };
+  const mobMap = { 'overview':'mob-overview','active-bills':'mob-bills','create-bill':'mob-create','trip-hub':'mob-trip','friends':'mob-settings','settings':'mob-settings','history':'mob-settings' };
   if (mobMap[page]) setMobNav(mobMap[page]);
   if (page === 'active-bills') loadActiveBills();
   if (page === 'history') loadHistory();
   if (page === 'settings') loadSettings();
   if (page === 'trip-hub') loadTrips();
+  if (page === 'friends') loadFriendsPage();
 }
 
 async function loadAllData() {
@@ -1348,6 +1420,9 @@ async function loadContactsForPicker() {
   );
   const names = new Set();
   allContacts = [];
+  // Raven friends first — they're the most relevant
+  const friends = await enrichContactsWithFriends();
+  (friends||[]).forEach(f => { if (f.name && !names.has(f.name.toLowerCase())) { names.add(f.name.toLowerCase()); allContacts.push({ name: f.name, source: 'friends' }); } });
   (phone || []).forEach(c => { if (!names.has(c.name.toLowerCase())) { names.add(c.name.toLowerCase()); allContacts.push({ name: c.name, phone: c.phone, source: 'contacts' }); } });
   (prev || []).forEach(p => { if (p.name && !names.has(p.name.toLowerCase()) && !p.name.startsWith('unknown_')) { names.add(p.name.toLowerCase()); allContacts.push({ name: p.name, source: 'history' }); } });
   allContacts.sort((a, b) => a.name.localeCompare(b.name));
@@ -1357,12 +1432,14 @@ async function loadContactsForPicker() {
 function renderContactsList(contacts) {
   const currentPeople = contactsPickerTarget === 'bill' ? cbPeople : tripPeople;
   const container = document.getElementById('contacts-list');
-  if (contacts.length === 0) { container.innerHTML = '<div style="text-align:center;padding:24px;color:var(--muted);font-size:13px">No contacts found.<br>Add contacts via SMS: ADD Jake 3477887944</div>'; return; }
+  if (contacts.length === 0) { container.innerHTML = '<div style="text-align:center;padding:24px;color:var(--muted);font-size:13px">No contacts found.<br>Add friends on the Friends page to see them here.</div>'; return; }
   container.innerHTML = contacts.map(c => {
     const isAdded = currentPeople.includes(c.name);
-    return '<div style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:' + (isAdded ? 'rgba(48,209,88,0.08)' : 'var(--dark3)') + ';border:1px solid ' + (isAdded ? 'rgba(48,209,88,0.25)' : 'var(--border)') + ';border-radius:10px;cursor:pointer" onclick="toggleContactPick(' + JSON.stringify(c.name) + ')">'
-      + '<div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--purple),var(--green));display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0">' + c.name[0].toUpperCase() + '</div>'
-      + '<div style="flex:1"><div style="font-size:14px;font-weight:600">' + c.name + '</div><div style="font-size:11px;color:var(--muted)">' + (c.phone || (c.source === 'history' ? 'Past bill' : '')) + '</div></div>'
+    const isFriend = c.source === 'friends';
+    const badge = isFriend ? '<span style="font-size:10px;background:rgba(124,58,237,0.15);border:1px solid rgba(124,58,237,0.25);color:var(--purple3);padding:2px 6px;border-radius:6px;font-weight:600">🪶 Raven</span>' : (c.source === 'history' ? '<span style="font-size:10px;color:var(--muted)">Past bill</span>' : '');
+    return '<div style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:' + (isAdded ? 'rgba(48,209,88,0.08)' : isFriend ? 'rgba(124,58,237,0.04)' : 'var(--dark3)') + ';border:1px solid ' + (isAdded ? 'rgba(48,209,88,0.25)' : isFriend ? 'rgba(124,58,237,0.2)' : 'var(--border)') + ';border-radius:10px;cursor:pointer" onclick="toggleContactPick(' + JSON.stringify(c.name) + ')">'
+      + '<div style="width:36px;height:36px;border-radius:50%;background:' + avatarGradients[c.name.charCodeAt(0) % avatarGradients.length] + ';display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0">' + c.name[0].toUpperCase() + '</div>'
+      + '<div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:600">' + c.name + '</div><div style="font-size:11px;color:var(--muted);margin-top:2px">' + badge + '</div></div>'
       + (isAdded ? '<span style="color:var(--green);font-size:18px">✓</span>' : '<span style="color:var(--muted);font-size:18px">+</span>')
       + '</div>';
   }).join('');
@@ -1635,6 +1712,281 @@ async function confirmDeleteTrip(tripId, tripName) {
     showToast('Trip deleted', 'success');
     loadTrips();
   } catch(e) { showToast('Error deleting trip', 'error'); btn.textContent = '🗑 Delete This Trip Forever'; btn.disabled = false; }
+}
+
+// ─── FRIENDS ──────────────────────────────────────────────────────────────────
+
+const avatarGradients = ['linear-gradient(135deg,#7C3AED,#A855F7)','linear-gradient(135deg,#E8633A,#FF6B35)','linear-gradient(135deg,#0EA5E9,#7C3AED)','linear-gradient(135deg,#30D158,#0EA5E9)','linear-gradient(135deg,#F59E0B,#EF4444)','linear-gradient(135deg,#EC4899,#8B5CF6)'];
+
+function friendAvatar(name, url, size) {
+  const s = size || 40;
+  if (url) return '<div style="width:'+s+'px;height:'+s+'px;border-radius:50%;overflow:hidden;flex-shrink:0"><img src="'+url+'" style="width:100%;height:100%;object-fit:cover"></div>';
+  const g = avatarGradients[(name||'A').charCodeAt(0) % avatarGradients.length];
+  return '<div style="width:'+s+'px;height:'+s+'px;border-radius:50%;background:'+g+';display:flex;align-items:center;justify-content:center;font-size:'+(s*0.35)+'px;font-weight:700;color:#fff;flex-shrink:0">'+(name||'?')[0].toUpperCase()+'</div>';
+}
+
+async function loadFriendsPage() {
+  // Load my Raven ID
+  try {
+    const { data: me } = await db.from('profiles').select('raven_id,first_name').eq('id', currentUser.id).single();
+    const rid = me?.raven_id || '';
+    const display = document.getElementById('my-raven-id-display');
+    if (display) display.textContent = rid ? '@' + rid : '⚠️ Set your Raven ID in Settings';
+  } catch(e) {}
+
+  await loadFriendRequests();
+  await loadFriendsList();
+}
+
+async function copyRavenId() {
+  const el = document.getElementById('my-raven-id-display');
+  const text = el ? el.textContent : '';
+  if (!text || text.includes('Set your')) { showToast('Set your Raven ID in Settings first', 'error'); showPage('settings'); return; }
+  try { await navigator.clipboard.writeText(text); showToast('Raven ID copied! ' + text, 'success'); } catch(e) { showToast(text, 'success'); }
+}
+
+async function checkRavenId() {
+  const val = document.getElementById('set-raven-id').value.trim().toLowerCase();
+  const status = document.getElementById('raven-id-status');
+  if (!val) { status.textContent = ''; return; }
+  if (val.length < 3) { status.style.color = 'var(--muted)'; status.textContent = 'Too short — minimum 3 characters'; return; }
+  const { data } = await db.from('profiles').select('id').eq('raven_id', val).neq('id', currentUser.id).maybeSingle();
+  if (data) { status.style.color = '#FF6B6B'; status.textContent = '✗ @' + val + ' is taken'; }
+  else { status.style.color = 'var(--green)'; status.textContent = '✓ @' + val + ' is available'; }
+}
+
+async function searchFriends() {
+  const query = document.getElementById('friend-search-input').value.trim().toLowerCase().replace('@','');
+  const container = document.getElementById('friend-search-results');
+  if (!query) { container.innerHTML = ''; return; }
+  container.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:8px 0">Searching...</div>';
+  try {
+    // Search by raven_id or first_name
+    const { data: results } = await db.from('profiles')
+      .select('id,first_name,last_name,raven_id,avatar_url,venmo,cashapp,applepay')
+      .or('raven_id.ilike.%' + query + '%,first_name.ilike.%' + query + '%')
+      .neq('id', currentUser.id)
+      .limit(8);
+
+    if (!results || results.length === 0) {
+      container.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:8px 0">No users found for "' + query + '"</div>';
+      return;
+    }
+
+    // Get existing friend statuses
+    const { data: existing } = await db.from('raven_friends')
+      .select('friend_id,user_id,status')
+      .or('user_id.eq.' + currentUser.id + ',friend_id.eq.' + currentUser.id);
+    const friendMap = {};
+    (existing || []).forEach(f => {
+      const otherId = f.user_id === currentUser.id ? f.friend_id : f.user_id;
+      friendMap[otherId] = f.status;
+    });
+
+    container.innerHTML = '';
+    results.forEach(p => {
+      const status = friendMap[p.id];
+      const name = [p.first_name, p.last_name].filter(Boolean).join(' ') || p.raven_id || 'Unknown';
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--dark);border:1px solid var(--border);border-radius:12px;cursor:pointer';
+      row.innerHTML = friendAvatar(name, p.avatar_url, 40)
+        + '<div style="flex:1;min-width:0">'
+        + '<div style="font-size:14px;font-weight:600">' + name + '</div>'
+        + (p.raven_id ? '<div style="font-size:12px;color:var(--purple3)">@' + p.raven_id + '</div>' : '<div style="font-size:12px;color:var(--muted)">No Raven ID set</div>')
+        + '</div>';
+
+      let actionBtn = document.createElement('button');
+      actionBtn.style.cssText = 'padding:8px 14px;border-radius:9px;font-family:\'Epilogue\',sans-serif;font-size:12px;font-weight:700;cursor:pointer;border:1px solid;white-space:nowrap;flex-shrink:0';
+      if (status === 'accepted') {
+        actionBtn.textContent = '✓ Friends';
+        actionBtn.style.cssText += 'background:rgba(48,209,88,0.08);border-color:rgba(48,209,88,0.2);color:var(--green)';
+        actionBtn.onclick = (e) => { e.stopPropagation(); openProfileModal(p); };
+      } else if (status === 'pending') {
+        actionBtn.textContent = '⏳ Pending';
+        actionBtn.style.cssText += 'background:rgba(255,255,255,0.05);border-color:var(--border);color:var(--muted)';
+      } else {
+        actionBtn.textContent = '+ Add Friend';
+        actionBtn.style.cssText += 'background:rgba(124,58,237,0.12);border-color:rgba(124,58,237,0.3);color:var(--purple3)';
+        actionBtn.onclick = async (e) => { e.stopPropagation(); await sendFriendRequest(p.id, name, actionBtn); };
+      }
+      row.appendChild(actionBtn);
+      row.addEventListener('click', () => openProfileModal(p));
+      container.appendChild(row);
+    });
+  } catch(e) { container.innerHTML = '<div style="color:#FF6B6B;font-size:13px;padding:8px 0">Error searching — try again</div>'; }
+}
+
+async function sendFriendRequest(friendId, friendName, btn) {
+  btn.textContent = 'Sending...'; btn.disabled = true;
+  try {
+    const { error } = await db.from('raven_friends').insert({ user_id: currentUser.id, friend_id: friendId, status: 'pending' });
+    if (error && error.code === '23505') { btn.textContent = '⏳ Pending'; btn.disabled = false; return; }
+    if (error) throw error;
+    btn.textContent = '⏳ Pending';
+    btn.style.background = 'rgba(255,255,255,0.05)';
+    btn.style.color = 'var(--muted)';
+    btn.disabled = false;
+    showToast('Friend request sent to ' + friendName + '!', 'success');
+  } catch(e) { showToast('Error sending request', 'error'); btn.textContent = '+ Add Friend'; btn.disabled = false; }
+}
+
+async function loadFriendRequests() {
+  const section = document.getElementById('friend-requests-section');
+  const list    = document.getElementById('friend-requests-list');
+  const count   = document.getElementById('friend-req-count');
+  if (!list) return;
+  try {
+    const { data: requests } = await db.from('raven_friends')
+      .select('id,user_id,status')
+      .eq('friend_id', currentUser.id)
+      .eq('status', 'pending');
+    if (!requests || requests.length === 0) { if (section) section.style.display = 'none'; return; }
+    // Fetch requester profiles
+    const ids = requests.map(r => r.user_id);
+    const { data: profiles } = await db.from('profiles').select('id,first_name,last_name,raven_id,avatar_url').in('id', ids);
+    const profMap = {};
+    (profiles||[]).forEach(p => { profMap[p.id] = p; });
+    if (section) section.style.display = 'block';
+    if (count) count.textContent = requests.length;
+    list.innerHTML = '';
+    requests.forEach(req => {
+      const p = profMap[req.user_id] || {};
+      const name = [p.first_name, p.last_name].filter(Boolean).join(' ') || p.raven_id || 'Someone';
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--dark);border:1px solid rgba(124,58,237,0.2);border-radius:12px';
+      row.innerHTML = friendAvatar(name, p.avatar_url, 38)
+        + '<div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:600">' + name + '</div>'
+        + (p.raven_id ? '<div style="font-size:12px;color:var(--purple3)">@' + p.raven_id + '</div>' : '') + '</div>';
+      const acceptBtn = document.createElement('button');
+      acceptBtn.textContent = '✓ Accept';
+      acceptBtn.style.cssText = 'padding:7px 12px;background:rgba(48,209,88,0.12);border:1px solid rgba(48,209,88,0.3);border-radius:8px;color:var(--green);font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;margin-right:6px';
+      acceptBtn.onclick = async () => {
+        await db.from('raven_friends').update({ status: 'accepted' }).eq('id', req.id);
+        // Create reciprocal friendship
+        await db.from('raven_friends').upsert({ user_id: currentUser.id, friend_id: req.user_id, status: 'accepted' }, { onConflict: 'user_id,friend_id' });
+        row.remove(); showToast('Now friends with ' + name + '! 🎉', 'success');
+        loadFriendsList();
+        const remaining = list.children.length;
+        if (remaining === 0 && section) section.style.display = 'none';
+      };
+      const declineBtn = document.createElement('button');
+      declineBtn.textContent = '✕';
+      declineBtn.style.cssText = 'padding:7px 10px;background:rgba(255,68,68,0.08);border:1px solid rgba(255,68,68,0.2);border-radius:8px;color:#FF6B6B;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer';
+      declineBtn.onclick = async () => {
+        await db.from('raven_friends').delete().eq('id', req.id);
+        row.remove();
+        if (list.children.length === 0 && section) section.style.display = 'none';
+      };
+      row.appendChild(acceptBtn); row.appendChild(declineBtn);
+      list.appendChild(row);
+    });
+  } catch(e) { console.log('friend requests error:', e); }
+}
+
+async function loadFriendsList() {
+  const container = document.getElementById('friends-list');
+  if (!container) return;
+  container.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+  try {
+    const { data: friendships } = await db.from('raven_friends')
+      .select('user_id,friend_id')
+      .or('user_id.eq.' + currentUser.id + ',friend_id.eq.' + currentUser.id)
+      .eq('status', 'accepted');
+    if (!friendships || friendships.length === 0) {
+      container.innerHTML = '<div style="text-align:center;padding:32px;color:var(--muted);font-size:14px"><div style="font-size:36px;margin-bottom:10px">👥</div><div style="font-weight:600;margin-bottom:4px">No friends yet</div><div>Search for people by their @RavenID above</div></div>';
+      return;
+    }
+    const friendIds = [...new Set(friendships.map(f => f.user_id === currentUser.id ? f.friend_id : f.user_id))];
+    const { data: profiles } = await db.from('profiles').select('id,first_name,last_name,raven_id,avatar_url,venmo,cashapp,applepay').in('id', friendIds);
+    container.innerHTML = '';
+    (profiles || []).forEach(p => {
+      const name = [p.first_name, p.last_name].filter(Boolean).join(' ') || p.raven_id || 'Unknown';
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--dark);border:1px solid var(--border);border-radius:12px;cursor:pointer;transition:border-color 0.15s';
+      row.addEventListener('mouseover', () => { row.style.borderColor = 'rgba(124,58,237,0.3)'; });
+      row.addEventListener('mouseout',  () => { row.style.borderColor = 'var(--border)'; });
+      const methods = [p.venmo && 'V', p.cashapp && '$', p.applepay && '✦'].filter(Boolean);
+      row.innerHTML = friendAvatar(name, p.avatar_url, 42)
+        + '<div style="flex:1;min-width:0">'
+        + '<div style="font-size:14px;font-weight:600">' + name + '</div>'
+        + (p.raven_id ? '<div style="font-size:12px;color:var(--purple3)">@' + p.raven_id + '</div>' : '')
+        + (methods.length ? '<div style="font-size:11px;color:var(--muted);margin-top:2px">' + methods.join(' · ') + ' set up</div>' : '')
+        + '</div>'
+        + '<div style="font-size:20px">›</div>';
+      row.addEventListener('click', () => openProfileModal(p));
+      container.appendChild(row);
+    });
+  } catch(e) { container.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px">Error loading friends</div>'; }
+}
+
+// ── PROFILE MODAL ──
+let _profileModalData = null;
+
+function openProfileModal(p) {
+  _profileModalData = p;
+  const name = [p.first_name, p.last_name].filter(Boolean).join(' ') || p.raven_id || 'Unknown';
+  const av = document.getElementById('pm-avatar');
+  if (av) { if (p.avatar_url) { av.innerHTML = '<img src="' + p.avatar_url + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'; av.style.background = 'transparent'; } else { av.textContent = name[0].toUpperCase(); av.style.background = avatarGradients[name.charCodeAt(0) % avatarGradients.length]; } }
+  const el = id => document.getElementById(id);
+  if (el('pm-name')) el('pm-name').textContent = name;
+  if (el('pm-raven-id')) el('pm-raven-id').textContent = p.raven_id ? '@' + p.raven_id : '';
+  if (el('pm-email')) el('pm-email').style.display = 'none';
+  // Payment methods
+  const pm = el('pm-payment-methods');
+  if (pm) {
+    const chips = [];
+    if (p.venmo)    chips.push('<span style="display:inline-flex;align-items:center;gap:5px;padding:5px 10px;background:#0084FF;border-radius:8px;font-size:12px;font-weight:700;color:#fff"><b>V</b> Venmo</span>');
+    if (p.cashapp)  chips.push('<span style="display:inline-flex;align-items:center;gap:5px;padding:5px 10px;background:#00D632;border-radius:8px;font-size:12px;font-weight:700;color:#000"><b>$</b> Cash App</span>');
+    if (p.applepay) chips.push('<span style="display:inline-flex;align-items:center;gap:5px;padding:5px 10px;background:#1a1a1a;border:1px solid #444;border-radius:8px;font-size:12px;font-weight:700;color:#fff">✦ Apple Pay</span>');
+    pm.innerHTML = chips.length ? chips.join('') : '<span style="font-size:12px;color:var(--muted)">No payment methods set up yet</span>';
+  }
+  // Action button — add to trip/bill or message
+  const ab = el('pm-action-btn');
+  if (ab) {
+    ab.innerHTML =
+      '<button onclick="addFriendToTrip()" style="width:100%;padding:13px;background:var(--green);border:none;border-radius:10px;font-family:\'Epilogue\',sans-serif;font-size:14px;font-weight:700;color:#000;cursor:pointer;margin-bottom:8px">✈️ Add to Trip</button>' +
+      '<button onclick="addFriendToBill()" style="width:100%;padding:13px;background:rgba(48,209,88,0.08);border:1px solid rgba(48,209,88,0.2);border-radius:10px;font-family:\'Epilogue\',sans-serif;font-size:14px;font-weight:700;color:var(--green);cursor:pointer">📋 Add to Bill</button>';
+  }
+  const modal = el('profile-modal');
+  if (modal) modal.style.display = 'flex';
+}
+
+function closeProfileModal() {
+  const modal = document.getElementById('profile-modal');
+  if (modal) modal.style.display = 'none';
+  _profileModalData = null;
+}
+
+function addFriendToTrip() {
+  if (!_profileModalData) return;
+  const name = _profileModalData.first_name || _profileModalData.raven_id || 'Friend';
+  closeProfileModal();
+  showPage('trip-hub');
+  showToast('Open a trip and use the + People button to add ' + name, 'success');
+}
+
+function addFriendToBill() {
+  if (!_profileModalData) return;
+  const name = _profileModalData.first_name || _profileModalData.raven_id || 'Friend';
+  closeProfileModal();
+  showPage('create-bill');
+  // Pre-populate in the contacts/people list
+  setTimeout(() => {
+    if (!cbPeople.includes(name)) { cbPeople.push(name); cbRenderPeople(); cbRenderItems(); cbUpdateSummary(); cbGoToStep(2); showToast(name + ' added to bill', 'success'); }
+    else { showToast(name + ' already on bill', 'success'); }
+  }, 300);
+}
+
+// Also enrich contacts picker with friends
+async function enrichContactsWithFriends() {
+  try {
+    const { data: friendships } = await db.from('raven_friends')
+      .select('user_id,friend_id').or('user_id.eq.' + currentUser.id + ',friend_id.eq.' + currentUser.id).eq('status','accepted');
+    if (!friendships || !friendships.length) return;
+    const ids = friendships.map(f => f.user_id === currentUser.id ? f.friend_id : f.user_id);
+    const { data: profiles } = await db.from('profiles').select('first_name,email').in('id', ids);
+    return (profiles||[]).map(p => ({ name: p.first_name || p.email, phone: p.email, source: 'friends' }));
+  } catch(e) { return []; }
 }
 
 // ─── TRIP HUB ─────────────────────────────────────────────────────────────────
