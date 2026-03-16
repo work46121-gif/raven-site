@@ -338,7 +338,7 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
       <button class="nav-item" onclick="showPage('active-bills')"><span class="ni">📋</span> Active Bills <span class="nav-badge" id="active-count">0</span></button>
       <button class="nav-item" onclick="showPage('create-bill')"><span class="ni">➕</span> Create Bill</button>
       <button class="nav-item" onclick="showPage('trip-hub')"><span class="ni">✈️</span> Trip Hub</button>
-      <button class="nav-item" onclick="showPage('friends')"><span class="ni">👥</span> Friends</button>
+      <button class="nav-item" onclick="showPage('friends')" style="position:relative"><span class="ni">👥</span> Friends <span id="friends-dm-badge" style="display:none;position:absolute;top:6px;right:8px;min-width:16px;height:16px;padding:0 4px;background:var(--purple);border-radius:8px;font-size:10px;font-weight:700;color:#fff;align-items:center;justify-content:center"></span></button>
       <button class="nav-item" onclick="showPage('history')"><span class="ni">🕐</span> History</button>
       <button class="nav-item" onclick="showPage('settings')"><span class="ni">⚙️</span> Settings</button>
     </nav>
@@ -814,15 +814,21 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
   <div id="dm-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.9);backdrop-filter:blur(12px);z-index:750;flex-direction:column;align-items:center;justify-content:flex-end">
     <div style="background:var(--dark);border:1px solid var(--border2);border-radius:24px 24px 0 0;width:100%;max-width:500px;display:flex;flex-direction:column;height:80vh">
       <!-- Header -->
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid var(--border)">
-        <div id="dm-title" style="font-size:16px;font-weight:700">💬 Message</div>
-        <button onclick="document.getElementById('dm-modal').style.display='none'" style="background:rgba(255,255,255,0.07);border:none;color:var(--muted);width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:15px">✕</button>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border);flex-shrink:0">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div id="dm-avatar-sm" style="width:34px;height:34px;border-radius:50%;background:var(--purple);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0"></div>
+          <div>
+            <div id="dm-title" style="font-size:15px;font-weight:700">Message</div>
+            <div id="dm-status" style="font-size:11px;color:var(--muted)">🟢 Raven friend</div>
+          </div>
+        </div>
+        <button onclick="closeDM()" style="background:rgba(255,255,255,0.07);border:none;color:var(--muted);width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:15px">✕</button>
       </div>
       <!-- Messages -->
       <div id="dm-messages" style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column"></div>
       <!-- Input -->
-      <div style="padding:12px 16px;border-top:1px solid var(--border);display:flex;gap:10px;align-items:center">
-        <input id="dm-input" type="text" class="form-input" placeholder="Type a message..." style="flex:1;margin:0" onkeydown="if(event.key==='Enter')sendDMMessage()">
+      <div style="padding:12px 16px 20px;border-top:1px solid var(--border);display:flex;gap:10px;align-items:center;flex-shrink:0">
+        <input id="dm-input" type="text" class="form-input" placeholder="Type a message or paste a link..." style="flex:1;margin:0" onkeydown="if(event.key==='Enter')sendDMMessage()">
         <button id="dm-send-btn" onclick="sendDMMessage()" style="padding:10px 18px;background:var(--purple);border:none;border-radius:10px;color:#fff;font-family:'Epilogue',sans-serif;font-size:14px;font-weight:700;cursor:pointer;flex-shrink:0">Send</button>
       </div>
     </div>
@@ -1590,6 +1596,7 @@ async function showDashboard() {
   loadAllData();
   // Check pending friend requests for notification badges
   setTimeout(() => { try { loadFriendRequests(); } catch(e) {} }, 1500);
+  setTimeout(() => { try { startDMPolling(); } catch(e) {} }, 2000);
 
   // Handle ?add=ravenId deep link — auto-navigate to Friends and send request
   const pendingAdd = sessionStorage.getItem('pending_add_friend');
@@ -2210,6 +2217,7 @@ function friendAvatar(name, url, size) {
 }
 
 async function loadFriendsPage() {
+  startDMPolling(); // load unread counts and keep them fresh
   // Load my Raven ID
   try {
     const { data: me } = await db.from('profiles').select('raven_id,first_name').eq('id', currentUser.id).single();
@@ -2417,13 +2425,17 @@ async function loadFriendsList() {
       row.addEventListener('mouseover', () => { row.style.borderColor = 'rgba(124,58,237,0.3)'; });
       row.addEventListener('mouseout',  () => { row.style.borderColor = 'var(--border)'; });
       const methods = [p.venmo && 'V', p.cashapp && '$', p.applepay && '✦'].filter(Boolean);
+      // Unread DM badge
+      const unreadCount = _dmUnreadMap[p.id] || 0;
+      const unreadBadgeHtml = '<div id="dm-unread-' + p.id + '" style="display:' + (unreadCount > 0 ? 'flex' : 'none') + ';align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 5px;background:var(--purple);border-radius:9px;font-size:10px;font-weight:700;color:#fff">' + (unreadCount > 9 ? '9+' : unreadCount) + '</div>';
       row.innerHTML = friendAvatar(name, p.avatar_url, 42)
         + '<div style="flex:1;min-width:0">'
         + '<div style="font-size:14px;font-weight:600">' + name + '</div>'
         + (p.raven_id ? '<div style="font-size:12px;color:var(--purple3)">@' + p.raven_id + '</div>' : '')
         + (methods.length ? '<div style="font-size:11px;color:var(--muted);margin-top:2px">' + methods.join(' · ') + ' set up</div>' : '')
         + '</div>'
-        + '<div style="font-size:20px">›</div>';
+        + unreadBadgeHtml
+        + '<div style="font-size:20px;color:var(--muted)">›</div>';
       row.addEventListener('click', () => openProfileModal(p));
       container.appendChild(row);
     });
@@ -2451,16 +2463,24 @@ function openProfileModal(p) {
     if (p.applepay) chips.push('<span style="display:inline-flex;align-items:center;gap:5px;padding:5px 10px;background:#1a1a1a;border:1px solid #444;border-radius:8px;font-size:12px;font-weight:700;color:#fff">✦ Apple Pay</span>');
     pm.innerHTML = chips.length ? chips.join('') : '<span style="font-size:12px;color:var(--muted)">No payment methods set up yet</span>';
   }
-  // Action button — add to trip/bill, message, or remove friend
+  // Action buttons — DOM construction only, no onclick with user data
   const ab = el('pm-action-btn');
   if (ab) {
-    // Check if this person is a friend so we can show Remove Friend
-    const friendId = p.id;
-    ab.innerHTML =
-      '<button onclick="addFriendToTrip()" style="width:100%;padding:12px;background:var(--green);border:none;border-radius:10px;font-family:\'Epilogue\',sans-serif;font-size:14px;font-weight:700;color:#000;cursor:pointer;margin-bottom:8px">✈️ Add to Trip</button>' +
-      '<button onclick="addFriendToBill()" style="width:100%;padding:12px;background:rgba(48,209,88,0.08);border:1px solid rgba(48,209,88,0.2);border-radius:10px;font-family:\'Epilogue\',sans-serif;font-size:14px;font-weight:700;color:var(--green);cursor:pointer;margin-bottom:8px">📋 Add to Bill</button>' +
-      '<button onclick="openDirectMessage(\'' + (p.id||'') + '\',\'' + (name.replace(/'/g,"\\'")||'') + '\')" style="width:100%;padding:12px;background:rgba(124,58,237,0.1);border:1px solid rgba(124,58,237,0.25);border-radius:10px;font-family:\'Epilogue\',sans-serif;font-size:14px;font-weight:700;color:var(--purple3);cursor:pointer;margin-bottom:8px">💬 Message</button>' +
-      '<button id="remove-friend-btn-' + (p.id||'') + '" onclick="removeFriend(\'' + (p.id||'') + '\',\'' + (name.replace(/'/g,"\\'")||'') + '\')" style="width:100%;padding:12px;background:rgba(255,68,68,0.06);border:1px solid rgba(255,68,68,0.15);border-radius:10px;font-family:\'Epilogue\',sans-serif;font-size:14px;font-weight:600;color:#FF6B6B;cursor:pointer">Remove Friend</button>';
+    ab.innerHTML = '';
+    const mkBtn = (label, bg, color, border, handler) => {
+      const b = document.createElement('button');
+      b.innerHTML = label;
+      b.style.cssText = 'width:100%;padding:12px;background:'+bg+';border:'+(border||'none')+';border-radius:10px;font-family:\'Epilogue\',sans-serif;font-size:14px;font-weight:700;color:'+color+';cursor:pointer;display:block;margin-bottom:8px';
+      b.addEventListener('click', handler);
+      ab.appendChild(b);
+      return b;
+    };
+    mkBtn('✈️ Add to Trip', 'var(--green)', '#000', 'none', addFriendToTrip);
+    mkBtn('📋 Add to Bill', 'rgba(48,209,88,0.08)', 'var(--green)', '1px solid rgba(48,209,88,0.2)', addFriendToBill);
+    mkBtn('💬 Message', 'rgba(124,58,237,0.1)', 'var(--purple3)', '1px solid rgba(124,58,237,0.25)', () => openDirectMessage(p.id, name, p));
+    const rmBtn = mkBtn('Remove Friend', 'rgba(255,68,68,0.06)', '#FF6B6B', '1px solid rgba(255,68,68,0.15)', () => removeFriend(p.id, name));
+    rmBtn.id = 'remove-friend-btn-' + (p.id||'');
+    rmBtn.style.fontWeight = '600'; rmBtn.style.marginBottom = '0';
   }
   const modal = el('profile-modal');
   if (modal) modal.style.display = 'flex';
@@ -2526,58 +2546,158 @@ async function removeFriend(friendId, name) {
 let _dmFriendId = null;
 let _dmFriendName = '';
 let _dmMessages = [];
+let _dmSubscription = null;
+let _dmUnreadMap = {}; // { friendId: count }
 
-function openDirectMessage(friendId, friendName) {
+// Auto-linkify text — detect URLs and make them clickable
+function linkifyText(text) {
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
+  const parts = text.split(urlRegex);
+  const frag = document.createDocumentFragment();
+  parts.forEach(part => {
+    if (urlRegex.test(part)) {
+      const a = document.createElement('a');
+      a.href = part; a.target = '_blank'; a.rel = 'noopener noreferrer';
+      a.textContent = part;
+      a.style.cssText = 'color:var(--purple3);text-decoration:underline;word-break:break-all';
+      frag.appendChild(a);
+    } else if (part) {
+      frag.appendChild(document.createTextNode(part));
+    }
+  });
+  return frag;
+}
+
+function openDirectMessage(friendId, friendName, friendProfile) {
   _dmFriendId = friendId;
   _dmFriendName = friendName;
   closeProfileModal();
-  // Show DM modal
   document.getElementById('dm-modal').style.display = 'flex';
-  document.getElementById('dm-title').textContent = '💬 ' + friendName;
+  document.getElementById('dm-title').textContent = friendName;
+  // Set mini avatar
+  const avEl = document.getElementById('dm-avatar-sm');
+  if (avEl) {
+    if (friendProfile && friendProfile.avatar_url) {
+      avEl.innerHTML = '<img src="' + friendProfile.avatar_url + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';
+      avEl.style.background = 'transparent';
+    } else {
+      avEl.textContent = (friendName[0] || '?').toUpperCase();
+      avEl.style.background = avatarGradients[(friendName.charCodeAt(0)||65) % avatarGradients.length];
+    }
+  }
   document.getElementById('dm-messages').innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px"><div class="spinner" style="margin:0 auto 8px"></div>Loading...</div>';
   loadDMMessages(friendId);
+  markDMRead(friendId);
+}
+
+function closeDM() {
+  document.getElementById('dm-modal').style.display = 'none';
+  // Unsubscribe realtime when closing
+  if (_dmSubscription) { try { _dmSubscription.unsubscribe(); } catch(e) {} _dmSubscription = null; }
+  _dmFriendId = null; _dmMessages = [];
+}
+
+async function markDMRead(friendId) {
+  if (!currentUser || !friendId) return;
+  try {
+    await db.from('direct_messages')
+      .update({ read_at: new Date().toISOString() })
+      .eq('sender_id', friendId)
+      .eq('receiver_id', currentUser.id)
+      .is('read_at', null);
+    // Clear unread badge for this friend
+    _dmUnreadMap[friendId] = 0;
+    updateDMBadges();
+  } catch(e) {}
 }
 
 async function loadDMMessages(friendId) {
   try {
-    // Load messages between current user and friend (both directions)
-    const { data: msgs } = await db.from('direct_messages')
+    const { data: msgs, error } = await db.from('direct_messages')
       .select('*')
       .or(
         'and(sender_id.eq.' + currentUser.id + ',receiver_id.eq.' + friendId + '),' +
         'and(sender_id.eq.' + friendId + ',receiver_id.eq.' + currentUser.id + ')'
       )
       .order('created_at', { ascending: true })
-      .limit(100);
+      .limit(200);
+    if (error) throw error;
     _dmMessages = msgs || [];
     renderDMMessages();
+    // Subscribe to realtime new messages
+    if (_dmSubscription) try { _dmSubscription.unsubscribe(); } catch(e) {}
+    _dmSubscription = db.channel('dm-' + friendId)
+      .on('postgres_changes', {
+        event: 'INSERT', schema: 'public', table: 'direct_messages',
+        filter: 'receiver_id=eq.' + currentUser.id
+      }, payload => {
+        if (payload.new.sender_id === _dmFriendId) {
+          _dmMessages.push(payload.new);
+          renderDMMessages();
+          markDMRead(_dmFriendId);
+        }
+      })
+      .subscribe();
   } catch(e) {
-    document.getElementById('dm-messages').innerHTML = '<div style="color:var(--muted);text-align:center;padding:20px;font-size:13px">Could not load messages.<br><span style="font-size:11px">Run the SQL below to enable messaging.</span></div>';
+    document.getElementById('dm-messages').innerHTML = '<div style="color:var(--muted);text-align:center;padding:20px;font-size:13px">Messaging not set up yet.<br><span style="font-size:11px;color:var(--muted2)">Run the SQL in the dev notes to enable.</span></div>';
   }
 }
 
 function renderDMMessages() {
   const container = document.getElementById('dm-messages');
   if (_dmMessages.length === 0) {
-    container.innerHTML = '<div style="text-align:center;padding:32px;color:var(--muted);font-size:13px"><div style="font-size:32px;margin-bottom:8px">👋</div>No messages yet. Say hi!</div>';
+    container.innerHTML = '<div style="text-align:center;padding:32px;color:var(--muted);font-size:13px"><div style="font-size:32px;margin-bottom:8px">👋</div>No messages yet — say hi!</div>';
     return;
   }
   container.innerHTML = '';
-  _dmMessages.forEach(m => {
+  let lastDate = '';
+  _dmMessages.forEach((m, idx) => {
     const isMine = m.sender_id === currentUser.id;
-    const time = new Date(m.created_at).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+    const dt = new Date(m.created_at);
+    const dateStr = dt.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+    const timeStr = dt.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+
+    // Date separator
+    if (dateStr !== lastDate) {
+      lastDate = dateStr;
+      const sep = document.createElement('div');
+      sep.style.cssText = 'text-align:center;margin:12px 0 8px;font-size:10px;color:var(--muted);font-weight:600;letter-spacing:0.08em;text-transform:uppercase';
+      sep.textContent = dateStr;
+      container.appendChild(sep);
+    }
+
     const wrap = document.createElement('div');
-    wrap.style.cssText = 'display:flex;flex-direction:' + (isMine ? 'row-reverse' : 'row') + ';gap:8px;margin-bottom:10px;align-items:flex-end';
+    wrap.style.cssText = 'display:flex;flex-direction:' + (isMine?'row-reverse':'row') + ';gap:8px;margin-bottom:6px;align-items:flex-end';
+
     const bubble = document.createElement('div');
-    bubble.style.cssText = 'max-width:70%;padding:10px 14px;border-radius:' + (isMine ? '14px 14px 4px 14px' : '14px 14px 14px 4px') + ';background:' + (isMine ? 'var(--purple)' : 'var(--dark2)') + ';border:1px solid ' + (isMine ? 'rgba(124,58,237,0.3)' : 'var(--border)');
-    const text = document.createElement('div');
-    text.style.cssText = 'font-size:14px;color:var(--white);word-break:break-word';
-    text.textContent = m.body;
-    const ts = document.createElement('div');
-    ts.style.cssText = 'font-size:10px;color:var(--muted);margin-top:4px;text-align:' + (isMine ? 'right' : 'left');
-    ts.textContent = time;
-    bubble.appendChild(text);
-    bubble.appendChild(ts);
+    bubble.style.cssText = 'max-width:72%;padding:10px 13px;border-radius:' +
+      (isMine ? '14px 14px 4px 14px' : '14px 14px 14px 4px') +
+      ';background:' + (isMine ? 'var(--purple)' : 'var(--dark2)') +
+      ';border:1px solid ' + (isMine ? 'rgba(124,58,237,0.35)' : 'var(--border)');
+
+    const textEl = document.createElement('div');
+    textEl.style.cssText = 'font-size:14px;color:var(--white);word-break:break-word;line-height:1.5';
+    textEl.appendChild(linkifyText(m.body));
+    bubble.appendChild(textEl);
+
+    // Timestamp + read receipt row
+    const meta = document.createElement('div');
+    meta.style.cssText = 'display:flex;align-items:center;gap:5px;margin-top:4px;justify-content:' + (isMine ? 'flex-end' : 'flex-start');
+    const ts = document.createElement('span');
+    ts.style.cssText = 'font-size:10px;color:var(--muted)';
+    ts.textContent = timeStr;
+    meta.appendChild(ts);
+
+    // Read receipt — show on last sent message only
+    if (isMine && idx === _dmMessages.length - 1) {
+      const tick = document.createElement('span');
+      tick.style.cssText = 'font-size:10px;color:' + (m.read_at ? 'var(--green)' : 'var(--muted)');
+      tick.title = m.read_at ? 'Read ' + new Date(m.read_at).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'}) : 'Sent';
+      tick.textContent = m.read_at ? '✓✓' : '✓';
+      meta.appendChild(tick);
+    }
+
+    bubble.appendChild(meta);
     wrap.appendChild(bubble);
     container.appendChild(wrap);
   });
@@ -2601,10 +2721,64 @@ async function sendDMMessage() {
     _dmMessages.push(data);
     renderDMMessages();
   } catch(e) {
-    showToast('Could not send message — run the SQL in settings to enable messaging', 'error');
-    input.value = body; // restore
+    showToast('Could not send — messaging SQL not yet set up', 'error');
+    input.value = body;
   }
   btn.disabled = false;
+}
+
+// ── UNREAD BADGE SYSTEM ──
+async function loadUnreadDMCounts() {
+  if (!currentUser) return;
+  try {
+    const { data: unread } = await db.from('direct_messages')
+      .select('sender_id')
+      .eq('receiver_id', currentUser.id)
+      .is('read_at', null);
+    _dmUnreadMap = {};
+    (unread || []).forEach(m => {
+      _dmUnreadMap[m.sender_id] = (_dmUnreadMap[m.sender_id] || 0) + 1;
+    });
+    updateDMBadges();
+  } catch(e) {}
+}
+
+function updateDMBadges() {
+  const totalUnread = Object.values(_dmUnreadMap).reduce((s,n) => s + n, 0);
+
+  // Friends page nav badge
+  const friendsBadge = document.getElementById('friends-dm-badge');
+  if (friendsBadge) {
+    friendsBadge.style.display = totalUnread > 0 ? 'flex' : 'none';
+    friendsBadge.textContent = totalUnread > 9 ? '9+' : totalUnread;
+  }
+
+  // Mobile nav More tab badge
+  const mobBadge = document.getElementById('mob-friends-badge');
+  if (mobBadge) {
+    mobBadge.style.display = totalUnread > 0 ? 'flex' : 'none';
+    mobBadge.textContent = totalUnread > 9 ? '9+' : totalUnread;
+  }
+
+  // Per-friend badges in friends list
+  Object.entries(_dmUnreadMap).forEach(([fid, count]) => {
+    const badge = document.getElementById('dm-unread-' + fid);
+    if (badge) {
+      badge.style.display = count > 0 ? 'flex' : 'none';
+      badge.textContent = count > 9 ? '9+' : count;
+    }
+  });
+}
+
+// Poll for new unread messages every 30 seconds when on friends page
+let _dmPollInterval = null;
+function startDMPolling() {
+  if (_dmPollInterval) clearInterval(_dmPollInterval);
+  loadUnreadDMCounts();
+  _dmPollInterval = setInterval(loadUnreadDMCounts, 30000);
+}
+function stopDMPolling() {
+  if (_dmPollInterval) { clearInterval(_dmPollInterval); _dmPollInterval = null; }
 }
 async function enrichContactsWithFriends() {
   try {
