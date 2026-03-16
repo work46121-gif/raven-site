@@ -1627,6 +1627,14 @@ async function loadTrips() {
       + '<a class="bill-action-btn btn-view" href="' + tripUrl + '" style="display:inline-flex;align-items:center;text-decoration:none">Open Trip →</a>'
       + '</div></div>';
   }).join('');
+
+  // Wire admin buttons directly after rendering — bypasses stopPropagation on parent
+  container.querySelectorAll('.admin-btn').forEach(btn => {
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      openTripAdmin(this.getAttribute('data-tripid'));
+    });
+  });
 }
 
 function openCreateTrip() {
@@ -2027,16 +2035,6 @@ async function cbCreateFinalBill() {
 }
 
 window.addEventListener('load', function() { init(); });
-
-// Event delegation — handles admin button clicks without any inline onclick
-document.addEventListener('click', function(e) {
-  const adminBtn = e.target.closest('.admin-btn');
-  if (adminBtn) {
-    e.stopPropagation();
-    const tripId = adminBtn.getAttribute('data-tripid');
-    if (tripId) openTripAdmin(tripId);
-  }
-});
 
 // Refresh trips when returning to tab
 document.addEventListener('visibilitychange', function() {
