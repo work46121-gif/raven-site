@@ -623,6 +623,10 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
       <div class="page-header"><h1 class="page-title">Account <span>Settings</span></h1></div>
       <div id="mob-quick-nav" style="display:none;margin-bottom:20px">
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:20px">
+          <button onclick="showPage('friends');setMobNav('mob-settings')" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:14px 8px;background:var(--dark);border:1px solid var(--border);border-radius:14px;cursor:pointer;-webkit-tap-highlight-color:transparent;text-align:center;position:relative">
+            <span style="font-size:22px">👥</span><span style="font-size:11px;font-weight:600;color:var(--white)">Friends</span>
+            <span id="mob-friends-badge" style="display:none;position:absolute;top:8px;right:8px;background:#A855F7;color:#fff;border-radius:10px;font-size:9px;font-weight:700;padding:1px 5px">!</span>
+          </button>
           <button onclick="showPage('history');setMobNav('mob-settings')" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:14px 8px;background:var(--dark);border:1px solid var(--border);border-radius:14px;cursor:pointer;-webkit-tap-highlight-color:transparent;text-align:center">
             <span style="font-size:22px">🕐</span><span style="font-size:11px;font-weight:600;color:var(--white)">History</span>
           </button>
@@ -825,7 +829,7 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
   <button class="mob-nav-btn" id="mob-bills" onclick="showPage('active-bills');setMobNav('mob-bills')"><span class="mi">📋</span>Bills</button>
   <button class="mob-nav-btn" id="mob-create" onclick="showPage('create-bill');setMobNav('mob-create')"><span class="mi" style="width:36px;height:36px;background:var(--green);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;color:#000;margin-bottom:1px">➕</span>New</button>
   <button class="mob-nav-btn" id="mob-trip" onclick="showPage('trip-hub');setMobNav('mob-trip')"><span class="mi">✈️</span>Trips</button>
-  <button class="mob-nav-btn" id="mob-settings" onclick="showPage('settings');setMobNav('mob-settings')"><span class="mi">☰</span>More</button>
+  <button class="mob-nav-btn" id="mob-settings" onclick="showPage('settings');setMobNav('mob-settings')" style="position:relative"><span class="mi">☰</span>More<span id="mob-friend-req-badge" style="display:none;position:absolute;top:6px;right:10px;width:8px;height:8px;background:#A855F7;border-radius:50%"></span></button>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -1257,6 +1261,8 @@ async function showDashboard() {
     if (greetingEl) greetingEl.closest('h1').innerHTML = 'Welcome Back <span style="color:var(--green)">🪶</span>';
   }
   loadAllData();
+  // Check pending friend requests for notification badges
+  setTimeout(() => { try { loadFriendRequests(); } catch(e) {} }, 1500);
 }
 
 function showPage(page) {
@@ -1849,6 +1855,16 @@ async function loadFriendRequests() {
       .select('id,user_id,status')
       .eq('friend_id', currentUser.id)
       .eq('status', 'pending');
+
+    // Update notification badges regardless of which page is open
+    const reqCount = (requests || []).length;
+    const mobBadge = document.getElementById('mob-friend-req-badge');
+    const mobFriendsBadge = document.getElementById('mob-friends-badge');
+    const sidebarFriends = document.querySelector('.nav-item[onclick*="friends"]');
+    if (mobBadge) mobBadge.style.display = reqCount > 0 ? 'block' : 'none';
+    if (mobFriendsBadge) { mobFriendsBadge.style.display = reqCount > 0 ? 'block' : 'none'; mobFriendsBadge.textContent = reqCount; }
+    if (sidebarFriends) sidebarFriends.innerHTML = '<span class="ni">👥</span> Friends' + (reqCount > 0 ? ' <span style="background:#A855F7;color:#fff;border-radius:8px;font-size:10px;padding:1px 6px;font-weight:700">' + reqCount + '</span>' : '');
+
     if (!requests || requests.length === 0) { if (section) section.style.display = 'none'; return; }
     // Fetch requester profiles
     const ids = requests.map(r => r.user_id);
@@ -1871,10 +1887,10 @@ async function loadFriendRequests() {
       acceptBtn.style.cssText = 'padding:7px 12px;background:rgba(48,209,88,0.12);border:1px solid rgba(48,209,88,0.3);border-radius:8px;color:var(--green);font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;margin-right:6px';
       acceptBtn.onclick = async () => {
         await db.from('raven_friends').update({ status: 'accepted' }).eq('id', req.id);
-        // Create reciprocal friendship
         await db.from('raven_friends').upsert({ user_id: currentUser.id, friend_id: req.user_id, status: 'accepted' }, { onConflict: 'user_id,friend_id' });
         row.remove(); showToast('Now friends with ' + name + '! 🎉', 'success');
         loadFriendsList();
+        loadFriendRequests(); // refresh badge counts
         const remaining = list.children.length;
         if (remaining === 0 && section) section.style.display = 'none';
       };
@@ -1884,6 +1900,7 @@ async function loadFriendRequests() {
       declineBtn.onclick = async () => {
         await db.from('raven_friends').delete().eq('id', req.id);
         row.remove();
+        loadFriendRequests();
         if (list.children.length === 0 && section) section.style.display = 'none';
       };
       row.appendChild(acceptBtn); row.appendChild(declineBtn);
