@@ -682,24 +682,31 @@ async function clearPendingJoin() {
 }
 
 // Call this after a user is authenticated — handles joining and redirecting
-async function handlePendingJoinIfAny(userId, userEmail) {
+async function handlePendingJoinIfAny(userId, userEmail, knownDisplayName) {
   const pending = await getPendingJoin();
   if (!pending) return false;
   try {
-    // Get display name from profile
-    const { data: profile } = await db.from('profiles').select('first_name').eq('id', userId).maybeSingle();
-    const displayName = profile?.first_name || userEmail.split('@')[0];
+    // Use the known display name if provided (e.g. from signup form), otherwise look up profile
+    let displayName = knownDisplayName || '';
+    if (!displayName) {
+      try {
+        const { data: profile } = await db.from('profiles').select('first_name').eq('id', userId).maybeSingle();
+        displayName = profile?.first_name || userEmail.split('@')[0];
+      } catch(e) { displayName = userEmail.split('@')[0]; }
+    }
     const r = await fetch(BACKEND + '/trip/' + pending.tripId + '/join', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ invite_token: pending.token, user_email: userEmail, display_name: displayName })
     });
     const d = await r.json();
-    clearPendingJoin();
     if (d.success) {
+      clearPendingJoin();
       // Redirect straight to the trip
       window.location.href = BACKEND + '/trip/' + pending.tripId + '?t=' + d.share_token + '&name=' + encodeURIComponent(displayName);
       return true;
+    } else {
+      console.error('Join failed:', d.error);
     }
   } catch(e) { console.error('Join trip error:', e); }
   clearPendingJoin();
@@ -722,7 +729,13 @@ async function init() {
 
 async function checkOnboardingAndShow(userId) {
   // First handle any pending trip join — this may redirect away
-  const redirected = await handlePendingJoinIfAny(userId, currentUser.email);
+  // Try to get name from local cache first to avoid a DB race
+  let knownName = '';
+  try {
+    const local = JSON.parse(localStorage.getItem('raven_profile') || '{}');
+    knownName = local.first_name || '';
+  } catch(e) {}
+  const redirected = await handlePendingJoinIfAny(userId, currentUser.email, knownName);
   if (redirected) return;
 
   try {
@@ -794,7 +807,8 @@ async function handleSignup() {
     currentUser = data.user;
     const pending = await getPendingJoin();
     if (pending) {
-      const redirected = await handlePendingJoinIfAny(data.user.id, email);
+      // Pass firstName directly — profile may not be queryable yet right after signup
+      const redirected = await handlePendingJoinIfAny(data.user.id, email, firstName || email.split('@')[0]);
       if (redirected) return;
     }
   }
@@ -1185,23 +1199,45 @@ async function loadTrips() {
   const container = document.getElementById('trips-list');
   container.innerHTML = '<div class="loading"><div class="spinner"></div> Loading...</div>';
 
-  // Load trips created by this user AND trips they've joined as a member
-  const [createdRes, memberRes] = await Promise.all([
-    db.from('trips').select('*').eq('creator_email', currentUser.email).order('created_at', { ascending: false }),
-    db.from('trip_members').select('trip_id').eq('user_email', currentUser.email)
-  ]);
+  // Load trips created by this user
+  const { data: createdTrips } = await db.from('trips').select('*').eq('creator_email', currentUser.email).order('created_at', { ascending: false });
+  let trips = createdTrips || [];
 
-  let trips = createdRes.data || [];
-
-  // Fetch member trips that aren't already in created trips
-  if (memberRes.data && memberRes.data.length > 0) {
-    const createdIds = new Set(trips.map(t => t.id));
-    const memberTripIds = memberRes.data.map(m => m.trip_id).filter(id => !createdIds.has(id));
-    if (memberTripIds.length > 0) {
-      const { data: memberTrips } = await db.from('trips').select('*').in('id', memberTripIds).order('created_at', { ascending: false });
-      if (memberTrips) trips = [...trips, ...memberTrips];
+  // Also find trips where user's email is in member_emails column (set when joining via invite)
+  // This works without a separate trip_members table
+  try {
+    const emailLower = currentUser.email.toLowerCase();
+    const { data: allTrips } = await db.from('trips').select('*').order('created_at', { ascending: false });
+    if (allTrips) {
+      const createdIds = new Set(trips.map(t => t.id));
+      allTrips.forEach(t => {
+        if (createdIds.has(t.id)) return; // already in list
+        try {
+          const members = Array.isArray(t.member_emails) ? t.member_emails : JSON.parse(t.member_emails || '[]');
+          if (members.map(e => e.toLowerCase()).includes(emailLower)) trips.push(t);
+        } catch(e) {}
+      });
     }
-  }
+  } catch(e) { console.log('member lookup error:', e); }
+
+  // Also try trip_members table if it exists
+  try {
+    const { data: memberRows } = await db.from('trip_members').select('trip_id').eq('user_email', currentUser.email);
+    if (memberRows && memberRows.length > 0) {
+      const createdIds = new Set(trips.map(t => t.id));
+      const memberTripIds = memberRows.map(m => m.trip_id).filter(id => !createdIds.has(id));
+      if (memberTripIds.length > 0) {
+        const { data: memberTrips } = await db.from('trips').select('*').in('id', memberTripIds);
+        if (memberTrips) trips = [...trips, ...memberTrips];
+      }
+    }
+  } catch(e) { /* trip_members table may not exist */ }
+
+  // Deduplicate by id
+  const seen = new Set();
+  trips = trips.filter(t => { if (seen.has(t.id)) return false; seen.add(t.id); return true; });
+  // Sort by created_at descending
+  trips.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
   if (trips.length === 0) {
     container.innerHTML = '<div class="empty-state"><span class="empty-icon">✈️</span><div class="empty-title">No trips yet</div><div class="empty-sub">Create a trip hub or join one via an invite link</div></div>';
