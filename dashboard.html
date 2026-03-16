@@ -3237,10 +3237,18 @@ async function cbCreateFinalBill() {
     btn.textContent = '🪶 Create Bill'; btn.disabled = false;
     return showToast('Error: ' + (insertError?.message || 'Could not create bill'), 'error');
   }
+  // Look up Raven profiles for all people by first_name so bill appears in their overview
+  let profileEmailMap = {};
+  try {
+    const { data: profiles } = await db.from('profiles').select('first_name,email').in('first_name', cbPeople);
+    (profiles || []).forEach(p => { if (p.first_name && p.email) profileEmailMap[p.first_name] = p.email; });
+  } catch(e) {}
+
   // Payer is marked as already paid (they fronted the money)
   const rows = cbPeople.map(person => ({
     bill_id: billId,
-    phone: 'unknown_' + person.toLowerCase().replace(/\s+/g,'_') + '_' + billId,
+    // Use their real email if found in Raven profiles — makes bill appear in their overview
+    phone: profileEmailMap[person] || ('unknown_' + person.toLowerCase().replace(/\s+/g,'_') + '_' + billId),
     name: person,
     amount: personAmounts[person] || 0,
     paid: person === paidBy // payer is pre-marked as paid
