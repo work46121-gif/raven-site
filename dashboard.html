@@ -822,21 +822,21 @@ async function handlePendingJoinIfAny(userId, userEmail, knownDisplayName) {
     const d = await r.json();
     if (d.success) {
       clearPendingJoin();
-      // Save trip ID to user's profile so it appears in their Trips tab
+      // Save trip ID to localStorage immediately (works without any DB schema changes)
       try {
-        const { data: profile } = await db.from('profiles').select('joined_trips').eq('id', userId).maybeSingle();
-        let existing = [];
-        if (profile?.joined_trips) {
-          try { existing = Array.isArray(profile.joined_trips) ? profile.joined_trips : JSON.parse(profile.joined_trips); } catch(e) {}
-        }
-        if (!existing.includes(pending.tripId)) existing.push(pending.tripId);
-        await db.from('profiles').update({ joined_trips: JSON.stringify(existing) }).eq('id', userId);
-        // Also save to localStorage so it shows immediately before next DB sync
         const localProfile = JSON.parse(localStorage.getItem('raven_profile') || '{}');
-        const localJoined = localProfile.joined_trips || [];
+        const localJoined = Array.isArray(localProfile.joined_trips) ? localProfile.joined_trips : [];
         if (!localJoined.includes(pending.tripId)) localJoined.push(pending.tripId);
         localStorage.setItem('raven_profile', JSON.stringify({ ...localProfile, joined_trips: localJoined }));
-      } catch(e) { console.log('Could not save joined trip to profile:', e); }
+      } catch(e) {}
+      // Also try saving to DB joined_trips column if it exists — gracefully skip if not
+      try {
+        const { data: profCheck, error: profErr } = await db.from('profiles').select('id').eq('id', userId).single();
+        if (!profErr && profCheck) {
+          // Try updating joined_trips — will fail silently if column doesn't exist
+          await db.from('profiles').update({ joined_trips: JSON.stringify([pending.tripId]) }).eq('id', userId);
+        }
+      } catch(e) { /* joined_trips column not yet added — localStorage fallback is sufficient */ }
       // Redirect straight to the trip
       window.location.href = BACKEND + '/trip/' + pending.tripId + '?t=' + d.share_token + '&name=' + encodeURIComponent(displayName);
       return true;
@@ -1560,21 +1560,10 @@ async function loadTrips() {
   let trips = createdTrips || [];
   const createdIds = new Set(trips.map(t => t.id));
 
-  // 2. Load joined trip IDs from the user's profile row (always accessible)
+  // 2. Load joined trip IDs — from localStorage only (no DB column required)
   try {
-    const { data: profile } = await db.from('profiles').select('joined_trips').eq('id', currentUser.id).single();
-    let joinedIds = [];
-    if (profile?.joined_trips) {
-      try { joinedIds = Array.isArray(profile.joined_trips) ? profile.joined_trips : JSON.parse(profile.joined_trips); } catch(e) {}
-    }
-    // Also check localStorage for any pending joined trips not yet in DB
-    try {
-      const local = JSON.parse(localStorage.getItem('raven_profile') || '{}');
-      if (local.joined_trips && Array.isArray(local.joined_trips)) {
-        local.joined_trips.forEach(id => { if (!joinedIds.includes(id)) joinedIds.push(id); });
-      }
-    } catch(e) {}
-
+    const local = JSON.parse(localStorage.getItem('raven_profile') || '{}');
+    const joinedIds = Array.isArray(local.joined_trips) ? local.joined_trips : [];
     const newIds = joinedIds.filter(id => !createdIds.has(id));
     if (newIds.length > 0) {
       const { data: joinedTrips } = await db.from('trips').select('*').in('id', newIds);
