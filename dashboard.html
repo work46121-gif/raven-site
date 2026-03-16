@@ -801,6 +801,21 @@ async function handlePendingJoinIfAny(userId, userEmail, knownDisplayName) {
     const d = await r.json();
     if (d.success) {
       clearPendingJoin();
+      // Save trip ID to user's profile so it appears in their Trips tab
+      try {
+        const { data: profile } = await db.from('profiles').select('joined_trips').eq('id', userId).maybeSingle();
+        let existing = [];
+        if (profile?.joined_trips) {
+          try { existing = Array.isArray(profile.joined_trips) ? profile.joined_trips : JSON.parse(profile.joined_trips); } catch(e) {}
+        }
+        if (!existing.includes(pending.tripId)) existing.push(pending.tripId);
+        await db.from('profiles').update({ joined_trips: JSON.stringify(existing) }).eq('id', userId);
+        // Also save to localStorage so it shows immediately before next DB sync
+        const localProfile = JSON.parse(localStorage.getItem('raven_profile') || '{}');
+        const localJoined = localProfile.joined_trips || [];
+        if (!localJoined.includes(pending.tripId)) localJoined.push(pending.tripId);
+        localStorage.setItem('raven_profile', JSON.stringify({ ...localProfile, joined_trips: localJoined }));
+      } catch(e) { console.log('Could not save joined trip to profile:', e); }
       // Redirect straight to the trip
       window.location.href = BACKEND + '/trip/' + pending.tripId + '?t=' + d.share_token + '&name=' + encodeURIComponent(displayName);
       return true;
@@ -1060,22 +1075,53 @@ async function showDashboard() {
   if (mobAvatar) mobAvatar.textContent = currentUser.email[0].toUpperCase();
   const mobQN = document.getElementById('mob-quick-nav');
   if (mobQN && window.innerWidth <= 768) mobQN.style.display = 'block';
-  try { const local = JSON.parse(localStorage.getItem('raven_profile') || '{}'); if (local.avatar_url) renderAvatar(local.avatar_url, local.first_name); } catch(e) {}
-  let firstName = null;
+
+  // Always fetch full profile from DB on load — avatar_url may not be in localStorage
   try {
     const local = JSON.parse(localStorage.getItem('raven_profile') || '{}');
-    if (local.first_name && local.user_id === currentUser.id) { firstName = local.first_name; }
-    else {
-      const { data: profile } = await db.from('profiles').select('first_name').eq('id', currentUser.id).single();
-      if (profile?.first_name) { firstName = profile.first_name; const existing = JSON.parse(localStorage.getItem('raven_profile') || '{}'); localStorage.setItem('raven_profile', JSON.stringify({ ...existing, first_name: firstName, user_id: currentUser.id })); }
+    // Show cached avatar immediately while we fetch
+    if (local.avatar_url) renderAvatar(local.avatar_url, local.first_name);
+
+    // Always fetch from DB to get latest avatar + name
+    const { data: profile } = await db.from('profiles').select('first_name, avatar_url').eq('id', currentUser.id).single();
+    if (profile) {
+      const firstName = profile.first_name || local.first_name || '';
+      const avatarUrl = profile.avatar_url || local.avatar_url || '';
+      // Update localStorage with latest
+      const existing = JSON.parse(localStorage.getItem('raven_profile') || '{}');
+      localStorage.setItem('raven_profile', JSON.stringify({ ...existing, first_name: firstName, avatar_url: avatarUrl, user_id: currentUser.id }));
+      // Render avatar
+      if (avatarUrl) renderAvatar(avatarUrl, firstName);
+      else if (firstName) renderAvatar(null, firstName);
+      // Set greeting and sidebar
+      if (firstName) {
+        const fn = firstName.charAt(0).toUpperCase() + firstName.slice(1);
+        const greetingEl = document.getElementById('greeting-name');
+        if (greetingEl) greetingEl.textContent = fn;
+        const sidebarName = document.getElementById('sidebar-name');
+        if (sidebarName) sidebarName.textContent = fn + ' (me)';
+        if (!avatarUrl) {
+          document.getElementById('sidebar-avatar').textContent = firstName[0].toUpperCase();
+          if (mobAvatar) mobAvatar.textContent = firstName[0].toUpperCase();
+        }
+      } else {
+        const greetingEl = document.getElementById('greeting-name');
+        if (greetingEl) greetingEl.closest('h1').innerHTML = 'Welcome Back <span style="color:var(--green)">🪶</span>';
+      }
+    } else {
+      // No profile yet — fall back to localStorage
+      const firstName = local.first_name || '';
+      if (local.avatar_url) renderAvatar(local.avatar_url, firstName);
+      else if (firstName) renderAvatar(null, firstName);
+      const greetingEl = document.getElementById('greeting-name');
+      if (firstName && greetingEl) greetingEl.textContent = firstName.charAt(0).toUpperCase() + firstName.slice(1);
+      else if (greetingEl) greetingEl.closest('h1').innerHTML = 'Welcome Back <span style="color:var(--green)">🪶</span>';
     }
-  } catch(e) {}
-  const greetingEl = document.getElementById('greeting-name');
-  if (firstName) {
-    greetingEl.textContent = firstName.charAt(0).toUpperCase() + firstName.slice(1);
-    document.getElementById('sidebar-name').textContent = firstName.charAt(0).toUpperCase() + firstName.slice(1) + ' (me)';
-    document.getElementById('sidebar-avatar').textContent = firstName[0].toUpperCase();
-  } else { greetingEl.closest('h1').innerHTML = 'Welcome Back <span style="color:var(--green)">🪶</span>'; }
+  } catch(e) {
+    // Fallback — just use email initial
+    const greetingEl = document.getElementById('greeting-name');
+    if (greetingEl) greetingEl.closest('h1').innerHTML = 'Welcome Back <span style="color:var(--green)">🪶</span>';
+  }
   loadAllData();
 }
 
@@ -1365,44 +1411,36 @@ async function loadTrips() {
   const container = document.getElementById('trips-list');
   container.innerHTML = '<div class="loading"><div class="spinner"></div> Loading...</div>';
 
-  // Load trips created by this user
+  // 1. Load trips created by this user
   const { data: createdTrips } = await db.from('trips').select('*').eq('creator_email', currentUser.email).order('created_at', { ascending: false });
   let trips = createdTrips || [];
+  const createdIds = new Set(trips.map(t => t.id));
 
-  // Also find trips where user's email is in member_emails column (set when joining via invite)
-  // This works without a separate trip_members table
+  // 2. Load joined trip IDs from the user's profile row (always accessible)
   try {
-    const emailLower = currentUser.email.toLowerCase();
-    const { data: allTrips } = await db.from('trips').select('*').order('created_at', { ascending: false });
-    if (allTrips) {
-      const createdIds = new Set(trips.map(t => t.id));
-      allTrips.forEach(t => {
-        if (createdIds.has(t.id)) return; // already in list
-        try {
-          const members = Array.isArray(t.member_emails) ? t.member_emails : JSON.parse(t.member_emails || '[]');
-          if (members.map(e => e.toLowerCase()).includes(emailLower)) trips.push(t);
-        } catch(e) {}
-      });
+    const { data: profile } = await db.from('profiles').select('joined_trips').eq('id', currentUser.id).single();
+    let joinedIds = [];
+    if (profile?.joined_trips) {
+      try { joinedIds = Array.isArray(profile.joined_trips) ? profile.joined_trips : JSON.parse(profile.joined_trips); } catch(e) {}
     }
-  } catch(e) { console.log('member lookup error:', e); }
-
-  // Also try trip_members table if it exists
-  try {
-    const { data: memberRows } = await db.from('trip_members').select('trip_id').eq('user_email', currentUser.email);
-    if (memberRows && memberRows.length > 0) {
-      const createdIds = new Set(trips.map(t => t.id));
-      const memberTripIds = memberRows.map(m => m.trip_id).filter(id => !createdIds.has(id));
-      if (memberTripIds.length > 0) {
-        const { data: memberTrips } = await db.from('trips').select('*').in('id', memberTripIds);
-        if (memberTrips) trips = [...trips, ...memberTrips];
+    // Also check localStorage for any pending joined trips not yet in DB
+    try {
+      const local = JSON.parse(localStorage.getItem('raven_profile') || '{}');
+      if (local.joined_trips && Array.isArray(local.joined_trips)) {
+        local.joined_trips.forEach(id => { if (!joinedIds.includes(id)) joinedIds.push(id); });
       }
-    }
-  } catch(e) { /* trip_members table may not exist */ }
+    } catch(e) {}
 
-  // Deduplicate by id
+    const newIds = joinedIds.filter(id => !createdIds.has(id));
+    if (newIds.length > 0) {
+      const { data: joinedTrips } = await db.from('trips').select('*').in('id', newIds);
+      if (joinedTrips) trips = [...trips, ...joinedTrips];
+    }
+  } catch(e) { console.log('joined trips lookup:', e); }
+
+  // 3. Deduplicate and sort
   const seen = new Set();
   trips = trips.filter(t => { if (seen.has(t.id)) return false; seen.add(t.id); return true; });
-  // Sort by created_at descending
   trips.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
   if (trips.length === 0) {
