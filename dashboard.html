@@ -587,10 +587,17 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
         <div id="friend-search-results" style="margin-top:12px;display:flex;flex-direction:column;gap:8px"></div>
       </div>
 
-      <!-- Pending requests -->
-      <div style="max-width:520px;margin-bottom:24px" id="friend-requests-section" style="display:none">
-        <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted2);margin-bottom:10px">Friend Requests <span id="friend-req-count" style="background:var(--purple);color:#fff;border-radius:8px;padding:2px 7px;font-size:10px;margin-left:4px"></span></div>
-        <div id="friend-requests-list" style="display:flex;flex-direction:column;gap:8px"></div>
+      <!-- Notification Center — always shown, populated by JS -->
+      <div style="max-width:520px;margin-bottom:24px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted2)">🔔 Notifications</div>
+          <span id="friend-req-count" style="display:none;background:var(--purple);color:#fff;border-radius:10px;padding:2px 8px;font-size:11px;font-weight:700"></span>
+        </div>
+        <div id="friend-requests-section">
+          <div id="friend-requests-list" style="display:flex;flex-direction:column;gap:8px">
+            <div style="padding:16px;background:var(--dark);border:1px solid var(--border);border-radius:12px;text-align:center;color:var(--muted);font-size:13px">No new notifications</div>
+          </div>
+        </div>
       </div>
 
       <!-- Friends list -->
@@ -1865,13 +1872,13 @@ async function loadFriendRequests() {
     if (mobFriendsBadge) { mobFriendsBadge.style.display = reqCount > 0 ? 'block' : 'none'; mobFriendsBadge.textContent = reqCount; }
     if (sidebarFriends) sidebarFriends.innerHTML = '<span class="ni">👥</span> Friends' + (reqCount > 0 ? ' <span style="background:#A855F7;color:#fff;border-radius:8px;font-size:10px;padding:1px 6px;font-weight:700">' + reqCount + '</span>' : '');
 
-    if (!requests || requests.length === 0) { if (section) section.style.display = 'none'; return; }
+    if (!requests || requests.length === 0) { list.innerHTML = '<div style="padding:16px;background:var(--dark);border:1px solid var(--border);border-radius:12px;text-align:center;color:var(--muted);font-size:13px">No new notifications</div>'; return; }
     // Fetch requester profiles
     const ids = requests.map(r => r.user_id);
     const { data: profiles } = await db.from('profiles').select('id,first_name,last_name,raven_id,avatar_url').in('id', ids);
     const profMap = {};
     (profiles||[]).forEach(p => { profMap[p.id] = p; });
-    if (section) section.style.display = 'block';
+    
     if (count) count.textContent = requests.length;
     list.innerHTML = '';
     requests.forEach(req => {
@@ -1892,7 +1899,7 @@ async function loadFriendRequests() {
         loadFriendsList();
         loadFriendRequests(); // refresh badge counts
         const remaining = list.children.length;
-        if (remaining === 0 && section) section.style.display = 'none';
+        
       };
       const declineBtn = document.createElement('button');
       declineBtn.textContent = '✕';
@@ -1901,7 +1908,7 @@ async function loadFriendRequests() {
         await db.from('raven_friends').delete().eq('id', req.id);
         row.remove();
         loadFriendRequests();
-        if (list.children.length === 0 && section) section.style.display = 'none';
+        
       };
       row.appendChild(acceptBtn); row.appendChild(declineBtn);
       list.appendChild(row);
