@@ -89,7 +89,10 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
 .nav-item .ni { font-size: 16px; width: 20px; text-align: center; }
 .nav-badge { margin-left: auto; background: var(--purple); color: #fff; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 10px; }
 .sidebar-user { padding: 16px; border-top: 1px solid var(--border); }
-.main { margin-left: 240px; min-height: 100vh; padding: 32px 36px; }
+.main { margin-left: 240px; min-height: 100vh; padding: 32px 48px; }
+.main-inner { max-width: 1100px; margin: 0 auto; }
+@media(min-width: 1400px) { .main { padding: 36px 64px; } }
+@media(min-width: 1600px) { .main-inner { max-width: 1280px; } }
 .page { display: none; }
 .page.active { display: block; }
 .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 32px; flex-wrap: wrap; gap: 16px; }
@@ -355,6 +358,7 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
   </aside>
 
   <main class="main">
+    <div class="main-inner">
     <!-- OVERVIEW -->
     <div id="page-overview" class="page active">
       <div class="page-header"><h1 class="page-title">Welcome, <span id="greeting-name"></span></h1></div>
@@ -712,12 +716,13 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
 
     <!-- PROFILE CARD MODAL -->
     <div id="profile-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);backdrop-filter:blur(12px);z-index:700;align-items:center;justify-content:center;padding:20px" onclick="if(event.target.id==='profile-modal')closeProfileModal()">
-      <div style="background:var(--dark);border:1px solid var(--border2);border-radius:20px;width:100%;max-width:400px;overflow:hidden">
-        <div style="height:80px;background:linear-gradient(135deg,var(--purple),var(--green));position:relative">
+      <div style="background:var(--dark);border:1px solid var(--border2);border-radius:20px;width:100%;max-width:400px;overflow:visible">
+        <div style="height:100px;background:linear-gradient(135deg,var(--purple),var(--green));position:relative;border-radius:20px 20px 0 0">
           <button onclick="closeProfileModal()" style="position:absolute;top:12px;right:12px;background:rgba(0,0,0,0.3);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:14px">✕</button>
+          <!-- Avatar sits at bottom of banner, half overlapping -->
+          <div id="pm-avatar" style="position:absolute;bottom:-38px;left:24px;width:76px;height:76px;border-radius:50%;background:linear-gradient(135deg,var(--purple),var(--green));border:4px solid var(--dark);display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:700;color:#fff;overflow:hidden;flex-shrink:0"></div>
         </div>
-        <div style="padding:0 24px 28px;margin-top:-36px">
-          <div id="pm-avatar" style="width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,var(--purple),var(--green));border:3px solid var(--dark);display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:700;color:#fff;overflow:hidden;margin-bottom:12px"></div>
+        <div style="padding:48px 24px 28px;">
           <div id="pm-name" style="font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:0.04em;margin-bottom:2px"></div>
           <div id="pm-raven-id" style="font-size:13px;color:var(--purple3);font-weight:600;margin-bottom:6px"></div>
           <div id="pm-email" style="font-size:12px;color:var(--muted);margin-bottom:18px"></div>
@@ -807,6 +812,7 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
       </div>
       <div id="trips-list" class="bills-list"><div class="loading"><div class="spinner"></div> Loading trips...</div></div>
     </div>
+    </div><!-- /.main-inner -->
   </main>
 
   <!-- CONTACTS PICKER MODAL -->
@@ -824,11 +830,19 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
         </div>
         <button onclick="closeDM()" style="background:rgba(255,255,255,0.07);border:none;color:var(--muted);width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:15px">✕</button>
       </div>
+      <!-- GIF search panel -->
+      <div id="dm-gif-panel" style="display:none;border-top:1px solid var(--border);padding:10px 16px;background:var(--dark2);flex-shrink:0">
+        <input id="dm-gif-search" type="text" placeholder="Search GIFs..." style="width:100%;padding:8px 12px;background:var(--dark3);border:1px solid var(--border);border-radius:8px;color:var(--white);font-family:'Epilogue',sans-serif;font-size:13px;outline:none;margin-bottom:8px" oninput="searchDMGifs(this.value)">
+        <div id="dm-gif-results" style="display:flex;flex-wrap:wrap;gap:6px;max-height:160px;overflow-y:auto">
+          <div style="color:var(--muted);font-size:12px;padding:8px 0;width:100%">Type to search GIFs...</div>
+        </div>
+      </div>
       <!-- Messages -->
       <div id="dm-messages" style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column"></div>
       <!-- Input -->
-      <div style="padding:12px 16px 20px;border-top:1px solid var(--border);display:flex;gap:10px;align-items:center;flex-shrink:0">
-        <input id="dm-input" type="text" class="form-input" placeholder="Type a message or paste a link..." style="flex:1;margin:0" onkeydown="if(event.key==='Enter')sendDMMessage()">
+      <div style="padding:12px 16px 20px;border-top:1px solid var(--border);display:flex;gap:8px;align-items:center;flex-shrink:0">
+        <button id="dm-gif-btn" onclick="toggleDMGifPanel()" style="padding:8px 10px;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:16px;cursor:pointer;flex-shrink:0" title="Send GIF">🎭</button>
+        <input id="dm-input" type="text" class="form-input" placeholder="Message..." style="flex:1;margin:0" onkeydown="if(event.key==='Enter')sendDMMessage()">
         <button id="dm-send-btn" onclick="sendDMMessage()" style="padding:10px 18px;background:var(--purple);border:none;border-radius:10px;color:#fff;font-family:'Epilogue',sans-serif;font-size:14px;font-weight:700;cursor:pointer;flex-shrink:0">Send</button>
       </div>
     </div>
@@ -950,7 +964,17 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
     <div class="modal-actions">
       <button class="modal-btn modal-btn-view" id="modal-view-btn">🔗 Open Bill Page</button>
       <button class="modal-btn modal-btn-remind" id="modal-remind-btn">🔔 Remind Unpaid</button>
+      <button class="modal-btn" id="modal-add-person-btn" style="background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.2);color:var(--purple3)">👤 Add Person</button>
       <button class="modal-btn modal-btn-delete" id="modal-delete-btn">🗑 Delete</button>
+    </div>
+    <!-- Add person to existing bill panel -->
+    <div id="modal-add-person-panel" style="display:none;margin-top:14px;padding:14px;background:var(--dark2);border:1px solid var(--border);border-radius:12px">
+      <div style="font-size:12px;font-weight:700;color:var(--muted2);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px">Add someone to this bill</div>
+      <div style="display:flex;gap:8px;margin-bottom:8px">
+        <input id="modal-add-person-input" type="text" class="form-input" placeholder="Name or @RavenID" style="flex:1;margin:0;font-size:13px;padding:9px 12px">
+        <button id="modal-add-person-btn-submit" style="padding:9px 16px;background:var(--purple);border:none;border-radius:9px;color:#fff;font-family:'Epilogue',sans-serif;font-size:13px;font-weight:700;cursor:pointer;flex-shrink:0">Add</button>
+      </div>
+      <div style="font-size:11px;color:var(--muted);line-height:1.6">If they have a RAVEN account, the bill will appear in their dashboard automatically.</div>
     </div>
   </div>
 </div>
@@ -1597,6 +1621,7 @@ async function showDashboard() {
   // Check pending friend requests for notification badges
   setTimeout(() => { try { loadFriendRequests(); } catch(e) {} }, 1500);
   setTimeout(() => { try { startDMPolling(); } catch(e) {} }, 2000);
+  setTimeout(() => { try { startPresence(); } catch(e) {} }, 3000);
 
   // Handle ?add=ravenId deep link — auto-navigate to Friends and send request
   const pendingAdd = sessionStorage.getItem('pending_add_friend');
@@ -1776,7 +1801,57 @@ async function openBillModal(billId) {
   document.getElementById('modal-view-btn').onclick = () => viewBillPage(billId);
   document.getElementById('modal-remind-btn').onclick = () => sendReminder(billId);
   document.getElementById('modal-delete-btn').onclick = () => deleteBill(billId);
+  // Add person toggle
+  const addPanel = document.getElementById('modal-add-person-panel');
+  const addBtn   = document.getElementById('modal-add-person-btn');
+  if (addPanel) addPanel.style.display = 'none';
+  if (addBtn)   addBtn.onclick = () => { if (addPanel) addPanel.style.display = addPanel.style.display === 'none' ? 'block' : 'none'; };
+  const addSubmit = document.getElementById('modal-add-person-btn-submit');
+  if (addSubmit) addSubmit.onclick = () => addPersonToBill(billId, bill);
+  const addInput = document.getElementById('modal-add-person-input');
+  if (addInput) { addInput.value = ''; addInput.onkeydown = e => { if (e.key === 'Enter') addPersonToBill(billId, bill); }; }
   document.getElementById('bill-modal').classList.add('open');
+}
+
+async function addPersonToBill(billId, bill) {
+  const input = document.getElementById('modal-add-person-input');
+  const raw = input?.value.trim();
+  if (!raw) return showToast('Enter a name or @RavenID', 'error');
+  const btn = document.getElementById('modal-add-person-btn-submit');
+  btn.textContent = 'Adding...'; btn.disabled = true;
+
+  // Figure out how much this person owes — use per_person from bill
+  const perPerson = parseFloat(bill.per_person || 0) || (bill.participants?.length > 0 ? parseFloat(bill.total) / (bill.participants.length + 1) : parseFloat(bill.total));
+  let personEmail = null;
+  let personName = raw.replace(/^@/, '');
+
+  // Try to find by Raven ID
+  const query = raw.startsWith('@') ? raw.slice(1) : raw;
+  try {
+    const { data: profile } = await db.from('profiles').select('id,first_name,email,raven_id').or('raven_id.eq.' + query.toLowerCase() + ',first_name.ilike.' + query).maybeSingle();
+    if (profile) {
+      personEmail = profile.email;
+      personName = profile.first_name || profile.raven_id || personName;
+    }
+  } catch(e) {}
+
+  // Check not already on bill
+  const alreadyOn = (bill.participants || []).some(p => p.name.toLowerCase() === personName.toLowerCase());
+  if (alreadyOn) { showToast(personName + ' is already on this bill', 'error'); btn.textContent = 'Add'; btn.disabled = false; return; }
+
+  const { error } = await db.from('participants').insert({
+    bill_id: billId,
+    phone: personEmail || ('unknown_' + personName.toLowerCase().replace(/\s+/g,'_') + '_' + billId),
+    name: personName,
+    amount: perPerson,
+    paid: false
+  });
+
+  btn.textContent = 'Add'; btn.disabled = false;
+  if (error) { showToast('Error: ' + error.message, 'error'); return; }
+  if (input) input.value = '';
+  showToast('✅ ' + personName + ' added to bill' + (personEmail ? ' — will see it on their dashboard' : ''), 'success');
+  openBillModal(billId); // refresh
 }
 
 function closeBillModal() { document.getElementById('bill-modal').classList.remove('open'); currentBillId = null; }
@@ -2446,7 +2521,7 @@ async function loadFriendsList() {
       const unreadBadgeHtml = '<div id="dm-unread-' + p.id + '" style="display:' + (unreadCount > 0 ? 'flex' : 'none') + ';align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 5px;background:var(--purple);border-radius:9px;font-size:10px;font-weight:700;color:#fff">' + (unreadCount > 9 ? '9+' : unreadCount) + '</div>';
       row.innerHTML = friendAvatar(name, p.avatar_url, 42)
         + '<div style="flex:1;min-width:0">'
-        + '<div style="font-size:14px;font-weight:600">' + name + '</div>'
+        + '<div style="font-size:14px;font-weight:600;display:flex;align-items:center;gap:6px">' + name + '<span id="online-dot-' + p.id + '" style="display:none;width:7px;height:7px;border-radius:50%;background:#30D158;flex-shrink:0" title="Online"></span></div>'
         + (p.raven_id ? '<div style="font-size:12px;color:var(--purple3)">@' + p.raven_id + '</div>' : '')
         + (methods.length ? '<div style="font-size:11px;color:var(--muted);margin-top:2px">' + methods.join(' · ') + ' set up</div>' : '')
         + '</div>'
@@ -2454,6 +2529,11 @@ async function loadFriendsList() {
         + '<div style="font-size:20px;color:var(--muted)">›</div>';
       row.addEventListener('click', () => openProfileModal(p));
       container.appendChild(row);
+      // Check online status async (non-blocking)
+      checkFriendOnline(p.id).then(online => {
+        const dot = document.getElementById('online-dot-' + p.id);
+        if (dot) dot.style.display = online ? 'inline-block' : 'none';
+      });
     });
   } catch(e) { container.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px">Error loading friends</div>'; }
 }
@@ -2604,6 +2684,13 @@ function openDirectMessage(friendId, friendName, friendProfile) {
   document.getElementById('dm-messages').innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px"><div class="spinner" style="margin:0 auto 8px"></div>Loading...</div>';
   loadDMMessages(friendId);
   markDMRead(friendId);
+  // Check online status
+  checkFriendOnline(friendId).then(online => {
+    const statusEl = document.getElementById('dm-status');
+    if (statusEl) statusEl.innerHTML = online
+      ? '<span style="color:#30D158">🟢 Online now</span>'
+      : '<span>🪶 Raven friend</span>';
+  });
 }
 
 function closeDM() {
@@ -2693,7 +2780,16 @@ function renderDMMessages() {
 
     const textEl = document.createElement('div');
     textEl.style.cssText = 'font-size:14px;color:var(--white);word-break:break-word;line-height:1.5';
-    textEl.appendChild(linkifyText(m.body));
+    // Render GIF or linkified text
+    if (m.gif_url) {
+      const gif = document.createElement('img');
+      gif.src = m.gif_url;
+      gif.style.cssText = 'max-width:200px;max-height:180px;border-radius:8px;display:block;cursor:pointer';
+      gif.addEventListener('click', () => window.open(m.gif_url, '_blank'));
+      textEl.appendChild(gif);
+    } else {
+      textEl.appendChild(linkifyText(m.body));
+    }
     bubble.appendChild(textEl);
 
     // Timestamp + read receipt row
@@ -2743,7 +2839,100 @@ async function sendDMMessage() {
   btn.disabled = false;
 }
 
-// ── UNREAD BADGE SYSTEM ──
+// ── ONLINE PRESENCE ──────────────────────────────────────────────────────────
+let _presenceInterval = null;
+
+async function updatePresence() {
+  if (!currentUser) return;
+  try {
+    await db.from('profiles').update({ last_seen: new Date().toISOString() }).eq('id', currentUser.id);
+  } catch(e) {}
+}
+
+async function checkFriendOnline(friendId) {
+  if (!friendId) return false;
+  try {
+    const { data } = await db.from('profiles').select('last_seen').eq('id', friendId).single();
+    if (!data?.last_seen) return false;
+    const diff = Date.now() - new Date(data.last_seen).getTime();
+    return diff < 5 * 60 * 1000; // online if seen within 5 minutes
+  } catch(e) { return false; }
+}
+
+function startPresence() {
+  updatePresence();
+  if (_presenceInterval) clearInterval(_presenceInterval);
+  _presenceInterval = setInterval(updatePresence, 60000); // ping every minute
+}
+
+// ── GIF SEARCH IN DM ─────────────────────────────────────────────────────────
+let _dmGifDebounce = null;
+const TENOR_KEY = 'AIzaSyAyimkuYQYF_y7VMHLAoALrYsuCkXMZZFw'; // free Tenor v2 key placeholder
+
+function toggleDMGifPanel() {
+  const panel = document.getElementById('dm-gif-panel');
+  const btn = document.getElementById('dm-gif-btn');
+  if (!panel) return;
+  const open = panel.style.display !== 'none';
+  panel.style.display = open ? 'none' : 'block';
+  btn.style.color = open ? 'var(--muted)' : 'var(--green)';
+  if (!open) document.getElementById('dm-gif-search')?.focus();
+}
+
+async function searchDMGifs(query) {
+  clearTimeout(_dmGifDebounce);
+  const results = document.getElementById('dm-gif-results');
+  if (!query || query.length < 2) {
+    if (results) results.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:8px 0;width:100%">Type to search GIFs...</div>';
+    return;
+  }
+  _dmGifDebounce = setTimeout(async () => {
+    if (results) results.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:8px 0">Searching...</div>';
+    try {
+      // Use Tenor v2 API (free, no key required for basic usage)
+      const res = await fetch('https://tenor.googleapis.com/v2/search?q=' + encodeURIComponent(query) + '&key=AIzaSyB-MzfBZ5MN00KPZE-kNZ7Ia63F7ZgmHKI&limit=12&media_filter=gif');
+      const data = await res.json();
+      if (!results) return;
+      results.innerHTML = '';
+      (data.results || []).forEach(gif => {
+        const url = gif.media_formats?.tinygif?.url || gif.media_formats?.gif?.url;
+        if (!url) return;
+        const img = document.createElement('img');
+        img.src = url;
+        img.style.cssText = 'width:calc(33% - 4px);height:80px;object-fit:cover;border-radius:6px;cursor:pointer;transition:opacity 0.15s';
+        img.addEventListener('mouseenter', () => img.style.opacity = '0.8');
+        img.addEventListener('mouseleave', () => img.style.opacity = '1');
+        img.addEventListener('click', () => sendDMGif(gif.media_formats?.gif?.url || url));
+        results.appendChild(img);
+      });
+      if (!results.children.length) results.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:8px 0">No results</div>';
+    } catch(e) {
+      if (results) results.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:8px 0">Search unavailable</div>';
+    }
+  }, 400);
+}
+
+async function sendDMGif(gifUrl) {
+  if (!gifUrl || !_dmFriendId) return;
+  // Close GIF panel
+  const panel = document.getElementById('dm-gif-panel');
+  const btn = document.getElementById('dm-gif-btn');
+  if (panel) panel.style.display = 'none';
+  if (btn) btn.style.color = 'var(--muted)';
+  try {
+    const { data, error } = await db.from('direct_messages').insert({
+      sender_id: currentUser.id,
+      receiver_id: _dmFriendId,
+      body: '[GIF]',
+      gif_url: gifUrl
+    }).select().single();
+    if (error) throw error;
+    _dmMessages.push(data);
+    renderDMMessages();
+  } catch(e) {
+    showToast('Could not send GIF', 'error');
+  }
+}
 async function loadUnreadDMCounts() {
   if (!currentUser) return;
   try {
