@@ -2889,21 +2889,18 @@ async function searchDMGifs(query) {
   _dmGifDebounce = setTimeout(async () => {
     if (results) results.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:8px 0">Searching...</div>';
     try {
-      // Use Tenor v2 API (free, no key required for basic usage)
-      const res = await fetch('https://tenor.googleapis.com/v2/search?q=' + encodeURIComponent(query) + '&key=LIVDSRZULELA&limit=16&media_filter=tinygif,gif&contentfilter=medium');
+      // Use the same Railway /gif-search endpoint that the trip hub uses (Giphy via GIPHY_API_KEY env var)
+      const res = await fetch(BACKEND + '/gif-search?q=' + encodeURIComponent(query));
       const data = await res.json();
       if (!results) return;
       results.innerHTML = '';
-      (data.results || []).forEach(gif => {
-        // Tenor v2 uses media_formats object
-        const preview = gif.media_formats?.tinygif?.url || gif.media_formats?.nanogif?.url || gif.media_formats?.gif?.url;
-        const fullUrl = gif.media_formats?.gif?.url || gif.media_formats?.mediumgif?.url || preview;
-        if (!preview) return;
+      (data.gifs || []).forEach(gif => {
+        if (!gif.preview) return;
         const img = document.createElement('img');
-        img.src = preview;
+        img.src = gif.preview;
         img.loading = 'lazy';
         img.style.cssText = 'width:calc(33% - 4px);height:80px;object-fit:cover;border-radius:6px;cursor:pointer;flex-shrink:0';
-        img.addEventListener('click', () => { sendDMGif(fullUrl); });
+        img.addEventListener('click', () => sendDMGif(gif.full || gif.preview));
         results.appendChild(img);
       });
       if (!results.children.length) results.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:8px 0">No results</div>';
