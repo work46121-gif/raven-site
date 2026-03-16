@@ -1619,11 +1619,33 @@ async function permanentDelete(billId) {
 }
 
 async function deleteBill(billId) {
-  if (!confirm('Delete this bill? This cannot be undone.')) return;
-  await db.from('bills').update({ status: 'deleted' }).eq('id', billId);
-  closeBillModal();
-  showToast('Bill deleted', 'success');
-  loadAllData();
+  // Use custom confirm — browser confirm() is unreliable on iOS Safari
+  const modal = document.getElementById('bill-modal');
+  const existing = document.getElementById('delete-confirm-wrap');
+  if (existing) { existing.remove(); return; }
+
+  const wrap = document.createElement('div');
+  wrap.id = 'delete-confirm-wrap';
+  wrap.style.cssText = 'margin-top:12px;padding:14px;background:rgba(255,68,68,0.06);border:1px solid rgba(255,68,68,0.2);border-radius:10px';
+  wrap.innerHTML = '<div style="font-size:13px;font-weight:600;color:#FF6B6B;margin-bottom:10px">⚠️ Delete this bill? This cannot be undone.</div>' +
+    '<div style="display:flex;gap:8px">' +
+    '<button id="delete-cancel-btn" style="flex:1;padding:10px;background:var(--dark2);border:1px solid var(--border);border-radius:8px;color:var(--muted);font-family:\'Epilogue\',sans-serif;font-size:13px;font-weight:600;cursor:pointer">Cancel</button>' +
+    '<button id="delete-confirm-btn" style="flex:1;padding:10px;background:rgba(255,68,68,0.15);border:1px solid rgba(255,68,68,0.3);border-radius:8px;color:#FF6B6B;font-family:\'Epilogue\',sans-serif;font-size:13px;font-weight:700;cursor:pointer">Yes, Delete</button>' +
+    '</div>';
+
+  // Append inside modal content
+  const modalContent = document.querySelector('#bill-modal .modal-box') || modal.querySelector('div div');
+  if (modalContent) modalContent.appendChild(wrap);
+  else modal.appendChild(wrap);
+
+  document.getElementById('delete-cancel-btn').onclick = () => wrap.remove();
+  document.getElementById('delete-confirm-btn').onclick = async () => {
+    await db.from('bills').update({ status: 'deleted' }).eq('id', billId);
+    wrap.remove();
+    closeBillModal();
+    showToast('Bill deleted', 'success');
+    loadAllData();
+  };
 }
 
 function setMobNav(id) {
