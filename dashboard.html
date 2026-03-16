@@ -1334,8 +1334,35 @@ async function loadAllData() {
 }
 
 async function loadOverview() {
-  const { data: bills } = await db.from('bills').select('*, participants(*)').eq('creator_phone', currentUser.email).neq('status', 'deleted').order('created_at', { ascending: false }).limit(5);
-  if (!bills) return;
+  // Fetch both bills I created AND bills I'm a participant in
+  const [{ data: myBills }, { data: partRows }] = await Promise.all([
+    db.from('bills').select('*, participants(*)').eq('creator_phone', currentUser.email).neq('status', 'deleted').order('created_at', { ascending: false }),
+    db.from('participants').select('bill_id').eq('phone', currentUser.email)
+  ]);
+  // Fetch participant bills (where I'm listed but not creator)
+  const partBillIds = (partRows || []).map(r => r.bill_id).filter(id => !(myBills || []).find(b => b.id === id));
+  let partBills = [];
+  if (partBillIds.length > 0) {
+    const { data } = await db.from('bills').select('*, participants(*)').in('id', partBillIds).neq('status', 'deleted').order('created_at', { ascending: false });
+    partBills = data || [];
+  }
+  const bills = [...(myBills || []), ...partBills].sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
+  if (!bills.length) {
+    document.getElementById('stat-active').textContent = '0';
+    document.getElementById('stat-owed').textContent = '$0.00';
+    document.getElementById('stat-collected').textContent = '$0.00';
+    document.getElementById('stat-settled').textContent = '0';
+    document.getElementById('active-count').textContent = '0';
+    document.getElementById('overview-bills').innerHTML = '<div class="empty-state"><span class="empty-icon">🪶</span><div class="empty-title">No bills yet</div><div class="empty-sub">Create your first bill to get started</div></div>';
+    return;
+  }
+  // Auto-complete bills where all participants have paid
+  for (const b of bills) {
+    if (b.status === 'active' && b.participants?.length > 0 && b.participants.every(p => p.paid)) {
+      await db.from('bills').update({ status: 'completed' }).eq('id', b.id);
+      b.status = 'completed';
+    }
+  }
   const active = bills.filter(b => b.status === 'active');
   const completed = bills.filter(b => b.status === 'completed');
   let totalOwed = 0, totalCollected = 0;
@@ -1346,27 +1373,47 @@ async function loadOverview() {
   document.getElementById('stat-settled').textContent = completed.length;
   document.getElementById('active-count').textContent = active.length;
   const container = document.getElementById('overview-bills');
-  if (bills.length === 0) { container.innerHTML = '<div class="empty-state"><span class="empty-icon">🪶</span><div class="empty-title">No bills yet</div><div class="empty-sub">Create your first bill to get started</div></div>'; return; }
   container.innerHTML = bills.slice(0, 4).map(b => renderBillCard(b)).join('');
 }
 
 async function loadActiveBills() {
-  const { data: bills } = await db.from('bills').select('*, participants(*)').eq('creator_phone', currentUser.email).eq('status', 'active').order('created_at', { ascending: false });
+  const [{ data: myBills }, { data: partRows }] = await Promise.all([
+    db.from('bills').select('*, participants(*)').eq('creator_phone', currentUser.email).eq('status', 'active').order('created_at', { ascending: false }),
+    db.from('participants').select('bill_id').eq('phone', currentUser.email)
+  ]);
+  const partBillIds = (partRows || []).map(r => r.bill_id).filter(id => !(myBills || []).find(b => b.id === id));
+  let partBills = [];
+  if (partBillIds.length > 0) {
+    const { data } = await db.from('bills').select('*, participants(*)').in('id', partBillIds).eq('status', 'active').order('created_at', { ascending: false });
+    partBills = data || [];
+  }
+  const bills = [...(myBills || []), ...partBills].sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
   const container = document.getElementById('active-bills-list');
-  if (!bills || bills.length === 0) { container.innerHTML = '<div class="empty-state"><span class="empty-icon">📋</span><div class="empty-title">No active bills</div><div class="empty-sub">Create a bill to start splitting</div></div>'; return; }
+  if (bills.length === 0) { container.innerHTML = '<div class="empty-state"><span class="empty-icon">📋</span><div class="empty-title">No active bills</div><div class="empty-sub">Create a bill to start splitting</div></div>'; return; }
   container.innerHTML = bills.map(b => renderBillCard(b)).join('');
 }
 
 async function loadHistory() {
-  const { data: bills } = await db.from('bills').select('*, participants(*)').eq('creator_phone', currentUser.email).order('created_at', { ascending: false });
+  const [{ data: myBills }, { data: partRows }] = await Promise.all([
+    db.from('bills').select('*, participants(*)').eq('creator_phone', currentUser.email).order('created_at', { ascending: false }),
+    db.from('participants').select('bill_id').eq('phone', currentUser.email)
+  ]);
+  const partBillIds = (partRows || []).map(r => r.bill_id).filter(id => !(myBills || []).find(b => b.id === id));
+  let partBills = [];
+  if (partBillIds.length > 0) {
+    const { data } = await db.from('bills').select('*, participants(*)').in('id', partBillIds).order('created_at', { ascending: false });
+    partBills = data || [];
+  }
+  const bills = [...(myBills || []), ...partBills].sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
   const container = document.getElementById('history-content');
-  if (!bills || bills.length === 0) { container.innerHTML = '<div class="empty-state"><span class="empty-icon">🕐</span><div class="empty-title">No history yet</div></div>'; return; }
+  if (bills.length === 0) { container.innerHTML = '<div class="empty-state"><span class="empty-icon">🕐</span><div class="empty-title">No history yet</div></div>'; return; }
   container.innerHTML = '<table class="history-table"><thead><tr><th>Bill</th><th>Total</th><th>People</th><th>Collected</th><th>Status</th><th>Date</th></tr></thead><tbody>' + bills.map(b => {
     const paid = b.participants?.filter(p => p.paid).length || 0;
     const total = b.participants?.length || 0;
     const collected = b.participants?.filter(p => p.paid).reduce((s, p) => s + parseFloat(p.amount || 0), 0) || 0;
     const date = new Date(b.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-    return '<tr style="cursor:pointer"><td onclick="openBillModal(\'' + b.id + '\')">' + b.name + '</td><td onclick="openBillModal(\'' + b.id + '\')">$' + parseFloat(b.total).toFixed(2) + '</td><td onclick="openBillModal(\'' + b.id + '\')">'+total+' people</td><td onclick="openBillModal(\'' + b.id + '\')" style="color:var(--green)">$' + collected.toFixed(2) + '</td><td><span class="status-badge ' + (b.status === 'active' ? 'status-active' : 'status-completed') + '">' + (b.status === 'active' ? '● Active' : b.status === 'deleted' ? '✕ Deleted' : '✓ Done') + '</span></td><td onclick="openBillModal(\'' + b.id + '\')">' + date + '</td></tr>';
+    const isCreator = b.creator_phone === currentUser.email;
+    return '<tr style="cursor:pointer"><td onclick="openBillModal(\'' + b.id + '\')">' + b.name + (isCreator ? '' : ' <span style="font-size:10px;color:var(--muted);background:var(--dark2);padding:2px 6px;border-radius:4px;vertical-align:middle">shared</span>') + '</td><td onclick="openBillModal(\'' + b.id + '\')">$' + parseFloat(b.total).toFixed(2) + '</td><td onclick="openBillModal(\'' + b.id + '\')">'+total+' people</td><td onclick="openBillModal(\'' + b.id + '\')" style="color:var(--green)">$' + collected.toFixed(2) + '</td><td><span class="status-badge ' + (b.status === 'active' ? 'status-active' : 'status-completed') + '">' + (b.status === 'active' ? '● Active' : b.status === 'deleted' ? '✕ Deleted' : '✓ Done') + '</span></td><td onclick="openBillModal(\'' + b.id + '\')">' + date + '</td></tr>';
   }).join('') + '</tbody></table>';
 }
 
@@ -1375,15 +1422,21 @@ function renderBillCard(b) {
   const total = b.participants?.length || 0;
   const pct = total > 0 ? Math.round((paid / total) * 100) : 0;
   const owed = b.participants?.filter(p => !p.paid).reduce((s, p) => s + parseFloat(p.amount || 0), 0) || 0;
+  const isFullyPaid = owed === 0 && total > 0;
+  const isCreator = b.creator_phone === currentUser.email;
   let billUrl = BACKEND + '/bill/' + b.id + (b.share_token ? '?t=' + b.share_token : '');
   try { const profile = JSON.parse(localStorage.getItem('raven_profile') || '{}'); if (profile.first_name) billUrl += (b.share_token ? '&' : '?') + 'name=' + encodeURIComponent(profile.first_name); } catch(e) {}
   billUrlMap[b.id] = billUrl;
+  const owedDisplay = isFullyPaid
+    ? '<span style="color:var(--green);font-weight:700">✓ All paid</span>'
+    : '<span style="color:var(--orange)">$' + owed.toFixed(2) + ' owed</span>';
+  const sharedBadge = !isCreator ? '<span style="font-size:10px;background:rgba(124,58,237,0.12);border:1px solid rgba(124,58,237,0.2);color:var(--purple3);padding:2px 7px;border-radius:6px;vertical-align:middle;margin-left:6px">shared</span>' : '';
   return '<div class="bill-card" onclick="openBillModal(\'' + b.id + '\')">' +
-    '<div><div class="bill-name">' + b.name + ' <span class="bill-id">' + b.id + '</span></div><div class="bill-meta"><span>' + total + ' people</span><span>' + paid + '/' + total + ' paid</span><span style="color:var(--orange)">$' + owed.toFixed(2) + ' owed</span></div></div>' +
-    '<div class="bill-amount">$' + parseFloat(b.total).toFixed(2) + '</div>' +
-    '<div class="bill-progress-wrap"><div class="bill-progress-label">' + pct + '% paid</div><div class="bill-progress"><div class="bill-progress-fill" style="width:' + pct + '%"></div></div></div>' +
+    '<div><div class="bill-name">' + b.name + sharedBadge + ' <span class="bill-id">' + b.id + '</span></div><div class="bill-meta"><span>' + total + ' people</span><span>' + paid + '/' + total + ' paid</span>' + owedDisplay + '</div></div>' +
+    '<div class="bill-amount" style="color:' + (isFullyPaid ? 'var(--green)' : 'var(--white)') + '">$' + parseFloat(b.total).toFixed(2) + '</div>' +
+    '<div class="bill-progress-wrap"><div class="bill-progress-label">' + pct + '% paid</div><div class="bill-progress"><div class="bill-progress-fill" style="width:' + pct + '%;background:' + (isFullyPaid ? 'var(--green)' : 'var(--purple)') + '"></div></div></div>' +
     '<div class="bill-actions" onclick="event.stopPropagation()">' +
-    '<button class="bill-action-btn btn-remind" onclick="sendReminder(\'' + b.id + '\')">🔔 Remind</button>' +
+    (isCreator ? '<button class="bill-action-btn btn-remind" onclick="sendReminder(\'' + b.id + '\')">🔔 Remind</button>' : '') +
     '<a class="bill-action-btn btn-view" href="' + billUrl + '" style="display:inline-flex;align-items:center;text-decoration:none">View Bill →</a>' +
     '</div></div>';
 }
@@ -1412,7 +1465,14 @@ function closeBillModal() { document.getElementById('bill-modal').classList.remo
 
 async function markPaid(participantId, billId) {
   await db.from('participants').update({ paid: true, paid_at: new Date().toISOString() }).eq('id', participantId);
-  showToast('✅ Marked as paid!', 'success');
+  // Check if all participants are now paid — if so, auto-complete the bill
+  const { data: bill } = await db.from('bills').select('*, participants(*)').eq('id', billId).single();
+  if (bill && bill.participants?.length > 0 && bill.participants.every(p => p.paid)) {
+    await db.from('bills').update({ status: 'completed' }).eq('id', billId);
+    showToast('🎉 Bill fully settled!', 'success');
+  } else {
+    showToast('✅ Marked as paid!', 'success');
+  }
   openBillModal(billId); loadAllData();
 }
 
