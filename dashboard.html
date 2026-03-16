@@ -869,17 +869,21 @@ async function handlePendingJoinIfAny(userId, userEmail, knownDisplayName) {
 }
 
 async function init() {
-  const hash = window.location.hash;
-  if (hash && hash.includes('access_token')) { await db.auth.getSession(); history.replaceState(null, '', window.location.pathname); }
-  const { data: { session } } = await db.auth.getSession();
-  if (session?.user) { currentUser = session.user; await checkOnboardingAndShow(currentUser.id); }
-  db.auth.onAuthStateChange(async (event, session) => {
-    if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session?.user) {
-      currentUser = session.user;
-      if (window.location.hash) history.replaceState(null, '', window.location.pathname);
-      await checkOnboardingAndShow(session.user.id);
-    } else if (event === 'SIGNED_OUT') { currentUser = null; showAuth(); }
-  });
+  try {
+    const hash = window.location.hash;
+    if (hash && hash.includes('access_token')) { try { await db.auth.getSession(); } catch(e){} history.replaceState(null, '', window.location.pathname); }
+    const { data: { session } } = await db.auth.getSession();
+    if (session?.user) { currentUser = session.user; await checkOnboardingAndShow(currentUser.id); }
+    db.auth.onAuthStateChange(async (event, session) => {
+      try {
+        if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session?.user) {
+          currentUser = session.user;
+          if (window.location.hash) history.replaceState(null, '', window.location.pathname);
+          await checkOnboardingAndShow(session.user.id);
+        } else if (event === 'SIGNED_OUT') { currentUser = null; showAuth(); }
+      } catch(e) { console.warn('auth state change error:', e); }
+    });
+  } catch(e) { console.warn('init error:', e); showAuth(); }
 }
 
 async function checkOnboardingAndShow(userId) {
@@ -1619,7 +1623,7 @@ async function loadTrips() {
       + '<div class="bill-progress-wrap"><div class="bill-progress-label">Active</div><div class="bill-progress"><div class="bill-progress-fill" style="width:100%"></div></div></div>'
       + '<div class="bill-actions" onclick="event.stopPropagation()">'
       + '<a class="bill-action-btn btn-remind" href="' + tripUrlReceipt + '" style="display:inline-flex;align-items:center;text-decoration:none;background:rgba(48,209,88,0.1);color:var(--green);border:1px solid rgba(48,209,88,0.25)">📸 Receipt</a>'
-      + (isCreator ? '<button class="bill-action-btn" onclick="openTripAdmin(' + safeId + ')" style="background:rgba(124,58,237,0.1);color:var(--purple3);border:1px solid rgba(124,58,237,0.2)">⚙️ Admin</button>' : '')
+      + (isCreator ? '<button class="bill-action-btn admin-btn" data-tripid="' + t.id + '" style="background:rgba(124,58,237,0.1);color:var(--purple3);border:1px solid rgba(124,58,237,0.2)">⚙️ Admin</button>' : '')
       + '<a class="bill-action-btn btn-view" href="' + tripUrl + '" style="display:inline-flex;align-items:center;text-decoration:none">Open Trip →</a>'
       + '</div></div>';
   }).join('');
@@ -2024,13 +2028,21 @@ async function cbCreateFinalBill() {
 
 window.addEventListener('load', function() { init(); });
 
-// Refresh trips data when user returns to tab (e.g. after visiting trip page)
+// Event delegation — handles admin button clicks without any inline onclick
+document.addEventListener('click', function(e) {
+  const adminBtn = e.target.closest('.admin-btn');
+  if (adminBtn) {
+    e.stopPropagation();
+    const tripId = adminBtn.getAttribute('data-tripid');
+    if (tripId) openTripAdmin(tripId);
+  }
+});
+
+// Refresh trips when returning to tab
 document.addEventListener('visibilitychange', function() {
   if (!document.hidden && currentUser) {
     const tripPage = document.getElementById('page-trip-hub');
-    if (tripPage && tripPage.classList.contains('active')) {
-      loadTrips();
-    }
+    if (tripPage && tripPage.classList.contains('active')) loadTrips();
   }
 });
 </script>
