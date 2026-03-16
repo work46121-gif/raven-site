@@ -878,7 +878,7 @@ async function checkOnboardingAndShow(userId) {
     if (local.user_id === userId && local.onboarding_complete) { showDashboard(); return; }
   } catch(e) {}
   try {
-    const { data: profile, error } = await db.from('profiles').select('onboarding_complete, first_name').eq('id', userId).single();
+    const { data: profile, error } = await db.from('profiles').select('*').eq('id', userId).single();
     if (!error && profile) {
       if (profile.onboarding_complete) {
         const existing = JSON.parse(localStorage.getItem('raven_profile') || '{}');
@@ -1103,9 +1103,9 @@ async function showDashboard() {
     // Show cached avatar immediately while we fetch
     if (local.avatar_url) renderAvatar(local.avatar_url, local.first_name);
 
-    // Always fetch from DB to get latest avatar + name
-    const { data: profile } = await db.from('profiles').select('first_name, avatar_url').eq('id', currentUser.id).single();
-    if (profile) {
+    // Fetch profile — use select('*') to avoid 400 if specific columns don't exist yet
+    const { data: profile, error: profErr } = await db.from('profiles').select('*').eq('id', currentUser.id).single();
+    if (!profErr && profile) {
       const firstName = profile.first_name || local.first_name || '';
       const avatarUrl = profile.avatar_url || local.avatar_url || '';
       // Update localStorage with latest
