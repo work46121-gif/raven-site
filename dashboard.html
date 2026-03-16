@@ -453,71 +453,123 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start">
           <div style="display:flex;flex-direction:column;gap:16px">
             <div id="cb-scanned-badge" style="display:none;padding:14px 18px;background:rgba(48,209,88,0.07);border:1px solid rgba(48,209,88,0.2);border-radius:12px;align-items:center;gap:12px"><span style="font-size:20px">✅</span><div id="cb-scan-summary" style="font-size:14px;color:var(--green);font-weight:600"></div></div>
-            <div style="background:var(--dark);border:1px solid var(--border);border-radius:16px;padding:24px">
-              <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted2);margin-bottom:6px">Who's at the table</div>
-              <div style="font-size:12px;color:var(--muted);margin-bottom:14px">Add everyone so you can assign items to them</div>
-              <div style="display:flex;gap:8px;margin-bottom:12px">
+
+            <!-- Who's splitting -->
+            <div style="background:var(--dark);border:1px solid var(--border);border-radius:16px;padding:20px">
+              <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted2);margin-bottom:12px">Who's splitting this?</div>
+              <div style="display:flex;gap:8px;margin-bottom:10px">
                 <input id="cb-person-input" type="text" class="add-person-input" placeholder="Add name (e.g. Jake)" style="flex:1" onkeydown="if(event.key==='Enter')cbAddPerson()">
                 <button class="add-person-btn" onclick="cbAddPerson()">+ Add</button>
                 <button class="add-person-btn" onclick="cbOpenContactsPicker()" style="background:rgba(48,209,88,0.1);border-color:rgba(48,209,88,0.25);color:var(--green)" title="Add from contacts">👥</button>
               </div>
               <div id="cb-people-chips" class="people-list"></div>
             </div>
-            <div style="background:var(--dark);border:1px solid var(--border);border-radius:16px;padding:24px">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-                <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted2)">Split Method</div>
+
+            <!-- Split method + Items -->
+            <div style="background:var(--dark);border:1px solid var(--border);border-radius:16px;padding:20px">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+                <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted2)">Items</div>
                 <div id="cb-item-count" style="font-size:12px;color:var(--muted)">0 items</div>
               </div>
-              <!-- Even / Itemized toggle -->
-              <div style="display:flex;gap:8px;margin-bottom:16px">
-                <button id="cb-split-even-btn" onclick="cbSetSplitMode('even')" style="flex:1;padding:10px;border-radius:9px;font-family:'Epilogue',sans-serif;font-size:13px;font-weight:700;cursor:pointer;background:rgba(48,209,88,0.12);border:1px solid rgba(48,209,88,0.3);color:var(--green)">⚖️ Split Evenly</button>
-                <button id="cb-split-item-btn" onclick="cbSetSplitMode('itemized')" style="flex:1;padding:10px;border-radius:9px;font-family:'Epilogue',sans-serif;font-size:13px;font-weight:700;cursor:pointer;background:var(--dark2);border:1px solid var(--border);color:var(--muted)">📋 Itemized</button>
+              <div style="display:flex;gap:8px;margin-bottom:14px">
+                <button id="cb-split-even-btn" onclick="cbSetSplitMode('even')" style="flex:1;padding:9px;border-radius:9px;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;background:rgba(48,209,88,0.12);border:1px solid rgba(48,209,88,0.3);color:var(--green)">⚖️ Split Evenly</button>
+                <button id="cb-split-item-btn" onclick="cbSetSplitMode('itemized')" style="flex:1;padding:9px;border-radius:9px;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;background:var(--dark2);border:1px solid var(--border);color:var(--muted)">📋 Itemized</button>
               </div>
-              <!-- Even split total input -->
-              <div id="cb-even-total-wrap" style="margin-bottom:14px">
-                <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:7px;font-weight:600">Total Amount</label>
-                <div style="position:relative"><span style="position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:14px">$</span><input id="cb-even-total" type="number" class="form-input" placeholder="0.00" step="0.01" style="padding-left:30px" oninput="cbUpdateSummary()"></div>
-                <div id="cb-even-preview" style="margin-top:10px;display:flex;flex-direction:column;gap:6px"></div>
+              <!-- Even: just enter a total -->
+              <div id="cb-even-total-wrap">
+                <div style="position:relative"><span style="position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:14px">$</span><input id="cb-even-total" type="number" class="form-input" placeholder="Enter total amount" step="0.01" style="padding-left:30px" oninput="cbUpdateSummary()"></div>
               </div>
-              <!-- Itemized items list -->
+              <!-- Itemized: item list + add row -->
               <div id="cb-itemized-wrap" style="display:none">
-                <div id="cb-items-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px"></div>
-                <div style="display:flex;gap:8px;border-top:1px solid var(--border);padding-top:14px">
-                  <input id="cb-item-name" type="text" class="add-person-input" placeholder="Add item" style="flex:1" onkeydown="if(event.key==='Enter')cbAddItem()">
-                  <div style="position:relative;display:flex;align-items:center"><span style="position:absolute;left:10px;color:var(--muted);font-size:13px">$</span><input id="cb-item-price" type="number" class="add-person-input" placeholder="0.00" step="0.01" style="width:90px;padding-left:22px" onkeydown="if(event.key==='Enter')cbAddItem()"></div>
+                <div id="cb-items-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px"></div>
+                <div style="display:flex;gap:8px;border-top:1px solid var(--border);padding-top:12px">
+                  <input id="cb-item-name" type="text" class="add-person-input" placeholder="Item name" style="flex:1" onkeydown="if(event.key==='Enter')cbAddItem()">
+                  <div style="position:relative;display:flex;align-items:center"><span style="position:absolute;left:10px;color:var(--muted);font-size:13px">$</span><input id="cb-item-price" type="number" class="add-person-input" placeholder="0.00" step="0.01" style="width:82px;padding-left:22px" onkeydown="if(event.key==='Enter')cbAddItem()"></div>
                   <button class="add-person-btn" onclick="cbAddItem()">+ Add</button>
                 </div>
               </div>
             </div>
-            <button onclick="cbGoToStep(1)" style="background:none;border:none;color:var(--muted);font-family:'Epilogue',sans-serif;font-size:13px;cursor:pointer;text-align:left;padding:4px 0">← Back</button>
-          </div>
 
-          <!-- RIGHT: Tax/tip + live summary -->
-          <div style="display:flex;flex-direction:column;gap:16px">
-            <div style="background:var(--dark);border:1px solid var(--border);border-radius:16px;padding:24px">
-              <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted2);margin-bottom:14px">Shared Charges <span style="color:var(--muted);font-weight:400;font-size:10px;text-transform:none;letter-spacing:0">(split evenly)</span></div>
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
-                <div><label style="font-size:12px;color:var(--muted);display:block;margin-bottom:7px;font-weight:600">Tax</label><div style="position:relative"><span style="position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:14px">$</span><input id="cb-tax" type="number" class="form-input" placeholder="0.00" step="0.01" style="padding-left:30px" oninput="cbUpdateSummary()"></div></div>
-                <div><label style="font-size:12px;color:var(--muted);display:block;margin-bottom:7px;font-weight:600">Tip</label><div style="position:relative"><span style="position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:14px">$</span><input id="cb-tip" type="number" class="form-input" placeholder="0.00" step="0.01" style="padding-left:30px" oninput="cbUpdateSummary()"></div></div>
+            <!-- Shared charges with per-charge split toggle -->
+            <div style="background:var(--dark);border:1px solid var(--border);border-radius:16px;padding:20px">
+              <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted2);margin-bottom:14px">Shared Charges</div>
+              <div style="display:flex;flex-direction:column;gap:12px">
+
+                <!-- Tax -->
+                <div style="background:var(--dark2);border:1px solid var(--border);border-radius:10px;padding:12px 14px">
+                  <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+                    <span style="font-size:13px;font-weight:600;flex:1">🧾 Tax</span>
+                    <div style="position:relative"><span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:12px">$</span><input id="cb-tax" type="number" class="add-person-input" placeholder="0.00" step="0.01" style="width:90px;padding-left:24px;font-size:13px" oninput="cbUpdateSummary()"></div>
+                  </div>
+                  <div style="display:flex;gap:6px">
+                    <button id="cb-tax-split-even" onclick="cbSetChargeSplit('tax','even')" style="flex:1;padding:5px 8px;border-radius:6px;font-family:inherit;font-size:11px;font-weight:600;cursor:pointer;background:rgba(48,209,88,0.12);border:1px solid rgba(48,209,88,0.3);color:var(--green)">÷ Evenly</button>
+                    <button id="cb-tax-split-prop" onclick="cbSetChargeSplit('tax','proportional')" style="flex:1;padding:5px 8px;border-radius:6px;font-family:inherit;font-size:11px;font-weight:600;cursor:pointer;background:var(--dark3);border:1px solid var(--border);color:var(--muted)">∝ By item cost</button>
+                  </div>
+                </div>
+
+                <!-- Tip -->
+                <div style="background:var(--dark2);border:1px solid var(--border);border-radius:10px;padding:12px 14px">
+                  <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+                    <span style="font-size:13px;font-weight:600;flex:1">💰 Tip</span>
+                    <div style="position:relative"><span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:12px">$</span><input id="cb-tip" type="number" class="add-person-input" placeholder="0.00" step="0.01" style="width:90px;padding-left:24px;font-size:13px" oninput="cbUpdateSummary()"></div>
+                  </div>
+                  <div style="display:flex;gap:6px">
+                    <button id="cb-tip-split-even" onclick="cbSetChargeSplit('tip','even')" style="flex:1;padding:5px 8px;border-radius:6px;font-family:inherit;font-size:11px;font-weight:600;cursor:pointer;background:rgba(48,209,88,0.12);border:1px solid rgba(48,209,88,0.3);color:var(--green)">÷ Evenly</button>
+                    <button id="cb-tip-split-prop" onclick="cbSetChargeSplit('tip','proportional')" style="flex:1;padding:5px 8px;border-radius:6px;font-family:inherit;font-size:11px;font-weight:600;cursor:pointer;background:var(--dark3);border:1px solid var(--border);color:var(--muted)">∝ By item cost</button>
+                  </div>
+                </div>
+
+                <!-- Service Fee -->
+                <div style="background:var(--dark2);border:1px solid var(--border);border-radius:10px;padding:12px 14px">
+                  <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+                    <span style="font-size:13px;font-weight:600;flex:1">🛎️ Service Fee</span>
+                    <div style="position:relative"><span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:12px">$</span><input id="cb-service" type="number" class="add-person-input" placeholder="0.00" step="0.01" style="width:90px;padding-left:24px;font-size:13px" oninput="cbUpdateSummary()"></div>
+                  </div>
+                  <div style="display:flex;gap:6px">
+                    <button id="cb-service-split-even" onclick="cbSetChargeSplit('service','even')" style="flex:1;padding:5px 8px;border-radius:6px;font-family:inherit;font-size:11px;font-weight:600;cursor:pointer;background:rgba(48,209,88,0.12);border:1px solid rgba(48,209,88,0.3);color:var(--green)">÷ Evenly</button>
+                    <button id="cb-service-split-prop" onclick="cbSetChargeSplit('service','proportional')" style="flex:1;padding:5px 8px;border-radius:6px;font-family:inherit;font-size:11px;font-weight:600;cursor:pointer;background:var(--dark3);border:1px solid var(--border);color:var(--muted)">∝ By item cost</button>
+                  </div>
+                </div>
+
+                <!-- Misc -->
+                <div style="background:var(--dark2);border:1px solid var(--border);border-radius:10px;padding:12px 14px">
+                  <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+                    <span style="font-size:13px;font-weight:600;flex:1">📦 Miscellaneous</span>
+                    <div style="position:relative"><span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:12px">$</span><input id="cb-misc" type="number" class="add-person-input" placeholder="0.00" step="0.01" style="width:90px;padding-left:24px;font-size:13px" oninput="cbUpdateSummary()"></div>
+                  </div>
+                  <div style="display:flex;gap:6px">
+                    <button id="cb-misc-split-even" onclick="cbSetChargeSplit('misc','even')" style="flex:1;padding:5px 8px;border-radius:6px;font-family:inherit;font-size:11px;font-weight:600;cursor:pointer;background:rgba(48,209,88,0.12);border:1px solid rgba(48,209,88,0.3);color:var(--green)">÷ Evenly</button>
+                    <button id="cb-misc-split-prop" onclick="cbSetChargeSplit('misc','proportional')" style="flex:1;padding:5px 8px;border-radius:6px;font-family:inherit;font-size:11px;font-weight:600;cursor:pointer;background:var(--dark3);border:1px solid var(--border);color:var(--muted)">∝ By item cost</button>
+                  </div>
+                </div>
               </div>
             </div>
 
-            <!-- Live summary card — sticky -->
+            <button onclick="cbGoToStep(1)" style="background:none;border:none;color:var(--muted);font-family:'Epilogue',sans-serif;font-size:13px;cursor:pointer;text-align:left;padding:4px 0">← Back</button>
+          </div>
+
+          <!-- RIGHT: Live summary -->
+          <div style="display:flex;flex-direction:column;gap:16px">
             <div style="position:sticky;top:24px;background:var(--dark);border:1px solid var(--border);border-radius:16px;padding:24px">
-              <div style="font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted2);margin-bottom:18px">Live Summary</div>
-              <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:18px;padding-bottom:18px;border-bottom:1px solid var(--border)">
-                <div style="display:flex;justify-content:space-between;font-size:14px;color:var(--muted)"><span>Subtotal</span><span id="cb-subtotal" style="font-family:'JetBrains Mono',monospace">$0.00</span></div>
-                <div style="display:flex;justify-content:space-between;font-size:14px;color:var(--muted)"><span>Tax</span><span id="cb-tax-display" style="font-family:'JetBrains Mono',monospace">$0.00</span></div>
-                <div style="display:flex;justify-content:space-between;font-size:14px;color:var(--muted)"><span>Tip</span><span id="cb-tip-display" style="font-family:'JetBrains Mono',monospace">$0.00</span></div>
+              <div style="font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted2);margin-bottom:16px">Live Summary</div>
+              <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--border)">
+                <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--muted)"><span>Subtotal</span><span id="cb-subtotal" style="font-family:'JetBrains Mono',monospace">$0.00</span></div>
+                <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--muted)"><span>Tax</span><span id="cb-tax-display" style="font-family:'JetBrains Mono',monospace">$0.00</span></div>
+                <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--muted)"><span>Tip</span><span id="cb-tip-display" style="font-family:'JetBrains Mono',monospace">$0.00</span></div>
+                <div id="cb-service-row" style="display:none;justify-content:space-between;font-size:13px;color:var(--muted)"><span>Service Fee</span><span id="cb-service-display" style="font-family:'JetBrains Mono',monospace">$0.00</span></div>
+                <div id="cb-misc-row" style="display:none;justify-content:space-between;font-size:13px;color:var(--muted)"><span>Misc</span><span id="cb-misc-display" style="font-family:'JetBrains Mono',monospace">$0.00</span></div>
               </div>
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:22px">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
                 <span style="font-size:18px;font-weight:700">Total</span>
                 <span id="cb-total-display" style="font-family:'Bebas Neue',sans-serif;font-size:36px;color:var(--green);letter-spacing:0.03em">$0.00</span>
               </div>
+              <!-- Per-person live breakdown -->
+              <div id="cb-per-person-live" style="display:flex;flex-direction:column;gap:6px;margin-bottom:20px"></div>
               <button onclick="cbGoToStep(3)" class="submit-btn" style="font-size:15px;padding:16px">Continue to Confirm →</button>
             </div>
           </div>
         </div>
+
       </div>
 
       <!-- ── STEP 3 ── -->
@@ -2387,26 +2439,69 @@ function cbGoToStep(step) {
   if (step === 3) cbBuildStep3();
 }
 
-let cbSplitMode = 'even'; // 'even' or 'itemized'
+let cbSplitMode = 'even';
+const cbChargeSplits = { tax: 'even', tip: 'even', service: 'even', misc: 'even' };
+
+function cbSetChargeSplit(charge, mode) {
+  cbChargeSplits[charge] = mode;
+  const e = document.getElementById('cb-' + charge + '-split-even');
+  const p = document.getElementById('cb-' + charge + '-split-prop');
+  if (!e || !p) return;
+  if (mode === 'even') {
+    e.style.cssText = 'flex:1;padding:5px 8px;border-radius:6px;font-family:inherit;font-size:11px;font-weight:600;cursor:pointer;background:rgba(48,209,88,0.12);border:1px solid rgba(48,209,88,0.3);color:var(--green)';
+    p.style.cssText = 'flex:1;padding:5px 8px;border-radius:6px;font-family:inherit;font-size:11px;font-weight:600;cursor:pointer;background:var(--dark3);border:1px solid var(--border);color:var(--muted)';
+  } else {
+    e.style.cssText = 'flex:1;padding:5px 8px;border-radius:6px;font-family:inherit;font-size:11px;font-weight:600;cursor:pointer;background:var(--dark3);border:1px solid var(--border);color:var(--muted)';
+    p.style.cssText = 'flex:1;padding:5px 8px;border-radius:6px;font-family:inherit;font-size:11px;font-weight:600;cursor:pointer;background:rgba(124,58,237,0.12);border:1px solid rgba(124,58,237,0.3);color:var(--purple3)';
+  }
+  cbUpdateSummary();
+}
 
 function cbSetSplitMode(mode) {
   cbSplitMode = mode;
-  const evenBtn = document.getElementById('cb-split-even-btn');
-  const itemBtn = document.getElementById('cb-split-item-btn');
-  const evenWrap = document.getElementById('cb-even-total-wrap');
-  const itemWrap = document.getElementById('cb-itemized-wrap');
+  const EB = document.getElementById('cb-split-even-btn'), IB = document.getElementById('cb-split-item-btn');
+  const EW = document.getElementById('cb-even-total-wrap'), IW = document.getElementById('cb-itemized-wrap');
   if (mode === 'even') {
-    evenBtn.style.cssText = 'flex:1;padding:10px;border-radius:9px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;background:rgba(48,209,88,0.12);border:1px solid rgba(48,209,88,0.3);color:var(--green)';
-    itemBtn.style.cssText = 'flex:1;padding:10px;border-radius:9px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;background:var(--dark2);border:1px solid var(--border);color:var(--muted)';
-    if (evenWrap) evenWrap.style.display = 'block';
-    if (itemWrap) itemWrap.style.display = 'none';
+    if (EB) EB.style.cssText = 'flex:1;padding:9px;border-radius:9px;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;background:rgba(48,209,88,0.12);border:1px solid rgba(48,209,88,0.3);color:var(--green)';
+    if (IB) IB.style.cssText = 'flex:1;padding:9px;border-radius:9px;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;background:var(--dark2);border:1px solid var(--border);color:var(--muted)';
+    if (EW) EW.style.display = 'block'; if (IW) IW.style.display = 'none';
   } else {
-    evenBtn.style.cssText = 'flex:1;padding:10px;border-radius:9px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;background:var(--dark2);border:1px solid var(--border);color:var(--muted)';
-    itemBtn.style.cssText = 'flex:1;padding:10px;border-radius:9px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;background:rgba(124,58,237,0.12);border:1px solid rgba(124,58,237,0.3);color:var(--purple3)';
-    if (evenWrap) evenWrap.style.display = 'none';
-    if (itemWrap) itemWrap.style.display = 'block';
+    if (EB) EB.style.cssText = 'flex:1;padding:9px;border-radius:9px;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;background:var(--dark2);border:1px solid var(--border);color:var(--muted)';
+    if (IB) IB.style.cssText = 'flex:1;padding:9px;border-radius:9px;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;background:rgba(124,58,237,0.12);border:1px solid rgba(124,58,237,0.3);color:var(--purple3)';
+    if (EW) EW.style.display = 'none'; if (IW) IW.style.display = 'block';
   }
   cbUpdateSummary();
+}
+
+function cbComputePersonAmounts() {
+  const n = cbPeople.length; if (n === 0) return {};
+  const tax = parseFloat(document.getElementById('cb-tax')?.value) || 0;
+  const tip = parseFloat(document.getElementById('cb-tip')?.value) || 0;
+  const svc = parseFloat(document.getElementById('cb-service')?.value) || 0;
+  const msc = parseFloat(document.getElementById('cb-misc')?.value) || 0;
+  const itemAmts = {}; cbPeople.forEach(p => { itemAmts[p] = 0; });
+  let subtotal = 0;
+  if (cbSplitMode === 'even') {
+    const base = parseFloat(document.getElementById('cb-even-total')?.value) || 0;
+    subtotal = base; cbPeople.forEach(p => { itemAmts[p] = base / n; });
+  } else {
+    cbItems.forEach(item => {
+      const asgn = item.assignees.length > 0 ? item.assignees : cbPeople;
+      const sh = item.price / asgn.length;
+      asgn.forEach(p => { itemAmts[p] = (itemAmts[p]||0) + sh; });
+      subtotal += item.price;
+    });
+  }
+  const totals = { ...itemAmts };
+  [['tax',tax],['tip',tip],['service',svc],['misc',msc]].forEach(([key,amt]) => {
+    if (amt <= 0) return;
+    if (cbChargeSplits[key] === 'proportional' && subtotal > 0) {
+      cbPeople.forEach(p => { totals[p] = (totals[p]||0) + amt * ((itemAmts[p]||0) / subtotal); });
+    } else {
+      cbPeople.forEach(p => { totals[p] = (totals[p]||0) + amt / n; });
+    }
+  });
+  return totals;
 }
 
 function cbSkipToStep2() { cbGoToStep(2); cbRenderItems(); cbRenderPeople(); cbSetSplitMode(cbItems.length > 0 ? 'itemized' : 'even'); }
@@ -2701,56 +2796,43 @@ function cbCloseAssign() { document.getElementById('cb-assign-modal').style.disp
 function cbUpdateSummary() {
   const tax = parseFloat(document.getElementById('cb-tax')?.value) || 0;
   const tip = parseFloat(document.getElementById('cb-tip')?.value) || 0;
-  let subtotal = 0;
-  if (cbSplitMode === 'even') {
-    subtotal = parseFloat(document.getElementById('cb-even-total')?.value) || 0;
-    // Update even split preview
-    const preview = document.getElementById('cb-even-preview');
-    if (preview && cbPeople.length > 0 && subtotal > 0) {
-      const perPerson = (subtotal + tax + tip) / cbPeople.length;
-      preview.innerHTML = cbPeople.map(p =>
-        '<div style="display:flex;justify-content:space-between;font-size:13px;padding:6px 0;border-bottom:1px solid var(--border)"><span style="color:var(--muted)">@' + p + '</span><span style="color:var(--green);font-weight:700">$' + perPerson.toFixed(2) + '</span></div>'
-      ).join('');
-    } else if (preview) { preview.innerHTML = ''; }
-  } else {
-    subtotal = cbItems.reduce((s, i) => s + i.price, 0);
-  }
-  const total = subtotal + tax + tip;
-  if (document.getElementById('cb-subtotal')) document.getElementById('cb-subtotal').textContent = '$' + subtotal.toFixed(2);
-  if (document.getElementById('cb-tax-display')) document.getElementById('cb-tax-display').textContent = '$' + tax.toFixed(2);
-  if (document.getElementById('cb-tip-display')) document.getElementById('cb-tip-display').textContent = '$' + tip.toFixed(2);
-  if (document.getElementById('cb-total-display')) document.getElementById('cb-total-display').textContent = '$' + total.toFixed(2);
+  const svc = parseFloat(document.getElementById('cb-service')?.value) || 0;
+  const msc = parseFloat(document.getElementById('cb-misc')?.value) || 0;
+  const subtotal = cbSplitMode === 'even'
+    ? (parseFloat(document.getElementById('cb-even-total')?.value) || 0)
+    : cbItems.reduce((s,i) => s + i.price, 0);
+  const total = subtotal + tax + tip + svc + msc;
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = '$' + v.toFixed(2); };
+  set('cb-subtotal', subtotal); set('cb-tax-display', tax); set('cb-tip-display', tip);
+  set('cb-service-display', svc); set('cb-misc-display', msc); set('cb-total-display', total);
+  const sr = document.getElementById('cb-service-row'); if (sr) sr.style.display = svc > 0 ? 'flex' : 'none';
+  const mr = document.getElementById('cb-misc-row');    if (mr) mr.style.display = msc > 0 ? 'flex' : 'none';
+  const liveEl = document.getElementById('cb-per-person-live');
+  if (liveEl && cbPeople.length > 0 && total > 0) {
+    const amts = cbComputePersonAmounts();
+    liveEl.innerHTML = '<div style="font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted2);font-weight:700;margin-bottom:6px">Per person</div>' +
+      cbPeople.map(p => '<div style="display:flex;justify-content:space-between;font-size:13px;padding:5px 0;border-bottom:1px solid var(--border)"><span style="color:var(--muted)">@' + p + '</span><span style="color:var(--green);font-weight:700">$' + (amts[p]||0).toFixed(2) + '</span></div>').join('');
+  } else if (liveEl) { liveEl.innerHTML = ''; }
 }
 
 function cbBuildStep3() {
   const name = document.getElementById('cb-name').value || 'Untitled Bill';
   const tax = parseFloat(document.getElementById('cb-tax')?.value) || 0;
   const tip = parseFloat(document.getElementById('cb-tip')?.value) || 0;
-  let total, personAmounts = {};
-
-  if (cbSplitMode === 'even') {
-    const base = parseFloat(document.getElementById('cb-even-total')?.value) || 0;
-    total = base + tax + tip;
-    const per = cbPeople.length > 0 ? total / cbPeople.length : 0;
-    cbPeople.forEach(p => { personAmounts[p] = per; });
-  } else {
-    const subtotal = cbItems.reduce((s, i) => s + i.price, 0);
-    total = subtotal + tax + tip;
-    const sharedPer = cbPeople.length > 0 ? (tax + tip) / cbPeople.length : 0;
-    cbPeople.forEach(p => {
-      let pt = sharedPer;
-      cbItems.forEach(item => { if (item.assignees.includes(p)) pt += item.price / item.assignees.length; else if (item.assignees.length === 0) pt += item.price / cbPeople.length; });
-      personAmounts[p] = pt;
-    });
-  }
-
+  const svc = parseFloat(document.getElementById('cb-service')?.value) || 0;
+  const msc = parseFloat(document.getElementById('cb-misc')?.value) || 0;
+  const subtotal = cbSplitMode === 'even'
+    ? (parseFloat(document.getElementById('cb-even-total')?.value) || 0)
+    : cbItems.reduce((s,i) => s + i.price, 0);
+  const total = subtotal + tax + tip + svc + msc;
+  const personAmounts = cbComputePersonAmounts();
   document.getElementById('cb-final-name').textContent = name;
   document.getElementById('cb-final-meta').textContent = (cbSplitMode === 'even' ? 'Split evenly' : cbItems.length + ' items') + ' · $' + total.toFixed(2);
   document.getElementById('cb-final-total').textContent = '$' + total.toFixed(2);
   const list = document.getElementById('cb-per-person-list');
   if (cbPeople.length === 0) { list.innerHTML = '<div style="color:var(--muted);font-size:13px">No people added</div>'; return; }
-  list.innerHTML = cbPeople.map(person =>
-    '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--dark2);border:1px solid var(--border);border-radius:10px"><div><div style="font-weight:600;font-size:14px">@' + person + '</div><div style="font-size:11px;color:var(--muted);margin-top:2px">' + (cbSplitMode === 'even' ? 'even share' : 'items + shared charges') + '</div></div><div style="font-family:\'Bebas Neue\',sans-serif;font-size:24px;color:var(--green)">$' + (personAmounts[person]||0).toFixed(2) + '</div></div>'
+  list.innerHTML = cbPeople.map(p =>
+    '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--dark2);border:1px solid var(--border);border-radius:10px"><div><div style="font-weight:600;font-size:14px">@' + p + '</div><div style="font-size:11px;color:var(--muted);margin-top:2px">' + (cbSplitMode === 'even' ? 'even share' : 'items + proportional charges') + '</div></div><div style="font-family:\'Bebas Neue\',sans-serif;font-size:24px;color:var(--green)">$' + (personAmounts[p]||0).toFixed(2) + '</div></div>'
   ).join('');
 }
 
@@ -2760,25 +2842,19 @@ async function cbCreateFinalBill() {
   if (cbPeople.length === 0) return showToast('Add at least one person', 'error');
   const tax = parseFloat(document.getElementById('cb-tax')?.value) || 0;
   const tip = parseFloat(document.getElementById('cb-tip')?.value) || 0;
-  let total, personAmounts = {};
-
+  const svc = parseFloat(document.getElementById('cb-service')?.value) || 0;
+  const msc = parseFloat(document.getElementById('cb-misc')?.value) || 0;
+  let total;
   if (cbSplitMode === 'even') {
     const base = parseFloat(document.getElementById('cb-even-total')?.value) || 0;
     if (base <= 0) return showToast('Enter the total amount', 'error');
-    total = base + tax + tip;
-    const per = total / cbPeople.length;
-    cbPeople.forEach(p => { personAmounts[p] = per; });
+    total = base + tax + tip + svc + msc;
   } else {
-    const subtotal = cbItems.reduce((s, i) => s + i.price, 0);
-    if (subtotal <= 0 && cbItems.length === 0) return showToast('Add at least one item', 'error');
-    total = subtotal + tax + tip;
-    const sharedPer = (tax + tip) / cbPeople.length;
-    cbPeople.forEach(p => {
-      let pt = sharedPer;
-      cbItems.forEach(item => { if (item.assignees.includes(p)) pt += item.price / item.assignees.length; else if (item.assignees.length === 0) pt += item.price / cbPeople.length; });
-      personAmounts[p] = pt;
-    });
+    const subtotal = cbItems.reduce((s,i) => s + i.price, 0);
+    if (subtotal <= 0) return showToast('Add at least one item', 'error');
+    total = subtotal + tax + tip + svc + msc;
   }
+  const personAmounts = cbComputePersonAmounts();
   const btn = document.getElementById('cb-final-btn');
   btn.textContent = 'Creating...'; btn.disabled = true;
   const billId = generateId();
@@ -2809,6 +2885,7 @@ async function cbCreateFinalBill() {
   btn.textContent = '🪶 Create Bill'; btn.disabled = false;
   showToast('✅ "' + name + '" created! ID: ' + billId, 'success');
   cbItems = []; cbPeople = []; cbImageBase64 = null; cbSplitMode = 'even';
+  Object.keys(cbChargeSplits).forEach(k => { cbChargeSplits[k] = 'even'; });
   document.getElementById('cb-name').value = '';
   if (document.getElementById('cb-tax')) document.getElementById('cb-tax').value = '';
   if (document.getElementById('cb-tip')) document.getElementById('cb-tip').value = '';
