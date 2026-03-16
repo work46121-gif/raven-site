@@ -2935,22 +2935,88 @@ function cbBuildStep3() {
   const total = subtotal + tax + tip + svc + msc;
   const personAmounts = cbComputePersonAmounts();
   const paidBy = document.getElementById('cb-paidby')?.value || '';
+
   document.getElementById('cb-final-name').textContent = name;
   document.getElementById('cb-final-meta').textContent = (cbSplitMode === 'even' ? 'Split evenly' : cbItems.length + ' items') + ' · $' + total.toFixed(2);
   document.getElementById('cb-final-total').textContent = '$' + total.toFixed(2);
-  const list = document.getElementById('cb-per-person-list');
-  if (cbPeople.length === 0) { list.innerHTML = '<div style="color:var(--muted);font-size:13px">No people added</div>'; return; }
-  // Show who paid badge if set
-  const paidBadge = paidBy
-    ? '<div style="display:flex;align-items:center;gap:10px;padding:12px 16px;background:rgba(124,58,237,0.07);border:1px solid rgba(124,58,237,0.2);border-radius:10px;margin-bottom:12px"><div style="font-size:20px">💳</div><div><div style="font-size:13px;font-weight:700;color:var(--purple3)">' + paidBy + ' paid the bill</div><div style="font-size:11px;color:var(--muted)">Others will owe them their share</div></div></div>'
-    : '';
-  list.innerHTML = paidBadge + cbPeople.map(p => {
-    const amt = personAmounts[p] || 0;
-    const isPayer = p === paidBy;
-    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--dark2);border:1px solid ' + (isPayer ? 'rgba(124,58,237,0.3)' : 'var(--border)') + ';border-radius:10px"><div><div style="font-weight:600;font-size:14px">@' + p + (isPayer ? ' <span style="font-size:10px;background:rgba(124,58,237,0.15);color:var(--purple3);border-radius:6px;padding:2px 6px;vertical-align:middle">paid</span>' : '') + '</div><div style="font-size:11px;color:var(--muted);margin-top:2px">' + (isPayer ? 'collecting from others' : 'owes ' + (paidBy || 'split')) + '</div></div><div style="font-family:\'Bebas Neue\',sans-serif;font-size:24px;color:' + (isPayer ? 'var(--purple3)' : 'var(--green)') + '">$' + amt.toFixed(2) + '</div></div>';
-  }).join('');
-}
 
+  const list = document.getElementById('cb-per-person-list');
+  list.innerHTML = '';
+  if (cbPeople.length === 0) { list.innerHTML = '<div style="color:var(--muted);font-size:13px">No people added</div>'; return; }
+
+  // Payer badge
+  if (paidBy) {
+    const badge = document.createElement('div');
+    badge.style.cssText = 'display:flex;align-items:center;gap:10px;padding:12px 14px;background:rgba(124,58,237,0.07);border:1px solid rgba(124,58,237,0.2);border-radius:10px';
+    badge.innerHTML = '<div style="font-size:18px">💳</div><div><div style="font-size:13px;font-weight:700;color:var(--purple3)">' + paidBy + ' paid the bill</div><div style="font-size:11px;color:var(--muted)">Others will owe them their share</div></div>';
+    list.appendChild(badge);
+  }
+
+  cbPeople.forEach(p => {
+    const total_p = personAmounts[p] || 0;
+    const isPayer = p === paidBy;
+
+    // Figure out this person's item breakdown
+    const lines = [];
+
+    if (cbSplitMode === 'even') {
+      const base = parseFloat(document.getElementById('cb-even-total')?.value) || 0;
+      lines.push({ label: 'Split share', amount: base / cbPeople.length });
+    } else {
+      // Items assigned to this person
+      const myItems = cbItems.filter(item => item.assignees.includes(p));
+      const unassigned = cbItems.filter(item => item.assignees.length === 0);
+      myItems.forEach(item => lines.push({ label: item.name, amount: item.price / item.assignees.length }));
+      if (unassigned.length > 0) {
+        const unassignedTotal = unassigned.reduce((s,i) => s + i.price, 0);
+        lines.push({ label: unassigned.length + ' unassigned item' + (unassigned.length > 1 ? 's' : '') + ' ÷ ' + cbPeople.length, amount: unassignedTotal / cbPeople.length });
+      }
+    }
+
+    // Shared charges
+    const itemSubtotal = lines.reduce((s,l) => s + l.amount, 0);
+    if (tax > 0)  lines.push({ label: 'Tax (' + (cbChargeSplits.tax === 'proportional' ? Math.round(itemSubtotal/subtotal*100) + '% share' : 'even split') + ')', amount: cbChargeSplits.tax === 'proportional' && subtotal > 0 ? tax * itemSubtotal / subtotal : tax / cbPeople.length });
+    if (tip > 0)  lines.push({ label: 'Tip (' + (cbChargeSplits.tip === 'proportional' ? Math.round(itemSubtotal/subtotal*100) + '% share' : 'even split') + ')', amount: cbChargeSplits.tip === 'proportional' && subtotal > 0 ? tip * itemSubtotal / subtotal : tip / cbPeople.length });
+    if (svc > 0)  lines.push({ label: 'Service fee', amount: cbChargeSplits.service === 'proportional' && subtotal > 0 ? svc * itemSubtotal / subtotal : svc / cbPeople.length });
+    if (msc > 0)  lines.push({ label: 'Misc', amount: cbChargeSplits.misc === 'proportional' && subtotal > 0 ? msc * itemSubtotal / subtotal : msc / cbPeople.length });
+
+    // Card — clicking toggles detail
+    const card = document.createElement('div');
+    card.style.cssText = 'border:1px solid ' + (isPayer ? 'rgba(124,58,237,0.3)' : 'var(--border)') + ';border-radius:12px;overflow:hidden;cursor:pointer';
+
+    const header = document.createElement('div');
+    header.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:' + (isPayer ? 'rgba(124,58,237,0.06)' : 'var(--dark2)');
+    header.innerHTML =
+      '<div><div style="font-weight:600;font-size:14px">@' + p + (isPayer ? ' <span style="font-size:10px;background:rgba(124,58,237,0.15);color:var(--purple3);border-radius:6px;padding:2px 6px;vertical-align:middle">paid</span>' : '') + '</div>' +
+      '<div style="font-size:11px;color:var(--muted);margin-top:2px">' + (isPayer ? 'collecting from others' : lines.length + ' line item' + (lines.length !== 1 ? 's' : '') + ' — tap for breakdown') + '</div></div>' +
+      '<div style="display:flex;align-items:center;gap:10px">' +
+      '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:26px;color:' + (isPayer ? 'var(--purple3)' : 'var(--green)') + '">$' + total_p.toFixed(2) + '</div>' +
+      '<span id="step3-chevron-' + p.replace(/\s+/g,'_') + '" style="color:var(--muted);font-size:12px">▾</span>' +
+      '</div>';
+
+    const detail = document.createElement('div');
+    detail.style.cssText = 'display:none;border-top:1px solid var(--border);background:var(--dark3);padding:12px 16px';
+    detail.innerHTML = lines.map((l, i) =>
+      '<div style="display:flex;justify-content:space-between;font-size:13px;padding:5px 0;' + (i < lines.length-1 ? 'border-bottom:1px solid rgba(255,255,255,0.04)' : '') + '">' +
+      '<span style="color:var(--muted)">' + l.label + '</span>' +
+      '<span style="font-family:\'JetBrains Mono\',monospace;color:var(--white)">$' + l.amount.toFixed(2) + '</span>' +
+      '</div>'
+    ).join('') +
+    '<div style="display:flex;justify-content:space-between;font-size:14px;font-weight:700;padding-top:8px;margin-top:4px;border-top:1px solid var(--border)">' +
+    '<span>Total</span><span style="color:' + (isPayer ? 'var(--purple3)' : 'var(--green)') + '">$' + total_p.toFixed(2) + '</span></div>';
+
+    header.addEventListener('click', () => {
+      const open = detail.style.display !== 'none';
+      detail.style.display = open ? 'none' : 'block';
+      const ch = document.getElementById('step3-chevron-' + p.replace(/\s+/g,'_'));
+      if (ch) ch.textContent = open ? '▾' : '▴';
+    });
+
+    card.appendChild(header);
+    card.appendChild(detail);
+    list.appendChild(card);
+  });
+}
 async function cbCreateFinalBill() {
   const name = document.getElementById('cb-name').value.trim();
   if (!name) return showToast('Enter a bill name', 'error');
@@ -2977,13 +3043,25 @@ async function cbCreateFinalBill() {
   let receiptData = null;
   if (cbImageBase64) { try { const compressed = await cbResizeImage('data:image/jpeg;base64,' + cbImageBase64, 800); receiptData = compressed.split(',')[1]; } catch(e) { receiptData = cbImageBase64; } }
   const shareToken = Array.from({length:16}, () => 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'[Math.floor(Math.random()*62)]).join('');
-  const billData = { id: billId, creator_phone: currentUser.email, name, total, per_person: total / cbPeople.length, status: 'active', share_token: shareToken };
-  if (paidBy) billData.paid_by = paidBy;
-  if (receiptData) billData.receipt_image = receiptData;
-  const { error } = await db.from('bills').insert(billData);
-  if (error) {
-    const { error: err2 } = await db.from('bills').insert({ ...billData, receipt_image: undefined });
-    if (err2) { btn.textContent = '🪶 Create Bill'; btn.disabled = false; return showToast('Error creating bill', 'error'); }
+
+  // Try insert with all fields, fall back progressively if columns don't exist
+  let inserted = false;
+  const baseData = { id: billId, creator_phone: currentUser.email, name, total, per_person: total / cbPeople.length, status: 'active', share_token: shareToken };
+  const attempts = [
+    { ...baseData, ...(paidBy ? { paid_by: paidBy } : {}), ...(receiptData ? { receipt_image: receiptData } : {}) },
+    { ...baseData, ...(paidBy ? { paid_by: paidBy } : {}) },
+    baseData
+  ];
+  let insertError = null;
+  for (const attempt of attempts) {
+    const { error } = await db.from('bills').insert(attempt);
+    if (!error) { inserted = true; break; }
+    console.error('Bill insert attempt failed:', error.message, 'keys:', Object.keys(attempt).join(','));
+    insertError = error;
+  }
+  if (!inserted) {
+    btn.textContent = '🪶 Create Bill'; btn.disabled = false;
+    return showToast('Error: ' + (insertError?.message || 'Could not create bill'), 'error');
   }
   // Payer is marked as already paid (they fronted the money)
   const rows = cbPeople.map(person => ({
