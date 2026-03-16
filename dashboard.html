@@ -573,7 +573,10 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
             <div id="my-raven-id-display" style="font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:0.05em;color:var(--white)">@loading...</div>
             <div style="font-size:12px;color:var(--muted);margin-top:2px">Share this ID so friends can find you on RAVEN</div>
           </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button onclick="shareRavenIdSMS()" style="padding:9px 16px;background:linear-gradient(135deg,#30D158,#0EA5E9);border:none;border-radius:9px;color:#000;font-family:'Epilogue',sans-serif;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap">💬 Share via iMessage</button>
           <button onclick="copyRavenId()" style="padding:9px 16px;background:rgba(124,58,237,0.15);border:1px solid rgba(124,58,237,0.3);border-radius:9px;color:var(--purple3);font-family:'Epilogue',sans-serif;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap">📋 Copy</button>
+        </div>
         </div>
       </div>
 
@@ -873,12 +876,18 @@ let currentBillId = null;
 let people = [];
 
 // ── JOIN TRIP STATE ──────────────────────────────────────────────────────────
-// Detect ?join_trip=X&join_token=Y on page load and persist to sessionStorage
+// Detect ?join_trip=X&join_token=Y and ?add=ravenId on page load
 (function detectJoinParams() {
   const params = new URLSearchParams(window.location.search);
   const joinTrip  = params.get('join_trip');
   const joinToken = params.get('join_token');
   const signIn    = params.get('signin');
+  const addFriend = params.get('add'); // Raven ID to add as friend after login
+
+  if (addFriend) {
+    sessionStorage.setItem('pending_add_friend', addFriend);
+    history.replaceState(null, '', window.location.pathname);
+  }
   if (joinTrip && joinToken) {
     sessionStorage.setItem('pending_join_trip',  joinTrip);
     sessionStorage.setItem('pending_join_token', joinToken);
@@ -1270,6 +1279,39 @@ async function showDashboard() {
   loadAllData();
   // Check pending friend requests for notification badges
   setTimeout(() => { try { loadFriendRequests(); } catch(e) {} }, 1500);
+
+  // Handle ?add=ravenId deep link — auto-navigate to Friends and send request
+  const pendingAdd = sessionStorage.getItem('pending_add_friend');
+  if (pendingAdd) {
+    sessionStorage.removeItem('pending_add_friend');
+    setTimeout(async () => {
+      showPage('friends');
+      setMobNav('mob-settings');
+      await loadFriendsPage();
+      // Search for the raven ID and auto-send request
+      try {
+        const { data: profiles } = await db.from('profiles').select('id,first_name,last_name,raven_id,avatar_url').eq('raven_id', pendingAdd.toLowerCase()).limit(1);
+        if (profiles && profiles.length > 0) {
+          const p = profiles[0];
+          const name = [p.first_name, p.last_name].filter(Boolean).join(' ') || p.raven_id;
+          // Check not already friends
+          const { data: existing } = await db.from('raven_friends').select('id,status').or('user_id.eq.'+currentUser.id+',friend_id.eq.'+currentUser.id).eq('friend_id', p.id).maybeSingle();
+          if (existing?.status === 'accepted') {
+            showToast('You\'re already friends with ' + name + '!', 'success');
+          } else if (existing?.status === 'pending') {
+            showToast('Friend request to ' + name + ' is already pending', 'success');
+          } else {
+            await db.from('raven_friends').insert({ user_id: currentUser.id, friend_id: p.id, status: 'pending' });
+            showToast('Friend request sent to ' + name + ' 🎉', 'success');
+          }
+          await loadFriendsList();
+        } else {
+          showToast('@' + pendingAdd + ' not found — they may need to sign up first', 'error');
+          document.getElementById('friend-search-input').value = pendingAdd;
+        }
+      } catch(e) { console.log('auto-add friend error:', e); }
+    }, 1000);
+  }
 }
 
 function showPage(page) {
@@ -1765,6 +1807,22 @@ async function copyRavenId() {
   const text = el ? el.textContent : '';
   if (!text || text.includes('Set your')) { showToast('Set your Raven ID in Settings first', 'error'); showPage('settings'); return; }
   try { await navigator.clipboard.writeText(text); showToast('Raven ID copied! ' + text, 'success'); } catch(e) { showToast(text, 'success'); }
+}
+
+async function shareRavenIdSMS() {
+  const el = document.getElementById('my-raven-id-display');
+  const ravenId = (el ? el.textContent : '').replace('@','').trim();
+  if (!ravenId || ravenId === 'loading...') { showToast('Set your Raven ID in Settings first', 'error'); showPage('settings'); return; }
+  // Build the deep link — lands on dashboard with ?add=ravenId which triggers friend request flow
+  const dashboardUrl = 'https://work46121-gif.github.io/raven-site/dashboard.html?add=' + encodeURIComponent(ravenId);
+  const name = (() => { try { return JSON.parse(localStorage.getItem('raven_profile')||'{}').first_name || 'Someone'; } catch(e) { return 'Someone'; } })();
+  const msg = name + ' wants to connect with you on RAVEN 🪶\n\nRaven splits bills & tracks trip expenses automatically with AI.\n\nTap to add @' + ravenId + ' as a friend:\n' + dashboardUrl;
+  // Try Web Share API first (works on mobile)
+  if (navigator.share) {
+    try { await navigator.share({ text: msg }); return; } catch(e) {}
+  }
+  // Fallback: open iMessage/SMS with sms: URI
+  window.open('sms:?&body=' + encodeURIComponent(msg), '_blank');
 }
 
 async function checkRavenId() {
