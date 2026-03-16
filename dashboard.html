@@ -754,10 +754,30 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
 <div class="toast" id="toast"></div>
 
 <script>
+// ── GLOBAL ERROR HANDLER — catch any unhandled promise rejections silently ──
+window.addEventListener('unhandledrejection', function(e) {
+  console.warn('Unhandled rejection (suppressed):', e.reason);
+  e.preventDefault(); // stops "Uncaught" appearing in console
+});
+
 const SUPABASE_URL = 'https://ffjpzkpdumdcwnakpaje.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZmanB6a3BkdW1kY3duYWtwYWplIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5ODc4OTcsImV4cCI6MjA4ODU2Mzg5N30.JtDLVu4K1TJ8emcN_mvSHBu6e0y8-jPQv-ypoc9p0RU';
 const { createClient } = supabase;
-const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// Safe client creation — clears corrupted auth tokens if they cause a parse error
+let db;
+try {
+  db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+} catch(e) {
+  console.warn('Supabase init failed, clearing storage:', e.message);
+  // Clear potentially corrupted Supabase session tokens from localStorage
+  Object.keys(localStorage).forEach(k => {
+    if (k.startsWith('sb-') || k.includes('supabase')) localStorage.removeItem(k);
+  });
+  // Retry after clearing
+  try { db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY); } catch(e2) { console.error('Fatal: Supabase could not initialize'); }
+}
+
 const BACKEND = 'https://raven-backend-production-fb1f.up.railway.app';
 
 let currentUser = null;
@@ -1160,7 +1180,9 @@ function showPage(page) {
   if (page === 'trip-hub') loadTrips();
 }
 
-async function loadAllData() { await Promise.all([loadOverview(), loadActiveBills()]); }
+async function loadAllData() {
+  try { await Promise.all([loadOverview(), loadActiveBills()]); } catch(e) { console.warn('loadAllData error:', e); }
+}
 
 async function loadOverview() {
   const { data: bills } = await db.from('bills').select('*, participants(*)').eq('creator_phone', currentUser.email).neq('status', 'deleted').order('created_at', { ascending: false }).limit(5);
@@ -1757,37 +1779,134 @@ function cbClearPhoto() {
   document.getElementById('cb-file-input').value = '';
 }
 
+// Fetch with timeout helper
+async function fetchWithTimeout(url, options, timeoutMs) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, { ...options, signal: controller.signal });
+    clearTimeout(timer);
+    return res;
+  } catch(e) {
+    clearTimeout(timer);
+    throw e;
+  }
+}
+
+// Wake the Railway server if it's sleeping (cold start can take 10-20s)
+async function wakeServer() {
+  try {
+    await fetchWithTimeout(BACKEND + '/', {}, 25000);
+  } catch(e) { /* ignore — we'll retry the real request anyway */ }
+}
+
 async function cbScanReceipt() {
   if (!cbImageBase64) return showToast('Upload a receipt photo first', 'error');
   document.getElementById('cb-scan-wrap').style.display = 'none';
   document.getElementById('cb-scanning').style.display = 'block';
-  const msgs = ['Analyzing receipt layout...', 'Reading item names and prices...', 'Detecting tax and tip...', 'Finalizing...'];
-  let mi = 0;
-  const iv = setInterval(() => { if (mi < msgs.length) document.getElementById('cb-scan-status').textContent = msgs[mi++]; }, 1400);
-  try {
-    const res = await fetch(BACKEND + '/demo/scan-receipt', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ image: cbImageBase64, mediaType: cbImageMediaType }) });
-    clearInterval(iv);
-    if (!res.ok) throw new Error('Server error ' + res.status);
-    const data = await res.json();
-    if (!data.success || !data.items?.length) throw new Error(data.error || 'No items found');
-    if (data.bill_name && !document.getElementById('cb-name').value) document.getElementById('cb-name').value = data.bill_name;
-    cbItems = data.items.map((item, i) => ({ id: Date.now() + i, name: item.name, price: parseFloat(item.price) || 0, assignees: [] }));
-    if (data.tax) document.getElementById('cb-tax').value = parseFloat(data.tax).toFixed(2);
-    if (data.tip) document.getElementById('cb-tip').value = parseFloat(data.tip).toFixed(2);
-    document.getElementById('cb-scanning').style.display = 'none';
-    const badge = document.getElementById('cb-scanned-badge'); badge.style.display = 'flex';
-    document.getElementById('cb-scan-summary').textContent = 'Found ' + cbItems.length + ' items · Tax $' + (data.tax||0).toFixed(2) + ' · Tip $' + (data.tip||0).toFixed(2);
-    document.getElementById('cb-scan-result').style.display = 'block';
-    document.getElementById('cb-scan-result').innerHTML = '<div style="display:flex;align-items:center;gap:10px;padding:12px 16px;background:rgba(48,209,88,0.07);border:1px solid rgba(48,209,88,0.2);border-radius:10px"><span>✅</span><span style="font-size:13px;color:var(--green);font-weight:600">' + cbItems.length + ' items found! Moving to next step...</span></div>';
-    cbRenderItems(); cbUpdateSummary();
-    showToast('✅ ' + cbItems.length + ' items scanned!', 'success');
-    setTimeout(() => cbGoToStep(2), 800);
-  } catch(err) {
+  document.getElementById('cb-scan-result').style.display = 'none';
+
+  const statusEl = document.getElementById('cb-scan-status');
+  let iv = null;
+
+  function setStatus(msg) {
+    if (statusEl) statusEl.textContent = msg;
+  }
+
+  function showScanError(msg) {
     clearInterval(iv);
     document.getElementById('cb-scanning').style.display = 'none';
     document.getElementById('cb-scan-wrap').style.display = 'block';
     document.getElementById('cb-scan-result').style.display = 'block';
-    document.getElementById('cb-scan-result').innerHTML = '<div style="display:flex;align-items:center;gap:10px;padding:12px 16px;background:rgba(255,68,68,0.07);border:1px solid rgba(255,68,68,0.2);border-radius:10px"><span>⚠️</span><span style="font-size:13px;color:#FF6B6B;font-weight:600">Scan failed — try a clearer photo or add items manually</span></div>';
+    document.getElementById('cb-scan-result').innerHTML =
+      '<div style="display:flex;align-items:center;gap:10px;padding:12px 16px;background:rgba(255,68,68,0.07);border:1px solid rgba(255,68,68,0.2);border-radius:10px">' +
+      '<span>⚠️</span><span style="font-size:13px;color:#FF6B6B;font-weight:600">' + msg + '</span></div>';
+  }
+
+  const MAX_RETRIES = 3;
+  let attempt = 0;
+
+  while (attempt < MAX_RETRIES) {
+    attempt++;
+    try {
+      // On first attempt, ping server to wake it from cold sleep
+      if (attempt === 1) {
+        setStatus('Waking up AI server...');
+        await wakeServer();
+        setStatus('Analyzing receipt...');
+      } else {
+        setStatus('Retrying... (attempt ' + attempt + ' of ' + MAX_RETRIES + ')');
+        // Brief pause between retries
+        await new Promise(r => setTimeout(r, 2000));
+      }
+
+      // Rotate status messages while waiting
+      const msgs = ['Analyzing receipt layout...', 'Reading item names and prices...', 'Detecting tax and tip...', 'Almost done...'];
+      let mi = 0;
+      iv = setInterval(() => { if (mi < msgs.length) setStatus(msgs[mi++]); }, 2000);
+
+      // 60s timeout — enough for Railway cold start + Claude processing
+      const res = await fetchWithTimeout(BACKEND + '/demo/scan-receipt', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: cbImageBase64, mediaType: cbImageMediaType })
+      }, 60000);
+
+      clearInterval(iv);
+
+      if (!res.ok) {
+        if (attempt < MAX_RETRIES) continue; // retry on server error
+        throw new Error('Server error ' + res.status);
+      }
+
+      const data = await res.json();
+      if (!data.success || !data.items?.length) {
+        // If it's a genuine "no items" result (not a server crash), don't retry
+        if (data.error && !data.error.includes('timeout') && !data.error.includes('network')) {
+          throw new Error('no_items');
+        }
+        if (attempt < MAX_RETRIES) continue;
+        throw new Error('no_items');
+      }
+
+      // ── SUCCESS ──
+      clearInterval(iv);
+      if (data.bill_name && !document.getElementById('cb-name').value) document.getElementById('cb-name').value = data.bill_name;
+      cbItems = data.items.map((item, i) => ({ id: Date.now() + i, name: item.name, price: parseFloat(item.price) || 0, assignees: [] }));
+      if (data.tax) document.getElementById('cb-tax').value = parseFloat(data.tax).toFixed(2);
+      if (data.tip) document.getElementById('cb-tip').value = parseFloat(data.tip).toFixed(2);
+      document.getElementById('cb-scanning').style.display = 'none';
+      const badge = document.getElementById('cb-scanned-badge');
+      if (badge) { badge.style.display = 'flex'; }
+      document.getElementById('cb-scan-summary').textContent = 'Found ' + cbItems.length + ' items · Tax $' + (data.tax||0).toFixed(2) + ' · Tip $' + (data.tip||0).toFixed(2);
+      document.getElementById('cb-scan-result').style.display = 'block';
+      document.getElementById('cb-scan-result').innerHTML =
+        '<div style="display:flex;align-items:center;gap:10px;padding:12px 16px;background:rgba(48,209,88,0.07);border:1px solid rgba(48,209,88,0.2);border-radius:10px">' +
+        '<span>✅</span><span style="font-size:13px;color:var(--green);font-weight:600">' + cbItems.length + ' items found! Moving to next step...</span></div>';
+      cbRenderItems(); cbUpdateSummary();
+      showToast('✅ ' + cbItems.length + ' items scanned!', 'success');
+      setTimeout(() => cbGoToStep(2), 800);
+      return; // done
+
+    } catch(err) {
+      clearInterval(iv);
+      if (err.name === 'AbortError') {
+        // Timeout — retry if we have attempts left
+        if (attempt < MAX_RETRIES) {
+          setStatus('Server is waking up, retrying...');
+          continue;
+        }
+        showScanError('Server took too long to respond. Please try again in a moment.');
+        return;
+      }
+      if (err.message === 'no_items') {
+        showScanError('No items detected. Try a clearer photo with better lighting.');
+        return;
+      }
+      if (attempt < MAX_RETRIES) continue;
+      showScanError('Scan failed. The server may be starting up — please try again in 15 seconds.');
+      return;
+    }
   }
 }
 
@@ -1904,6 +2023,16 @@ async function cbCreateFinalBill() {
 }
 
 window.addEventListener('load', function() { init(); });
+
+// Refresh trips data when user returns to tab (e.g. after visiting trip page)
+document.addEventListener('visibilitychange', function() {
+  if (!document.hidden && currentUser) {
+    const tripPage = document.getElementById('page-trip-hub');
+    if (tripPage && tripPage.classList.contains('active')) {
+      loadTrips();
+    }
+  }
+});
 </script>
 </body>
 </html>
