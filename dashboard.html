@@ -2717,16 +2717,34 @@ async function cbScanReceipt() {
 function cbAddPerson() { const input = document.getElementById('cb-person-input'); const name = input.value.trim(); if (!name || cbPeople.includes(name)) return; cbPeople.push(name); input.value = ''; cbRenderPeople(); cbRenderItems(); cbUpdateSummary(); }
 function cbRemovePerson(name) { cbPeople = cbPeople.filter(p => p !== name); cbItems.forEach(item => { item.assignees = item.assignees.filter(a => a !== name); }); cbRenderPeople(); cbRenderItems(); cbUpdateSummary(); }
 function cbRenderPeople() {
-  // Render chips with × remove button
-  document.getElementById('cb-people-chips').innerHTML = cbPeople.map(p =>
-    '<div class="person-tag">@' + p + ' <button onclick="cbRemovePerson(' + JSON.stringify(p) + ')">×</button></div>'
-  ).join('');
+  // Build chips with DOM — no innerHTML onclick to avoid name escaping issues
+  const container = document.getElementById('cb-people-chips');
+  container.innerHTML = '';
+  cbPeople.forEach(p => {
+    const chip = document.createElement('div');
+    chip.className = 'person-tag';
+    const label = document.createElement('span');
+    label.textContent = '@' + p;
+    const btn = document.createElement('button');
+    btn.textContent = '×';
+    btn.title = 'Remove ' + p;
+    btn.addEventListener('click', () => cbRemovePerson(p));
+    chip.appendChild(label);
+    chip.appendChild(btn);
+    container.appendChild(chip);
+  });
   // Update "Who paid?" dropdown
   const sel = document.getElementById('cb-paidby');
   if (sel) {
     const cur = sel.value;
-    sel.innerHTML = '<option value="">— Select who paid —</option>' +
-      cbPeople.map(p => '<option value="' + p.replace(/"/g,'&quot;') + '"' + (cur === p ? ' selected' : '') + '>' + p + '</option>').join('');
+    sel.innerHTML = '<option value="">— Select who paid —</option>';
+    cbPeople.forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p;
+      opt.textContent = p;
+      if (p === cur) opt.selected = true;
+      sel.appendChild(opt);
+    });
   }
 }
 
@@ -2797,10 +2815,30 @@ function cbOpenAssign(itemId) {
 
 function cbRenderAssignModal(itemId) {
   const item = cbItems.find(i => i.id === itemId);
-  document.getElementById('cb-assign-people-btns').innerHTML = cbPeople.map(p => { const isAssigned = item.assignees.includes(p); return '<button onclick="cbToggleAssign(' + itemId + ',' + JSON.stringify(p) + ')" style="padding:8px 16px;border-radius:8px;font-family:\'Epilogue\',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.15s;background:' + (isAssigned ? 'rgba(48,209,88,0.15)' : 'var(--dark3)') + ';border:1px solid ' + (isAssigned ? 'rgba(48,209,88,0.3)' : 'var(--border)') + ';color:' + (isAssigned ? 'var(--green)' : 'var(--muted2)') + '">' + (isAssigned ? '✓ ' : '') + p + '</button>'; }).join('');
+  if (!item) return;
+
+  // Build assign buttons with DOM — no onclick strings with user data
+  const btnsContainer = document.getElementById('cb-assign-people-btns');
+  btnsContainer.innerHTML = '';
+  cbPeople.forEach(p => {
+    const isAssigned = item.assignees.includes(p);
+    const btn = document.createElement('button');
+    btn.textContent = (isAssigned ? '✓ ' : '') + p;
+    btn.style.cssText = 'padding:8px 16px;border-radius:8px;font-family:\'Epilogue\',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.15s;background:' + (isAssigned ? 'rgba(48,209,88,0.15)' : 'var(--dark3)') + ';border:1px solid ' + (isAssigned ? 'rgba(48,209,88,0.3)' : 'var(--border)') + ';color:' + (isAssigned ? 'var(--green)' : 'var(--muted2)');
+    btn.addEventListener('click', () => { cbToggleAssign(itemId, p); });
+    btnsContainer.appendChild(btn);
+  });
+
+  // Build assigned list
   const list = document.getElementById('cb-assign-list');
-  if (item.assignees.length === 0) { list.innerHTML = '<div style="font-size:13px;color:var(--muted);padding:8px 0">No one assigned yet</div>'; }
-  else { const share = (item.price / item.assignees.length).toFixed(2); list.innerHTML = item.assignees.map(a => '<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 12px;background:var(--dark3);border-radius:8px;margin-bottom:6px"><span style="font-size:13px;font-weight:500">' + a + '</span><span style="font-size:13px;color:var(--green);font-weight:600">$' + share + '</span></div>').join(''); }
+  if (item.assignees.length === 0) {
+    list.innerHTML = '<div style="font-size:13px;color:var(--muted);padding:8px 0">No one assigned yet</div>';
+  } else {
+    const share = (item.price / item.assignees.length).toFixed(2);
+    list.innerHTML = item.assignees.map(a =>
+      '<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 12px;background:var(--dark3);border-radius:8px;margin-bottom:6px"><span style="font-size:13px;font-weight:500">' + a + '</span><span style="font-size:13px;color:var(--green);font-weight:600">$' + share + '</span></div>'
+    ).join('');
+  }
 }
 
 function cbToggleAssign(itemId, personName) {
