@@ -2890,19 +2890,20 @@ async function searchDMGifs(query) {
     if (results) results.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:8px 0">Searching...</div>';
     try {
       // Use Tenor v2 API (free, no key required for basic usage)
-      const res = await fetch('https://tenor.googleapis.com/v2/search?q=' + encodeURIComponent(query) + '&key=AIzaSyB-MzfBZ5MN00KPZE-kNZ7Ia63F7ZgmHKI&limit=12&media_filter=gif');
+      const res = await fetch('https://tenor.googleapis.com/v2/search?q=' + encodeURIComponent(query) + '&key=LIVDSRZULELA&limit=16&media_filter=tinygif,gif&contentfilter=medium');
       const data = await res.json();
       if (!results) return;
       results.innerHTML = '';
       (data.results || []).forEach(gif => {
-        const url = gif.media_formats?.tinygif?.url || gif.media_formats?.gif?.url;
-        if (!url) return;
+        // Tenor v2 uses media_formats object
+        const preview = gif.media_formats?.tinygif?.url || gif.media_formats?.nanogif?.url || gif.media_formats?.gif?.url;
+        const fullUrl = gif.media_formats?.gif?.url || gif.media_formats?.mediumgif?.url || preview;
+        if (!preview) return;
         const img = document.createElement('img');
-        img.src = url;
-        img.style.cssText = 'width:calc(33% - 4px);height:80px;object-fit:cover;border-radius:6px;cursor:pointer;transition:opacity 0.15s';
-        img.addEventListener('mouseenter', () => img.style.opacity = '0.8');
-        img.addEventListener('mouseleave', () => img.style.opacity = '1');
-        img.addEventListener('click', () => sendDMGif(gif.media_formats?.gif?.url || url));
+        img.src = preview;
+        img.loading = 'lazy';
+        img.style.cssText = 'width:calc(33% - 4px);height:80px;object-fit:cover;border-radius:6px;cursor:pointer;flex-shrink:0';
+        img.addEventListener('click', () => { sendDMGif(fullUrl); });
         results.appendChild(img);
       });
       if (!results.children.length) results.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:8px 0">No results</div>';
