@@ -1027,12 +1027,21 @@ async function handleSignup() {
   const { data, error } = await db.auth.signUp({ email, password });
   if (error) { showAuthError(error.message); btn.textContent = 'Create Account →'; btn.disabled = false; return; }
 
-  // Save first name to profile immediately if provided
+  // Save first name to profile + auto-generate Raven ID
   if (data?.user && firstName) {
     try {
-      await db.from('profiles').upsert({ id: data.user.id, email, first_name: firstName, onboarding_complete: false, updated_at: new Date().toISOString() }, { onConflict: 'id' });
-      const existing = JSON.parse(localStorage.getItem('raven_profile') || '{}');
-      localStorage.setItem('raven_profile', JSON.stringify({ ...existing, first_name: firstName, user_id: data.user.id }));
+      // Generate a unique Raven ID: firstname + random 2-digit number, lowercase
+      const base = firstName.toLowerCase().replace(/[^a-z0-9]/g, '');
+      let ravenId = null;
+      // Try base, then base+2digits until unique
+      for (let attempt = 0; attempt < 10; attempt++) {
+        const candidate = attempt === 0 ? base : base + (Math.floor(Math.random() * 90) + 10);
+        const { data: existing } = await db.from('profiles').select('id').eq('raven_id', candidate).maybeSingle();
+        if (!existing) { ravenId = candidate; break; }
+      }
+      await db.from('profiles').upsert({ id: data.user.id, email, first_name: firstName, raven_id: ravenId, onboarding_complete: false, updated_at: new Date().toISOString() }, { onConflict: 'id' });
+      const existingLocal = JSON.parse(localStorage.getItem('raven_profile') || '{}');
+      localStorage.setItem('raven_profile', JSON.stringify({ ...existingLocal, first_name: firstName, raven_id: ravenId, user_id: data.user.id }));
     } catch(e) {}
   }
 
