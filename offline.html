@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Offline — RavenSplit</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Epilogue:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--black:#06060A;--dark:#0C0C12;--border:rgba(255,255,255,0.07);--white:#F0EEF8;--muted:#6E6B80;--green:#30D158;--purple:#7C3AED;--purple3:#C084FC}
+body{font-family:'Epilogue',sans-serif;background:var(--black);color:var(--white);min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 50% 30%,rgba(124,58,237,0.08),transparent 70%);pointer-events:none}
+.card{background:var(--dark);border:1px solid var(--border);border-radius:20px;padding:48px 36px;max-width:380px;width:100%;position:relative}
+.icon{font-size:52px;margin-bottom:20px;display:block}
+h1{font-family:'Bebas Neue',sans-serif;font-size:42px;letter-spacing:0.05em;margin-bottom:12px;background:linear-gradient(135deg,var(--white),var(--purple3));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+p{font-size:15px;color:var(--muted);line-height:1.7;margin-bottom:28px}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:14px 28px;background:var(--green);color:#000;border:none;border-radius:10px;font-family:'Epilogue',sans-serif;font-size:14px;font-weight:700;cursor:pointer;text-decoration:none;transition:all 0.2s}
+.btn:hover{background:#3ddd68;transform:translateY(-1px)}
+.status{margin-top:20px;font-size:12px;color:var(--muted);display:flex;align-items:center;justify-content:center;gap:8px}
+.dot{width:7px;height:7px;border-radius:50%;background:#FF6B35}
+.dot.online{background:var(--green)}
+</style>
+</head>
+<body>
+<div class="card">
+  <span class="icon">🪶</span>
+  <h1>You're Offline</h1>
+  <p>No internet connection right now. Connect to WiFi or mobile data and try again — your bills and trips will be right where you left them.</p>
+  <a href="/dashboard.html" class="btn" onclick="location.reload();return false">↻ Try Again</a>
+  <div class="status">
+    <span class="dot" id="dot"></span>
+    <span id="status-text">No connection</span>
+  </div>
+</div>
+<script>
+function updateStatus() {
+  const dot = document.getElementById('dot');
+  const text = document.getElementById('status-text');
+  if (navigator.onLine) {
+    dot.className = 'dot online';
+    text.textContent = 'Back online — tap Try Again';
+  } else {
+    dot.className = 'dot';
+    text.textContent = 'No connection';
+  }
+}
+window.addEventListener('online', () => { updateStatus(); setTimeout(() => location.href = '/dashboard.html', 1500); });
+window.addEventListener('offline', updateStatus);
+updateStatus();
+</script>
+</body>
+</html>
