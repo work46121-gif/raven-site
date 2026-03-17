@@ -5,6 +5,43 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
+
+<!-- Sentry Error Monitoring -->
+<script
+  src="https://js.sentry-cdn.com/YOUR_SENTRY_DSN_LOADER.min.js"
+  crossorigin="anonymous"
+></script>
+<script>
+  // Replace YOUR_SENTRY_DSN below with the DSN from sentry.io → Settings → Projects → Client Keys
+  if (typeof Sentry !== 'undefined') {
+    Sentry.init({
+      dsn: 'YOUR_SENTRY_DSN',
+      environment: window.location.hostname === 'localhost' ? 'development' : 'production',
+      release: 'raven@2.0.0',
+      tracesSampleRate: 0.2, // capture 20% of transactions for performance
+      beforeSend(event) {
+        // Don't send errors from localhost
+        if (window.location.hostname === 'localhost') return null;
+        return event;
+      }
+    });
+  }
+</script>
+
+<!-- PostHog Analytics -->
+<!-- Replace YOUR_POSTHOG_KEY with your key from posthog.com → Project Settings → API Keys -->
+<script>
+  !function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]);t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.crossOrigin="anonymous",p.async=!0,p.src=s.api_host.replace(".i.posthog.com","-assets.i.posthog.com")+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+" (stub)"},o="init capture register register_once register_for_session unregister unregister_for_session getFeatureFlag getFeatureFlagPayload isFeatureEnabled reloadFeatureFlags updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures on onFeatureFlags onSessionId getSurveys getActiveMatchingSurveys renderSurvey canRenderSurvey getNextSurveyStep identify setPersonProperties group resetGroups setPersonPropertiesForFlags resetPersonPropertiesForFlags setGroupPropertiesForFlags resetGroupPropertiesForFlags reset get_distinct_id getGroups get_session_id get_session_replay_url alias set_config startSessionRecording stopSessionRecording sessionRecordingStarted captureException loadToolbar get_property getSessionProperty createPersonProfile opt_in_capturing opt_out_capturing has_opted_in_capturing has_opted_out_capturing clear_opt_in_out_capturing debug".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
+  posthog.init('YOUR_POSTHOG_KEY', {
+    api_host: 'https://us.i.posthog.com',
+    person_profiles: 'identified_only',
+    capture_pageview: true,
+    capture_pageleave: true,
+    loaded: function(ph) {
+      if (window.location.hostname === 'localhost') ph.opt_out_capturing();
+    }
+  });
+</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dashboard — RavenSplit</title>
 <meta name="description" content="Your RavenSplit dashboard — manage bills, trip hubs, and payments.">
@@ -1529,6 +1566,8 @@ let payModalBillId = null;
 async function openPayModal(participantId, billId, amount) {
   payModalParticipantId = participantId; payModalBillId = billId;
   const amt = parseFloat(amount).toFixed(2);
+  // Track pay modal opened
+  try { if (typeof posthog !== 'undefined') posthog.capture('pay_modal_opened', { bill_id: billId, amount: parseFloat(amt) }); } catch(e) {}
   document.getElementById('pay-modal-amount').textContent = '$' + amt;
   document.getElementById('pay-modal-methods').innerHTML = '<div style="text-align:center;padding:16px;color:var(--muted);font-size:13px">Loading payment options...</div>';
   document.getElementById('cb-pay-modal').style.display = 'flex';
@@ -1622,6 +1661,8 @@ async function openPayModal(participantId, billId, amount) {
 
 async function cbMarkPaidOther() {
   if (!payModalParticipantId || !payModalBillId) return;
+  // Track payment marked
+  try { if (typeof posthog !== 'undefined') posthog.capture('payment_marked_paid', { bill_id: payModalBillId, method: 'other' }); } catch(e) {}
   await markPaid(payModalParticipantId, payModalBillId);
   cbClosePayModal(); showToast('✅ Marked as paid!', 'success');
 }
@@ -1823,6 +1864,9 @@ async function showDashboard() {
   const mobQN = document.getElementById('mob-quick-nav');
   if (mobQN && window.innerWidth <= 768) mobQN.style.display = 'block';
 
+  // Identify user in PostHog for analytics
+  try { if (typeof posthog !== 'undefined') posthog.identify(currentUser.id, { email: currentUser.email }); } catch(e) {}
+
   // Always fetch full profile from DB on load — avatar_url may not be in localStorage
   try {
     const local = JSON.parse(localStorage.getItem('raven_profile') || '{}');
@@ -1910,6 +1954,8 @@ async function showDashboard() {
 }
 
 function showPage(page) {
+  // Track page views in PostHog
+  if (typeof posthog !== 'undefined') posthog.capture('page_view', { page });
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('page-' + page).classList.add('active');
@@ -3703,6 +3749,8 @@ async function wakeServer() {
 
 async function cbScanReceipt() {
   if (!cbImageBase64) return showToast('Upload a receipt photo first', 'error');
+  // Track scan attempt
+  try { if (typeof posthog !== 'undefined') posthog.capture('receipt_scan_started'); } catch(e) {}
   document.getElementById('cb-scan-wrap').style.display = 'none';
   document.getElementById('cb-scanning').style.display = 'block';
   document.getElementById('cb-scan-result').style.display = 'none';
@@ -4179,6 +4227,8 @@ async function cbCreateFinalBill() {
   }
   btn.textContent = '🪶 Create Bill'; btn.disabled = false;
   showToast('✅ "' + name + '" created! ID: ' + billId, 'success');
+  // Track bill creation in PostHog
+  try { if (typeof posthog !== 'undefined') posthog.capture('bill_created', { bill_id: billId, split_mode: cbSplitMode, people_count: cbPeople.length, total, has_receipt: !!cbImageBase64, has_payer: !!paidBy }); } catch(e) {}
   cbItems = []; cbPeople = []; cbImageBase64 = null; cbSplitMode = 'even';
   Object.keys(cbChargeSplits).forEach(k => { cbChargeSplits[k] = 'proportional'; });
   document.getElementById('cb-name').value = '';
