@@ -2320,21 +2320,19 @@ function closeBillModal() { document.getElementById('bill-modal').classList.remo
 
 async function shareBillLink(billId, billName, shareToken) {
   const url = BACKEND + '/bill/' + billId + (shareToken ? '?t=' + shareToken : '');
-  // Text-only — no separate `url` field, which causes iOS to render TWO bubbles
-  const msg = '🪶 ' + (billName || 'Bill') + '\n\nTap to see what you owe and pay your share:\n' + url + '\n\n— Split bills free with RAVEN | ravensplit.com';
+  // Send the URL only — iOS will auto-expand into the rich link preview card
+  // (raven image + OG title + domain). Adding any text around it breaks the preview.
   if (navigator.share) {
     try {
-      await navigator.share({ text: msg }); // text only — URL is embedded in the message
+      await navigator.share({ text: url });
       return;
     } catch(e) { if (e.name === 'AbortError') return; }
   }
   // Fallback — copy to clipboard
   try {
-    await navigator.clipboard.writeText(msg);
+    await navigator.clipboard.writeText(url);
     showToast('📋 Bill link copied!', 'success');
-  } catch(e) {
-    prompt('Copy this link:', url);
-  }
+  } catch(e) { prompt('Copy this link:', url); }
 }
 
 async function markPaid(participantId, billId) {
