@@ -3815,7 +3815,7 @@ async function cbCreateFinalBill() {
 
   // Try insert with all fields, fall back progressively if columns don't exist
   let inserted = false;
-  const baseData = { id: billId, creator_phone: currentUser.email, name, total, per_person: total / cbPeople.length, status: 'active', share_token: shareToken };
+  const baseData = { id: billId, creator_phone: currentUser.email, name, total, per_person: total / cbPeople.length, status: 'active', share_token: shareToken, ...(tax > 0 ? {tax} : {}), ...(tip > 0 ? {tip} : {}), ...(svc > 0 ? {service_fee: svc} : {}), ...(msc > 0 ? {misc: msc} : {}) };
   const attempts = [
     { ...baseData, ...(paidBy ? { paid_by: paidBy } : {}), ...(receiptData ? { receipt_image: receiptData } : {}) },
     { ...baseData, ...(paidBy ? { paid_by: paidBy } : {}) },
