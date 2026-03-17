@@ -2320,10 +2320,11 @@ function closeBillModal() { document.getElementById('bill-modal').classList.remo
 
 async function shareBillLink(billId, billName, shareToken) {
   const url = BACKEND + '/bill/' + billId + (shareToken ? '?t=' + shareToken : '');
-  const msg = '🪶 ' + (billName || 'Bill') + '\n\nTap to see what you owe and pay your share:\n' + url + '\n\n— Split bills instantly with RAVEN | ravensplit.com';
+  // Text-only — no separate `url` field, which causes iOS to render TWO bubbles
+  const msg = '🪶 ' + (billName || 'Bill') + '\n\nTap to see what you owe and pay your share:\n' + url + '\n\n— Split bills free with RAVEN | ravensplit.com';
   if (navigator.share) {
     try {
-      await navigator.share({ title: '🪶 ' + (billName || 'Bill'), text: msg, url });
+      await navigator.share({ text: msg }); // text only — URL is embedded in the message
       return;
     } catch(e) { if (e.name === 'AbortError') return; }
   }
@@ -2845,7 +2846,7 @@ async function shareRavenIdSMS() {
   const name = (() => { try { return JSON.parse(localStorage.getItem('raven_profile')||'{}').first_name || 'Someone'; } catch(e) { return 'Someone'; } })();
   const inviteUrl = BACKEND + '/friend-invite/' + encodeURIComponent(ravenId);
   // Single message body — URL at the end so iMessage renders the link preview card
-  const msg = name + ' wants to connect with you on RAVEN 🪶\n\nTap to add @' + ravenId + ' as a friend:\n' + inviteUrl + '\n\n— Split bills instantly with RAVEN | ravensplit.com';
+  const msg = name + ' wants to connect with you on RAVEN 🪶\n\nTap to add @' + ravenId + ' as a friend:\n' + inviteUrl + '\n\n— Split bills free with RAVEN | ravensplit.com';
   if (navigator.share) {
     try {
       // Pass ONLY text — not url separately, which causes iOS to send it as a second bubble
