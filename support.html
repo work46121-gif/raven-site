@@ -1,468 +1,429 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Support — RAVEN</title>
-  <meta name="description" content="RAVEN Support — commands, FAQs, and how to get help.">
-  <link rel="icon" type="image/x-icon" href="/favicon.ico">
-<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Support — RAVEN</title>
+<meta name="description" content="RAVEN Support — get help with receipt scanning, bill splitting, trip hubs, and your account.">
+<link rel="icon" type="image/x-icon" href="favicon.ico">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Epilogue:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --black:#06060A;--dark:#0C0C12;--dark2:#13131A;--dark3:#1A1A24;--dark4:#22222E;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);
+  --white:#F0EEF8;--muted:#6E6B80;--muted2:#9896A8;
+  --green:#30D158;--green-glow:rgba(48,209,88,0.25);
+  --purple:#7C3AED;--purple2:#A855F7;--purple3:#C084FC;
+  --orange:#FF6B35;
+}
+html{scroll-behavior:smooth}
+body{font-family:'Epilogue',sans-serif;background:var(--black);color:var(--white);line-height:1.75;min-height:100vh}
+body::after{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");pointer-events:none;z-index:900;opacity:0.35}
 
-    :root {
-      --bg: #0a0a0a;
-      --surface: #111111;
-      --border: #1e1e1e;
-      --accent: #e8e0d0;
-      --muted: #555;
-      --text: #c8c0b0;
-      --white: #f0ece4;
-    }
+nav{position:fixed;top:0;left:0;right:0;z-index:500;height:64px;display:flex;align-items:center;justify-content:space-between;padding:0 52px;background:rgba(6,6,10,0.92);backdrop-filter:blur(24px);border-bottom:1px solid var(--border)}
+.nav-logo{display:flex;align-items:center;gap:10px;text-decoration:none}
+.nav-logo-text{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:0.2em;background:linear-gradient(135deg,var(--white) 20%,var(--purple3));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.nav-back{color:var(--muted);text-decoration:none;font-size:13px;letter-spacing:0.04em;transition:color 0.2s}
+.nav-back:hover{color:var(--white)}
 
-    html { scroll-behavior: smooth; }
+.page-hero{padding:120px 52px 60px;position:relative;overflow:hidden;text-align:left}
+.page-hero::before{content:'';position:absolute;top:-150px;left:50%;transform:translateX(-50%);width:800px;height:500px;background:radial-gradient(ellipse,rgba(48,209,88,0.06) 0%,rgba(124,58,237,0.04) 50%,transparent 70%);pointer-events:none}
+.page-hero-inner{max-width:900px;position:relative}
+.hero-tag{display:inline-flex;align-items:center;gap:8px;background:rgba(48,209,88,0.08);border:1px solid rgba(48,209,88,0.2);padding:5px 14px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;color:var(--green);margin-bottom:20px}
+.hero-tag-dot{width:5px;height:5px;border-radius:50%;background:var(--green);animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.4}}
+h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(52px,8vw,96px);letter-spacing:0.03em;line-height:0.9;color:var(--white);margin-bottom:16px}
+.hero-sub{font-size:15px;color:var(--muted);max-width:580px;line-height:1.8;margin-bottom:32px}
 
-    body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: 'DM Sans', sans-serif;
-      font-weight: 300;
-      line-height: 1.75;
-      min-height: 100vh;
-    }
+.contact-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:60px;max-width:900px}
+.contact-card{background:var(--dark);border:1px solid var(--border);border-radius:16px;padding:24px 28px;text-decoration:none;transition:all 0.2s;display:flex;align-items:flex-start;gap:16px}
+.contact-card:hover{border-color:var(--border2);background:var(--dark2);transform:translateY(-2px)}
+.contact-icon{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.cc-green{background:rgba(48,209,88,0.1);border:1px solid rgba(48,209,88,0.2)}
+.cc-purple{background:rgba(124,58,237,0.1);border:1px solid rgba(124,58,237,0.2)}
+.contact-title{font-weight:700;font-size:15px;color:var(--white);margin-bottom:4px}
+.contact-val{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--green);margin-bottom:4px}
+.contact-desc{font-size:12px;color:var(--muted);line-height:1.5}
 
-    nav {
-      border-bottom: 1px solid var(--border);
-      padding: 1.25rem 2rem;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      position: sticky;
-      top: 0;
-      background: rgba(10,10,10,0.95);
-      backdrop-filter: blur(8px);
-      z-index: 100;
-    }
-    .nav-logo {
-      font-family: 'Space Mono', monospace;
-      font-size: 0.85rem;
-      letter-spacing: 0.15em;
-      color: var(--white);
-      text-decoration: none;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-    .nav-logo span { opacity: 0.5; font-size: 1rem; }
-    .nav-back {
-      font-family: 'Space Mono', monospace;
-      font-size: 0.7rem;
-      letter-spacing: 0.1em;
-      color: var(--muted);
-      text-decoration: none;
-      transition: color 0.2s;
-    }
-    .nav-back:hover { color: var(--accent); }
+.content-wrap{max-width:900px;padding:0 52px 100px}
 
-    .hero {
-      border-bottom: 1px solid var(--border);
-      padding: 5rem 2rem 3.5rem;
-      max-width: 860px;
-      margin: 0 auto;
-    }
-    .tag {
-      font-family: 'Space Mono', monospace;
-      font-size: 0.65rem;
-      letter-spacing: 0.2em;
-      color: var(--muted);
-      text-transform: uppercase;
-      margin-bottom: 1.25rem;
-    }
-    h1 {
-      font-family: 'Space Mono', monospace;
-      font-size: clamp(1.8rem, 4vw, 2.8rem);
-      color: var(--white);
-      line-height: 1.2;
-      font-weight: 700;
-      margin-bottom: 1rem;
-    }
-    .hero-sub {
-      font-size: 1rem;
-      color: var(--text);
-      max-width: 500px;
-    }
+h2.section-title{font-family:'Bebas Neue',sans-serif;font-size:36px;letter-spacing:0.05em;color:var(--white);margin-bottom:8px}
+.section-sub{font-size:14px;color:var(--muted);margin-bottom:24px}
 
-    /* CONTACT STRIP */
-    .contact-strip {
-      max-width: 860px;
-      margin: 0 auto;
-      padding: 2rem 2rem 0;
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 1rem;
-    }
-    .contact-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      padding: 1.5rem;
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-      text-decoration: none;
-      transition: border-color 0.2s;
-    }
-    .contact-card:hover { border-color: var(--accent); }
-    .contact-card-label {
-      font-family: 'Space Mono', monospace;
-      font-size: 0.6rem;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-      color: var(--muted);
-    }
-    .contact-card-value {
-      font-family: 'Space Mono', monospace;
-      font-size: 0.85rem;
-      color: var(--white);
-    }
-    .contact-card-sub {
-      font-size: 0.8rem;
-      color: var(--muted);
-    }
+.faq-group{margin-bottom:48px}
+.faq-label{display:inline-flex;align-items:center;gap:8px;font-size:10px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;margin-bottom:16px;padding:4px 12px;border-radius:20px}
+.fl-green{background:rgba(48,209,88,0.08);border:1px solid rgba(48,209,88,0.2);color:var(--green)}
+.fl-purple{background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.2);color:var(--purple3)}
+.fl-orange{background:rgba(255,107,53,0.08);border:1px solid rgba(255,107,53,0.2);color:var(--orange)}
 
-    /* CONTENT */
-    .content {
-      max-width: 860px;
-      margin: 0 auto;
-      padding: 3.5rem 2rem 6rem;
-    }
+.faq-item{border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:8px;transition:border-color 0.2s}
+.faq-item:hover{border-color:var(--border2)}
+.faq-q{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent;gap:16px}
+.faq-q-text{font-weight:600;font-size:14px;color:var(--white);line-height:1.5}
+.faq-chevron{color:var(--muted);font-size:16px;flex-shrink:0;transition:transform 0.2s}
+.faq-item.open .faq-chevron{transform:rotate(180deg)}
+.faq-a{display:none;padding:0 20px 16px;font-size:14px;color:var(--muted2);line-height:1.75}
+.faq-item.open .faq-a{display:block}
+.faq-a strong{color:var(--white);font-weight:600}
+.faq-a ul{list-style:none;margin:10px 0}
+.faq-a ul li{padding:5px 0 5px 18px;position:relative;font-size:13px;color:var(--muted2)}
+.faq-a ul li::before{content:'›';position:absolute;left:0;color:var(--green);font-weight:700}
+.faq-a a{color:var(--green);border-bottom:1px solid rgba(48,209,88,0.25)}
+.faq-a a:hover{border-color:var(--green)}
+.faq-a code{font-family:'JetBrains Mono',monospace;background:var(--dark2);padding:2px 6px;border-radius:4px;font-size:12px;color:var(--purple3)}
 
-    .section {
-      margin-bottom: 3rem;
-      padding-bottom: 3rem;
-      border-bottom: 1px solid var(--border);
-    }
-    .section:last-child { border-bottom: none; }
+.divider{height:1px;background:var(--border);margin:48px 0}
 
-    h2 {
-      font-family: 'Space Mono', monospace;
-      font-size: 0.75rem;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-      color: var(--accent);
-      margin-bottom: 1.5rem;
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-    }
-    h2::before {
-      content: '';
-      display: inline-block;
-      width: 20px;
-      height: 1px;
-      background: var(--accent);
-      opacity: 0.4;
-    }
+.tip-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:16px}
+.tip-card{background:var(--dark);border:1px solid var(--border);border-radius:12px;padding:16px 18px;transition:all 0.2s}
+.tip-card:hover{border-color:var(--border2);background:var(--dark2)}
+.tip-icon{font-size:22px;margin-bottom:10px;display:block}
+.tip-title{font-weight:700;font-size:13px;color:var(--white);margin-bottom:5px}
+.tip-desc{font-size:12px;color:var(--muted);line-height:1.6}
 
-    p { margin-bottom: 1rem; color: var(--text); font-size: 0.95rem; }
+footer{border-top:1px solid var(--border);padding:36px 52px;display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:24px}
+.f-logo{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:0.15em;color:var(--muted2);margin-bottom:6px}
+.f-tag{font-size:12px;color:var(--muted);margin-bottom:12px}
+.f-links{display:flex;gap:20px;flex-wrap:wrap;align-items:center}
+.f-links a{color:var(--muted);text-decoration:none;font-size:12px;transition:color 0.2s}
+.f-links a:hover{color:var(--white)}
+.f-copy{font-size:11px;color:rgba(110,107,128,0.4)}
 
-    /* COMMAND TABLE */
-    .cmd-grid {
-      display: grid;
-      gap: 0.75rem;
-    }
-    .cmd-row {
-      display: grid;
-      grid-template-columns: 1fr 2fr;
-      gap: 1rem;
-      align-items: start;
-      padding: 1rem 1.25rem;
-      background: var(--surface);
-      border: 1px solid var(--border);
-    }
-    .cmd-name {
-      font-family: 'Space Mono', monospace;
-      font-size: 0.8rem;
-      color: var(--white);
-      letter-spacing: 0.05em;
-    }
-    .cmd-example {
-      font-family: 'Space Mono', monospace;
-      font-size: 0.7rem;
-      color: var(--muted);
-      margin-top: 0.25rem;
-    }
-    .cmd-desc {
-      font-size: 0.88rem;
-      color: var(--text);
-      line-height: 1.6;
-    }
-
-    /* FAQ */
-    .faq-item {
-      border: 1px solid var(--border);
-      margin-bottom: 0.75rem;
-      overflow: hidden;
-    }
-    .faq-q {
-      padding: 1.1rem 1.25rem;
-      font-family: 'DM Sans', sans-serif;
-      font-weight: 500;
-      font-size: 0.92rem;
-      color: var(--white);
-      cursor: pointer;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      user-select: none;
-      background: var(--surface);
-      transition: background 0.2s;
-    }
-    .faq-q:hover { background: #181818; }
-    .faq-q .arrow {
-      font-family: 'Space Mono', monospace;
-      font-size: 0.7rem;
-      color: var(--muted);
-      transition: transform 0.2s;
-    }
-    .faq-a {
-      display: none;
-      padding: 1rem 1.25rem 1.25rem;
-      font-size: 0.9rem;
-      color: var(--text);
-      border-top: 1px solid var(--border);
-      background: var(--bg);
-      line-height: 1.7;
-    }
-    .faq-item.open .faq-a { display: block; }
-    .faq-item.open .arrow { transform: rotate(180deg); }
-
-    a { color: var(--accent); text-decoration: none; border-bottom: 1px solid rgba(232,224,208,0.25); transition: border-color 0.2s; }
-    a:hover { border-color: var(--accent); }
-
-    code {
-      font-family: 'Space Mono', monospace;
-      font-size: 0.82em;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      padding: 0.1em 0.4em;
-      color: var(--accent);
-    }
-
-    footer {
-      border-top: 1px solid var(--border);
-      padding: 2rem;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 1rem;
-    }
-    .footer-logo {
-      font-family: 'Space Mono', monospace;
-      font-size: 0.75rem;
-      letter-spacing: 0.15em;
-      color: var(--muted);
-    }
-    .footer-links { display: flex; gap: 2rem; }
-    .footer-links a {
-      font-family: 'Space Mono', monospace;
-      font-size: 0.65rem;
-      letter-spacing: 0.12em;
-      color: var(--muted);
-      border: none;
-      transition: color 0.2s;
-    }
-    .footer-links a:hover { color: var(--accent); }
-
-    @media (max-width: 540px) {
-      .cmd-row { grid-template-columns: 1fr; }
-    }
-  </style>
+@media(max-width:768px){
+  nav{padding:0 16px;height:56px}
+  .page-hero{padding:84px 20px 40px}
+  .contact-row{grid-template-columns:1fr}
+  .content-wrap{padding:0 20px 80px}
+  .tip-grid{grid-template-columns:1fr 1fr}
+  footer{padding:28px 20px;flex-direction:column}
+}
+@media(max-width:480px){
+  .tip-grid{grid-template-columns:1fr}
+}
+</style>
 </head>
 <body>
 
-  <nav>
-    <a href="/" class="nav-logo"><span>🪶</span> RAVEN</a>
-    <a href="/" class="nav-back">← Back to home</a>
-  </nav>
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <linearGradient id="bodyGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#1a0533"/><stop offset="40%" style="stop-color:#2d1060"/><stop offset="100%" style="stop-color:#0d0d1a"/></linearGradient>
+    <linearGradient id="eyeGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#30D158"/><stop offset="100%" style="stop-color:#A855F7"/></linearGradient>
+    <linearGradient id="beakGrad" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" style="stop-color:#2a2a3a"/><stop offset="100%" style="stop-color:#111120"/></linearGradient>
+    <linearGradient id="tailGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#2d1060;stop-opacity:0.9"/><stop offset="100%" style="stop-color:#30D158;stop-opacity:0.4"/></linearGradient>
+    <filter id="eyeGlow" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="2.5" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <filter id="softShadow"><feDropShadow dx="0" dy="3" stdDeviation="6" flood-color="#7C3AED" flood-opacity="0.35"/></filter>
+  </defs>
+</svg>
 
-  <div class="hero">
-    <div class="tag">Support · Help Center</div>
-    <h1>We've got you.</h1>
-    <p class="hero-sub">Commands, FAQs, and direct support — everything you need to get RAVEN working for your group.</p>
+<nav>
+  <a href="index.html" class="nav-logo">
+    <svg width="32" height="32" viewBox="0 0 200 200"><g transform="scale(0.19)"><path d="M85 95 C70 90 45 88 28 78 C20 73 15 65 18 58 C22 50 32 48 42 52 C50 55 56 62 62 70 C68 78 74 86 85 95Z" fill="url(#bodyGrad)"/><path d="M115 95 C130 90 155 88 172 78 C180 73 185 65 182 58 C178 50 168 48 158 52 C150 55 144 62 138 70 C132 78 126 86 115 95Z" fill="url(#bodyGrad)"/><path d="M75 100 C68 108 65 118 66 128 C67 140 72 150 80 156 C87 161 93 160 100 158 C107 160 113 161 120 156 C128 150 133 140 134 128 C135 118 132 108 125 100 C118 92 108 88 100 88 C92 88 82 92 75 100Z" fill="url(#bodyGrad)" filter="url(#softShadow)"/><path d="M78 72 C76 60 80 48 88 40 C94 34 100 32 106 34 C116 37 122 46 122 56 C122 66 118 76 112 83 C108 88 104 90 100 90 C93 90 86 85 82 80 C80 77 79 75 78 72Z" fill="url(#bodyGrad)" filter="url(#softShadow)"/><path d="M78 72 C72 68 62 66 56 68 C52 70 51 74 54 77 C58 80 65 79 72 76 C75 75 77 74 78 72Z" fill="url(#beakGrad)"/><path d="M100 155 C98 165 95 178 92 188 C90 194 88 197 90 198 C92 199 95 194 98 186 C100 180 101 170 100 155Z" fill="url(#tailGrad)"/><ellipse cx="97" cy="58" rx="7" ry="6.5" fill="#06060f" filter="url(#eyeGlow)"/><ellipse cx="97" cy="58" rx="4.5" ry="4" fill="url(#eyeGrad)" opacity="0.9"/><ellipse cx="94" cy="55" rx="1.5" ry="1.2" fill="white" opacity="0.95" transform="rotate(-20 94 55)"/></g></svg>
+    <span class="nav-logo-text">RAVEN</span>
+  </a>
+  <a href="index.html" class="nav-back">← Back to home</a>
+</nav>
+
+<div class="page-hero" style="padding-left:52px;padding-right:52px">
+  <div class="page-hero-inner">
+    <div class="hero-tag"><span class="hero-tag-dot"></span>Help Center</div>
+    <h1>How Can We<br>Help?</h1>
+    <p class="hero-sub">Find answers to common questions about receipt scanning, bill splitting, trip hubs, and your account — or reach us directly.</p>
   </div>
 
-  <div class="contact-strip">
-    <a href="sms:+15162347187&body=HELP" class="contact-card">
-      <div class="contact-card-label">Text us</div>
-      <div class="contact-card-value">+1 (516) 234-7187</div>
-      <div class="contact-card-sub">Text HELP for instant help</div>
+  <!-- CONTACT CARDS -->
+  <div class="contact-row">
+    <a href="tel:+15162347187" class="contact-card" style="text-decoration:none;border-color:rgba(48,209,88,0.2);position:relative">
+      <div style="position:absolute;top:14px;right:14px;background:rgba(48,209,88,0.1);border:1px solid rgba(48,209,88,0.25);border-radius:20px;padding:2px 10px;font-size:10px;font-weight:700;letter-spacing:0.1em;color:var(--green);text-transform:uppercase">Preferred</div>
+      <div class="contact-icon cc-purple">📱</div>
+      <div>
+        <div class="contact-title">Call or Text</div>
+        <div class="contact-val">+1 (516) 234-7187</div>
+        <div class="contact-desc">Our fastest channel right now. Text us anytime — we monitor throughout the day and typically reply in minutes.</div>
+      </div>
     </a>
-    <a href="/cdn-cgi/l/email-protection#bccfc9ccccd3cec8fcdbd9c8ceddcad9d292ddcccc" class="contact-card">
-      <div class="contact-card-label">Email</div>
-      <div class="contact-card-value"><span class="__cf_email__" data-cfemail="4e3d3b3e3e213c3a0e292b3a3c2f382b20602f3e3e">[email&#160;protected]</span></div>
-      <div class="contact-card-sub">We reply within 24 hours</div>
-    </a>
-    <a href="#" class="contact-card">
-      <div class="contact-card-label">Discord</div>
-      <div class="contact-card-value">Join our server</div>
-      <div class="contact-card-sub">Community help & updates</div>
+    <a href="mailto:hello@getraven.app" class="contact-card" style="text-decoration:none">
+      <div class="contact-icon cc-green">📧</div>
+      <div>
+        <div class="contact-title">Email Support</div>
+        <div class="contact-val">hello@getraven.app</div>
+        <div class="contact-desc">Good for detailed issues, account questions, or feature requests. We respond within 24 hours.</div>
+      </div>
     </a>
   </div>
+</div>
 
-  <div class="content">
+<div class="content-wrap">
 
-    <!-- COMMANDS -->
-    <div class="section">
-      <h2>Commands — SMS & iMessage</h2>
-      <div class="cmd-grid">
-        <div class="cmd-row">
-          <div>
-            <div class="cmd-name">SPLIT</div>
-            <div class="cmd-example">SPLIT $120 Dinner @Jake @Mia</div>
-          </div>
-          <div class="cmd-desc">Create a new bill. Include the total amount, a name for the bill, and tag each person who owes.</div>
-        </div>
-        <div class="cmd-row">
-          <div>
-            <div class="cmd-name">PAID [ID]</div>
-            <div class="cmd-example">PAID B7K2</div>
-          </div>
-          <div class="cmd-desc">Mark yourself as paid on a bill. Use the bill ID from the original SPLIT reply.</div>
-        </div>
-        <div class="cmd-row">
-          <div>
-            <div class="cmd-name">REMIND [ID]</div>
-            <div class="cmd-example">REMIND B7K2</div>
-          </div>
-          <div class="cmd-desc">Ping everyone who still owes on a bill. Only the bill creator can send reminders.</div>
-        </div>
-        <div class="cmd-row">
-          <div>
-            <div class="cmd-name">STATUS [ID]</div>
-            <div class="cmd-example">STATUS B7K2</div>
-          </div>
-          <div class="cmd-desc">Get the current breakdown — who's paid and who still owes.</div>
-        </div>
-        <div class="cmd-row">
-          <div>
-            <div class="cmd-name">BILLS</div>
-            <div class="cmd-example">BILLS</div>
-          </div>
-          <div class="cmd-desc">See all your active bills and their IDs.</div>
-        </div>
-        <div class="cmd-row">
-          <div>
-            <div class="cmd-name">HELP</div>
-            <div class="cmd-example">HELP</div>
-          </div>
-          <div class="cmd-desc">Get a quick command reference sent to you directly.</div>
-        </div>
-        <div class="cmd-row">
-          <div>
-            <div class="cmd-name">DELETE [ID]</div>
-            <div class="cmd-example">DELETE B7K2</div>
-          </div>
-          <div class="cmd-desc">Close and remove a bill. Only the bill creator can delete.</div>
-        </div>
+  <!-- TIPS -->
+  <h2 class="section-title">Quick Tips</h2>
+  <p class="section-sub">The most common things people ask about, answered in one line.</p>
+  <div class="tip-grid">
+    <div class="tip-card">
+      <span class="tip-icon">📸</span>
+      <div class="tip-title">Better scan results</div>
+      <div class="tip-desc">Flatten the receipt, use good lighting, and make sure all items are visible before uploading.</div>
+    </div>
+    <div class="tip-card">
+      <span class="tip-icon">🔗</span>
+      <div class="tip-title">Sharing a bill</div>
+      <div class="tip-desc">Tap "Share" on any bill — your group can open the link on any device without signing up.</div>
+    </div>
+    <div class="tip-card">
+      <span class="tip-icon">✈️</span>
+      <div class="tip-title">Trip Hub invite</div>
+      <div class="tip-desc">Use the 📨 Invite link in trip settings — it prompts new members to create a RAVEN account.</div>
+    </div>
+    <div class="tip-card">
+      <span class="tip-icon">💳</span>
+      <div class="tip-title">Payment methods</div>
+      <div class="tip-desc">Set up Venmo, Cash App, Zelle, or Apple Pay in Settings → Payment Methods. Others see these when paying you.</div>
+    </div>
+    <div class="tip-card">
+      <span class="tip-icon">📊</span>
+      <div class="tip-title">Mark as paid</div>
+      <div class="tip-desc">If someone pays outside the app, tap "Mark as Settled" on their row to update the bill status.</div>
+    </div>
+    <div class="tip-card">
+      <span class="tip-icon">🗑️</span>
+      <div class="tip-title">Delete a bill</div>
+      <div class="tip-desc">Go to History in your dashboard, find the bill, and tap Delete. Deleted bills are removed permanently.</div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- FAQ: RECEIPT SCANNING -->
+  <div class="faq-group">
+    <div class="faq-label fl-green">📸 Receipt Scanning</div>
+
+    <div class="faq-item">
+      <div class="faq-q" onclick="toggleFaq(this)">
+        <span class="faq-q-text">Why did the AI miss some items on my receipt?</span>
+        <span class="faq-chevron">⌄</span>
+      </div>
+      <div class="faq-a">
+        AI scanning works best with clear, well-lit photos where all items are visible. Common issues include: crumpled or blurry receipts, dark or low-contrast text, and handwritten checks. Try retaking the photo in better lighting, or manually add any missed items using the "Add Item" button.
       </div>
     </div>
 
-    <!-- DISCORD COMMANDS -->
-    <div class="section">
-      <h2>Commands — Discord</h2>
-      <div class="cmd-grid">
-        <div class="cmd-row">
-          <div>
-            <div class="cmd-name">/split</div>
-            <div class="cmd-example">/split name:Airbnb total:540 people:@Alex @Priya</div>
-          </div>
-          <div class="cmd-desc">Create a new bill in your Discord server. Tags each person directly in the channel.</div>
-        </div>
-        <div class="cmd-row">
-          <div>
-            <div class="cmd-name">/paid</div>
-            <div class="cmd-example">/paid A4FX2</div>
-          </div>
-          <div class="cmd-desc">Mark yourself as paid on a Discord bill.</div>
-        </div>
-        <div class="cmd-row">
-          <div>
-            <div class="cmd-name">/remind</div>
-            <div class="cmd-example">/remind A4FX2</div>
-          </div>
-          <div class="cmd-desc">Ping unpaid members on a bill. Creator-only.</div>
-        </div>
-        <div class="cmd-row">
-          <div>
-            <div class="cmd-name">/status</div>
-            <div class="cmd-example">/status A4FX2</div>
-          </div>
-          <div class="cmd-desc">See the current payment status for a bill.</div>
-        </div>
+    <div class="faq-item">
+      <div class="faq-q" onclick="toggleFaq(this)">
+        <span class="faq-q-text">What types of receipts can RAVEN scan?</span>
+        <span class="faq-chevron">⌄</span>
+      </div>
+      <div class="faq-a">
+        RAVEN can scan virtually any printed receipt — restaurants, grocery stores, retail, Airbnb/hotel folios, bar tabs, event tickets, and more. Handwritten checks and low-quality photos may have reduced accuracy. You can always edit the scanned result before sending.
       </div>
     </div>
 
-    <!-- FAQ -->
-    <div class="section">
-      <h2>Frequently Asked Questions</h2>
-      <div id="faq">
-
-        <div class="faq-item">
-          <div class="faq-q">How do I get started? <span class="arrow">↓</span></div>
-          <div class="faq-a">Just text <code>SPLIT</code> to <strong>+1 (516) 234-7187</strong>. No app download, no sign-up, no account needed. Add the number to your group chat and you're ready.</div>
-        </div>
-
-        <div class="faq-item">
-          <div class="faq-q">Does RAVEN work on Android? <span class="arrow">↓</span></div>
-          <div class="faq-a">Yes. RAVEN works over standard SMS, so any phone — iPhone or Android — can text the RAVEN number. The iMessage experience is richest on iPhone-only group chats, but SMS works universally.</div>
-        </div>
-
-        <div class="faq-item">
-          <div class="faq-q">Does RAVEN actually send money? <span class="arrow">↓</span></div>
-          <div class="faq-a">No. RAVEN tracks who owes what and sends reminders — it does not process payments. You still settle up through Venmo, Zelle, Cash App, or cash. RAVEN just removes the awkwardness of asking.</div>
-        </div>
-
-        <div class="faq-item">
-          <div class="faq-q">What's the difference between Free and Pro? <span class="arrow">↓</span></div>
-          <div class="faq-a">The Free plan gives you 1 RAVEN number, up to 5 active bills, and manual reminders. Pro ($9/group/month) unlocks unlimited bills, scheduled auto-reminders, full bill history and export, and custom reminder messages.</div>
-        </div>
-
-        <div class="faq-item">
-          <div class="faq-q">Can I use RAVEN with an existing group chat? <span class="arrow">↓</span></div>
-          <div class="faq-a">Yes — just add RAVEN's number to your existing group chat. Everyone in the chat can interact with it immediately.</div>
-        </div>
-
-        <div class="faq-item">
-          <div class="faq-q">Someone in my group isn't getting messages. What should I do? <span class="arrow">↓</span></div>
-          <div class="faq-a">Make sure they haven't blocked the RAVEN number, and that their carrier supports SMS from short codes or 10DLC numbers. If issues persist, text HELP to +1 (516) 234-7187 or email <a href="/cdn-cgi/l/email-protection#fb888e8b8b94898fbb9c9e8f899a8d9e95d59a8b8b"><span class="__cf_email__" data-cfemail="8cfff9fcfce3fef8ccebe9f8feedfae9e2a2edfcfc">[email&#160;protected]</span></a>.</div>
-        </div>
-
-        <div class="faq-item">
-          <div class="faq-q">How do I cancel my Pro subscription? <span class="arrow">↓</span></div>
-          <div class="faq-a">Text <code>CANCEL</code> to +1 (516) 234-7187 or email <a href="/cdn-cgi/l/email-protection#8cfff9fcfce3fef8ccebe9f8feedfae9e2a2edfcfc"><span class="__cf_email__" data-cfemail="c8bbbdb8b8a7babc88afadbcbaa9beada6e6a9b8b8">[email&#160;protected]</span></a>. Your access continues until the end of the current billing period.</div>
-        </div>
-
-        <div class="faq-item">
-          <div class="faq-q">How do I delete my data? <span class="arrow">↓</span></div>
-          <div class="faq-a">Text <code>DELETE ACCOUNT</code> to +1 (516) 234-7187. All your bills and associated data will be permanently removed. See our <a href="/privacy.html">Privacy Policy</a> for more details.</div>
-        </div>
-
+    <div class="faq-item">
+      <div class="faq-q" onclick="toggleFaq(this)">
+        <span class="faq-q-text">Is my receipt photo stored on your servers?</span>
+        <span class="faq-chevron">⌄</span>
+      </div>
+      <div class="faq-a">
+        Receipt images are sent to our AI (Claude by Anthropic) for processing, then the extracted data is stored on your bill. We do not retain raw receipt images in our database long-term. See our <a href="privacy.html">Privacy Policy</a> for full details.
       </div>
     </div>
 
-    <!-- STILL NEED HELP -->
-    <div class="section">
-      <h2>Still Need Help?</h2>
-      <p>Text <code>HELP</code> to <a href="sms:+15162347187&body=HELP">+1 (516) 234-7187</a> for an instant command reference, or reach us at <a href="/cdn-cgi/l/email-protection#40333530302f323400272534322136252e6e213030"><span class="__cf_email__" data-cfemail="62111712120d101622050716100314070c4c031212">[email&#160;protected]</span></a> and we'll get back to you within 24 hours.</p>
+    <div class="faq-item">
+      <div class="faq-q" onclick="toggleFaq(this)">
+        <span class="faq-q-text">Can I scan receipts without an account?</span>
+        <span class="faq-chevron">⌄</span>
+      </div>
+      <div class="faq-a">
+        Receipt scanning requires a RAVEN account (free). However, your group members can view bills and mark themselves as paid via a shared link — <strong>no account required</strong> for participants.
+      </div>
     </div>
-
   </div>
 
-  <footer>
-    <div class="footer-logo">© 2026 RAVEN</div>
-    <div class="footer-links">
-      <a href="/priva
+  <!-- FAQ: BILLS -->
+  <div class="faq-group">
+    <div class="faq-label fl-purple">🧾 Bills & Splitting</div>
+
+    <div class="faq-item">
+      <div class="faq-q" onclick="toggleFaq(this)">
+        <span class="faq-q-text">How do I split a bill evenly vs. by item?</span>
+        <span class="faq-chevron">⌄</span>
+      </div>
+      <div class="faq-a">
+        When creating a bill, choose <strong>Split Evenly</strong> to divide the total equally, or <strong>Itemized</strong> to let each person pick what they ordered. With itemized splits, tax and tip are distributed proportionally based on each person's subtotal.
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q" onclick="toggleFaq(this)">
+        <span class="faq-q-text">My friend can't access the bill link — what do they do?</span>
+        <span class="faq-chevron">⌄</span>
+      </div>
+      <div class="faq-a">
+        Bill links are publicly accessible — no account needed. If they're having trouble, try:
+        <ul>
+          <li>Making sure they're using the full link (check it wasn't truncated in your message)</li>
+          <li>Having them try a different browser (Chrome or Safari work best)</li>
+          <li>Resending the link from your dashboard → Bills → Share</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q" onclick="toggleFaq(this)">
+        <span class="faq-q-text">Can I edit a bill after it's been shared?</span>
+        <span class="faq-chevron">⌄</span>
+      </div>
+      <div class="faq-a">
+        Yes — bill creators can edit item names and amounts, add or remove people, and mark payments. Changes appear live for anyone with the link. Note: if someone has already selected items, editing may affect their total.
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q" onclick="toggleFaq(this)">
+        <span class="faq-q-text">How do reminders work?</span>
+        <span class="faq-chevron">⌄</span>
+      </div>
+      <div class="faq-a">
+        From your dashboard, tap the 🔔 Remind button on any active bill. RAVEN sends a reminder to all unpaid participants — they'll get the bill link again so they can pay. Reminders are sent as SMS (if a phone is on file) or otherwise shared via the web.
+      </div>
+    </div>
+  </div>
+
+  <!-- FAQ: TRIP HUBS -->
+  <div class="faq-group">
+    <div class="faq-label fl-orange">✈️ Trip Hubs</div>
+
+    <div class="faq-item">
+      <div class="faq-q" onclick="toggleFaq(this)">
+        <span class="faq-q-text">What's the difference between a Bill and a Trip Hub?</span>
+        <span class="faq-chevron">⌄</span>
+      </div>
+      <div class="faq-a">
+        A <strong>Bill</strong> is for a single receipt — one dinner, one Airbnb night, one shared Uber. A <strong>Trip Hub</strong> is for an entire group trip — it holds multiple receipts and shows each person's running total across all of them. Think of the hub as a folder of bills for one trip.
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q" onclick="toggleFaq(this)">
+        <span class="faq-q-text">How do I invite someone new to join my Trip Hub?</span>
+        <span class="faq-chevron">⌄</span>
+      </div>
+      <div class="faq-a">
+        Open the trip page and tap <strong>📨 Invite</strong>. You'll see two links:
+        <ul>
+          <li><strong>Trip Link</strong> — for people already added to the trip (no account needed to view)</li>
+          <li><strong>Invite Link</strong> — for new people who need to create a RAVEN account to join and add receipts</li>
+        </ul>
+        Copy the Invite Link and paste it directly into your group chat.
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q" onclick="toggleFaq(this)">
+        <span class="faq-q-text">Can I add a trip date and see a countdown?</span>
+        <span class="faq-chevron">⌄</span>
+      </div>
+      <div class="faq-a">
+        Yes! On the trip hub page, tap ⚙️ <strong>Settings</strong> and enter your trip date. Once saved, the page will show a live countdown — "47 days to go" — right at the top of the trip hub.
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q" onclick="toggleFaq(this)">
+        <span class="faq-q-text">Can multiple people add receipts to the same trip?</span>
+        <span class="faq-chevron">⌄</span>
+      </div>
+      <div class="faq-a">
+        Yes — anyone with the trip link can add receipts and leave comments. The running totals update automatically for everyone. If you want someone to have a RAVEN account so they can also manage the trip, use the Invite Link to get them signed up.
+      </div>
+    </div>
+  </div>
+
+  <!-- FAQ: ACCOUNT -->
+  <div class="faq-group">
+    <div class="faq-label fl-purple">👤 Account & Settings</div>
+
+    <div class="faq-item">
+      <div class="faq-q" onclick="toggleFaq(this)">
+        <span class="faq-q-text">How do I set up my payment methods?</span>
+        <span class="faq-chevron">⌄</span>
+      </div>
+      <div class="faq-a">
+        Go to <strong>Dashboard → Settings → Payment Methods</strong>. Add your Venmo username, Cash App $cashtag, Zelle email/phone, or Apple Pay name. When someone views a bill you created, they'll see these options with direct links to pay you.
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q" onclick="toggleFaq(this)">
+        <span class="faq-q-text">How do I change my profile picture?</span>
+        <span class="faq-chevron">⌄</span>
+      </div>
+      <div class="faq-a">
+        Go to <strong>Dashboard → Settings</strong>. Tap the avatar or "📷 Change Photo" button. Your photo is cropped to a square and saved to your profile — it appears in bill comments and as your dashboard avatar.
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q" onclick="toggleFaq(this)">
+        <span class="faq-q-text">How do I delete my account?</span>
+        <span class="faq-chevron">⌄</span>
+      </div>
+      <div class="faq-a">
+        Email us at <a href="mailto:hello@getraven.app">hello@getraven.app</a> or text <a href="tel:+15162347187">+1 (516) 234-7187</a> with your account email. We'll permanently delete your account and all associated data within 14 days.
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q" onclick="toggleFaq(this)">
+        <span class="faq-q-text">I forgot my password — how do I reset it?</span>
+        <span class="faq-chevron">⌄</span>
+      </div>
+      <div class="faq-a">
+        On the login screen at <a href="dashboard.html">dashboard.html</a>, click "Forgot password?" and enter your email. You'll receive a reset link within a few minutes. If you don't see it, check your spam folder or contact us.
+      </div>
+    </div>
+  </div>
+
+  <!-- STILL STUCK -->
+  <div style="background:var(--dark);border:1px solid var(--border);border-radius:16px;padding:32px;text-align:center;margin-top:24px">
+    <div style="font-size:32px;margin-bottom:12px">🪶</div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:0.05em;margin-bottom:8px">Still stuck?</div>
+    <p style="color:var(--muted);font-size:14px;margin-bottom:24px;max-width:400px;margin-left:auto;margin-right:auto;line-height:1.7">We're a small team that actually reads every message. Reach out — we'll get back to you within 24 hours.</p>
+    <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+      <a href="tel:+15162347187" style="display:inline-flex;align-items:center;gap:8px;padding:12px 24px;background:var(--green);color:#000;border-radius:9px;font-weight:700;font-size:14px;text-decoration:none;border:none;transition:all 0.2s" onmouseover="this.style.background='#3ddd68'" onmouseout="this.style.background='var(--green)'">📱 Call or Text <span style="font-size:11px;opacity:0.7;font-weight:500">— Fastest</span></a>
+      <a href="mailto:hello@getraven.app" style="display:inline-flex;align-items:center;gap:8px;padding:12px 24px;background:transparent;color:var(--muted2);border:1px solid var(--border2);border-radius:9px;font-weight:600;font-size:14px;text-decoration:none;transition:all 0.2s" onmouseover="this.style.color='var(--white)';this.style.borderColor='rgba(255,255,255,0.25)'" onmouseout="this.style.color='var(--muted2)';this.style.borderColor='var(--border2)'">📧 Email Us</a>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <div>
+    <div class="f-logo">🪶 RAVEN</div>
+    <div class="f-tag">Scan receipts. Share links. Get paid.</div>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:12px;align-items:flex-end">
+    <div class="f-links">
+      <a href="index.html">Home</a>
+      <a href="dashboard.html">Dashboard</a>
+      <a href="privacy.html">Privacy</a>
+      <a href="terms.html">Terms</a>
+      <a href="support.html" style="color:var(--white)">Support</a>
+    </div>
+    <div class="f-copy">© 2026 RAVEN. All rights reserved.</div>
+  </div>
+</footer>
+
+<script>
+function toggleFaq(btn) {
+  const item = btn.parentElement;
+  const wasOpen = item.classList.contains('open');
+  // Close all
+  document.querySelectorAll('.faq-item.open').forEach(i => i.classList.remove('open'));
+  // Open clicked if it wasn't open
+  if (!wasOpen) item.classList.add('open');
+}
+</script>
+
+</body>
+</html>
