@@ -52,7 +52,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="RavenSplit">
+<meta name="apple-mobile-web-app-title" content="RAVEN">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="apple-touch-icon" sizes="152x152" href="/icon-152.png">
 <link rel="apple-touch-icon" sizes="192x192" href="/icon-192.png">
@@ -850,6 +850,31 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
         <div id="settings-saved" style="display:none;margin-top:12px;color:var(--green);font-size:13px;font-weight:600">✅ Settings saved!</div>
       </div>
 
+      <!-- PWA INSTALL CARD — shown on mobile when not yet installed -->
+      <div id="pwa-install-card" style="display:none;max-width:520px;margin-top:20px">
+        <div style="padding:16px;background:linear-gradient(135deg,rgba(124,58,237,0.1),rgba(48,209,88,0.06));border:1px solid rgba(124,58,237,0.22);border-radius:16px">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:0" id="pwa-install-main">
+            <div style="display:flex;align-items:center;gap:12px;min-width:0">
+              <div style="font-size:26px;flex-shrink:0">🪶</div>
+              <div>
+                <div style="font-size:13px;font-weight:700;color:var(--white);margin-bottom:2px">Add RAVEN to Home Screen</div>
+                <div style="font-size:11px;color:var(--muted);line-height:1.4">Works offline · feels like a native app</div>
+              </div>
+            </div>
+            <button id="pwa-install-btn" onclick="triggerPwaInstall()" style="flex-shrink:0;padding:9px 16px;background:var(--green);border:none;border-radius:9px;color:#000;font-family:'Epilogue',sans-serif;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap">Install</button>
+          </div>
+          <!-- iOS manual instructions — shown on Safari/iOS where native prompt isn't available -->
+          <div id="pwa-ios-hint" style="display:none;margin-top:12px;padding:12px;background:rgba(255,255,255,0.04);border-radius:10px">
+            <div style="font-size:12px;color:var(--muted2);line-height:1.8">
+              <strong style="color:var(--white)">On iPhone / iPad:</strong><br>
+              1. Tap the <strong style="color:var(--white)">Share</strong> button ⬆️ in Safari<br>
+              2. Scroll down and tap <strong style="color:var(--white)">"Add to Home Screen"</strong> ➕<br>
+              3. Tap <strong style="color:var(--white)">Add</strong> — done!
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- PRIVACY SECTION — inline inside Settings page -->
       <div id="privacy-section" style="max-width:520px;margin-top:32px;padding-bottom:40px">
         <div class="form-card" style="padding:24px">
@@ -1097,6 +1122,7 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
     <div id="modal-participants" class="participants-list"></div>
     <div class="modal-actions">
       <button class="modal-btn modal-btn-view" id="modal-view-btn">🔗 Open Bill Page</button>
+      <button class="modal-btn" id="modal-share-btn" style="background:rgba(0,140,255,0.1);border:1px solid rgba(0,140,255,0.25);color:#4DB8FF">📤 Share Link</button>
       <button class="modal-btn modal-btn-remind" id="modal-remind-btn">🔔 Remind Unpaid</button>
       <button class="modal-btn" id="modal-edit-toggle-btn" style="background:rgba(48,209,88,0.08);border:1px solid rgba(48,209,88,0.2);color:var(--green)" onclick="toggleBillEditPanel()">✏️ Edit Bill</button>
       <button class="modal-btn" id="modal-add-person-btn" style="background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.2);color:var(--purple3)">👤 Add Person</button>
@@ -1698,6 +1724,7 @@ async function loadSettings() {
   } catch(e) {}
   if (window.innerWidth <= 768) { const qn = document.getElementById('mob-quick-nav'); if (qn) qn.style.display = 'block'; }
   loadPrivacyToggles();
+  setupPwaInstallCard();
 }
 
 function renderAvatar(url, firstName) {
@@ -1838,6 +1865,65 @@ async function handlePushNotifToggle(value) {
     if (perm !== 'granted') { setPrivacyToggle('push_notif', false); showToast('Notifications blocked — allow in browser settings', 'error'); return; }
   }
   await savePrivacySetting('push_notif', value);
+}
+
+// ─── PWA INSTALL ──────────────────────────────────────────────────────────────
+
+let _pwaInstallPrompt = null;
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  _pwaInstallPrompt = e;
+  setupPwaInstallCard();
+});
+
+window.addEventListener('appinstalled', () => {
+  const card = document.getElementById('pwa-install-card');
+  if (card) card.style.display = 'none';
+  _pwaInstallPrompt = null;
+});
+
+function _isRunningAsPwa() {
+  return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+}
+
+function _isIosSafari() {
+  return /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
+}
+
+function setupPwaInstallCard() {
+  const card = document.getElementById('pwa-install-card');
+  if (!card) return;
+  if (_isRunningAsPwa()) { card.style.display = 'none'; return; }
+
+  if (_pwaInstallPrompt) {
+    // Chrome / Android — native prompt available
+    card.style.display = 'block';
+    const btn = document.getElementById('pwa-install-btn');
+    if (btn) btn.style.display = 'block';
+    const hint = document.getElementById('pwa-ios-hint');
+    if (hint) hint.style.display = 'none';
+  } else if (_isIosSafari()) {
+    // iOS Safari — show manual step-by-step instructions
+    card.style.display = 'block';
+    const btn = document.getElementById('pwa-install-btn');
+    if (btn) btn.style.display = 'none';
+    const hint = document.getElementById('pwa-ios-hint');
+    if (hint) hint.style.display = 'block';
+  }
+  // Desktop / unsupported — keep hidden
+}
+
+async function triggerPwaInstall() {
+  if (!_pwaInstallPrompt) return;
+  _pwaInstallPrompt.prompt();
+  const { outcome } = await _pwaInstallPrompt.userChoice;
+  if (outcome === 'accepted') {
+    showToast('🪶 RAVEN added to your home screen!', 'success');
+    const card = document.getElementById('pwa-install-card');
+    if (card) card.style.display = 'none';
+    _pwaInstallPrompt = null;
+  }
 }
 
 const billUrlMap = {};
@@ -2078,7 +2164,8 @@ function renderBillCard(b) {
     '<div class="bill-progress-wrap"><div class="bill-progress-label">' + pct + '% paid</div><div class="bill-progress"><div class="bill-progress-fill" style="width:' + pct + '%;background:' + (isFullyPaid ? 'var(--green)' : 'var(--purple)') + '"></div></div></div>' +
     '<div class="bill-actions" onclick="event.stopPropagation()">' +
     (isCreator ? '<button class="bill-action-btn btn-remind" onclick="sendReminder(\'' + b.id + '\')">🔔 Remind</button>' : '') +
-    '<a class="bill-action-btn btn-view" href="' + billUrl + '" style="display:inline-flex;align-items:center;text-decoration:none">View Bill →</a>' +
+    '<button class="bill-action-btn" onclick="shareBillLink(\'' + b.id + '\',\'' + (b.name||'').replace(/'/g,"\\'") + '\',\'' + (b.share_token||'') + '\')" style="background:rgba(0,140,255,0.1);border:1px solid rgba(0,140,255,0.2);color:#4DB8FF">📤 Share</button>' +
+    '<a class="bill-action-btn btn-view" href="' + billUrl + '" style="display:inline-flex;align-items:center;text-decoration:none">View →</a>' +
     '</div></div>';
 }
 
@@ -2122,6 +2209,7 @@ async function openBillModal(billId) {
   }).join('');
 
   document.getElementById('modal-view-btn').onclick = () => viewBillPage(billId);
+  document.getElementById('modal-share-btn').onclick = () => shareBillLink(billId, bill.name, bill.share_token);
   document.getElementById('modal-remind-btn').onclick = () => sendReminder(billId);
   document.getElementById('modal-delete-btn').onclick = () => deleteBill(billId);
 
@@ -2229,6 +2317,24 @@ async function addPersonToBill(billId, bill) {
 }
 
 function closeBillModal() { document.getElementById('bill-modal').classList.remove('open'); currentBillId = null; }
+
+async function shareBillLink(billId, billName, shareToken) {
+  const url = BACKEND + '/bill/' + billId + (shareToken ? '?t=' + shareToken : '');
+  const msg = '🪶 ' + (billName || 'Bill') + '\n\nTap to see what you owe and pay your share:\n' + url + '\n\n— Split bills instantly with RAVEN | ravensplit.com';
+  if (navigator.share) {
+    try {
+      await navigator.share({ title: '🪶 ' + (billName || 'Bill'), text: msg, url });
+      return;
+    } catch(e) { if (e.name === 'AbortError') return; }
+  }
+  // Fallback — copy to clipboard
+  try {
+    await navigator.clipboard.writeText(msg);
+    showToast('📋 Bill link copied!', 'success');
+  } catch(e) {
+    prompt('Copy this link:', url);
+  }
+}
 
 async function markPaid(participantId, billId) {
   await db.from('participants').update({ paid: true, paid_at: new Date().toISOString() }).eq('id', participantId);
@@ -2739,7 +2845,7 @@ async function shareRavenIdSMS() {
   const name = (() => { try { return JSON.parse(localStorage.getItem('raven_profile')||'{}').first_name || 'Someone'; } catch(e) { return 'Someone'; } })();
   const inviteUrl = BACKEND + '/friend-invite/' + encodeURIComponent(ravenId);
   // Single message body — URL at the end so iMessage renders the link preview card
-  const msg = name + ' wants to connect with you on RAVEN 🪶\n\nTap to add @' + ravenId + ' as a friend:\n' + inviteUrl;
+  const msg = name + ' wants to connect with you on RAVEN 🪶\n\nTap to add @' + ravenId + ' as a friend:\n' + inviteUrl + '\n\n— Split bills instantly with RAVEN | ravensplit.com';
   if (navigator.share) {
     try {
       // Pass ONLY text — not url separately, which causes iOS to send it as a second bubble
