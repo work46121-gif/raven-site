@@ -1253,7 +1253,17 @@ async function handleLogin() {
   btn.textContent = 'Signing in...'; btn.disabled = true; hideAuthError();
   const { data, error } = await db.auth.signInWithPassword({ email, password });
   btn.textContent = 'Sign In →'; btn.disabled = false;
-  if (error) { showAuthError(error.message); return; }
+  if (error) {
+    // Check if it's an email not confirmed error
+    if (error.message?.toLowerCase().includes('email not confirmed') || error.message?.toLowerCase().includes('confirm')) {
+      // Show resend confirmation option
+      showAuthError('Please confirm your email first. ' +
+        '<button onclick="resendConfirmation(\'' + email.replace(/'/g, '') + '\')" style="background:none;border:none;color:var(--green);font-family:\'Epilogue\',sans-serif;font-size:inherit;cursor:pointer;text-decoration:underline;padding:0">Resend confirmation email →</button>');
+      return;
+    }
+    showAuthError(error.message);
+    return;
+  }
   if (data?.user) {
     if (document.getElementById('remember-me')?.checked) {
       localStorage.setItem('raven_remembered_email', email);
@@ -1261,6 +1271,19 @@ async function handleLogin() {
       localStorage.removeItem('raven_remembered_email');
     }
     currentUser = data.user; await checkOnboardingAndShow(data.user.id);
+  }
+}
+
+async function resendConfirmation(email) {
+  const addr = email || document.getElementById('login-email')?.value.trim();
+  if (!addr) return showAuthError('Enter your email address first.');
+  try {
+    const { error } = await db.auth.resend({ type: 'signup', email: addr });
+    if (error) return showAuthError(error.message);
+    hideAuthError();
+    showToast('✅ Confirmation email resent to ' + addr, 'success');
+  } catch(e) {
+    showToast('Could not resend — try signing up again', 'error');
   }
 }
 
@@ -1354,17 +1377,30 @@ async function handleSignup() {
 
   btn.textContent = 'Create Account →'; btn.disabled = false;
 
+  // Show email confirmation required screen
+  document.getElementById('signup-form').style.display = 'none';
+  document.querySelector('.auth-tabs').style.display = 'none';
+  const card = document.querySelector('.auth-card');
+  const confirmDiv = document.createElement('div');
+  confirmDiv.className = 'auth-form';
+  confirmDiv.style.textAlign = 'center';
+  confirmDiv.innerHTML =
+    '<div style="font-size:48px;margin-bottom:16px">📧</div>' +
+    '<div style="font-size:18px;font-weight:700;color:var(--white);margin-bottom:8px">Check your email</div>' +
+    '<div style="font-size:14px;color:var(--muted);line-height:1.7;margin-bottom:20px">We sent a confirmation link to <strong style="color:var(--white)">' + email + '</strong>.<br>Click it to activate your account — RAVEN uses your confirmed email to send bill reminders.</div>' +
+    '<div style="padding:12px 16px;background:rgba(48,209,88,0.07);border:1px solid rgba(48,209,88,0.2);border-radius:10px;font-size:13px;color:var(--green);margin-bottom:16px">✅ Once confirmed, come back and sign in</div>' +
+    '<button onclick="location.reload()" style="background:none;border:none;color:var(--muted);font-family:\'Epilogue\',sans-serif;font-size:13px;cursor:pointer;text-decoration:underline">← Back to Sign In</button>';
+  if (card) card.appendChild(confirmDiv);
+
   // If there's a pending join, handle it now before routing to onboarding
   if (data?.user) {
     currentUser = data.user;
     const pending = await getPendingJoin();
     if (pending) {
-      // Pass firstName directly — profile may not be queryable yet right after signup
       const redirected = await handlePendingJoinIfAny(data.user.id, email, firstName || email.split('@')[0]);
       if (redirected) return;
     }
   }
-  window.location.href = 'onboarding.html';
 }
 
 let payModalParticipantId = null;
@@ -1870,12 +1906,37 @@ async function markPaid(participantId, billId) {
 }
 
 async function sendReminder(billId) {
-  try { await fetch(BACKEND + '/remind-dashboard', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ billId, userEmail: currentUser.email }) }); } catch(e) {}
-  showToast('🔔 Reminder sent!', 'success');
+  const btn = document.getElementById('modal-remind-btn');
+  if (btn) { btn.textContent = 'Sending...'; btn.disabled = true; }
+  try {
+    const res = await fetch(BACKEND + '/remind-dashboard', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ billId, userEmail: currentUser.email })
+    });
+    const data = await res.json();
+    if (data.message === 'Everyone has paid!') {
+      showToast('🎉 Everyone has already paid!', 'success');
+    } else if (data.sent > 0) {
+      showToast('🔔 Reminder sent to ' + data.sent + ' person' + (data.sent > 1 ? 's' : '') + (data.skipped > 0 ? ' (' + data.skipped + ' skipped — email not confirmed)' : ''), 'success');
+    } else if (data.skipped > 0) {
+      showToast('⚠️ ' + data.skipped + ' person' + (data.skipped > 1 ? 's haven\'t' : ' hasn\'t') + ' confirmed their email yet — reminders not sent', 'error');
+    } else {
+      showToast('🔔 Reminders sent!', 'success');
+    }
+  } catch(e) {
+    showToast('🔔 Reminder sent!', 'success');
+  }
+  if (btn) { btn.textContent = '🔔 Remind Unpaid'; btn.disabled = false; }
 }
 
 async function permanentDelete(billId) {
-  if (!confirm('Permanently delete this bill?')) return;
+  // Two-tap confirm — no confirm() (broken on iOS)
+  const btn = event?.target;
+  if (!btn || btn.dataset.confirming !== '1') {
+    if (btn) { btn.dataset.confirming = '1'; btn.textContent = '⚠️ Tap again to confirm'; btn.style.background = 'rgba(255,68,68,0.2)'; btn.style.borderColor = 'rgba(255,68,68,0.5)'; setTimeout(() => { if (btn.dataset.confirming==='1'){btn.dataset.confirming='';btn.textContent='🗑 Permanently Delete';btn.style.background='';btn.style.borderColor='';} }, 3000); }
+    return;
+  }
   await db.from('item_selections').delete().eq('bill_id', billId);
   await db.from('receipt_items').delete().eq('bill_id', billId);
   await db.from('participants').delete().eq('bill_id', billId);
@@ -2227,7 +2288,7 @@ async function toggleCoAdmin(memberName) {
 }
 
 async function removeMemberAdmin(memberName) {
-  if (!confirm('Remove "' + memberName + '" from this trip?\n\nThey will no longer appear in receipt splits on the trip page.')) return;
+  // confirm() removed - caller should use two-tap pattern
   const people   = getAdminPeople().filter(p => p !== memberName);
   const coAdmins = getAdminAdmins().filter(a => a !== memberName);
   try {
@@ -2266,7 +2327,8 @@ async function loadAdminComments() {
       delBtn.title = 'Delete this comment';
       delBtn.style.cssText = 'background:rgba(255,68,68,0.08);border:1px solid rgba(255,68,68,0.2);border-radius:6px;color:#FF6B6B;cursor:pointer;padding:4px 8px;font-size:13px;flex-shrink:0';
       delBtn.addEventListener('click', async () => {
-        if (!confirm('Delete this comment by ' + (c.author_name || 'Anonymous') + '?')) return;
+        // Two-tap confirm
+        if (delBtn.dataset.confirming !== '1') { delBtn.dataset.confirming='1'; delBtn.textContent='⚠️ Confirm'; delBtn.style.cssText+='background:rgba(255,68,68,0.2);border-color:rgba(255,68,68,0.5)'; setTimeout(()=>{ if(delBtn.dataset.confirming==='1'){delBtn.dataset.confirming='';delBtn.textContent='🗑';delBtn.style.cssText=delBtn.style.cssText.replace(/background[^;]*;?/,'').replace(/border-color[^;]*;?/,'');} },3000); return; }
         const { error } = await db.from('trip_comments').delete().eq('id', c.id);
         if (error) { showToast('Error deleting comment', 'error'); return; }
         row.remove();
@@ -2279,7 +2341,11 @@ async function loadAdminComments() {
 }
 
 async function confirmDeleteTrip(tripId, tripName) {
-  if (!confirm('Delete "' + tripName + '"?\n\nThis permanently removes:\n• All receipts\n• All comments\n• All member data\n\nThis CANNOT be undone.')) return;
+  const dBtn = document.getElementById('admin-delete-btn');
+  if (!dBtn || dBtn.dataset.confirming !== '1') {
+    if (dBtn) { dBtn.dataset.confirming='1'; dBtn.textContent='⚠️ Tap again — PERMANENTLY delete?'; dBtn.style.background='rgba(255,68,68,0.25)'; dBtn.style.borderColor='rgba(255,68,68,0.6)'; setTimeout(()=>{ if(dBtn.dataset.confirming==='1'){dBtn.dataset.confirming='';dBtn.textContent='🗑 Delete This Trip Forever';dBtn.style.background='rgba(255,68,68,0.12)';dBtn.style.borderColor='rgba(255,68,68,0.35)';} },4000); }
+    return;
+  }
   const btn = document.getElementById('admin-delete-btn');
   btn.textContent = 'Deleting...'; btn.disabled = true;
   try {
@@ -3130,7 +3196,7 @@ async function createTrip() {
   tripCoverBase64 = null;
   showToast('✈️ Trip "' + name + '" created!', 'success');
   const tripUrl = BACKEND + '/trip/' + tripId + '?t=' + shareToken;
-  setTimeout(() => { if (confirm('Trip created! Copy the share link now?')) navigator.clipboard.writeText(tripUrl).then(()=>showToast('Link copied!','success')).catch(()=>prompt('Copy:',tripUrl)); }, 500);
+  setTimeout(() => { navigator.clipboard.writeText(tripUrl).then(()=>showToast('✅ Trip created! Link copied to clipboard','success')).catch(()=>showToast('✅ Trip created!','success')); }, 500);
   loadTrips();
 }
 
