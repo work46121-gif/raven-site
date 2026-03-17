@@ -2053,7 +2053,10 @@ async function openBillModal(billId) {
 
   const parts = bill.participants || [];
 
-  // Build participant rows with correct paid-by indicator
+  // Build participant rows — three states:
+  // 1. Bill payer → purple "💳 Paid the bill" badge, no action
+  // 2. Non-payer who settled (p.paid=true) → green "💳 Paid" badge, no action
+  // 3. Non-payer who hasn't settled (p.paid=false) → orange owed amount + Pay button
   document.getElementById('modal-participants').innerHTML = parts.map(p => {
     const isBillPayer = paidByName && p.name.toLowerCase() === paidByName;
     let badge, action;
@@ -2068,7 +2071,7 @@ async function openBillModal(billId) {
       action = '<button class="mark-paid-btn" onclick="openPayModal(\'' + p.id + '\', \'' + billId + '\', ' + parseFloat(p.amount).toFixed(2) + ')">💳 Pay</button>';
     }
     return '<div class="participant-row"><div><div class="participant-name">@' + p.name + '</div>' +
-      (p.paid && p.payment_method ? '<div style="font-size:11px;color:var(--muted);margin-top:3px">via ' + p.payment_method + '</div>' : '') +
+      (p.paid && !isBillPayer && p.payment_method ? '<div style="font-size:11px;color:var(--muted);margin-top:3px">via ' + p.payment_method + '</div>' : '') +
       '</div><div style="display:flex;align-items:center;gap:10px">' + badge + action + '</div></div>';
   }).join('');
 
@@ -2110,8 +2113,28 @@ async function saveBillEdits() {
   const newName = document.getElementById('modal-edit-name')?.value.trim();
   const newPaidBy = document.getElementById('modal-edit-paidby')?.value || null;
   if (!newName) return showToast('Bill name cannot be empty', 'error');
+
+  // Fetch current bill to check if paid_by actually changed
+  const { data: currentBill } = await db.from('bills').select('paid_by').eq('id', currentBillId).single();
+  const payerChanged = (currentBill?.paid_by || '').toLowerCase() !== (newPaidBy || '').toLowerCase();
+
   const { error } = await db.from('bills').update({ name: newName, paid_by: newPaidBy || null }).eq('id', currentBillId);
   if (error) return showToast('Error: ' + error.message, 'error');
+
+  // If the bill payer changed, reset paid=false for everyone who isn't the new payer
+  // so they get a fresh Pay button pointing to the correct person
+  if (payerChanged && newPaidBy) {
+    try {
+      const { data: parts } = await db.from('participants').select('id, name').eq('bill_id', currentBillId);
+      if (parts) {
+        const toReset = parts.filter(p => p.name.toLowerCase() !== newPaidBy.toLowerCase()).map(p => p.id);
+        if (toReset.length > 0) {
+          await db.from('participants').update({ paid: false, paid_at: null, payment_method: null }).in('id', toReset);
+        }
+      }
+    } catch(e) {}
+  }
+
   showToast('✅ Bill updated!', 'success');
   toggleBillEditPanel();
   openBillModal(currentBillId);
