@@ -747,7 +747,7 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
 <div id="page-settings" class="page">
       <div class="page-header"><h1 class="page-title">Account <span>Settings</span></h1></div>
       <div id="mob-quick-nav" style="display:none;margin-bottom:20px">
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:20px">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px">
           <button onclick="showPage('friends');setMobNav('mob-settings')" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:14px 8px;background:var(--dark);border:1px solid var(--border);border-radius:14px;cursor:pointer;-webkit-tap-highlight-color:transparent;text-align:center;position:relative">
             <span style="font-size:22px">👥</span><span style="font-size:11px;font-weight:600;color:var(--white)">Friends</span>
             <span id="mob-friends-badge" style="display:none;position:absolute;top:8px;right:8px;background:#A855F7;color:#fff;border-radius:10px;font-size:9px;font-weight:700;padding:1px 5px">!</span>
@@ -758,10 +758,35 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
           <button onclick="showPage('trip-hub');setMobNav('mob-trip')" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:14px 8px;background:var(--dark);border:1px solid var(--border);border-radius:14px;cursor:pointer;-webkit-tap-highlight-color:transparent;text-align:center">
             <span style="font-size:22px">✈️</span><span style="font-size:11px;font-weight:600;color:var(--white)">Trips</span>
           </button>
+          <button onclick="openPrivacySettings()" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:14px 8px;background:var(--dark);border:1px solid var(--border);border-radius:14px;cursor:pointer;-webkit-tap-highlight-color:transparent;text-align:center">
+            <span style="font-size:22px">🔒</span><span style="font-size:11px;font-weight:600;color:var(--white)">Privacy</span>
+          </button>
           <button onclick="handleLogout()" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:14px 8px;background:rgba(255,68,68,0.07);border:1px solid rgba(255,68,68,0.15);border-radius:14px;cursor:pointer;-webkit-tap-highlight-color:transparent;text-align:center">
             <span style="font-size:22px">⎋</span><span style="font-size:11px;font-weight:600;color:#FF6B6B">Sign Out</span>
           </button>
         </div>
+        <div style="height:1px;background:var(--border);margin-bottom:20px"></div>
+
+        <!-- PWA Install Banner — only shown if not already installed -->
+        <div id="pwa-install-card" style="display:none;margin-bottom:16px;padding:14px 16px;background:linear-gradient(135deg,rgba(124,58,237,0.12),rgba(48,209,88,0.08));border:1px solid rgba(124,58,237,0.25);border-radius:14px">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+            <div style="display:flex;align-items:center;gap:12px;min-width:0">
+              <div style="font-size:26px;flex-shrink:0">🪶</div>
+              <div>
+                <div style="font-size:13px;font-weight:700;color:var(--white);margin-bottom:2px">Add to Home Screen</div>
+                <div style="font-size:11px;color:var(--muted);line-height:1.4">Get the full app experience — works offline</div>
+              </div>
+            </div>
+            <button id="pwa-install-btn" onclick="triggerPwaInstall()" style="flex-shrink:0;padding:9px 16px;background:var(--green);border:none;border-radius:9px;color:#000;font-family:'Epilogue',sans-serif;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap">Install</button>
+          </div>
+          <!-- iOS fallback instructions (shown on Safari/iOS where prompt isn't available) -->
+          <div id="pwa-ios-hint" style="display:none;margin-top:10px;padding:10px 12px;background:rgba(255,255,255,0.04);border-radius:8px">
+            <div style="font-size:12px;color:var(--muted2);line-height:1.7">
+              On iPhone: tap <strong style="color:var(--white)">Share</strong> <span style="font-size:14px">⬆️</span> then <strong style="color:var(--white)">"Add to Home Screen"</strong> <span style="font-size:14px">➕</span>
+            </div>
+          </div>
+        </div>
+
         <div style="height:1px;background:var(--border);margin-bottom:20px"></div>
       </div>
       <div style="max-width:520px;margin-bottom:16px">
@@ -1001,6 +1026,136 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
 </div>
 
 <div class="toast" id="toast"></div>
+
+<!-- PRIVACY SETTINGS MODAL -->
+<div id="privacy-modal" style="display:none;position:fixed;inset:0;z-index:3000;background:rgba(0,0,0,0.75);backdrop-filter:blur(8px);align-items:flex-end;justify-content:center" onclick="if(event.target===this)closePrivacySettings()">
+  <div style="background:#13131A;border:1px solid rgba(255,255,255,0.1);border-radius:24px 24px 0 0;padding:24px 20px 52px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto">
+    <div style="width:36px;height:4px;background:rgba(255,255,255,0.12);border-radius:2px;margin:0 auto 20px"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:22px">
+      <div>
+        <div style="font-size:18px;font-weight:800;letter-spacing:0.02em">🔒 Privacy Settings</div>
+        <div style="font-size:12px;color:#6E6B80;margin-top:3px">Control how RAVEN uses your data</div>
+      </div>
+      <button onclick="closePrivacySettings()" style="background:rgba(255,255,255,0.07);border:none;color:#9896A8;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center">✕</button>
+    </div>
+
+    <!-- PRESENCE -->
+    <div style="margin-bottom:8px">
+      <div style="font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#6E6B80;margin-bottom:10px">Presence</div>
+
+      <div style="background:#0C0C12;border:1px solid rgba(255,255,255,0.07);border-radius:14px;overflow:hidden">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;padding:16px;gap:14px">
+          <div style="flex:1;min-width:0">
+            <div style="font-size:14px;font-weight:600;color:#F0EEF8;margin-bottom:3px">Appear Offline</div>
+            <div style="font-size:12px;color:#6E6B80;line-height:1.5">Friends won't see your green online dot or last-seen time</div>
+          </div>
+          <label style="position:relative;width:46px;height:26px;flex-shrink:0;cursor:pointer;margin-top:2px">
+            <input type="checkbox" id="priv-appear-offline" style="opacity:0;width:0;height:0;position:absolute" onchange="savePrivacySetting('appear_offline',this.checked)">
+            <span id="toggle-appear-offline" style="position:absolute;inset:0;background:#2A2A38;border-radius:13px;transition:all 0.2s;border:1px solid rgba(255,255,255,0.1)"></span>
+            <span id="knob-appear-offline" style="position:absolute;top:3px;left:3px;width:18px;height:18px;background:#6E6B80;border-radius:50%;transition:all 0.2s"></span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- NOTIFICATIONS -->
+    <div style="margin-bottom:8px;margin-top:16px">
+      <div style="font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#6E6B80;margin-bottom:10px">Notifications</div>
+      <div style="background:#0C0C12;border:1px solid rgba(255,255,255,0.07);border-radius:14px;overflow:hidden">
+
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;padding:16px;border-bottom:1px solid rgba(255,255,255,0.05);gap:14px">
+          <div style="flex:1;min-width:0">
+            <div style="font-size:14px;font-weight:600;color:#F0EEF8;margin-bottom:3px">Push Notifications</div>
+            <div style="font-size:12px;color:#6E6B80;line-height:1.5">Bill reminders, payment confirmations, and friend requests</div>
+          </div>
+          <label style="position:relative;width:46px;height:26px;flex-shrink:0;cursor:pointer;margin-top:2px">
+            <input type="checkbox" id="priv-push-notif" style="opacity:0;width:0;height:0;position:absolute" onchange="handlePushNotifToggle(this.checked)">
+            <span id="toggle-priv-push-notif" style="position:absolute;inset:0;background:#2A2A38;border-radius:13px;transition:all 0.2s;border:1px solid rgba(255,255,255,0.1)"></span>
+            <span id="knob-priv-push-notif" style="position:absolute;top:3px;left:3px;width:18px;height:18px;background:#6E6B80;border-radius:50%;transition:all 0.2s"></span>
+          </label>
+        </div>
+
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;padding:16px;gap:14px">
+          <div style="flex:1;min-width:0">
+            <div style="font-size:14px;font-weight:600;color:#F0EEF8;margin-bottom:3px">Bill Payment Alerts</div>
+            <div style="font-size:12px;color:#6E6B80;line-height:1.5">Get notified when someone pays their share</div>
+          </div>
+          <label style="position:relative;width:46px;height:26px;flex-shrink:0;cursor:pointer;margin-top:2px">
+            <input type="checkbox" id="priv-payment-alerts" style="opacity:0;width:0;height:0;position:absolute" onchange="savePrivacySetting('payment_alerts',this.checked)">
+            <span id="toggle-priv-payment-alerts" style="position:absolute;inset:0;background:#2A2A38;border-radius:13px;transition:all 0.2s;border:1px solid rgba(255,255,255,0.1)"></span>
+            <span id="knob-priv-payment-alerts" style="position:absolute;top:3px;left:3px;width:18px;height:18px;background:#6E6B80;border-radius:50%;transition:all 0.2s"></span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- MARKETING / COMMUNICATIONS -->
+    <div style="margin-bottom:8px;margin-top:16px">
+      <div style="font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#6E6B80;margin-bottom:10px">Communications</div>
+      <div style="background:#0C0C12;border:1px solid rgba(255,255,255,0.07);border-radius:14px;overflow:hidden">
+
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;padding:16px;border-bottom:1px solid rgba(255,255,255,0.05);gap:14px">
+          <div style="flex:1;min-width:0">
+            <div style="font-size:14px;font-weight:600;color:#F0EEF8;margin-bottom:3px">Email Updates</div>
+            <div style="font-size:12px;color:#6E6B80;line-height:1.5">New features, tips, and product announcements</div>
+          </div>
+          <label style="position:relative;width:46px;height:26px;flex-shrink:0;cursor:pointer;margin-top:2px">
+            <input type="checkbox" id="priv-email-marketing" style="opacity:0;width:0;height:0;position:absolute" onchange="savePrivacySetting('email_marketing',this.checked)">
+            <span id="toggle-priv-email-marketing" style="position:absolute;inset:0;background:#2A2A38;border-radius:13px;transition:all 0.2s;border:1px solid rgba(255,255,255,0.1)"></span>
+            <span id="knob-priv-email-marketing" style="position:absolute;top:3px;left:3px;width:18px;height:18px;background:#6E6B80;border-radius:50%;transition:all 0.2s"></span>
+          </label>
+        </div>
+
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;padding:16px;gap:14px">
+          <div style="flex:1;min-width:0">
+            <div style="font-size:14px;font-weight:600;color:#F0EEF8;margin-bottom:3px">SMS Reminders</div>
+            <div style="font-size:12px;color:#6E6B80;line-height:1.5">Text reminders when you're owed or when bills are due</div>
+          </div>
+          <label style="position:relative;width:46px;height:26px;flex-shrink:0;cursor:pointer;margin-top:2px">
+            <input type="checkbox" id="priv-sms-reminders" style="opacity:0;width:0;height:0;position:absolute" onchange="savePrivacySetting('sms_reminders',this.checked)">
+            <span id="toggle-priv-sms-reminders" style="position:absolute;inset:0;background:#2A2A38;border-radius:13px;transition:all 0.2s;border:1px solid rgba(255,255,255,0.1)"></span>
+            <span id="knob-priv-sms-reminders" style="position:absolute;top:3px;left:3px;width:18px;height:18px;background:#6E6B80;border-radius:50%;transition:all 0.2s"></span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- DATA & PRIVACY -->
+    <div style="margin-top:16px;margin-bottom:8px">
+      <div style="font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#6E6B80;margin-bottom:10px">Data & Privacy</div>
+      <div style="background:#0C0C12;border:1px solid rgba(255,255,255,0.07);border-radius:14px;overflow:hidden">
+
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;padding:16px;border-bottom:1px solid rgba(255,255,255,0.05);gap:14px">
+          <div style="flex:1;min-width:0">
+            <div style="font-size:14px;font-weight:600;color:#F0EEF8;margin-bottom:3px">Show in Friend Search</div>
+            <div style="font-size:12px;color:#6E6B80;line-height:1.5">Others can find you by your Raven ID or name</div>
+          </div>
+          <label style="position:relative;width:46px;height:26px;flex-shrink:0;cursor:pointer;margin-top:2px">
+            <input type="checkbox" id="priv-discoverable" style="opacity:0;width:0;height:0;position:absolute" onchange="savePrivacySetting('discoverable',this.checked)">
+            <span id="toggle-priv-discoverable" style="position:absolute;inset:0;background:#2A2A38;border-radius:13px;transition:all 0.2s;border:1px solid rgba(255,255,255,0.1)"></span>
+            <span id="knob-priv-discoverable" style="position:absolute;top:3px;left:3px;width:18px;height:18px;background:#6E6B80;border-radius:50%;transition:all 0.2s"></span>
+          </label>
+        </div>
+
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;padding:16px;gap:14px">
+          <div style="flex:1;min-width:0">
+            <div style="font-size:14px;font-weight:600;color:#F0EEF8;margin-bottom:3px">Analytics & Improvement</div>
+            <div style="font-size:12px;color:#6E6B80;line-height:1.5">Help us improve RAVEN by sharing anonymous usage data</div>
+          </div>
+          <label style="position:relative;width:46px;height:26px;flex-shrink:0;cursor:pointer;margin-top:2px">
+            <input type="checkbox" id="priv-analytics" style="opacity:0;width:0;height:0;position:absolute" onchange="savePrivacySetting('analytics',this.checked)">
+            <span id="toggle-priv-analytics" style="position:absolute;inset:0;background:#2A2A38;border-radius:13px;transition:all 0.2s;border:1px solid rgba(255,255,255,0.1)"></span>
+            <span id="knob-priv-analytics" style="position:absolute;top:3px;left:3px;width:18px;height:18px;background:#6E6B80;border-radius:50%;transition:all 0.2s"></span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:20px;text-align:center">
+      <div style="font-size:11px;color:#4A4760">Settings saved automatically · <a href="https://ravensplit.com/privacy" style="color:#6E6B80;text-decoration:none">Privacy Policy</a></div>
+    </div>
+  </div>
+</div>
 
 <script>
 // ── GLOBAL ERROR HANDLER — catch any unhandled promise rejections silently ──
@@ -1528,6 +1683,8 @@ async function loadSettings() {
     }
   } catch(e) {}
   if (window.innerWidth <= 768) { const qn = document.getElementById('mob-quick-nav'); if (qn) qn.style.display = 'block'; }
+  // Show PWA install card if eligible
+  setupPwaInstallCard();
 }
 
 function renderAvatar(url, firstName) {
@@ -1593,6 +1750,131 @@ async function saveSettings() {
     if (data.first_name) { const greetEl = document.getElementById('greeting-name'); if (greetEl) greetEl.textContent = data.first_name.charAt(0).toUpperCase() + data.first_name.slice(1); }
   } catch(e) { showToast('Error saving settings', 'error'); }
   btn.textContent = '💾 Save Settings'; btn.disabled = false;
+}
+
+// ─── PRIVACY SETTINGS ─────────────────────────────────────────────────────────
+
+const PRIVACY_DEFAULTS = {
+  appear_offline: false,
+  push_notif: false,
+  payment_alerts: true,
+  email_marketing: false,
+  sms_reminders: true,
+  discoverable: true,
+  analytics: true
+};
+
+function getPrivacySettings() {
+  try { return { ...PRIVACY_DEFAULTS, ...JSON.parse(localStorage.getItem('raven_privacy') || '{}') }; }
+  catch(e) { return { ...PRIVACY_DEFAULTS }; }
+}
+
+function setPrivacyToggle(key, value) {
+  const checkbox = document.getElementById('priv-' + key.replace('_','-').replace('_','-'));
+  const track    = document.getElementById('toggle-priv-' + key.replace('_','-').replace('_','-'));
+  const knob     = document.getElementById('knob-priv-' + key.replace('_','-').replace('_','-'));
+  if (!checkbox) return;
+  checkbox.checked = value;
+  if (track) track.style.background = value ? 'var(--green)' : '#2A2A38';
+  if (knob) { knob.style.left = value ? '24px' : '3px'; knob.style.background = value ? '#fff' : '#6E6B80'; }
+}
+
+function openPrivacySettings() {
+  const modal = document.getElementById('privacy-modal');
+  if (!modal) return;
+  const priv = getPrivacySettings();
+  // Render all toggle states
+  Object.keys(PRIVACY_DEFAULTS).forEach(key => setPrivacyToggle(key, priv[key]));
+  modal.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+
+function closePrivacySettings() {
+  const modal = document.getElementById('privacy-modal');
+  if (modal) modal.style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+async function savePrivacySetting(key, value) {
+  // Update toggle UI immediately
+  setPrivacyToggle(key, value);
+  // Persist locally
+  const priv = getPrivacySettings();
+  priv[key] = value;
+  localStorage.setItem('raven_privacy', JSON.stringify(priv));
+  // Try to persist to Supabase profiles table (graceful fail if column doesn't exist yet)
+  try {
+    await db.from('profiles').upsert(
+      { id: currentUser.id, ['privacy_' + key]: value, updated_at: new Date().toISOString() },
+      { onConflict: 'id' }
+    );
+  } catch(e) { /* column may not exist yet — localStorage is the source of truth for now */ }
+}
+
+async function handlePushNotifToggle(value) {
+  if (value && 'Notification' in window) {
+    const perm = await Notification.requestPermission();
+    if (perm !== 'granted') {
+      // User denied — flip toggle back
+      setPrivacyToggle('push_notif', false);
+      showToast('Notifications blocked — allow in browser settings', 'error');
+      return;
+    }
+  }
+  await savePrivacySetting('push_notif', value);
+}
+
+// ─── PWA INSTALL ──────────────────────────────────────────────────────────────
+
+let pwaInstallPrompt = null; // holds the beforeinstallprompt event
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault(); // block the auto-prompt
+  pwaInstallPrompt = e;
+  // Expose the card if settings page is already showing
+  setupPwaInstallCard();
+});
+
+function isRunningAsPwa() {
+  return window.matchMedia('(display-mode: standalone)').matches ||
+         window.navigator.standalone === true;
+}
+
+function isIos() {
+  return /iphone|ipad|ipod/i.test(navigator.userAgent);
+}
+
+function setupPwaInstallCard() {
+  const card = document.getElementById('pwa-install-card');
+  if (!card) return;
+  if (isRunningAsPwa()) { card.style.display = 'none'; return; } // already installed
+
+  if (pwaInstallPrompt) {
+    // Chrome/Android — native prompt available
+    card.style.display = 'block';
+    const iosHint = document.getElementById('pwa-ios-hint');
+    if (iosHint) iosHint.style.display = 'none';
+  } else if (isIos()) {
+    // iOS Safari — show manual instructions
+    card.style.display = 'block';
+    const installBtn = document.getElementById('pwa-install-btn');
+    if (installBtn) installBtn.style.display = 'none';
+    const iosHint = document.getElementById('pwa-ios-hint');
+    if (iosHint) iosHint.style.display = 'block';
+  }
+  // On desktop or unsupported browsers: card stays hidden
+}
+
+async function triggerPwaInstall() {
+  if (!pwaInstallPrompt) return;
+  pwaInstallPrompt.prompt();
+  const { outcome } = await pwaInstallPrompt.userChoice;
+  if (outcome === 'accepted') {
+    showToast('🪶 RAVEN added to your home screen!', 'success');
+    const card = document.getElementById('pwa-install-card');
+    if (card) card.style.display = 'none';
+    pwaInstallPrompt = null;
+  }
 }
 
 const billUrlMap = {};
