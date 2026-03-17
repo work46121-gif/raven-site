@@ -1,0 +1,7 @@
+json{
+  "name": "raven-site",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "npx serve . -p ${PORT:-80}"
+  }
+}
