@@ -2399,12 +2399,13 @@ async function shareRavenIdSMS() {
   const ravenId = (el ? el.textContent : '').replace('@','').trim();
   if (!ravenId || ravenId === 'loading...') { showToast('Set your Raven ID in Settings first', 'error'); showPage('settings'); return; }
   const name = (() => { try { return JSON.parse(localStorage.getItem('raven_profile')||'{}').first_name || 'Someone'; } catch(e) { return 'Someone'; } })();
-  // Use Railway friend-invite page — has OG meta tags so iMessage shows rich raven image preview
   const inviteUrl = BACKEND + '/friend-invite/' + encodeURIComponent(ravenId);
+  // Single message body — URL at the end so iMessage renders the link preview card
   const msg = name + ' wants to connect with you on RAVEN 🪶\n\nTap to add @' + ravenId + ' as a friend:\n' + inviteUrl;
   if (navigator.share) {
     try {
-      await navigator.share({ title: name + ' wants to be your RAVEN friend', text: msg, url: inviteUrl });
+      // Pass ONLY text — not url separately, which causes iOS to send it as a second bubble
+      await navigator.share({ text: msg });
       return;
     } catch(e) { if (e.name === 'AbortError') return; }
   }
