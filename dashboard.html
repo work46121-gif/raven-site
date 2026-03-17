@@ -1329,20 +1329,19 @@ async function checkOnboardingAndShow(userId) {
   try {
     const { data: profile, error } = await db.from('profiles').select('*').eq('id', userId).single();
     if (!error && profile) {
-      // #3 Fix: ensure every profile has a raven_id — generate one if missing
+      // Ensure every profile has a raven_id — generate one if missing (mel → mel1 → mel2)
       if (!profile.raven_id && profile.first_name) {
         try {
-          const base = profile.first_name.toLowerCase().replace(/[^a-z0-9]/g, '');
+          const base = profile.first_name.toLowerCase().replace(/[^a-z0-9]/g, '') || 'user';
           let ravenId = null;
-          for (let attempt = 0; attempt < 10; attempt++) {
-            const candidate = attempt === 0 ? base : base + (Math.floor(Math.random() * 90) + 10);
+          for (let i = 0; i <= 99; i++) {
+            const candidate = i === 0 ? base : base + i;
             const { data: existing } = await db.from('profiles').select('id').eq('raven_id', candidate).maybeSingle();
             if (!existing) { ravenId = candidate; break; }
           }
-          if (ravenId) {
-            await db.from('profiles').update({ raven_id: ravenId }).eq('id', userId);
-            profile.raven_id = ravenId;
-          }
+          if (!ravenId) ravenId = base + Date.now().toString().slice(-4);
+          await db.from('profiles').update({ raven_id: ravenId }).eq('id', userId);
+          profile.raven_id = ravenId;
         } catch(e) {}
       }
       if (profile.onboarding_complete) {
@@ -1478,18 +1477,18 @@ async function handleSignup() {
   const { data, error } = await db.auth.signUp({ email, password });
   if (error) { showAuthError(error.message); btn.textContent = 'Create Account →'; btn.disabled = false; return; }
 
-  // Save first name to profile + auto-generate Raven ID
+  // Save first name to profile + auto-generate Raven ID (sequential: mel → mel1 → mel2)
   if (data?.user && firstName) {
     try {
-      // Generate a unique Raven ID: firstname + random 2-digit number, lowercase
-      const base = firstName.toLowerCase().replace(/[^a-z0-9]/g, '');
+      const base = firstName.toLowerCase().replace(/[^a-z0-9]/g, '') || 'user';
       let ravenId = null;
-      // Try base, then base+2digits until unique
-      for (let attempt = 0; attempt < 10; attempt++) {
-        const candidate = attempt === 0 ? base : base + (Math.floor(Math.random() * 90) + 10);
+      // Try base first, then base1, base2... base99
+      for (let i = 0; i <= 99; i++) {
+        const candidate = i === 0 ? base : base + i;
         const { data: existing } = await db.from('profiles').select('id').eq('raven_id', candidate).maybeSingle();
         if (!existing) { ravenId = candidate; break; }
       }
+      if (!ravenId) ravenId = base + Date.now().toString().slice(-4);
       await db.from('profiles').upsert({ id: data.user.id, email, first_name: firstName, raven_id: ravenId, onboarding_complete: false, updated_at: new Date().toISOString() }, { onConflict: 'id' });
       const existingLocal = JSON.parse(localStorage.getItem('raven_profile') || '{}');
       localStorage.setItem('raven_profile', JSON.stringify({ ...existingLocal, first_name: firstName, raven_id: ravenId, user_id: data.user.id }));
@@ -1711,9 +1710,32 @@ async function handleAvatarUpload(event) {
 async function saveSettings() {
   const btn = document.getElementById('save-settings-btn');
   btn.textContent = 'Saving...'; btn.disabled = true;
-  const ravenIdInput = document.getElementById('set-raven-id').value.trim().toLowerCase().replace(/[^a-z0-9_]/g,'');
+  let ravenIdInput = document.getElementById('set-raven-id').value.trim().toLowerCase().replace(/[^a-z0-9_]/g,'');
   const data = { id: currentUser.id, email: currentUser.email, first_name: document.getElementById('set-first').value.trim(), last_name: document.getElementById('set-last').value.trim(), phone: document.getElementById('set-phone').value.trim(), venmo: document.getElementById('set-venmo').value.trim(), cashapp: document.getElementById('set-cashapp').value.trim(), zelle: document.getElementById('set-zelle').value.trim(), applepay: document.getElementById('set-applepay').value.trim(), onboarding_complete: true, updated_at: new Date().toISOString() };
-  if (ravenIdInput) data.raven_id = ravenIdInput;
+
+  // If user typed a Raven ID, check it's not taken by someone else
+  if (ravenIdInput) {
+    const { data: conflict } = await db.from('profiles').select('id').eq('raven_id', ravenIdInput).neq('id', currentUser.id).maybeSingle();
+    if (conflict) {
+      // Suggest the next available one
+      const suggested = await generateUniqueRavenId(ravenIdInput, currentUser.id);
+      const status = document.getElementById('raven-id-status');
+      if (status) { status.style.color = '#FF6B6B'; status.textContent = '✗ @' + ravenIdInput + ' is taken — try @' + suggested; }
+      document.getElementById('set-raven-id').value = ravenIdInput;
+      showToast('@' + ravenIdInput + ' is taken. Try @' + suggested, 'error');
+      btn.textContent = '💾 Save Settings'; btn.disabled = false;
+      return;
+    }
+    data.raven_id = ravenIdInput;
+  } else if (data.first_name) {
+    // Auto-generate from first name if no ID set yet
+    const { data: existing } = await db.from('profiles').select('raven_id').eq('id', currentUser.id).single();
+    if (!existing?.raven_id) {
+      data.raven_id = await generateUniqueRavenId(data.first_name.toLowerCase().replace(/[^a-z0-9_]/g,''), currentUser.id);
+      document.getElementById('set-raven-id').value = data.raven_id;
+    }
+  }
+
   try {
     await db.from('profiles').upsert(data, { onConflict: 'id' });
     const existing = JSON.parse(localStorage.getItem('raven_profile') || '{}');
@@ -1721,6 +1743,7 @@ async function saveSettings() {
     document.getElementById('settings-saved').style.display = 'block';
     setTimeout(() => document.getElementById('settings-saved').style.display = 'none', 3000);
     if (data.first_name) { const greetEl = document.getElementById('greeting-name'); if (greetEl) greetEl.textContent = data.first_name.charAt(0).toUpperCase() + data.first_name.slice(1); }
+    if (data.raven_id) { const status = document.getElementById('raven-id-status'); if (status) { status.style.color = 'var(--green)'; status.textContent = '✓ @' + data.raven_id + ' saved'; } }
   } catch(e) { showToast('Error saving settings', 'error'); }
   btn.textContent = '💾 Save Settings'; btn.disabled = false;
 }
@@ -2659,14 +2682,38 @@ async function shareRavenIdSMS() {
   window.open('sms:?&body=' + encodeURIComponent(msg), '_blank');
 }
 
+// Generate a unique Raven ID: tries base, then base1, base2, base3...
+// excludeUserId = current user so we don't conflict with themselves
+async function generateUniqueRavenId(base, excludeUserId) {
+  const clean = base.toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 20) || 'user';
+  // Try the clean base first
+  const { data: first } = await db.from('profiles').select('id').eq('raven_id', clean).neq('id', excludeUserId || '').maybeSingle();
+  if (!first) return clean;
+  // Try base1, base2, ... base99
+  for (let i = 1; i <= 99; i++) {
+    const candidate = clean + i;
+    const { data: exists } = await db.from('profiles').select('id').eq('raven_id', candidate).neq('id', excludeUserId || '').maybeSingle();
+    if (!exists) return candidate;
+  }
+  // Absolute fallback — append timestamp fragment
+  return clean + Date.now().toString().slice(-4);
+}
+
 async function checkRavenId() {
   const val = document.getElementById('set-raven-id').value.trim().toLowerCase();
   const status = document.getElementById('raven-id-status');
   if (!val) { status.textContent = ''; return; }
   if (val.length < 3) { status.style.color = 'var(--muted)'; status.textContent = 'Too short — minimum 3 characters'; return; }
   const { data } = await db.from('profiles').select('id').eq('raven_id', val).neq('id', currentUser.id).maybeSingle();
-  if (data) { status.style.color = '#FF6B6B'; status.textContent = '✗ @' + val + ' is taken'; }
-  else { status.style.color = 'var(--green)'; status.textContent = '✓ @' + val + ' is available'; }
+  if (data) {
+    // Suggest the next available
+    const suggested = await generateUniqueRavenId(val, currentUser.id);
+    status.style.color = '#FF6B6B';
+    status.innerHTML = '✗ @' + val + ' is taken &mdash; <span style="color:var(--purple3);cursor:pointer;text-decoration:underline" onclick="document.getElementById(\'set-raven-id\').value=\'' + suggested + '\';checkRavenId()">use @' + suggested + '?</span>';
+  } else {
+    status.style.color = 'var(--green)';
+    status.textContent = '✓ @' + val + ' is available';
+  }
 }
 
 async function searchFriends() {
