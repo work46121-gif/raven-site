@@ -1573,35 +1573,52 @@ async function openPayModal(participantId, billId, amount) {
   const displayName = paidByName || profile?.first_name || bill?.creator_phone?.split('@')[0] || 'Bill payer';
   document.getElementById('pay-modal-sub').textContent = 'Send $' + amt + ' to ' + displayName;
 
-  const methods = [];
+  const mc = document.getElementById('pay-modal-methods');
+  mc.innerHTML = '';
+
+  function addLinkRow(href, target, bg, iconBg, iconText, title, handle) {
+    const a = document.createElement('a');
+    a.href = href; if (target) a.target = target;
+    a.className = 'pay-method-row'; a.style.background = bg;
+    a.innerHTML = `<div class="pay-method-icon" style="background:${iconBg};font-size:${iconText.length>1?'9px':'14px'}">${iconText}</div><div class="pay-method-info"><div class="pay-method-name">${title}</div><div class="pay-method-handle">${handle}</div></div><div class="pay-method-arrow">→</div>`;
+    mc.appendChild(a);
+  }
+
+  function addCopyRow(copyText, bg, iconBg, iconText, title, handle) {
+    const btn = document.createElement('button');
+    btn.className = 'pay-method-row'; btn.style.background = bg; btn.style.border = '2px solid rgba(255,255,255,0.06)'; btn.style.width = '100%'; btn.style.cursor = 'pointer';
+    btn.innerHTML = `<div class="pay-method-icon" style="background:${iconBg};font-size:${iconText.length>1?'9px':'14px'}">${iconText}</div><div class="pay-method-info"><div class="pay-method-name">${title}</div><div class="pay-method-handle">${handle}</div></div><div class="pay-method-arrow">→</div>`;
+    btn.addEventListener('click', () => { navigator.clipboard.writeText(copyText).then(() => showToast(title + ' info copied!', 'success')).catch(() => prompt('Copy:', copyText)); });
+    mc.appendChild(btn);
+  }
+
   if (profile?.venmo) {
     const handle = profile.venmo.startsWith('@') ? profile.venmo : '@' + profile.venmo;
     const clean = profile.venmo.replace('@','');
-    methods.push(`<a href="venmo://paycharge?txn=pay&recipients=${clean}&amount=${amt}&note=Bill Payment" class="pay-method-row" style="background:#003d7a"><div class="pay-method-icon" style="background:#008CFF">V</div><div class="pay-method-info"><div class="pay-method-name">Venmo</div><div class="pay-method-handle">${handle}</div></div><div class="pay-method-arrow">→</div></a>`);
+    addLinkRow('venmo://paycharge?txn=pay&recipients='+clean+'&amount='+amt+'&note=Bill+Payment', '_blank', '#003d7a', '#008CFF', 'V', 'Venmo', handle + ' · $' + amt);
   }
   if (profile?.cashapp) {
     const tag = profile.cashapp.startsWith('$') ? profile.cashapp : '$' + profile.cashapp;
     const clean = profile.cashapp.replace('$','');
-    methods.push(`<a href="https://cash.app/$${clean}/${amt}" target="_blank" class="pay-method-row" style="background:#004d12"><div class="pay-method-icon" style="background:#00D632">$</div><div class="pay-method-info"><div class="pay-method-name">Cash App</div><div class="pay-method-handle">${tag}</div></div><div class="pay-method-arrow">→</div></a>`);
+    addLinkRow('https://cash.app/$'+clean+'/'+amt, '_blank', '#004d12', '#00D632', '$', 'Cash App', tag + ' · $' + amt);
   }
   if (profile?.zelle) {
-    const zel = profile.zelle;
-    methods.push(`<a href="#" onclick="navigator.clipboard.writeText(${JSON.stringify(zel)}).then(()=>showToast('Zelle info copied!','success'));return false" class="pay-method-row" style="background:#2a0a52"><div class="pay-method-icon" style="background:#6D1ED4">Z</div><div class="pay-method-info"><div class="pay-method-name">Zelle</div><div class="pay-method-handle">${zel} · tap to copy</div></div><div class="pay-method-arrow">→</div></a>`);
+    addCopyRow(profile.zelle, '#2a0a52', '#6D1ED4', 'Z', 'Zelle', profile.zelle + ' · tap to copy');
   }
   if (profile?.applepay) {
     const ap = profile.applepay;
     const dig = ap.replace(/\D/g,'');
     if (dig.length >= 7) {
       const e164 = dig.length===10?'+1'+dig:(dig.length===11&&dig[0]==='1'?'+'+dig:'+'+dig);
-      methods.push(`<a href="sms:${e164}&body=${encodeURIComponent('Sending $'+amt+' via Apple Pay')}" class="pay-method-row" style="background:#1a1a1a"><div class="pay-method-icon" style="background:#333;border:1px solid #555;font-size:9px">Pay</div><div class="pay-method-info"><div class="pay-method-name">Apple Pay</div><div class="pay-method-handle">Opens iMessage to ${ap}</div></div><div class="pay-method-arrow">→</div></a>`);
+      addLinkRow('sms:'+e164+'&body='+encodeURIComponent('Sending $'+amt+' via Apple Pay'), null, '#1a1a1a', '#333', 'Pay', 'Apple Pay', 'Opens iMessage to ' + ap);
     } else {
-      methods.push(`<a href="#" onclick="navigator.clipboard.writeText(${JSON.stringify(ap)}).then(()=>showToast('Apple Pay info copied!','success'));return false" class="pay-method-row" style="background:#1a1a1a"><div class="pay-method-icon" style="background:#333;border:1px solid #555;font-size:9px">Pay</div><div class="pay-method-info"><div class="pay-method-name">Apple Pay</div><div class="pay-method-handle">${ap} · tap to copy</div></div><div class="pay-method-arrow">→</div></a>`);
+      addCopyRow(ap, '#1a1a1a', '#333', 'Pay', 'Apple Pay', ap + ' · tap to copy');
     }
   }
-  if (methods.length === 0) {
-    methods.push(`<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">No payment methods set up for ${displayName}.<br><span style="font-size:11px">They need to add Venmo, Cash App, Zelle or Apple Pay in Settings.</span></div>`);
+
+  if (mc.children.length === 0) {
+    mc.innerHTML = `<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">No payment methods set up for ${displayName}.<br><span style="font-size:11px">They need to add Venmo, Cash App, Zelle or Apple Pay in Settings.</span></div>`;
   }
-  document.getElementById('pay-modal-methods').innerHTML = methods.join('');
 }
 
 async function cbMarkPaidOther() {
@@ -2070,7 +2087,7 @@ async function saveBillEdits() {
   const newName = document.getElementById('modal-edit-name')?.value.trim();
   const newPaidBy = document.getElementById('modal-edit-paidby')?.value || null;
   if (!newName) return showToast('Bill name cannot be empty', 'error');
-  const { error } = await db.from('bills').update({ name: newName, paid_by: newPaidBy || null, updated_at: new Date().toISOString() }).eq('id', currentBillId);
+  const { error } = await db.from('bills').update({ name: newName, paid_by: newPaidBy || null }).eq('id', currentBillId);
   if (error) return showToast('Error: ' + error.message, 'error');
   showToast('✅ Bill updated!', 'success');
   toggleBillEditPanel();
