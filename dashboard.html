@@ -2398,15 +2398,17 @@ async function shareRavenIdSMS() {
   const el = document.getElementById('my-raven-id-display');
   const ravenId = (el ? el.textContent : '').replace('@','').trim();
   if (!ravenId || ravenId === 'loading...') { showToast('Set your Raven ID in Settings first', 'error'); showPage('settings'); return; }
-  // Build the deep link — lands on dashboard with ?add=ravenId which triggers friend request flow
-  const dashboardUrl = 'https://work46121-gif.github.io/raven-site/dashboard.html?add=' + encodeURIComponent(ravenId);
   const name = (() => { try { return JSON.parse(localStorage.getItem('raven_profile')||'{}').first_name || 'Someone'; } catch(e) { return 'Someone'; } })();
-  const msg = name + ' wants to connect with you on RAVEN 🪶\n\nRaven splits bills & tracks trip expenses automatically with AI.\n\nTap to add @' + ravenId + ' as a friend:\n' + dashboardUrl;
-  // Try Web Share API first (works on mobile)
+  // Use Railway friend-invite page — has OG meta tags so iMessage shows rich raven image preview
+  const inviteUrl = BACKEND + '/friend-invite/' + encodeURIComponent(ravenId);
+  const msg = name + ' wants to connect with you on RAVEN 🪶\n\nTap to add @' + ravenId + ' as a friend:\n' + inviteUrl;
   if (navigator.share) {
-    try { await navigator.share({ text: msg }); return; } catch(e) {}
+    try {
+      await navigator.share({ title: name + ' wants to be your RAVEN friend', text: msg, url: inviteUrl });
+      return;
+    } catch(e) { if (e.name === 'AbortError') return; }
   }
-  // Fallback: open iMessage/SMS with sms: URI
+  // Fallback: iMessage/SMS
   window.open('sms:?&body=' + encodeURIComponent(msg), '_blank');
 }
 
