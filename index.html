@@ -505,7 +505,7 @@ async function joinWaitlist(){
   const s=document.getElementById('wl-success'),er=document.getElementById('wl-error');
   s.style.display='none';er.style.display='none';
   if(!email||!email.includes('@')||!email.includes('.')){er.textContent='Please enter a valid email.';er.style.display='block';return}
-  try{await fetch('https://raven-backend-production-fb1f.up.railway.app/waitlist',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,timestamp:new Date().toISOString(),source:'website'})})}catch(e){}
+  try{await fetch('/waitlist',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,timestamp:new Date().toISOString(),source:'website'})})}catch(e){}
   s.style.display='block';document.getElementById('wl-email').value='';
 }
 document.addEventListener('DOMContentLoaded',()=>{const i=document.getElementById('wl-email');if(i)i.addEventListener('keydown',e=>{if(e.key==='Enter')joinWaitlist()})});
