@@ -159,10 +159,28 @@ const server = http.createServer(async (req, res) => {
   if (path.extname(urlPath)) {
     const filePath = '.' + urlPath;
     if (fs.existsSync(filePath)) return serveStaticFile(req, res, filePath);
-    // File not found locally — redirect to GitHub Pages
-    // Handles raven-demo.html, privacy.html, terms.html, support.html, etc.
-    res.writeHead(302, { 'Location': 'https://work46121-gif.github.io/raven-site' + urlPath });
-    return res.end();
+    // Fetch from GitHub Pages server-side, strip Cloudflare injection, serve clean
+    const ghUrl = 'https://work46121-gif.github.io/raven-site' + urlPath;
+    const protocol = ghUrl.startsWith('https') ? https : http;
+    const ghReq = protocol.get(ghUrl, ghRes => {
+      if (ghRes.statusCode !== 200) {
+        res.writeHead(ghRes.statusCode); res.end('Not found'); return;
+      }
+      let body = '';
+      ghRes.setEncoding('utf8');
+      ghRes.on('data', chunk => body += chunk);
+      ghRes.on('end', () => {
+        // Strip Cloudflare email-decode script injection
+        body = body.replace(/<script[^>]*src="\/cdn-cgi\/[^"]*"[^>]*><\/script>/gi, '');
+        // Replace CF email obfuscation spans with encoded email
+        body = body.replace(/<span class="__cf_email__"[^>]*>\[email[^\]]*\]<\/span>/gi, 'hello&#64;ravensplit.com');
+        const ct = path.extname(urlPath) === '.html' ? 'text/html; charset=utf-8' : (ghRes.headers['content-type'] || 'application/octet-stream');
+        res.writeHead(200, { 'Content-Type': ct, 'Cache-Control': 'no-cache' });
+        res.end(body);
+      });
+    });
+    ghReq.on('error', () => { res.writeHead(502); res.end('Bad gateway'); });
+    return;
   }
 
   const htmlPath = '.' + urlPath + '.html';
