@@ -127,7 +127,7 @@ const server = http.createServer(async (req, res) => {
   }
 
   // Everything else → serve static files
-  serveHandler(req, res, { public: '.', cleanUrls: true });
+  serveHandler(req, res, { public: '.', cleanUrls: false });
 });
 
 const PORT = process.env.PORT || 3000;
