@@ -2323,11 +2323,7 @@ async function shareBillLink(billId, billName, shareToken) {
   const url = FRONTEND + '/bill/' + billId + (shareToken ? '?t=' + shareToken : '');
   const myName = (() => { try { return JSON.parse(localStorage.getItem('raven_profile')||'{}').first_name || 'Someone'; } catch(e) { return 'Someone'; } })();
   // URL goes LAST so iMessage auto-generates the rich preview card from OG tags
-  const msg = myName + ' wants to split "' + (billName||'a bill') + '" with you on RAVEN 🪶
-
-Split bills free with RAVEN | ravensplit.com
-
-' + url;
+  const msg = myName + ' wants to split "' + (billName||'a bill') + '" with you on RAVEN 🪶\n\nSplit bills free with RAVEN | ravensplit.com\n\n' + url;
   if (navigator.share) {
     try { await navigator.share({ text: msg }); return; }
     catch(e) { if (e.name === 'AbortError') return; }
