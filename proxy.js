@@ -127,7 +127,12 @@ const server = http.createServer(async (req, res) => {
   }
 
   // Everything else → serve static files
-  serveHandler(req, res, { public: '.', cleanUrls: false });
+  // Rewrite extensionless URLs to .html manually, then serve with cleanUrls off
+  const spath = req.url.split('?')[0];
+  if (!spath.includes('.') && spath !== '/') {
+    req.url = spath + '.html' + (req.url.includes('?') ? '?' + req.url.split('?')[1] : '');
+  }
+  serveHandler(req, res, { public: '.', cleanUrls: false, directoryListing: false });
 });
 
 const PORT = process.env.PORT || 3000;
