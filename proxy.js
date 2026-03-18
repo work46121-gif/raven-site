@@ -76,6 +76,34 @@ function serveOGPage(res, title, description, redirectUrl) {
   res.end(html);
 }
 
+function serveOGPageWithImage(res, title, description, redirectUrl, imageUrl) {
+  const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${title}</title>
+  <meta name="description" content="${description}">
+  <meta property="og:title" content="${title}">
+  <meta property="og:description" content="${description}">
+  <meta property="og:image" content="${imageUrl}">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:url" content="${redirectUrl}">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="RAVEN">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="${title}">
+  <meta name="twitter:description" content="${description}">
+  <meta name="twitter:image" content="${imageUrl}">
+  <meta http-equiv="refresh" content="0;url=${redirectUrl}">
+</head>
+<body style="background:#06060A;margin:0"></body>
+</html>`;
+  res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-cache' });
+  res.end(html);
+}
+
 const server = http.createServer(async (req, res) => {
   const urlPath = req.url.split('?')[0];
 
@@ -99,11 +127,13 @@ const server = http.createServer(async (req, res) => {
     const backendUrl = BACKEND + req.url;
     if (!isBot(req)) { res.writeHead(302, { 'Location': backendUrl }); return res.end(); }
     let tripName = 'Trip Hub';
+    let tripCoverUrl = 'https://ravensplit.com/raven-hero.png';
     try {
-      const { data } = await db.from('trips').select('name').eq('id', tripId).single();
+      const { data } = await db.from('trips').select('name, cover_image').eq('id', tripId).single();
       if (data?.name) tripName = data.name;
+      if (data?.cover_image) tripCoverUrl = BACKEND + '/trip/' + tripId + '/cover-image';
     } catch(e) {}
-    return serveOGPage(res, `✈️ Join ${tripName} on RAVEN`, 'Split bills free with RAVEN | ravensplit.com', backendUrl);
+    return serveOGPageWithImage(res, `✈️ Join ${tripName} on RAVEN`, 'Split bills free with RAVEN | ravensplit.com', backendUrl, tripCoverUrl);
   }
 
   // /friend-invite/:id
@@ -116,7 +146,7 @@ const server = http.createServer(async (req, res) => {
       const { data } = await db.from('profiles').select('first_name').eq('raven_id', ravenId).single();
       if (data?.first_name) firstName = data.first_name;
     } catch(e) {}
-    return serveOGPage(res, `🪶 ${firstName} wants to be your friend on RAVEN`, 'Split bills free with RAVEN | ravensplit.com', backendUrl);
+    return serveOGPage(res, `🪶 ${firstName} wants to be your friend — Split bills free with RAVEN | ravensplit.com`, 'Split bills free with RAVEN | ravensplit.com', backendUrl);
   }
 
   // API routes → proxy to backend
