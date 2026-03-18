@@ -159,7 +159,10 @@ const server = http.createServer(async (req, res) => {
   if (path.extname(urlPath)) {
     const filePath = '.' + urlPath;
     if (fs.existsSync(filePath)) return serveStaticFile(req, res, filePath);
-    res.writeHead(404); return res.end('Not found');
+    // File not found locally — redirect to GitHub Pages
+    // Handles raven-demo.html, privacy.html, terms.html, support.html, etc.
+    res.writeHead(302, { 'Location': 'https://work46121-gif.github.io/raven-site' + urlPath });
+    return res.end();
   }
 
   const htmlPath = '.' + urlPath + '.html';
