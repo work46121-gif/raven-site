@@ -2322,13 +2322,16 @@ function closeBillModal() { document.getElementById('bill-modal').classList.remo
 async function shareBillLink(billId, billName, shareToken) {
   const url = FRONTEND + '/bill/' + billId + (shareToken ? '?t=' + shareToken : '');
   const myName = (() => { try { return JSON.parse(localStorage.getItem('raven_profile')||'{}').first_name || 'Someone'; } catch(e) { return 'Someone'; } })();
-  // URL goes LAST so iMessage auto-generates the rich preview card from OG tags
-  const msg = myName + ' wants to split "' + (billName||'a bill') + '" with you on RAVEN 🪶\n\nSplit bills free with RAVEN | ravensplit.com\n\n' + url;
+  // Send URL alone — iMessage only generates rich preview card when URL is by itself
+  const msg = myName + ' wants to split "' + (billName||'a bill') + '" with you on RAVEN 🪶\nSplit bills free with RAVEN | ravensplit.com';
   if (navigator.share) {
-    try { await navigator.share({ text: msg }); return; }
-    catch(e) { if (e.name === 'AbortError') return; }
+    try {
+      // Share URL separately as the url param — iMessage renders it as its own rich bubble
+      await navigator.share({ title: msg, url: url });
+      return;
+    } catch(e) { if (e.name === 'AbortError') return; }
   }
-  try { await navigator.clipboard.writeText(msg); showToast('📋 Bill link copied!', 'success'); }
+  try { await navigator.clipboard.writeText(url); showToast('📋 Bill link copied!', 'success'); }
   catch(e) { prompt('Copy this link:', url); }
 }
 
@@ -2337,13 +2340,14 @@ async function shareTripLink(tripId) {
   if (!trip) return showToast('Trip not found', 'error');
   const url = FRONTEND + '/trip/' + tripId + '?t=' + trip.share_token;
   const myName = (() => { try { return JSON.parse(localStorage.getItem('raven_profile')||'{}').first_name || 'Someone'; } catch(e) { return 'Someone'; } })();
-  // URL at end — iMessage auto-generates rich preview from OG tags
-  const msg = myName + ' invited you to join "' + trip.name + '" on RAVEN 🪶\n\nSplit bills free with RAVEN | ravensplit.com\n\n' + url;
+  const msg = myName + ' invited you to join "' + trip.name + '" on RAVEN 🪶\nSplit bills free with RAVEN | ravensplit.com';
   if (navigator.share) {
-    try { await navigator.share({ text: msg }); return; }
-    catch(e) { if (e.name === 'AbortError') return; }
+    try {
+      await navigator.share({ title: msg, url: url });
+      return;
+    } catch(e) { if (e.name === 'AbortError') return; }
   }
-  try { await navigator.clipboard.writeText(msg); showToast('📋 Trip invite copied!', 'success'); }
+  try { await navigator.clipboard.writeText(url); showToast('📋 Trip invite copied!', 'success'); }
   catch(e) { prompt('Copy this link:', url); }
 }
 
@@ -2855,13 +2859,14 @@ async function shareRavenIdSMS() {
   if (!ravenId || ravenId === 'loading...') { showToast('Set your Raven ID in Settings first', 'error'); showPage('settings'); return; }
   const name = (() => { try { return JSON.parse(localStorage.getItem('raven_profile')||'{}').first_name || 'Someone'; } catch(e) { return 'Someone'; } })();
   const inviteUrl = FRONTEND + '/friend-invite/' + encodeURIComponent(ravenId);
-  // URL at end — iMessage auto-generates rich preview card from ravensplit.com OG tags
-  const msg = name + ' wants to connect with you on RAVEN 🪶\n\nTap to add @' + ravenId + ' as a friend\n\nSplit bills free with RAVEN | ravensplit.com\n\n' + inviteUrl;
+  const msg = name + ' wants to connect with you on RAVEN 🪶\nTap to add @' + ravenId + ' as a friend\nSplit bills free with RAVEN | ravensplit.com';
   if (navigator.share) {
-    try { await navigator.share({ text: msg }); return; }
-    catch(e) { if (e.name === 'AbortError') return; }
+    try {
+      await navigator.share({ title: msg, url: inviteUrl });
+      return;
+    } catch(e) { if (e.name === 'AbortError') return; }
   }
-  window.open('sms:?&body=' + encodeURIComponent(msg), '_blank');
+  window.open('sms:?&body=' + encodeURIComponent(msg + '\n' + inviteUrl), '_blank');
 }
 
 // Generate a unique Raven ID: tries base, then base1, base2, base3...
