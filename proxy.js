@@ -98,7 +98,8 @@ const server = http.createServer(async (req, res) => {
       const { data } = await db.from('trips').select('name').eq('id', tripId).single();
       if (data?.name) tripName = data.name;
     } catch(e) {}
-    return serveOGPage(res, `✈️ Join ${tripName} on RAVEN`, 'Split bills free with RAVEN | ravensplit.com', backendUrl);
+    const ravenUrl = 'https://ravensplit.com' + req.url;
+    return serveOGPage(res, `✈️ Join ${tripName} on RAVEN`, 'Split bills free with RAVEN | ravensplit.com', ravenUrl);
   }
 
   // /friend-invite/:id — OG preview page
