@@ -835,21 +835,6 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
           </div>
         </div>
       </div>
-      <div style="max-width:520px;margin-bottom:20px">
-        <div class="form-card" style="padding:24px">
-          <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted2);margin-bottom:6px">Payment Methods</div>
-          <div style="font-size:12px;color:var(--muted);margin-bottom:18px">People will see these when they click Pay on your bills</div>
-          <div class="form-group"><label class="form-label" style="display:flex;align-items:center;gap:8px"><span style="width:20px;height:20px;background:#008CFF;border-radius:4px;display:inline-flex;align-items:center;justify-content:center;font-size:10px;color:#fff">V</span> Venmo Username</label><input id="set-venmo" type="text" class="form-input" placeholder="@your-venmo"></div>
-          <div class="form-group"><label class="form-label" style="display:flex;align-items:center;gap:8px"><span style="width:20px;height:20px;background:#00D632;border-radius:4px;display:inline-flex;align-items:center;justify-content:center;font-size:10px;color:#fff">$</span> Cash App $Cashtag</label><input id="set-cashapp" type="text" class="form-input" placeholder="$YourCashtag"></div>
-          <div class="form-group"><label class="form-label" style="display:flex;align-items:center;gap:8px"><span style="width:20px;height:20px;background:#6D1ED4;border-radius:4px;display:inline-flex;align-items:center;justify-content:center;font-size:10px;color:#fff">Z</span> Zelle</label><input id="set-zelle" type="text" class="form-input" placeholder="email or phone number"></div>
-          <div class="form-group"><label class="form-label" style="display:flex;align-items:center;gap:8px"><span style="width:20px;height:20px;background:#1a1a1a;border:1px solid #444;border-radius:4px;display:inline-flex;align-items:center;justify-content:center;font-size:9px;color:#fff">Pay</span> Apple Pay</label><input id="set-applepay" type="text" class="form-input" placeholder="e.g. John or +15551234567"></div>
-        </div>
-      </div>
-      <div style="max-width:520px">
-        <button onclick="saveSettings()" class="submit-btn" id="save-settings-btn">💾 Save Settings</button>
-        <div id="settings-saved" style="display:none;margin-top:12px;color:var(--green);font-size:13px;font-weight:600">✅ Settings saved!</div>
-      </div>
-
       <!-- PWA INSTALL CARD — shown on mobile when not yet installed -->
       <div id="pwa-install-card" style="display:none;max-width:520px;margin-top:20px">
         <div style="padding:16px;background:linear-gradient(135deg,rgba(124,58,237,0.1),rgba(48,209,88,0.06));border:1px solid rgba(124,58,237,0.22);border-radius:16px">
@@ -874,6 +859,23 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
           </div>
         </div>
       </div>
+
+      <div style="max-width:520px;margin-bottom:20px">
+        <div class="form-card" style="padding:24px">
+          <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted2);margin-bottom:6px">Payment Methods</div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:18px">People will see these when they click Pay on your bills</div>
+          <div class="form-group"><label class="form-label" style="display:flex;align-items:center;gap:8px"><span style="width:20px;height:20px;background:#008CFF;border-radius:4px;display:inline-flex;align-items:center;justify-content:center;font-size:10px;color:#fff">V</span> Venmo Username</label><input id="set-venmo" type="text" class="form-input" placeholder="@your-venmo"></div>
+          <div class="form-group"><label class="form-label" style="display:flex;align-items:center;gap:8px"><span style="width:20px;height:20px;background:#00D632;border-radius:4px;display:inline-flex;align-items:center;justify-content:center;font-size:10px;color:#fff">$</span> Cash App $Cashtag</label><input id="set-cashapp" type="text" class="form-input" placeholder="$YourCashtag"></div>
+          <div class="form-group"><label class="form-label" style="display:flex;align-items:center;gap:8px"><span style="width:20px;height:20px;background:#6D1ED4;border-radius:4px;display:inline-flex;align-items:center;justify-content:center;font-size:10px;color:#fff">Z</span> Zelle</label><input id="set-zelle" type="text" class="form-input" placeholder="email or phone number"></div>
+          <div class="form-group"><label class="form-label" style="display:flex;align-items:center;gap:8px"><span style="width:20px;height:20px;background:#1a1a1a;border:1px solid #444;border-radius:4px;display:inline-flex;align-items:center;justify-content:center;font-size:9px;color:#fff">Pay</span> Apple Pay</label><input id="set-applepay" type="text" class="form-input" placeholder="e.g. John or +15551234567"></div>
+        </div>
+      </div>
+      <div style="max-width:520px">
+        <button onclick="saveSettings()" class="submit-btn" id="save-settings-btn">💾 Save Settings</button>
+        <div id="settings-saved" style="display:none;margin-top:12px;color:var(--green);font-size:13px;font-weight:600">✅ Settings saved!</div>
+      </div>
+
+
 
       <!-- PRIVACY SECTION — inline inside Settings page -->
       <div id="privacy-section" style="max-width:520px;margin-top:32px;padding-bottom:40px">
@@ -2340,12 +2342,24 @@ async function shareTripLink(tripId) {
   if (!trip) return showToast('Trip not found', 'error');
   const url = FRONTEND + '/trip/' + tripId + '?t=' + trip.share_token;
   const myName = (() => { try { return JSON.parse(localStorage.getItem('raven_profile')||'{}').first_name || 'Someone'; } catch(e) { return 'Someone'; } })();
-  const msg = myName + ' invited you to join "' + trip.name + '" on RAVEN 🪶\nSplit bills free with RAVEN | ravensplit.com';
-  if (navigator.share) {
+  const titleMsg = myName + ' invited you to join "' + trip.name + '" on RAVEN 🪶\nSplit bills free with RAVEN | ravensplit.com';
+
+  // If trip has a cover photo, share it as a file + url so iMessage shows cover photo
+  if (trip.cover_image && navigator.share && navigator.canShare) {
     try {
-      await navigator.share({ title: msg, url: url });
-      return;
-    } catch(e) { if (e.name === 'AbortError') return; }
+      const blob = await fetch('data:image/jpeg;base64,' + trip.cover_image).then(r => r.blob());
+      const file = new File([blob], 'trip-cover.jpg', { type: 'image/jpeg' });
+      if (navigator.canShare({ files: [file], url: url })) {
+        await navigator.share({ files: [file], title: titleMsg, url: url });
+        return;
+      }
+    } catch(e) {}
+  }
+
+  // Fallback — share as rich link card (no cover photo)
+  if (navigator.share) {
+    try { await navigator.share({ title: titleMsg, url: url }); return; }
+    catch(e) { if (e.name === 'AbortError') return; }
   }
   try { await navigator.clipboard.writeText(url); showToast('📋 Trip invite copied!', 'success'); }
   catch(e) { prompt('Copy this link:', url); }
