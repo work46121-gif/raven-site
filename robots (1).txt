@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /bill/
+Disallow: /trip/
+Disallow: /friend-invite/
+Disallow: /demo/
+
+Sitemap: https://ravensplit.com/sitemap.xml
