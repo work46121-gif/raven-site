@@ -150,7 +150,7 @@ const server = http.createServer(async (req, res) => {
   }
 
   // API routes → proxy to backend
-  const PROXY_PATHS = ['/sms', '/waitlist', '/remind', '/ping', '/demo/', '/demo/scan', '/gif-search', '/trip-info'];
+  const PROXY_PATHS = ['/sms', '/waitlist', '/remind', '/ping', '/demo/', '/demo/scan', '/gif-search', '/trip-info', '/sitemap.xml', '/robots.txt'];
   if (PROXY_PATHS.some(p => urlPath.startsWith(p))) return proxyToBackend(req, res);
 
   // Static files
@@ -159,12 +159,10 @@ const server = http.createServer(async (req, res) => {
   if (path.extname(urlPath)) {
     const filePath = '.' + urlPath;
     if (fs.existsSync(filePath)) return serveStaticFile(req, res, filePath);
-    // Fetch from GitHub Pages server-side, strip Cloudflare injection, serve clean
+    // Fetch from GitHub Pages server-side, strip Cloudflare injection
     const ghUrl = 'https://work46121-gif.github.io/raven-site' + urlPath;
     const ghReq = https.get(ghUrl, ghRes => {
-      if (ghRes.statusCode !== 200) {
-        res.writeHead(ghRes.statusCode); res.end('Not found'); return;
-      }
+      if (ghRes.statusCode !== 200) { res.writeHead(ghRes.statusCode); res.end('Not found'); return; }
       let body = '';
       ghRes.setEncoding('utf8');
       ghRes.on('data', chunk => body += chunk);
