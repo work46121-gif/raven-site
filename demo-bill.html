@@ -236,12 +236,12 @@
 
     <div class="bill-info animate-in">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
-        <div id="d-bill-name-display" class="bill-name" style="cursor:pointer;" onclick="editBillName('d')">Saturday Night Out</div>
+        <div id="d-bill-name-display" class="bill-name" style="cursor:pointer;" onclick="editBillName('d')">New York City Dinner 2026</div>
         <button onclick="editBillName('d')" style="background:rgba(168,85,247,0.1);border:1px solid rgba(168,85,247,0.2);color:var(--raven3);font-size:11px;padding:3px 10px;border-radius:8px;cursor:pointer;font-family:'Epilogue',sans-serif;font-weight:600;flex-shrink:0;">✏️ Edit</button>
       </div>
-      <input type="text" id="d-bill-name" value="Saturday Night Out" maxlength="40" autocomplete="off" autocorrect="off" style="display:none;font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:0.04em;background:var(--dark2);border:1px solid var(--raven2);border-radius:10px;color:var(--white);outline:none;width:100%;padding:8px 12px;margin-bottom:6px;" placeholder="Name your bill..." onblur="saveBillName('d')" onkeydown="if(event.key==='Enter')saveBillName('d')" />
+      <input type="text" id="d-bill-name" value="New York City Dinner 2026" maxlength="40" autocomplete="off" autocorrect="off" style="display:none;font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:0.04em;background:var(--dark2);border:1px solid var(--raven2);border-radius:10px;color:var(--white);outline:none;width:100%;padding:8px 12px;margin-bottom:6px;" placeholder="Name your bill..." onblur="saveBillName('d')" onkeydown="if(event.key==='Enter')saveBillName('d')" />
       <div class="bill-meta">
-        <div class="bill-tag">Total <span id="d-bill-total">$187.40</span></div>
+        <div class="bill-tag">Total <span id="d-bill-total">$188.00</span></div>
         <div class="bill-tag" id="d-item-count-tag">8 items</div>
         <div class="bill-tag" id="d-confirmed-tag">1 confirmed so far</div>
       </div>
@@ -396,12 +396,12 @@
 
     <div class="bill-info animate-in">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
-        <div id="a-bill-name-display" class="bill-name" style="cursor:pointer;" onclick="editBillName('a')">Fort Lauderdale Airbnb 🌴</div>
+        <div id="a-bill-name-display" class="bill-name" style="cursor:pointer;" onclick="editBillName('a')">New York City Trip 2026 🗽</div>
         <button onclick="editBillName('a')" style="background:rgba(168,85,247,0.1);border:1px solid rgba(168,85,247,0.2);color:var(--raven3);font-size:11px;padding:3px 10px;border-radius:8px;cursor:pointer;font-family:'Epilogue',sans-serif;font-weight:600;flex-shrink:0;">✏️ Edit</button>
       </div>
-      <input type="text" id="a-bill-name" value="Fort Lauderdale Airbnb 🌴" maxlength="40" autocomplete="off" autocorrect="off" style="display:none;font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:0.04em;background:var(--dark2);border:1px solid var(--raven2);border-radius:10px;color:var(--white);outline:none;width:100%;padding:8px 12px;margin-bottom:6px;" placeholder="Name your bill..." onblur="saveBillName('a')" onkeydown="if(event.key==='Enter')saveBillName('a')" />
+      <input type="text" id="a-bill-name" value="New York City Trip 2026 🗽" maxlength="40" autocomplete="off" autocorrect="off" style="display:none;font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:0.04em;background:var(--dark2);border:1px solid var(--raven2);border-radius:10px;color:var(--white);outline:none;width:100%;padding:8px 12px;margin-bottom:6px;" placeholder="Name your bill..." onblur="saveBillName('a')" onkeydown="if(event.key==='Enter')saveBillName('a')" />
       <div class="bill-meta">
-        <div class="bill-tag">Created by <span>Melad</span></div>
+        <div class="bill-tag">Created by <span>Jake</span></div>
         <div class="bill-tag"><span id="a-people-count">4</span> people</div>
       </div>
     </div>
@@ -490,7 +490,7 @@
   <div class="modal-overlay" id="payModal" onclick="closeModalOutside(event)">
     <div class="modal">
       <div class="modal-handle"></div>
-      <div class="modal-title">Pay Melad</div>
+      <div class="modal-title">Pay Jake</div>
       <div class="modal-sub">Send your share to the bill creator</div>
       <div class="modal-amount" id="modal-amount">$135.00</div>
       <button id="saveBtn" onclick="saveToSupabase()" style="width:100%;padding:15px;background:linear-gradient(135deg,var(--sms),#00a832);border:none;border-radius:14px;color:#000;font-family:'Epilogue',sans-serif;font-size:15px;font-weight:700;cursor:pointer;margin-bottom:14px;display:flex;align-items:center;justify-content:center;gap:8px;">🪶 Save Bill & Choose Payment</button>
@@ -660,14 +660,14 @@
       });
     }
     const dItems = [
-      { id: '1', name: 'Salmon Pasta',           price: 24, claimers: [] },
-      { id: '2', name: 'Grilled Chicken',         price: 18, claimers: ['melad'] },
+      { id: '1', name: 'Truffle Pasta',           price: 28, claimers: [] },
+      { id: '2', name: 'Salmon Filet',         price: 34, claimers: ['jake'] },
       { id: '3', name: 'House Salad',             price: 14, claimers: [] },
       { id: '4', name: 'Ribeye Steak',            price: 22, claimers: [] },
-      { id: '5', name: 'Malbec Glass × 2',        price: 16, claimers: ['arsalan'] },
-      { id: '6', name: 'Truffle Fries',           price: 12, claimers: ['melad', 'will'] },
-      { id: '7', name: 'Sparkling Water',         price: 9,  claimers: [] },
-      { id: '8', name: 'Chocolate Lava Cake × 2', price: 28, claimers: [] },
+      { id: '5', name: 'Malbec (btl)',        price: 52, claimers: ['priya'] },
+      { id: '6', name: 'Truffle Fries',           price: 12, claimers: ['sam', 'zoe'] },
+      { id: '7', name: 'Sparkling Water',         price: 8,  claimers: [] },
+      { id: '8', name: 'Tiramisu × 2', price: 18, claimers: [] },
     ];
     // dSelections[id] = { type: 'solo'|'split'|'assigned', assignedTo: 'name'|null }
     const dSelections = {};
@@ -691,7 +691,7 @@
     let assignModalItemId = null;
 
     // ── DINNER PEOPLE LIST ──
-    let dPeople = ['melad', 'troia', 'arsalan', 'will'];
+    let dPeople = ['jake', 'priya', 'sam', 'zoe'];
 
     function renderDinnerPeopleList() {
       const container = document.getElementById('d-names-list');
@@ -1215,7 +1215,7 @@
 
           payload = {
             type: 'itemized',
-            name: document.getElementById('d-bill-name').value.trim() || 'Saturday Night Out',
+            name: document.getElementById('d-bill-name').value.trim() || 'New York City Dinner 2026',
             items: dItems.map(i => ({ name: i.name, price: i.price })),
             total: actualTotal,
             tax: actualTax,
@@ -1273,7 +1273,7 @@
       const tab = document.getElementById(tabId);
 
       const billName = activeTab === 'dinner'
-        ? (document.getElementById('d-bill-name').value.trim() || 'Saturday Night Out')
+        ? (document.getElementById('d-bill-name').value.trim() || 'New York City Dinner 2026')
         : (document.getElementById('a-bill-name').value.trim() || 'Simple Split');
       const iMessageText = `You have been spotted by R.A.V.E.N 🪶\n\n📋 ${billName}\n\nTap the link to pick what you ordered and see what you owe:\n${billUrl}`;
       const iMessageUrl = `sms:&body=${encodeURIComponent(iMessageText)}`;
