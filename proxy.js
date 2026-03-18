@@ -6,11 +6,16 @@ const serveHandler = require('serve-handler');
 
 const BACKEND = 'https://raven-backend-production-fb1f.up.railway.app';
 
+const { createClient } = require('@supabase/supabase-js');
+const db = createClient(
+  'https://ffjpzkpdumdcwnakpaje.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZmanB6a3BkdW1kY3duYWtwYWplIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5ODc4OTcsImV4cCI6MjA4ODU2Mzg5N30.JtDLVu4K1TJ8emcN_mvSHBu6e0y8-jPQv-ypoc9p0RU'
+);
+
 function proxyToBackend(req, res) {
   const url = new URL(BACKEND + req.url);
   const options = {
-    hostname: url.hostname,
-    port: 443,
+    hostname: url.hostname, port: 443,
     path: url.pathname + url.search,
     method: req.method,
     headers: { ...req.headers, host: url.hostname },
@@ -23,9 +28,27 @@ function proxyToBackend(req, res) {
   req.pipe(proxyReq);
 }
 
+function serveStaticFile(req, res, filePath) {
+  fs.readFile(filePath, (err, data) => {
+    if (err) { res.writeHead(404); res.end('Not found'); return; }
+    const ext = path.extname(filePath);
+    const types = {
+      '.html': 'text/html', '.js': 'application/javascript',
+      '.css': 'text/css', '.png': 'image/png', '.jpg': 'image/jpeg',
+      '.ico': 'image/x-icon', '.json': 'application/json',
+      '.gif': 'image/gif', '.webp': 'image/webp', '.svg': 'image/svg+xml'
+    };
+    res.writeHead(200, { 'Content-Type': types[ext] || 'application/octet-stream' });
+    res.end(data);
+  });
+}
+
+function isBot(req) {
+  const ua = req.headers['user-agent'] || '';
+  return /facebookexternalhit|Twitterbot|LinkedInBot|WhatsApp|Slackbot|TelegramBot|Applebot|iMessage|curl|python|bot|crawler|spider/i.test(ua);
+}
+
 function serveOGPage(res, title, description, redirectUrl) {
-  // Check if request is from a bot/crawler (iMessage, Twitter, Facebook)
-  // Bots read OG tags; real users get instant redirect
   const html = `<!DOCTYPE html>
 <html>
 <head>
@@ -46,7 +69,6 @@ function serveOGPage(res, title, description, redirectUrl) {
   <meta name="twitter:description" content="${description}">
   <meta name="twitter:image" content="https://ravensplit.com/raven-hero.png">
   <meta http-equiv="refresh" content="0;url=${redirectUrl}">
-  <link rel="canonical" href="${redirectUrl}">
 </head>
 <body style="background:#06060A;margin:0"></body>
 </html>`;
@@ -54,26 +76,14 @@ function serveOGPage(res, title, description, redirectUrl) {
   res.end(html);
 }
 
-
-const { createClient } = require('@supabase/supabase-js');
-const db = createClient(
-  'https://ffjpzkpdumdcwnakpaje.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZmanB6a3BkdW1kY3duYWtwYWplIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5ODc4OTcsImV4cCI6MjA4ODU2Mzg5N30.JtDLVu4K1TJ8emcN_mvSHBu6e0y8-jPQv-ypoc9p0RU'
-);
-
 const server = http.createServer(async (req, res) => {
   const urlPath = req.url.split('?')[0];
 
-  // /bill/:id — OG preview for bots, instant redirect for users
+  // /bill/:id
   if (urlPath.startsWith('/bill/')) {
     const billId = urlPath.split('/')[2] || '';
     const backendUrl = BACKEND + req.url;
-    const ua = req.headers['user-agent'] || '';
-    const isBot = /facebookexternalhit|Twitterbot|LinkedInBot|WhatsApp|Slackbot|TelegramBot|Applebot|iMessage|curl|python|bot|crawler|spider/i.test(ua);
-    if (!isBot) {
-      res.writeHead(302, { 'Location': backendUrl });
-      return res.end();
-    }
+    if (!isBot(req)) { res.writeHead(302, { 'Location': backendUrl }); return res.end(); }
     let billName = 'Your Bill';
     try {
       const { data } = await db.from('bills').select('name').eq('id', billId).single();
@@ -82,17 +92,12 @@ const server = http.createServer(async (req, res) => {
     return serveOGPage(res, `🪶 ${billName} — Split bills free with RAVEN`, 'Tap to see what you owe and pay your share.', backendUrl);
   }
 
-  // /trip/:id — OG preview for bots, instant redirect for users
+  // /trip/:id
   if (urlPath.startsWith('/trip/')) {
     if (req.url.includes('action=')) return proxyToBackend(req, res);
     const tripId = urlPath.split('/')[2] || '';
     const backendUrl = BACKEND + req.url;
-    const ua = req.headers['user-agent'] || '';
-    const isBot = /facebookexternalhit|Twitterbot|LinkedInBot|WhatsApp|Slackbot|TelegramBot|Applebot|iMessage|curl|python|bot|crawler|spider/i.test(ua);
-    if (!isBot) {
-      res.writeHead(302, { 'Location': backendUrl });
-      return res.end();
-    }
+    if (!isBot(req)) { res.writeHead(302, { 'Location': backendUrl }); return res.end(); }
     let tripName = 'Trip Hub';
     try {
       const { data } = await db.from('trips').select('name').eq('id', tripId).single();
@@ -101,13 +106,11 @@ const server = http.createServer(async (req, res) => {
     return serveOGPage(res, `✈️ Join ${tripName} on RAVEN`, 'Split bills free with RAVEN | ravensplit.com', backendUrl);
   }
 
-  // /friend-invite/:id — OG preview page
+  // /friend-invite/:id
   if (urlPath.startsWith('/friend-invite/')) {
     const ravenId = urlPath.split('/')[2] || '';
     const backendUrl = BACKEND + req.url;
-    const ua2 = req.headers['user-agent'] || '';
-    const isBot2 = /facebookexternalhit|Twitterbot|LinkedInBot|WhatsApp|Slackbot|TelegramBot|Applebot|iMessage|curl|python|bot|crawler|spider/i.test(ua2);
-    if (!isBot2) { res.writeHead(302, { 'Location': backendUrl }); return res.end(); }
+    if (!isBot(req)) { res.writeHead(302, { 'Location': backendUrl }); return res.end(); }
     let firstName = ravenId;
     try {
       const { data } = await db.from('profiles').select('first_name').eq('raven_id', ravenId).single();
@@ -118,38 +121,20 @@ const server = http.createServer(async (req, res) => {
 
   // API routes → proxy to backend
   const PROXY_PATHS = ['/sms', '/waitlist', '/remind', '/ping', '/demo/', '/demo/scan', '/gif-search', '/trip-info'];
-  if (PROXY_PATHS.some(p => urlPath.startsWith(p))) {
-    return proxyToBackend(req, res);
-  }
+  if (PROXY_PATHS.some(p => urlPath.startsWith(p))) return proxyToBackend(req, res);
 
-  // Static files — handle manually
-  // / → index.html
-  // /dashboard → dashboard.html
-  // /demo-bill.html → demo-bill.html (explicit .html)
-  // /raven-hero.png → raven-hero.png etc
-  // Serve static files
-  if (urlPath === '/') {
-    return serveStaticFile(req, res, './index.html');
-  }
+  // Static files
+  if (urlPath === '/') return serveStaticFile(req, res, './index.html');
 
-  // Has extension — serve directly
   if (path.extname(urlPath)) {
     const filePath = '.' + urlPath;
     if (fs.existsSync(filePath)) return serveStaticFile(req, res, filePath);
-    // Try without the extension as a folder/clean URL fallback
-    const noExtPath = '.' + urlPath.replace(/\.html$/, '') + '.html';
-    if (fs.existsSync(noExtPath)) return serveStaticFile(req, res, noExtPath);
-    // Fall through to serve-handler for assets
-    return serveHandler(req, res, { public: '.', directoryListing: false });
+    res.writeHead(404); return res.end('Not found');
   }
 
-  // No extension — try as .html file (e.g. /dashboard → dashboard.html)
   const htmlPath = '.' + urlPath + '.html';
-  if (fs.existsSync(htmlPath)) {
-    return serveStaticFile(req, res, htmlPath);
-  }
+  if (fs.existsSync(htmlPath)) return serveStaticFile(req, res, htmlPath);
 
-  // Final fallback
   serveStaticFile(req, res, './index.html');
 });
 
