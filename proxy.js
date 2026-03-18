@@ -45,11 +45,9 @@ function serveOGPage(res, title, description, redirectUrl) {
   <meta name="twitter:image" content="https://ravensplit.com/raven-hero.png">
   <script>window.location.replace('${redirectUrl}');</script>
 </head>
-<body style="background:#06060A;color:#F0EEF8;font-family:sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;text-align:center;margin:0">
-  <div><div style="font-size:56px;margin-bottom:16px">🪶</div><div style="font-size:22px;font-weight:700">${title}</div></div>
-</body>
+<body style="background:#06060A;margin:0;opacity:0"></body>
 </html>`;
-  res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+  res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-cache' });
   res.end(html);
 }
 
