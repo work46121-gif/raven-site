@@ -6,6 +6,7 @@
   },
   "dependencies": {
     "http-proxy": "^1.18.1",
-    "serve-handler": "^6.1.5"
+    "serve-handler": "^6.1.5",
+    "@supabase/supabase-js": "^2.0.0"
   }
 }
