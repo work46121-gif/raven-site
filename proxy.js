@@ -111,7 +111,7 @@ const server = http.createServer(async (req, res) => {
   if (urlPath.startsWith('/bill/')) {
     const billId = urlPath.split('/')[2] || '';
     const backendUrl = BACKEND + req.url;
-    if (!isBot(req)) { res.writeHead(302, { 'Location': backendUrl }); return res.end(); }
+    if (!isBot(req)) { return proxyToBackend(req, res); }
     let billName = 'Your Bill';
     try {
       const { data } = await db.from('bills').select('name').eq('id', billId).single();
@@ -125,7 +125,7 @@ const server = http.createServer(async (req, res) => {
     if (req.url.includes('action=')) return proxyToBackend(req, res);
     const tripId = urlPath.split('/')[2] || '';
     const backendUrl = BACKEND + req.url;
-    if (!isBot(req)) { res.writeHead(302, { 'Location': backendUrl }); return res.end(); }
+    if (!isBot(req)) { return proxyToBackend(req, res); }
     let tripName = 'Trip Hub';
     let tripCoverUrl = 'https://ravensplit.com/raven-hero.png';
     try {
@@ -140,7 +140,7 @@ const server = http.createServer(async (req, res) => {
   if (urlPath.startsWith('/friend-invite/')) {
     const ravenId = urlPath.split('/')[2] || '';
     const backendUrl = BACKEND + req.url;
-    if (!isBot(req)) { res.writeHead(302, { 'Location': backendUrl }); return res.end(); }
+    if (!isBot(req)) { return proxyToBackend(req, res); }
     let firstName = ravenId;
     try {
       const { data } = await db.from('profiles').select('first_name').eq('raven_id', ravenId).single();
@@ -161,8 +161,7 @@ const server = http.createServer(async (req, res) => {
     if (fs.existsSync(filePath)) return serveStaticFile(req, res, filePath);
     // Fetch from GitHub Pages server-side, strip Cloudflare injection, serve clean
     const ghUrl = 'https://work46121-gif.github.io/raven-site' + urlPath;
-    const protocol = ghUrl.startsWith('https') ? https : http;
-    const ghReq = protocol.get(ghUrl, ghRes => {
+    const ghReq = https.get(ghUrl, ghRes => {
       if (ghRes.statusCode !== 200) {
         res.writeHead(ghRes.statusCode); res.end('Not found'); return;
       }
@@ -170,9 +169,7 @@ const server = http.createServer(async (req, res) => {
       ghRes.setEncoding('utf8');
       ghRes.on('data', chunk => body += chunk);
       ghRes.on('end', () => {
-        // Strip Cloudflare email-decode script injection
         body = body.replace(/<script[^>]*src="\/cdn-cgi\/[^"]*"[^>]*><\/script>/gi, '');
-        // Replace CF email obfuscation spans with encoded email
         body = body.replace(/<span class="__cf_email__"[^>]*>\[email[^\]]*\]<\/span>/gi, 'hello&#64;ravensplit.com');
         const ct = path.extname(urlPath) === '.html' ? 'text/html; charset=utf-8' : (ghRes.headers['content-type'] || 'application/octet-stream');
         res.writeHead(200, { 'Content-Type': ct, 'Cache-Control': 'no-cache' });
