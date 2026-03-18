@@ -114,7 +114,7 @@ const server = http.createServer(async (req, res) => {
   }
 
   // API routes → proxy to backend
-  const PROXY_PATHS = ['/sms', '/waitlist', '/remind', '/ping', '/demo', '/gif-search', '/trip-info'];
+  const PROXY_PATHS = ['/sms', '/waitlist', '/remind', '/ping', '/demo/', '/demo/scan', '/gif-search', '/trip-info'];
   if (PROXY_PATHS.some(p => urlPath.startsWith(p))) {
     return proxyToBackend(req, res);
   }
@@ -133,8 +133,11 @@ const server = http.createServer(async (req, res) => {
   if (path.extname(urlPath)) {
     const filePath = '.' + urlPath;
     if (fs.existsSync(filePath)) return serveStaticFile(req, res, filePath);
-    res.writeHead(404); res.end('Not found');
-    return;
+    // Try without the extension as a folder/clean URL fallback
+    const noExtPath = '.' + urlPath.replace(/\.html$/, '') + '.html';
+    if (fs.existsSync(noExtPath)) return serveStaticFile(req, res, noExtPath);
+    // Fall through to serve-handler for assets
+    return serveHandler(req, res, { public: '.', directoryListing: false });
   }
 
   // No extension — try as .html file (e.g. /dashboard → dashboard.html)
