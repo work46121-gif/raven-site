@@ -2344,19 +2344,20 @@ async function shareTripLink(tripId) {
   const myName = (() => { try { return JSON.parse(localStorage.getItem('raven_profile')||'{}').first_name || 'Someone'; } catch(e) { return 'Someone'; } })();
   const titleMsg = myName + ' invited you to join "' + trip.name + '" on RAVEN 🪶\nSplit bills free with RAVEN | ravensplit.com';
 
-  // If trip has a cover photo, share it as a file + url so iMessage shows cover photo
+  // If trip has a cover photo, share image file + text with URL embedded
   if (trip.cover_image && navigator.share && navigator.canShare) {
     try {
       const blob = await fetch('data:image/jpeg;base64,' + trip.cover_image).then(r => r.blob());
       const file = new File([blob], 'trip-cover.jpg', { type: 'image/jpeg' });
-      if (navigator.canShare({ files: [file], url: url })) {
-        await navigator.share({ files: [file], title: titleMsg, url: url });
+      if (navigator.canShare({ files: [file] })) {
+        // iOS supports files OR url but not both — include url in text instead
+        await navigator.share({ files: [file], text: titleMsg + '\n\n' + url });
         return;
       }
-    } catch(e) {}
+    } catch(e) { if (e.name !== 'AbortError') console.log('file share failed:', e); }
   }
 
-  // Fallback — share as rich link card (no cover photo)
+  // Fallback — rich link card (no cover photo)
   if (navigator.share) {
     try { await navigator.share({ title: titleMsg, url: url }); return; }
     catch(e) { if (e.name === 'AbortError') return; }
