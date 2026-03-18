@@ -1,8 +1,7 @@
-@@ -2,6 +2,10 @@
+{
   "name": "raven-site",
   "version": "1.0.0",
   "scripts": {
-    "start": "npx serve . -p 3000"
     "start": "node proxy.js"
   },
   "dependencies": {
