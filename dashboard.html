@@ -2321,48 +2321,57 @@ function closeBillModal() { document.getElementById('bill-modal').classList.remo
 
 async function shareBillLink(billId, billName, shareToken) {
   const url = FRONTEND + '/bill/' + billId + (shareToken ? '?t=' + shareToken : '');
-  const name = (() => { try { return JSON.parse(localStorage.getItem('raven_profile')||'{}').first_name || 'Someone'; } catch(e) { return 'Someone'; } })();
-  const msg = name + ' wants to split "' + (billName || 'a bill') + '" with you on RAVEN 🪶\n\nSplit bills free with RAVEN | ravensplit.com\n\n' + url;
-  if (navigator.share) {
+  const myName = (() => { try { return JSON.parse(localStorage.getItem('raven_profile')||'{}').first_name || 'Someone'; } catch(e) { return 'Someone'; } })();
+  const msg = myName + ' wants to split "' + (billName||'a bill') + '" with you on RAVEN 🪶\n\nSplit bills free with RAVEN | ravensplit.com\n\n' + url;
+  if (navigator.share && navigator.canShare) {
     try {
-      await navigator.share({ text: msg });
-      return;
-    } catch(e) { if (e.name === 'AbortError') return; }
+      const imgResp = await fetch('https://ravensplit.com/raven-hero.png');
+      const blob = await imgResp.blob();
+      const file = new File([blob], 'raven.png', { type: 'image/png' });
+      if (navigator.canShare({ files: [file], text: msg })) {
+        await navigator.share({ files: [file], text: msg });
+        return;
+      }
+    } catch(e) {}
   }
-  // Fallback — copy to clipboard
-  try {
-    await navigator.clipboard.writeText(msg);
-    showToast('📋 Bill link copied!', 'success');
-  } catch(e) { prompt('Copy this link:', url); }
+  if (navigator.share) {
+    try { await navigator.share({ text: msg }); return; }
+    catch(e) { if (e.name === 'AbortError') return; }
+  }
+  try { await navigator.clipboard.writeText(msg); showToast('\u{1F4CB} Bill link copied!', 'success'); }
+  catch(e) { prompt('Copy this link:', url); }
 }
 
 async function shareTripLink(tripId) {
   const trip = tripDataMap[tripId];
   if (!trip) return showToast('Trip not found', 'error');
   const url = FRONTEND + '/trip/' + tripId + '?t=' + trip.share_token;
-  const userName = (() => { try { return JSON.parse(localStorage.getItem('raven_profile')||'{}').first_name || 'Someone'; } catch(e) { return 'Someone'; } })();
-  const msg = userName + ' invited you to join "' + trip.name + '" on RAVEN 🪶\n\nSplit bills free with RAVEN | ravensplit.com\n\n' + url;
+  const myName = (() => { try { return JSON.parse(localStorage.getItem('raven_profile')||'{}').first_name || 'Someone'; } catch(e) { return 'Someone'; } })();
+  const msg = myName + ' invited you to join "' + trip.name + '" on RAVEN 🪶\n\nSplit bills free with RAVEN | ravensplit.com\n\n' + url;
 
-  // If trip has a cover image, share it as a file alongside the message
-  if (trip.cover_image && navigator.share && navigator.canShare) {
+  // Prefer cover photo; fall back to raven-hero.png
+  let imageUrl = trip.cover_image
+    ? 'data:image/jpeg;base64,' + trip.cover_image
+    : 'https://ravensplit.com/raven-hero.png';
+
+  if (navigator.share && navigator.canShare) {
     try {
-      const blob = await fetch('data:image/jpeg;base64,' + trip.cover_image).then(r => r.blob());
-      const file = new File([blob], 'trip-cover.jpg', { type: 'image/jpeg' });
-      if (navigator.canShare({ files: [file] })) {
-        await navigator.share({ text: msg, files: [file] });
+      const imgResp = await fetch(imageUrl);
+      const blob = await imgResp.blob();
+      const ext = trip.cover_image ? 'jpg' : 'png';
+      const file = new File([blob], 'trip.' + ext, { type: blob.type || 'image/jpeg' });
+      if (navigator.canShare({ files: [file], text: msg })) {
+        await navigator.share({ files: [file], text: msg });
         return;
       }
-    } catch(e) { /* fall through to text-only share */ }
+    } catch(e) {}
   }
-
   if (navigator.share) {
     try { await navigator.share({ text: msg }); return; }
     catch(e) { if (e.name === 'AbortError') return; }
   }
-  try {
-    await navigator.clipboard.writeText(msg);
-    showToast('📋 Trip link copied!', 'success');
-  } catch(e) { prompt('Copy this link:', url); }
+  try { await navigator.clipboard.writeText(msg); showToast('📋 Trip invite copied!', 'success'); }
+  catch(e) { prompt('Copy this link:', url); }
 }
 
 async function markPaid(participantId, billId) {
@@ -2873,15 +2882,22 @@ async function shareRavenIdSMS() {
   if (!ravenId || ravenId === 'loading...') { showToast('Set your Raven ID in Settings first', 'error'); showPage('settings'); return; }
   const name = (() => { try { return JSON.parse(localStorage.getItem('raven_profile')||'{}').first_name || 'Someone'; } catch(e) { return 'Someone'; } })();
   const inviteUrl = FRONTEND + '/friend-invite/' + encodeURIComponent(ravenId);
-  const msg = name + ' wants to connect with you on RAVEN 🪶\n\nTap to add @' + ravenId + ' as a friend:\n' + inviteUrl + '\n\nSplit bills free with RAVEN | ravensplit.com';
-  if (navigator.share) {
+  const msg = name + ' wants to connect with you on RAVEN 🪶\n\nTap to add @' + ravenId + ' as a friend:\n\nSplit bills free with RAVEN | ravensplit.com\n\n' + inviteUrl;
+  if (navigator.share && navigator.canShare) {
     try {
-      // Pass ONLY text — not url separately, which causes iOS to send it as a second bubble
-      await navigator.share({ text: msg });
-      return;
-    } catch(e) { if (e.name === 'AbortError') return; }
+      const imgResp = await fetch('https://ravensplit.com/raven-hero.png');
+      const blob = await imgResp.blob();
+      const file = new File([blob], 'raven.png', { type: 'image/png' });
+      if (navigator.canShare({ files: [file], text: msg })) {
+        await navigator.share({ files: [file], text: msg });
+        return;
+      }
+    } catch(e) {}
   }
-  // Fallback: iMessage/SMS
+  if (navigator.share) {
+    try { await navigator.share({ text: msg }); return; }
+    catch(e) { if (e.name === 'AbortError') return; }
+  }
   window.open('sms:?&body=' + encodeURIComponent(msg), '_blank');
 }
 
@@ -3614,7 +3630,7 @@ async function loadTrips() {
       + '<div class="bill-progress-wrap"><div class="bill-progress-label">Active</div><div class="bill-progress"><div class="bill-progress-fill" style="width:100%"></div></div></div>'
       + '<div class="bill-actions" onclick="event.stopPropagation()">'
       + '<a class="bill-action-btn btn-remind" href="' + tripUrlReceipt + '" style="display:inline-flex;align-items:center;text-decoration:none;background:rgba(48,209,88,0.1);color:var(--green);border:1px solid rgba(48,209,88,0.25)">📸 Receipt</a>'
-      + '<button class="bill-action-btn" onclick="shareTripLink(' + safeId + ')" style="background:rgba(0,140,255,0.1);border:1px solid rgba(0,140,255,0.2);color:#4DB8FF">📤 Share</button>'
+      + '<button class="bill-action-btn" onclick="shareTripLink(' + safeId + ')" style="background:rgba(0,140,255,0.1);border:1px solid rgba(0,140,255,0.2);color:#4DB8FF">📤 Invite</button>'
       + (isCreator ? '<button class="bill-action-btn admin-btn" data-tripid="' + t.id + '" style="background:rgba(124,58,237,0.1);color:var(--purple3);border:1px solid rgba(124,58,237,0.2)">⚙️ Admin</button>' : '')
       + '<a class="bill-action-btn btn-view" href="' + tripUrl + '" style="display:inline-flex;align-items:center;text-decoration:none">Open Trip →</a>'
       + '</div></div>';
@@ -3699,14 +3715,26 @@ async function createTrip() {
   tripCoverBase64 = null;
   showToast('✈️ Trip "' + name + '" created!', 'success');
   const tripUrl = FRONTEND + '/trip/' + tripId + '?t=' + shareToken;
-  const userName = (() => { try { return JSON.parse(localStorage.getItem('raven_profile')||'{}').first_name || 'Someone'; } catch(e) { return 'Someone'; } })();
-  const tripMsg = userName + ' invited you to join "' + name + '" on RAVEN 🪶\n\nSplit bills free with RAVEN | ravensplit.com\n\n' + tripUrl;
-  setTimeout(() => {
-    if (navigator.share) {
-      navigator.share({ text: tripMsg }).catch(() => {});
-    } else {
-      navigator.clipboard.writeText(tripMsg).then(()=>showToast('✅ Trip created! Link copied to clipboard','success')).catch(()=>showToast('✅ Trip created!','success'));
+  // Auto-share invite after creation using cover photo if available
+  setTimeout(async () => {
+    const myName = (() => { try { return JSON.parse(localStorage.getItem('raven_profile')||'{}').first_name || 'Someone'; } catch(e) { return 'Someone'; } })();
+    const msg = myName + ' invited you to join "' + name + '" on RAVEN 🪶\n\nSplit bills free with RAVEN | ravensplit.com\n\n' + tripUrl;
+    let imageUrl = tripCoverBase64 ? 'data:image/jpeg;base64,' + tripCoverBase64 : 'https://ravensplit.com/raven-hero.png';
+    if (navigator.share && navigator.canShare) {
+      try {
+        const imgResp = await fetch(imageUrl);
+        const blob = await imgResp.blob();
+        const file = new File([blob], tripCoverBase64 ? 'trip.jpg' : 'raven.png', { type: blob.type || 'image/jpeg' });
+        if (navigator.canShare({ files: [file], text: msg })) {
+          await navigator.share({ files: [file], text: msg });
+          return;
+        }
+      } catch(e) {}
     }
+    if (navigator.share) {
+      try { await navigator.share({ text: msg }); return; } catch(e) {}
+    }
+    navigator.clipboard.writeText(tripUrl).then(()=>showToast('✅ Trip created! Link copied!','success')).catch(()=>showToast('✅ Trip created!','success'));
   }, 500);
   loadTrips();
 }
