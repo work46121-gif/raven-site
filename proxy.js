@@ -24,6 +24,8 @@ function proxyToBackend(req, res) {
 }
 
 function serveOGPage(res, title, description, redirectUrl) {
+  // Check if request is from a bot/crawler (iMessage, Twitter, Facebook)
+  // Bots read OG tags; real users get instant redirect
   const html = `<!DOCTYPE html>
 <html>
 <head>
@@ -43,27 +45,15 @@ function serveOGPage(res, title, description, redirectUrl) {
   <meta name="twitter:title" content="${title}">
   <meta name="twitter:description" content="${description}">
   <meta name="twitter:image" content="https://ravensplit.com/raven-hero.png">
-  <script>window.location.replace('${redirectUrl}');</script>
+  <meta http-equiv="refresh" content="0;url=${redirectUrl}">
+  <link rel="canonical" href="${redirectUrl}">
 </head>
-<body style="background:#06060A;margin:0;opacity:0"></body>
+<body style="background:#06060A;margin:0"></body>
 </html>`;
   res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-cache' });
   res.end(html);
 }
 
-function serveStaticFile(req, res, filePath) {
-  fs.readFile(filePath, (err, data) => {
-    if (err) {
-      res.writeHead(404);
-      res.end('Not found');
-      return;
-    }
-    const ext = path.extname(filePath);
-    const types = { '.html': 'text/html', '.js': 'application/javascript', '.css': 'text/css', '.png': 'image/png', '.jpg': 'image/jpeg', '.ico': 'image/x-icon', '.json': 'application/json', '.gif': 'image/gif', '.webp': 'image/webp' };
-    res.writeHead(200, { 'Content-Type': types[ext] || 'application/octet-stream' });
-    res.end(data);
-  });
-}
 
 const { createClient } = require('@supabase/supabase-js');
 const db = createClient(
@@ -74,10 +64,16 @@ const db = createClient(
 const server = http.createServer(async (req, res) => {
   const urlPath = req.url.split('?')[0];
 
-  // /bill/:id — OG preview page
+  // /bill/:id — OG preview for bots, instant redirect for users
   if (urlPath.startsWith('/bill/')) {
     const billId = urlPath.split('/')[2] || '';
     const backendUrl = BACKEND + req.url;
+    const ua = req.headers['user-agent'] || '';
+    const isBot = /facebookexternalhit|Twitterbot|LinkedInBot|WhatsApp|Slackbot|TelegramBot|Applebot|iMessage|curl|python|bot|crawler|spider/i.test(ua);
+    if (!isBot) {
+      res.writeHead(302, { 'Location': backendUrl });
+      return res.end();
+    }
     let billName = 'Your Bill';
     try {
       const { data } = await db.from('bills').select('name').eq('id', billId).single();
@@ -86,24 +82,32 @@ const server = http.createServer(async (req, res) => {
     return serveOGPage(res, `🪶 ${billName} — Split bills free with RAVEN`, 'Tap to see what you owe and pay your share.', backendUrl);
   }
 
-  // /trip/:id — OG preview then redirect to backend
+  // /trip/:id — OG preview for bots, instant redirect for users
   if (urlPath.startsWith('/trip/')) {
     if (req.url.includes('action=')) return proxyToBackend(req, res);
     const tripId = urlPath.split('/')[2] || '';
     const backendUrl = BACKEND + req.url;
+    const ua = req.headers['user-agent'] || '';
+    const isBot = /facebookexternalhit|Twitterbot|LinkedInBot|WhatsApp|Slackbot|TelegramBot|Applebot|iMessage|curl|python|bot|crawler|spider/i.test(ua);
+    if (!isBot) {
+      res.writeHead(302, { 'Location': backendUrl });
+      return res.end();
+    }
     let tripName = 'Trip Hub';
     try {
       const { data } = await db.from('trips').select('name').eq('id', tripId).single();
       if (data?.name) tripName = data.name;
     } catch(e) {}
-    const ravenUrl = 'https://ravensplit.com' + req.url;
-    return serveOGPage(res, `✈️ Join ${tripName} on RAVEN`, 'Split bills free with RAVEN | ravensplit.com', ravenUrl);
+    return serveOGPage(res, `✈️ Join ${tripName} on RAVEN`, 'Split bills free with RAVEN | ravensplit.com', backendUrl);
   }
 
   // /friend-invite/:id — OG preview page
   if (urlPath.startsWith('/friend-invite/')) {
     const ravenId = urlPath.split('/')[2] || '';
     const backendUrl = BACKEND + req.url;
+    const ua2 = req.headers['user-agent'] || '';
+    const isBot2 = /facebookexternalhit|Twitterbot|LinkedInBot|WhatsApp|Slackbot|TelegramBot|Applebot|iMessage|curl|python|bot|crawler|spider/i.test(ua2);
+    if (!isBot2) { res.writeHead(302, { 'Location': backendUrl }); return res.end(); }
     let firstName = ravenId;
     try {
       const { data } = await db.from('profiles').select('first_name').eq('raven_id', ravenId).single();
