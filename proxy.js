@@ -1,5 +1,7 @@
 const http = require('http');
 const https = require('https');
+const fs = require('fs');
+const path = require('path');
 const serveHandler = require('serve-handler');
 
 const BACKEND = 'https://raven-backend-production-fb1f.up.railway.app';
@@ -44,11 +46,25 @@ function serveOGPage(res, title, description, redirectUrl) {
   <script>window.location.replace('${redirectUrl}');</script>
 </head>
 <body style="background:#06060A;color:#F0EEF8;font-family:sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;text-align:center;margin:0">
-  <div><div style="font-size:56px;margin-bottom:16px">🪶</div><div style="font-size:22px;font-weight:700;margin-bottom:8px">${title}</div></div>
+  <div><div style="font-size:56px;margin-bottom:16px">🪶</div><div style="font-size:22px;font-weight:700">${title}</div></div>
 </body>
 </html>`;
   res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
   res.end(html);
+}
+
+function serveStaticFile(req, res, filePath) {
+  fs.readFile(filePath, (err, data) => {
+    if (err) {
+      res.writeHead(404);
+      res.end('Not found');
+      return;
+    }
+    const ext = path.extname(filePath);
+    const types = { '.html': 'text/html', '.js': 'application/javascript', '.css': 'text/css', '.png': 'image/png', '.jpg': 'image/jpeg', '.ico': 'image/x-icon', '.json': 'application/json', '.gif': 'image/gif', '.webp': 'image/webp' };
+    res.writeHead(200, { 'Content-Type': types[ext] || 'application/octet-stream' });
+    res.end(data);
+  });
 }
 
 const { createClient } = require('@supabase/supabase-js');
@@ -58,71 +74,77 @@ const db = createClient(
 );
 
 const server = http.createServer(async (req, res) => {
-  const path = req.url.split('?')[0];
+  const urlPath = req.url.split('?')[0];
 
-  // /bill/:id
-  if (path.startsWith('/bill/')) {
-    const billId = path.split('/')[2] || '';
+  // /bill/:id — OG preview page
+  if (urlPath.startsWith('/bill/')) {
+    const billId = urlPath.split('/')[2] || '';
     const backendUrl = BACKEND + req.url;
     let billName = 'Your Bill';
     try {
       const { data } = await db.from('bills').select('name').eq('id', billId).single();
       if (data?.name) billName = data.name;
     } catch(e) {}
-    return serveOGPage(res,
-      `🪶 ${billName} — Split bills free with RAVEN`,
-      'Tap to see what you owe and pay your share. | ravensplit.com',
-      backendUrl
-    );
+    return serveOGPage(res, `🪶 ${billName} — Split bills free with RAVEN`, 'Tap to see what you owe and pay your share.', backendUrl);
   }
 
-  // /trip/:id
-  if (path.startsWith('/trip/')) {
+  // /trip/:id — OG preview then redirect to backend
+  if (urlPath.startsWith('/trip/')) {
     if (req.url.includes('action=')) return proxyToBackend(req, res);
-    const tripId = path.split('/')[2] || '';
+    const tripId = urlPath.split('/')[2] || '';
     const backendUrl = BACKEND + req.url;
     let tripName = 'Trip Hub';
     try {
       const { data } = await db.from('trips').select('name').eq('id', tripId).single();
       if (data?.name) tripName = data.name;
     } catch(e) {}
-    return serveOGPage(res,
-      `✈️ Join ${tripName} on RAVEN`,
-      'Split bills free with RAVEN | ravensplit.com',
-      backendUrl
-    );
+    return serveOGPage(res, `✈️ Join ${tripName} on RAVEN`, 'Split bills free with RAVEN | ravensplit.com', backendUrl);
   }
 
-  // /friend-invite/:id
-  if (path.startsWith('/friend-invite/')) {
-    const ravenId = path.split('/')[2] || '';
+  // /friend-invite/:id — OG preview page
+  if (urlPath.startsWith('/friend-invite/')) {
+    const ravenId = urlPath.split('/')[2] || '';
     const backendUrl = BACKEND + req.url;
     let firstName = ravenId;
     try {
       const { data } = await db.from('profiles').select('first_name').eq('raven_id', ravenId).single();
       if (data?.first_name) firstName = data.first_name;
     } catch(e) {}
-    return serveOGPage(res,
-      `🪶 ${firstName} wants to be your friend on RAVEN — Split bills free with RAVEN | ravensplit.com`,
-      'Split bills free with RAVEN | ravensplit.com',
-      backendUrl
-    );
+    return serveOGPage(res, `🪶 ${firstName} wants to be your friend on RAVEN`, 'Split bills free with RAVEN | ravensplit.com', backendUrl);
   }
 
-  // API routes
+  // API routes → proxy to backend
   const PROXY_PATHS = ['/sms', '/waitlist', '/remind', '/ping', '/demo', '/gif-search', '/trip-info'];
-  if (PROXY_PATHS.some(p => path.startsWith(p))) {
+  if (PROXY_PATHS.some(p => urlPath.startsWith(p))) {
     return proxyToBackend(req, res);
   }
 
-  // Static files — serve with cleanUrls ON (handles / → index.html, /dashboard → dashboard.html)
-  // but also serve explicit .html paths directly
-  serveHandler(req, res, {
-    public: '.',
-    cleanUrls: true,
-    directoryListing: false,
-    rewrites: [{ source: '**', destination: '/index.html' }]
-  });
+  // Static files — handle manually
+  // / → index.html
+  // /dashboard → dashboard.html
+  // /demo-bill.html → demo-bill.html (explicit .html)
+  // /raven-hero.png → raven-hero.png etc
+  // Serve static files
+  if (urlPath === '/') {
+    return serveStaticFile(req, res, './index.html');
+  }
+
+  // Has extension — serve directly
+  if (path.extname(urlPath)) {
+    const filePath = '.' + urlPath;
+    if (fs.existsSync(filePath)) return serveStaticFile(req, res, filePath);
+    res.writeHead(404); res.end('Not found');
+    return;
+  }
+
+  // No extension — try as .html file (e.g. /dashboard → dashboard.html)
+  const htmlPath = '.' + urlPath + '.html';
+  if (fs.existsSync(htmlPath)) {
+    return serveStaticFile(req, res, htmlPath);
+  }
+
+  // Final fallback
+  serveStaticFile(req, res, './index.html');
 });
 
 const PORT = process.env.PORT || 3000;
