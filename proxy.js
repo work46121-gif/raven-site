@@ -114,7 +114,7 @@ const server = http.createServer(async (req, res) => {
       if (data?.first_name) firstName = data.first_name;
     } catch(e) {}
     return serveOGPage(res,
-      `🪶 ${firstName} wants to be your friend on RAVEN`,
+      `🪶 ${firstName} wants to be your friend on RAVEN — Split bills free with RAVEN | ravensplit.com`,
       'Split bills free with RAVEN | ravensplit.com',
       backendUrl
     );
