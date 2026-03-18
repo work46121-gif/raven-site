@@ -1200,6 +1200,7 @@ try {
 }
 
 const BACKEND = 'https://raven-backend-production-fb1f.up.railway.app';
+const FRONTEND = 'https://ravensplit.com';
 
 let currentUser = null;
 let currentBillId = null;
@@ -1323,7 +1324,7 @@ async function handlePendingJoinIfAny(userId, userEmail, knownDisplayName) {
         displayName = profile?.first_name || userEmail.split('@')[0];
       } catch(e) { displayName = userEmail.split('@')[0]; }
     }
-    const r = await fetch(BACKEND + '/trip/' + pending.tripId + '/join', {
+    const r = await fetch(FRONTEND + '/trip/' + pending.tripId + '/join', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ invite_token: pending.token, user_email: userEmail, display_name: displayName })
@@ -1347,7 +1348,7 @@ async function handlePendingJoinIfAny(userId, userEmail, knownDisplayName) {
         }
       } catch(e) { /* joined_trips column not yet added — localStorage fallback is sufficient */ }
       // Redirect straight to the trip
-      window.location.href = BACKEND + '/trip/' + pending.tripId + '?t=' + d.share_token + '&name=' + encodeURIComponent(displayName);
+      window.location.href = FRONTEND + '/trip/' + pending.tripId + '?t=' + d.share_token + '&name=' + encodeURIComponent(displayName);
       return true;
     } else {
       console.error('Join failed:', d.error);
@@ -1932,7 +1933,7 @@ async function viewBillPage(billId) {
   if (billUrlMap[billId]) { window.location.href = billUrlMap[billId]; return; }
   const { data: bill } = await db.from('bills').select('share_token').eq('id', billId).single();
   const token = bill?.share_token ? '?t=' + bill.share_token : '';
-  let url = BACKEND + '/bill/' + billId + token;
+  let url = FRONTEND + '/bill/' + billId + token;
   try { const profile = JSON.parse(localStorage.getItem('raven_profile') || '{}'); if (profile.first_name) url += (token ? '&' : '?') + 'name=' + encodeURIComponent(profile.first_name); } catch(e) {}
   window.location.href = url;
 }
@@ -2151,7 +2152,7 @@ function renderBillCard(b) {
   const owed = b.participants?.filter(p => !p.paid).reduce((s, p) => s + parseFloat(p.amount || 0), 0) || 0;
   const isFullyPaid = owed === 0 && total > 0;
   const isCreator = b.creator_phone === currentUser.email;
-  let billUrl = BACKEND + '/bill/' + b.id + (b.share_token ? '?t=' + b.share_token : '');
+  let billUrl = FRONTEND + '/bill/' + b.id + (b.share_token ? '?t=' + b.share_token : '');
   try { const profile = JSON.parse(localStorage.getItem('raven_profile') || '{}'); if (profile.first_name) billUrl += (b.share_token ? '&' : '?') + 'name=' + encodeURIComponent(profile.first_name); } catch(e) {}
   billUrlMap[b.id] = billUrl;
   const owedDisplay = isFullyPaid
@@ -2319,7 +2320,7 @@ async function addPersonToBill(billId, bill) {
 function closeBillModal() { document.getElementById('bill-modal').classList.remove('open'); currentBillId = null; }
 
 async function shareBillLink(billId, billName, shareToken) {
-  const url = BACKEND + '/bill/' + billId + (shareToken ? '?t=' + shareToken : '');
+  const url = FRONTEND + '/bill/' + billId + (shareToken ? '?t=' + shareToken : '');
   // Send the URL only — iOS will auto-expand into the rich link preview card
   // (raven image + OG title + domain). Adding any text around it breaks the preview.
   if (navigator.share) {
@@ -3571,7 +3572,7 @@ async function loadTrips() {
 
   container.innerHTML = trips.map(t => {
     const people = Array.isArray(t.people) ? t.people : JSON.parse(t.people || '[]');
-    const tripUrl = BACKEND + '/trip/' + t.id + '?t=' + t.share_token;
+    const tripUrl = FRONTEND + '/trip/' + t.id + '?t=' + t.share_token;
     const tripUrlReceipt = tripUrl + '&action=receipt';
     tripUrlMap[t.id] = tripUrl;
     // Store full trip data safely — never pass user content through onclick attributes
@@ -3668,7 +3669,7 @@ async function createTrip() {
   closeCreateTrip();
   tripCoverBase64 = null;
   showToast('✈️ Trip "' + name + '" created!', 'success');
-  const tripUrl = BACKEND + '/trip/' + tripId + '?t=' + shareToken;
+  const tripUrl = FRONTEND + '/trip/' + tripId + '?t=' + shareToken;
   setTimeout(() => { navigator.clipboard.writeText(tripUrl).then(()=>showToast('✅ Trip created! Link copied to clipboard','success')).catch(()=>showToast('✅ Trip created!','success')); }, 500);
   loadTrips();
 }
