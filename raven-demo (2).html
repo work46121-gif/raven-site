@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RAVEN — See How It Works</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Epilogue:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --black:#06060A;--dark:#0C0C12;--dark2:#13131A;--dark3:#1A1A24;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);
+  --white:#F0EEF8;--muted:#6E6B80;--muted2:#9896A8;
+  --green:#30D158;--purple:#7C3AED;--purple2:#A855F7;--purple3:#C084FC;
+  --orange:#FF6B35;
+}
+html{scroll-behavior:smooth}
+body{font-family:'Epilogue',sans-serif;background:var(--black);color:var(--white);min-height:100vh;overflow-x:hidden}
+body::after{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");pointer-events:none;z-index:900;opacity:0.3}
+header{position:fixed;top:0;left:0;right:0;z-index:100;height:60px;display:flex;align-items:center;justify-content:space-between;padding:0 40px;background:rgba(6,6,10,0.9);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
+.logo{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:0.2em;background:linear-gradient(135deg,var(--white) 20%,var(--purple3));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.header-badge{font-size:11px;color:var(--muted);background:rgba(255,255,255,0.05);padding:4px 12px;border-radius:20px;border:1px solid var(--border)}
+.hero{padding:120px 40px 60px;text-align:center;max-width:700px;margin:0 auto}
+.hero-tag{display:inline-flex;align-items:center;gap:8px;background:rgba(48,209,88,0.08);border:1px solid rgba(48,209,88,0.2);padding:5px 14px;border-radius:20px;font-size:11px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--green);margin-bottom:28px}
+.pulse{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.5;transform:scale(1.5)}}
+.hero h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(52px,9vw,96px);line-height:0.9;letter-spacing:0.02em;margin-bottom:16px}
+.hero h1 span{background:linear-gradient(120deg,var(--green),var(--purple2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero p{font-size:16px;color:var(--muted);line-height:1.8;margin-bottom:36px;font-weight:300}
+.start-btn{display:inline-flex;align-items:center;gap:10px;padding:14px 32px;background:var(--green);color:#000;border:none;border-radius:10px;font-family:'Epilogue',sans-serif;font-size:15px;font-weight:700;cursor:pointer;transition:all 0.2s}
+.start-btn:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(48,209,88,0.3)}
+.demo-wrap{max-width:440px;margin:0 auto;padding:0 20px 80px}
+.steps{display:flex;align-items:center;justify-content:center}
+.step-dot{width:32px;height:32px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--muted);transition:all 0.4s;flex-shrink:0;background:var(--black)}
+.step-dot.active{border-color:var(--green);color:var(--green);background:rgba(48,209,88,0.1)}
+.step-dot.done{border-color:var(--green);background:var(--green);color:#000}
+.step-line{width:40px;height:2px;background:var(--border);transition:background 0.4s}
+.step-line.done{background:var(--green)}
+.phone{background:var(--dark);border:1px solid var(--border2);border-radius:28px;overflow:hidden;box-shadow:0 40px 80px rgba(0,0,0,0.6)}
+.phone-bar{height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;background:var(--dark2);border-bottom:1px solid var(--border)}
+.screen{display:none;animation:fadeIn 0.3s ease}
+.screen.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.receipt-upload{padding:28px 24px;text-align:center}
+.upload-icon{width:80px;height:80px;border-radius:20px;background:linear-gradient(135deg,rgba(124,58,237,0.2),rgba(48,209,88,0.1));border:2px dashed rgba(124,58,237,0.4);display:flex;align-items:center;justify-content:center;font-size:32px;margin:0 auto 16px;cursor:pointer;transition:all 0.3s}
+.upload-icon:hover{transform:scale(1.05);border-color:var(--purple2)}
+.receipt-preview{display:none;margin:0 auto 16px;border-radius:14px;overflow:hidden;border:1px solid var(--border2);background:#fff}
+.receipt-lines{padding:14px;font-family:'JetBrains Mono',monospace;font-size:9px;color:#222;line-height:1.8;text-align:left}
+.r-store{font-size:11px;font-weight:700;text-align:center;margin-bottom:6px}
+.r-row{display:flex;justify-content:space-between}
+.r-total{border-top:1px dashed #ccc;margin-top:4px;padding-top:4px;font-weight:700;display:flex;justify-content:space-between}
+.scanning-screen{padding:36px 24px;text-align:center}
+.scan-orb{width:90px;height:90px;border-radius:50%;background:linear-gradient(135deg,var(--purple),var(--green));margin:0 auto 18px;display:flex;align-items:center;justify-content:center;font-size:32px;animation:orbPulse 1.5s ease-in-out infinite}
+@keyframes orbPulse{0%,100%{box-shadow:0 0 0 0 rgba(124,58,237,0.4)}50%{box-shadow:0 0 0 18px rgba(124,58,237,0)}}
+.scan-progress{height:3px;background:var(--border);border-radius:2px;margin-top:18px;overflow:hidden}
+.scan-fill{height:100%;background:linear-gradient(90deg,var(--purple),var(--green));border-radius:2px;width:0%;transition:width 0.08s linear}
+.scan-items{margin-top:16px;text-align:left;display:flex;flex-direction:column;gap:5px}
+.scan-item{display:flex;justify-content:space-between;padding:7px 11px;background:rgba(48,209,88,0.05);border:1px solid rgba(48,209,88,0.1);border-radius:8px;font-size:11px;opacity:0;transform:translateY(4px);transition:all 0.3s}
+.scan-item.appear{opacity:1;transform:translateY(0)}
+.assign-screen{padding:18px}
+.item-card{background:var(--dark2);border:1px solid var(--border);border-radius:12px;padding:11px 13px;margin-bottom:8px;transition:all 0.2s}
+.item-card.assigned{border-color:rgba(48,209,88,0.4);background:rgba(48,209,88,0.03)}
+.item-name{font-size:13px;font-weight:600;margin-bottom:5px}
+.item-price{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--green)}
+.person-chips{display:flex;gap:5px;flex-wrap:wrap;margin-top:7px}
+.pchip{padding:3px 9px;border-radius:20px;font-size:10px;font-weight:600;border:1px solid var(--border);color:var(--muted);cursor:pointer;transition:all 0.15s;user-select:none}
+.pchip.selected{background:var(--purple);border-color:var(--purple);color:#fff}
+.summary-screen{padding:18px}
+.person-row{display:flex;align-items:center;justify-content:space-between;padding:11px 13px;background:var(--dark2);border:1px solid var(--border);border-radius:12px;margin-bottom:7px}
+.avatar{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0}
+.pay-screen{padding:22px}
+.pay-method{display:flex;align-items:center;gap:12px;padding:13px 15px;border-radius:12px;margin-bottom:9px;cursor:pointer;transition:all 0.2s;text-decoration:none}
+.pay-method:hover{transform:translateX(3px)}
+.pay-icon{width:38px;height:38px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0}
+.action-btn{width:100%;padding:15px;background:var(--green);border:none;border-radius:12px;color:#000;font-family:'Epilogue',sans-serif;font-size:14px;font-weight:700;cursor:pointer;margin-top:14px;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:8px}
+.action-btn:hover{background:#3ddd68;transform:translateY(-1px)}
+.back-btn{width:100%;padding:10px;background:transparent;border:1px solid var(--border);border-radius:10px;color:var(--muted);font-family:'Epilogue',sans-serif;font-size:12px;cursor:pointer;margin-top:7px;transition:all 0.15s}
+.back-btn:hover{border-color:var(--border2);color:var(--white)}
+.toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--dark2);border:1px solid rgba(48,209,88,0.3);color:var(--green);padding:10px 20px;border-radius:20px;font-size:13px;font-weight:600;z-index:999;white-space:nowrap;transition:all 0.35s;pointer-events:none;opacity:0}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+@media(max-width:480px){header{padding:0 20px}.hero{padding:100px 20px 40px}}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">🪶 RAVEN</div>
+  <div class="header-badge">Interactive Demo</div>
+</header>
+
+<div class="hero" id="hero-section">
+  <div class="hero-tag"><span class="pulse"></span> Live Demo</div>
+  <h1>See how<br><span>RAVEN</span><br>works</h1>
+  <p>Snap a receipt. AI splits it in seconds.<br>One link — everyone pays their share.</p>
+  <button class="start-btn" onclick="startDemo()">▶ Try It Now — 60 Seconds</button>
+</div>
+
+<div class="demo-wrap" id="demo-section" style="display:none">
+  <div style="text-align:center;margin-bottom:28px">
+    <h2 style="font-family:'Bebas Neue',sans-serif;font-size:34px;letter-spacing:0.06em;margin-bottom:6px">Your Turn</h2>
+    <p style="font-size:12px;color:var(--muted)">Follow along — this is exactly how real users experience RAVEN</p>
+  </div>
+
+  <div style="margin-bottom:28px">
+    <div class="steps">
+      <div class="step-dot active" id="dot-1">1</div>
+      <div class="step-line" id="line-1"></div>
+      <div class="step-dot" id="dot-2">2</div>
+      <div class="step-line" id="line-2"></div>
+      <div class="step-dot" id="dot-3">3</div>
+      <div class="step-line" id="line-3"></div>
+      <div class="step-dot" id="dot-4">4</div>
+      <div class="step-line" id="line-4"></div>
+      <div class="step-dot" id="dot-5">5</div>
+    </div>
+    <div style="display:flex;justify-content:space-between;margin-top:8px">
+      <span style="font-size:9px;color:var(--muted);width:32px;text-align:center">Snap</span>
+      <span style="font-size:9px;color:var(--muted);width:32px;text-align:center;margin-left:40px">Scan</span>
+      <span style="font-size:9px;color:var(--muted);width:32px;text-align:center;margin-left:40px">Assign</span>
+      <span style="font-size:9px;color:var(--muted);width:32px;text-align:center;margin-left:40px">Share</span>
+      <span style="font-size:9px;color:var(--muted);width:32px;text-align:center;margin-left:40px">Pay</span>
+    </div>
+  </div>
+
+  <div class="phone">
+    <div class="phone-bar">
+      <div>
+        <div style="font-size:13px;font-weight:700" id="screen-title">📸 Snap Your Receipt</div>
+        <div style="font-size:10px;color:var(--muted)" id="screen-sub">Tap the camera to upload</div>
+      </div>
+      <div style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace" id="step-counter">1 / 5</div>
+    </div>
+
+    <!-- S1: Upload -->
+    <div class="screen active" id="screen-1">
+      <div class="receipt-upload">
+        <div class="upload-icon" id="upload-btn" onclick="uploadReceipt()">📷</div>
+        <div class="receipt-preview" id="receipt-preview">
+          <div class="receipt-lines">
+            <div class="r-store">COSTCO WHOLESALE #208</div>
+            <div style="text-align:center;font-size:8px;color:#888;margin-bottom:6px">08/19/2024</div>
+            <div class="r-row"><span>BANANAS</span><span>$1.67</span></div>
+            <div class="r-row"><span>BLUETOOTH SPEAKER</span><span>$122.34</span></div>
+            <div class="r-row"><span>DINING TABLE</span><span>$422.99</span></div>
+            <div class="r-row"><span>WINE BOTTLE</span><span>$9.99</span></div>
+            <div class="r-row"><span>BEER CASE</span><span>$19.90</span></div>
+            <div style="border-top:1px dashed #ccc;margin:4px 0"></div>
+            <div class="r-row"><span>TAX</span><span>$102.67</span></div>
+            <div class="r-total"><span>*** TOTAL</span><span>$679.56</span></div>
+          </div>
+        </div>
+        <p id="upload-text" style="font-size:12px;color:var(--muted);line-height:1.7">Tap the camera above to<br>"upload" your receipt</p>
+        <button class="action-btn" id="scan-btn" style="display:none" onclick="goToScan()">✨ Scan with AI</button>
+      </div>
+    </div>
+
+    <!-- S2: Scanning -->
+    <div class="screen" id="screen-2">
+      <div class="scanning-screen">
+        <div class="scan-orb" id="scan-orb">✨</div>
+        <div style="font-size:13px;color:var(--purple3);font-weight:600;margin-bottom:6px" id="scan-status">Claude AI is reading your receipt...</div>
+        <div style="font-size:11px;color:var(--muted)" id="scan-sub">Analyzing items, prices, tax and tip</div>
+        <div class="scan-progress"><div class="scan-fill" id="scan-fill"></div></div>
+        <div class="scan-items" id="scan-items"></div>
+      </div>
+    </div>
+
+    <!-- S3: Assign -->
+    <div class="screen" id="screen-3">
+      <div class="assign-screen">
+        <div style="font-size:13px;font-weight:700;margin-bottom:3px">Who ordered what?</div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:14px">Tap names to assign items · tap again to unassign</div>
+
+        <div class="item-card assigned" id="ic-bananas">
+          <div style="display:flex;justify-content:space-between"><span class="item-name">🍌 Bananas</span><span class="item-price">$1.67</span></div>
+          <div class="person-chips">
+            <div class="pchip" onclick="toggleChip(this)">Jake</div>
+            <div class="pchip" onclick="toggleChip(this)">Priya</div>
+            <div class="pchip selected" onclick="toggleChip(this)">Sam ✓</div>
+            <div class="pchip" onclick="toggleChip(this)">Zoe</div>
+          </div>
+        </div>
+
+        <div class="item-card assigned" id="ic-speaker">
+          <div style="display:flex;justify-content:space-between"><span class="item-name">🔊 Bluetooth Speaker</span><span class="item-price">$122.34</span></div>
+          <div class="person-chips">
+            <div class="pchip selected" onclick="toggleChip(this)">Jake ✓</div>
+            <div class="pchip" onclick="toggleChip(this)">Priya</div>
+            <div class="pchip" onclick="toggleChip(this)">Sam</div>
+            <div class="pchip" onclick="toggleChip(this)">Zoe</div>
+          </div>
+        </div>
+
+        <div class="item-card assigned" id="ic-table">
+          <div style="display:flex;justify-content:space-between"><span class="item-name">🪑 Dining Table</span><span class="item-price">$422.99</span></div>
+          <div class="person-chips">
+            <div class="pchip" onclick="toggleChip(this)">Jake</div>
+            <div class="pchip selected" onclick="toggleChip(this)">Priya ✓</div>
+            <div class="pchip" onclick="toggleChip(this)">Sam</div>
+            <div class="pchip" onclick="toggleChip(this)">Zoe</div>
+          </div>
+        </div>
+
+        <div class="item-card assigned" id="ic-beer">
+          <div style="display:flex;justify-content:space-between"><span class="item-name">🍺 Beer Case</span><span class="item-price">$19.90</span></div>
+          <div class="person-chips">
+            <div class="pchip selected" onclick="toggleChip(this)">Jake ✓</div>
+            <div class="pchip selected" onclick="toggleChip(this)">Priya ✓</div>
+            <div class="pchip selected" onclick="toggleChip(this)">Sam ✓</div>
+            <div class="pchip selected" onclick="toggleChip(this)">Zoe ✓</div>
+          </div>
+        </div>
+
+        <button class="action-btn" onclick="goToSummary()">Calculate Shares →</button>
+        <button class="back-btn" onclick="showScreen(1)">← Back</button>
+      </div>
+    </div>
+
+    <!-- S4: Summary -->
+    <div class="screen" id="screen-4">
+      <div class="summary-screen">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:0.04em;margin-bottom:3px">Costco Wholesale</div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:14px">$679.56 total · 4 people · 💳 Jake paid</div>
+        <div style="font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Who Owes What</div>
+
+        <div class="person-row">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div class="avatar" style="background:linear-gradient(135deg,#7C3AED,#A855F7)">J</div>
+            <div><div style="font-size:13px;font-weight:600">Jake</div><div style="font-size:10px;color:#C084FC">💳 Paid the bill</div></div>
+          </div>
+          <div style="font-size:12px;color:var(--green);font-weight:600;font-family:'JetBrains Mono',monospace">Collecting</div>
+        </div>
+
+        <div class="person-row">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div class="avatar" style="background:linear-gradient(135deg,#E8633A,#FF6B35)">P</div>
+            <div><div style="font-size:13px;font-weight:600">Priya</div><div style="font-size:10px;color:var(--muted)">Table + Beer + Tax</div></div>
+          </div>
+          <div style="font-size:12px;color:var(--orange);font-weight:600;font-family:'JetBrains Mono',monospace">$234.18</div>
+        </div>
+
+        <div class="person-row">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div class="avatar" style="background:linear-gradient(135deg,#0EA5E9,#7C3AED)">S</div>
+            <div><div style="font-size:13px;font-weight:600">Sam</div><div style="font-size:10px;color:var(--muted)">Bananas + Beer + Tax</div></div>
+          </div>
+          <div style="font-size:12px;color:var(--orange);font-weight:600;font-family:'JetBrains Mono',monospace">$24.30</div>
+        </div>
+
+        <div class="person-row">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div class="avatar" style="background:linear-gradient(135deg,#30D158,#0EA5E9)">Z</div>
+            <div><div style="font-size:13px;font-weight:600">Zoe</div><div style="font-size:10px;color:var(--muted)">Beer + Tax</div></div>
+          </div>
+          <div style="font-size:12px;color:var(--orange);font-weight:600;font-family:'JetBrains Mono',monospace">$18.47</div>
+        </div>
+
+        <button class="action-btn" onclick="goToShare()">📤 Share Bill Link</button>
+        <button class="back-btn" onclick="showScreen(3)">← Back</button>
+      </div>
+    </div>
+
+    <!-- S5: Pay -->
+    <div class="screen" id="screen-5">
+      <div class="pay-screen">
+        <div id="pay-main">
+          <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted2);margin-bottom:3px">Pay Jake</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:50px;color:var(--green);letter-spacing:0.04em;line-height:1;margin-bottom:4px">$234.18</div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:18px">Priya · Costco Wholesale</div>
+
+          <a class="pay-method" style="background:#003d7a" href="#" onclick="markPaid(event,'Venmo')">
+            <div class="pay-icon" style="background:#008CFF">V</div>
+            <div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--white)">Venmo</div><div style="font-size:11px;color:var(--muted)">@jake · $234.18</div></div>
+            <div style="color:var(--muted)">→</div>
+          </a>
+
+          <a class="pay-method" style="background:#004d12" href="#" onclick="markPaid(event,'Cash App')">
+            <div class="pay-icon" style="background:#00D632">$</div>
+            <div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--white)">Cash App</div><div style="font-size:11px;color:var(--muted)">$jake · $234.18</div></div>
+            <div style="color:var(--muted)">→</div>
+          </a>
+
+          <a class="pay-method" style="background:#2a0a52" href="#" onclick="markPaid(event,'Zelle')">
+            <div class="pay-icon" style="background:#6D1ED4">Z</div>
+            <div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--white)">Zelle</div><div style="font-size:11px;color:var(--muted)"><span class="__cf_email__" data-cfemail="8be1eae0eecbeee6eae2e7a5e8e4e6">[email&#160;protected]</span> · tap to copy</div></div>
+            <div style="color:var(--muted)">→</div>
+          </a>
+        </div>
+
+        <div id="success-check" style="display:none;text-align:center;padding:24px 0">
+          <div style="font-size:56px;margin-bottom:14px">✅</div>
+          <div style="font-size:16px;font-weight:700;color:var(--green);margin-bottom:6px">Payment Sent!</div>
+          <div style="font-size:12px;color:var(--muted);line-height:1.6">Jake has been notified.<br>You're all settled up.</div>
+          <button class="action-btn" onclick="restartDemo()" style="background:var(--purple);margin-top:20px">🔄 Try Again</button>
+        </div>
+
+        <button class="back-btn" id="pay-back-btn" onclick="showScreen(4)">← Back</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+const titles = {1:['📸 Snap Your Receipt','Tap the camera to upload'],2:['✨ AI Scanning','Claude is reading your receipt...'],3:['👆 Assign Items','Tap names to assign each item'],4:['📊 Who Owes What','RAVEN calculated everyone\'s share'],5:['💳 Pay Jake','Choose how Priya wants to pay']};
+
+function showScreen(n) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + n).classList.add('active');
+  document.getElementById('screen-title').textContent = titles[n][0];
+  document.getElementById('screen-sub').textContent = titles[n][1];
+  document.getElementById('step-counter').textContent = n + ' / 5';
+  for (let i = 1; i <= 5; i++) {
+    const d = document.getElementById('dot-' + i);
+    if (i < n) { d.className = 'step-dot done'; d.textContent = '✓'; }
+    else if (i === n) { d.className = 'step-dot active'; d.textContent = i; }
+    else { d.className = 'step-dot'; d.textContent = i; }
+    if (i < 5) document.getElementById('line-' + i).className = i < n ? 'step-line done' : 'step-line';
+  }
+}
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+function startDemo() {
+  document.getElementById('hero-section').style.display = 'none';
+  const d = document.getElementById('demo-section');
+  d.style.display = 'block';
+  d.scrollIntoView({behavior:'smooth',block:'start'});
+  showScreen(1);
+}
+
+function uploadReceipt() {
+  const btn = document.getElementById('upload-btn');
+  btn.textContent = '⏳';
+  setTimeout(() => {
+    btn.style.display = 'none';
+    document.getElementById('receipt-preview').style.display = 'block';
+    document.getElementById('upload-text').textContent = 'Receipt loaded! Ready to scan.';
+    document.getElementById('scan-btn').style.display = 'flex';
+    toast('📷 Receipt uploaded!');
+  }, 500);
+}
+
+function goToScan() {
+  showScreen(2);
+  const fill = document.getElementById('scan-fill');
+  const status = document.getElementById('scan-status');
+  const sub = document.getElementById('scan-sub');
+  const orb = document.getElementById('scan-orb');
+  const container = document.getElementById('scan-items');
+  const items = ['🍌 Bananas · $1.67','🔊 Bluetooth Speaker · $122.34','🪑 Dining Table · $422.99','🍺 Beer Case · $19.90','🧾 Tax · $102.67'];
+  const msgs = [[0,'Reading receipt layout...','Detecting store and date'],[20,'Extracting line items...','Matching prices to products'],[55,'Calculating tax split...','Proportional allocation'],[80,'Finalizing results...','Almost done!']];
+  let p = 0;
+  const iv = setInterval(() => {
+    p += 1.1; fill.style.width = Math.min(p,100) + '%';
+    msgs.forEach(([t,s,sb]) => { if (p >= t && p < t+2) { status.textContent = s; sub.textContent = sb; }});
+    items.forEach((item, i) => {
+      if (p >= 28 + i*13) {
+        let el = document.getElementById('si-'+i);
+        if (!el) {
+          el = document.createElement('div'); el.className = 'scan-item'; el.id = 'si-'+i;
+          const parts = item.split('·');
+          el.innerHTML = '<span>'+parts[0]+'</span><span style="color:var(--green);font-family:\'JetBrains Mono\',monospace">·'+parts[1]+'</span>';
+          container.appendChild(el);
+          setTimeout(() => el.classList.add('appear'), 50);
+        }
+      }
+    });
+    if (p >= 100) {
+      clearInterval(iv);
+      orb.textContent = '✅'; orb.style.animation = 'none';
+      status.textContent = '5 items found!'; status.style.color = 'var(--green)';
+      sub.textContent = 'AI scan complete in 2.1 seconds';
+      setTimeout(() => { showScreen(3); toast('✨ AI extracted 5 items!'); }, 800);
+    }
+  }, 28);
+}
+
+function toggleChip(chip) {
+  const was = chip.classList.contains('selected');
+  const name = chip.textContent.replace(' ✓','');
+  if (was) { chip.classList.remove('selected'); chip.textContent = name; }
+  else { chip.classList.add('selected'); chip.textContent = name + ' ✓'; }
+}
+
+function goToSummary() { showScreen(4); toast('🪶 Shares calculated!'); }
+
+function goToShare() {
+  showScreen(5);
+  toast('📤 Link sent via iMessage!');
+}
+
+function markPaid(e, method) {
+  e.preventDefault();
+  document.getElementById('pay-main').style.display = 'none';
+  document.getElementById('success-check').style.display = 'block';
+  document.getElementById('pay-back-btn').style.display = 'none';
+  toast('✅ Paid via ' + method + '!');
+}
+
+function restartDemo() {
+  document.getElementById('upload-btn').style.display = 'flex';
+  document.getElementById('upload-btn').textContent = '📷';
+  document.getElementById('receipt-preview').style.display = 'none';
+  document.getElementById('upload-text').textContent = 'Tap the camera above to\n"upload" your receipt';
+  document.getElementById('scan-btn').style.display = 'none';
+  document.getElementById('scan-fill').style.width = '0%';
+  document.getElementById('scan-items').innerHTML = '';
+  document.getElementById('scan-orb').textContent = '✨';
+  document.getElementById('scan-orb').style.animation = 'orbPulse 1.5s ease-in-out infinite';
+  document.getElementById('scan-status').style.color = '';
+  document.getElementById('pay-main').style.display = 'block';
+  document
