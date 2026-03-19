@@ -159,10 +159,12 @@ const server = http.createServer(async (req, res) => {
   }
 
   // API routes → proxy to backend
-  const PROXY_PATHS = ['/sms', '/waitlist', '/remind', '/ping', '/demo/', '/demo/scan', '/gif-search', '/trip-info', '/sitemap.xml', '/robots.txt'];
+  const PROXY_PATHS = ['/sms', '/waitlist', '/remind', '/ping', '/demo/', '/demo/scan', '/gif-search', '/trip-info'];
   if (PROXY_PATHS.some(p => urlPath.startsWith(p))) return proxyToBackend(req, res);
 
   // Static files
+  if (urlPath === '/sitemap.xml') return serveStaticFile(req, res, './sitemap.xml');
+  if (urlPath === '/robots.txt') return serveStaticFile(req, res, './robots.txt');
   if (urlPath === '/') return serveStaticFile(req, res, './index.html');
 
   if (path.extname(urlPath)) {
