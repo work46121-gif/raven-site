@@ -105,6 +105,15 @@ function serveOGPageWithImage(res, title, description, redirectUrl, imageUrl) {
 }
 
 const server = http.createServer(async (req, res) => {
+  // www → non-www redirect
+  const host = req.headers.host || '';
+  if (host.startsWith('www.')) {
+    const nonWww = host.replace(/^www\./, '');
+    res.writeHead(301, { 'Location': 'https://' + nonWww + req.url });
+    res.end();
+    return;
+  }
+
   const urlPath = req.url.split('?')[0];
 
   // /bill/:id
