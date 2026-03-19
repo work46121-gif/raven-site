@@ -167,6 +167,7 @@ const server = http.createServer(async (req, res) => {
   if (urlPath === '/sitemap.xml') return serveStaticFile(req, res, './sitemap.xml');
   if (urlPath === '/robots.txt') return serveStaticFile(req, res, './robots.txt');
   if (urlPath === '/') return serveStaticFile(req, res, './index.html');
+  if (urlPath === '/dashboard.html' || urlPath === '/dashboard') return serveStaticFile(req, res, './dashboard.html');
 
   if (path.extname(urlPath)) {
     const filePath = '.' + urlPath;
