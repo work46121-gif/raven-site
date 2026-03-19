@@ -4450,6 +4450,7 @@ async function cbCreateFinalBill() {
   }
   btn.textContent = '🪶 Create Bill'; btn.disabled = false;
   showToast('✅ "' + name + '" created! ID: ' + billId, 'success');
+  celebrateBillCreated();
   // Track bill creation in PostHog
   try { if (typeof posthog !== 'undefined') posthog.capture('bill_created', { bill_id: billId, split_mode: cbSplitMode, people_count: cbPeople.length, total, has_receipt: !!cbImageBase64, has_payer: !!paidBy }); } catch(e) {}
   cbItems = []; cbPeople = []; cbImageBase64 = null; cbSplitMode = 'even';
@@ -4716,6 +4717,72 @@ function shareInviteEmail() {
   const subject = encodeURIComponent('Join me on RAVEN — AI bill splitting');
   const body = encodeURIComponent('Hey!\n\nI\'ve been using RAVEN to split bills — it scans receipts with AI and everyone pays their exact share. No app needed!\n\nJoin me here: ' + link + '\n\nSee you there 🪶');
   window.open('mailto:?subject=' + subject + '&body=' + body, '_blank');
+}
+
+
+function celebrateBillCreated() {
+  const canvas = document.createElement('canvas');
+  canvas.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:9998';
+  document.body.appendChild(canvas);
+  const ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  class Bird {
+    constructor(color, side, delay) {
+      this.color = color; this.delay = delay; this.t = -delay; this.side = side;
+      const W = canvas.width, H = canvas.height;
+      this.x = side === 'left' ? -40 : W + 40;
+      this.y = 80 + Math.random() * (H - 160);
+      this.vx = side === 'left' ? (2.5 + Math.random() * 2) : -(2.5 + Math.random() * 2);
+      this.vy = (Math.random() - 0.5) * 1.2;
+      this.wingPhase = Math.random() * Math.PI * 2;
+      this.wingSpeed = 0.12 + Math.random() * 0.08;
+      this.size = 13 + Math.random() * 9;
+      this.alpha = 0; this.alive = true;
+    }
+    update() {
+      this.t++;
+      if (this.t < 0) return;
+      if (this.alpha < 1) this.alpha = Math.min(1, this.alpha + 0.06);
+      this.x += this.vx; this.y += this.vy;
+      this.vy += (Math.random() - 0.5) * 0.15; this.vy *= 0.97;
+      this.wingPhase += this.wingSpeed;
+      if (this.x < -100 || this.x > canvas.width + 100 || this.y < -60 || this.y > canvas.height + 60) this.alive = false;
+    }
+    draw() {
+      if (this.t < 0 || !this.alive) return;
+      ctx.save(); ctx.globalAlpha = this.alpha;
+      ctx.translate(this.x, this.y);
+      if (this.vx < 0) ctx.scale(-1, 1);
+      const s = this.size, wing = Math.sin(this.wingPhase) * 0.6;
+      ctx.fillStyle = this.color;
+      ctx.beginPath(); ctx.ellipse(0, 0, s * 0.7, s * 0.28, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(s * 0.6, -s * 0.05, s * 0.22, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(s*0.1,-s*0.1); ctx.bezierCurveTo(-s*0.2,-s*(0.5+wing),-s*0.7,-s*(0.6+wing),-s*0.9,-s*(0.1+wing*0.3));
+      ctx.bezierCurveTo(-s*0.5,-s*0.1,-s*0.1,-s*0.05,s*0.1,-s*0.1); ctx.closePath(); ctx.fill();
+      ctx.lineWidth = 1.8; ctx.strokeStyle = this.color;
+      ctx.beginPath(); ctx.moveTo(-s*0.65,0); ctx.lineTo(-s*1.1,-s*0.2);
+      ctx.moveTo(-s*0.65,0); ctx.lineTo(-s*1.15,s*0.05);
+      ctx.moveTo(-s*0.65,0); ctx.lineTo(-s*1.05,s*0.22); ctx.stroke();
+      ctx.restore();
+    }
+  }
+
+  const colors = ['#30D158','#A855F7'];
+  let birds = [], id = 0;
+  for (let i = 0; i < 8; i++) { birds.push(new Bird(colors[id%2],'left',i*12)); id++; }
+  for (let i = 0; i < 8; i++) { birds.push(new Bird(colors[id%2],'right',i*12+6)); id++; }
+
+  function loop() {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    birds = birds.filter(b => b.alive || b.t < 0);
+    birds.forEach(b => { b.update(); b.draw(); });
+    if (birds.length > 0) requestAnimationFrame(loop);
+    else canvas.remove();
+  }
+  loop();
 }
 
 window.addEventListener('load', function() { init(); });
