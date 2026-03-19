@@ -808,6 +808,13 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
           <button onclick="showPage('trip-hub');setMobNav('mob-trip')" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:14px 8px;background:var(--dark);border:1px solid var(--border);border-radius:14px;cursor:pointer;-webkit-tap-highlight-color:transparent;text-align:center">
             <span style="font-size:22px">✈️</span><span style="font-size:11px;font-weight:600;color:var(--white)">Trips</span>
           </button>
+          <button onclick="showPage('notifications');setMobNav('mob-settings')" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:14px 8px;background:var(--dark);border:1px solid var(--border);border-radius:14px;cursor:pointer;-webkit-tap-highlight-color:transparent;text-align:center;position:relative">
+            <span style="font-size:22px">🔔</span><span style="font-size:11px;font-weight:600;color:var(--white)">Notifications</span>
+            <span id="mob-notif-quick-badge" style="display:none;position:absolute;top:8px;right:8px;background:#FF4444;color:#fff;border-radius:50%;width:14px;height:14px;font-size:9px;font-weight:700;align-items:center;justify-content:center">!</span>
+          </button>
+          <button onclick="showPage('invite');setMobNav('mob-settings')" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:14px 8px;background:var(--dark);border:1px solid var(--border);border-radius:14px;cursor:pointer;-webkit-tap-highlight-color:transparent;text-align:center">
+            <span style="font-size:22px">🎟</span><span style="font-size:11px;font-weight:600;color:var(--white)">Invite</span>
+          </button>
           <button onclick="document.getElementById('privacy-section').scrollIntoView({behavior:'smooth'})" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:14px 8px;background:var(--dark);border:1px solid var(--border);border-radius:14px;cursor:pointer;-webkit-tap-highlight-color:transparent;text-align:center">
             <span style="font-size:22px">🔒</span><span style="font-size:11px;font-weight:600;color:var(--white)">Privacy</span>
           </button>
@@ -1252,7 +1259,6 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
   <button class="mob-nav-btn" id="mob-bills" onclick="showPage('active-bills');setMobNav('mob-bills')"><span class="mi">📋</span>Bills</button>
   <button class="mob-nav-btn" id="mob-create" onclick="showPage('create-bill');setMobNav('mob-create')"><span class="mi" style="width:36px;height:36px;background:var(--green);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;color:#000;margin-bottom:1px">➕</span>New</button>
   <button class="mob-nav-btn" id="mob-trip" onclick="showPage('trip-hub');setMobNav('mob-trip')"><span class="mi">✈️</span>Trips</button>
-  <button class="mob-nav-btn" id="mob-notif" onclick="showPage('notifications');setMobNav('mob-notif')" style="position:relative"><span class="mi">🔔</span>Alerts<span id="mob-notif-badge" style="display:none;position:absolute;top:6px;right:8px;width:8px;height:8px;background:#FF4444;border-radius:50%"></span></button>
   <button class="mob-nav-btn" id="mob-settings" onclick="showPage('settings');setMobNav('mob-settings')" style="position:relative"><span class="mi">☰</span>More<span id="mob-friend-req-badge" style="display:none;position:absolute;top:6px;right:10px;width:8px;height:8px;background:#A855F7;border-radius:50%"></span></button>
 </div>
 
@@ -2133,7 +2139,7 @@ function showPage(page) {
   document.getElementById('page-' + page).classList.add('active');
   const navMap = { 'overview': 0, 'active-bills': 1, 'create-bill': 2, 'trip-hub': 3, 'friends': 4, 'history': 5, 'notifications': 6, 'invite': 7, 'settings': 8 };
   document.querySelectorAll('.nav-item')[navMap[page]]?.classList.add('active');
-  const mobMap = { 'overview':'mob-overview','active-bills':'mob-bills','create-bill':'mob-create','trip-hub':'mob-trip','friends':'mob-settings','settings':'mob-settings','history':'mob-settings','notifications':'mob-notif','invite':'mob-settings' };
+  const mobMap = { 'overview':'mob-overview','active-bills':'mob-bills','create-bill':'mob-create','trip-hub':'mob-trip','friends':'mob-settings','settings':'mob-settings','history':'mob-settings','notifications':'mob-settings','invite':'mob-settings' };
   if (mobMap[page]) setMobNav(mobMap[page]);
   if (page === 'active-bills') loadActiveBills();
   if (page === 'history') loadHistory();
@@ -4618,6 +4624,8 @@ function updateNotifBadge() {
   }
   const mobBadge = document.getElementById('mob-notif-badge');
   if (mobBadge) mobBadge.style.display = unread > 0 ? 'block' : 'none';
+  const mobQuickBadge = document.getElementById('mob-notif-quick-badge');
+  if (mobQuickBadge) mobQuickBadge.style.display = unread > 0 ? 'flex' : 'none';
   const countEl = document.getElementById('notif-unread-count');
   if (countEl) countEl.textContent = unread > 0 ? '(' + unread + ')' : '';
 }
@@ -4652,9 +4660,19 @@ function getMyInviteLink() {
   } catch(e) { return 'https://ravensplit.com'; }
 }
 
-function loadInvitePage() {
+async function loadInvitePage() {
   const linkEl = document.getElementById('invite-link-text');
   if (linkEl) linkEl.textContent = getMyInviteLink();
+  // Also try to get raven_id from DB if not in localStorage
+  try {
+    const { data: prof } = await db.from('profiles').select('raven_id').eq('id', currentUser.id).maybeSingle();
+    if (prof?.raven_id) {
+      const existing = JSON.parse(localStorage.getItem('raven_profile') || '{}');
+      existing.raven_id = prof.raven_id;
+      localStorage.setItem('raven_profile', JSON.stringify(existing));
+      if (linkEl) linkEl.textContent = 'https://ravensplit.com/friend-invite/' + prof.raven_id;
+    }
+  } catch(e) {}
   loadInviteSuggestions();
 }
 
