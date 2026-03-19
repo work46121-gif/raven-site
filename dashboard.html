@@ -402,6 +402,8 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
       <button class="nav-item" onclick="showPage('trip-hub')"><span class="ni">✈️</span> Trip Hub</button>
       <button class="nav-item" onclick="showPage('friends')" style="position:relative"><span class="ni">👥</span> Friends <span id="friends-dm-badge" style="display:none;position:absolute;top:6px;right:8px;min-width:16px;height:16px;padding:0 4px;background:var(--purple);border-radius:8px;font-size:10px;font-weight:700;color:#fff;align-items:center;justify-content:center"></span></button>
       <button class="nav-item" onclick="showPage('history')"><span class="ni">🕐</span> History</button>
+      <button class="nav-item" onclick="showPage('notifications')" style="position:relative"><span class="ni">🔔</span> Notifications <span id="notif-badge" style="display:none;margin-left:auto;background:#FF4444;color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;min-width:20px;text-align:center"></span></button>
+      <button class="nav-item" onclick="showPage('invite')"><span class="ni">🎟</span> Invite Friends</button>
     </nav>
     <div class="sidebar-user">
       <button onclick="showPage('settings')" style="width:100%;display:flex;align-items:center;gap:10px;padding:10px 12px;background:transparent;border:none;border-radius:10px;cursor:pointer;transition:background 0.2s;text-align:left" onmouseover="this.style.background='var(--dark3)'" onmouseout="this.style.background='transparent'">
@@ -1250,6 +1252,7 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
   <button class="mob-nav-btn" id="mob-bills" onclick="showPage('active-bills');setMobNav('mob-bills')"><span class="mi">📋</span>Bills</button>
   <button class="mob-nav-btn" id="mob-create" onclick="showPage('create-bill');setMobNav('mob-create')"><span class="mi" style="width:36px;height:36px;background:var(--green);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;color:#000;margin-bottom:1px">➕</span>New</button>
   <button class="mob-nav-btn" id="mob-trip" onclick="showPage('trip-hub');setMobNav('mob-trip')"><span class="mi">✈️</span>Trips</button>
+  <button class="mob-nav-btn" id="mob-notif" onclick="showPage('notifications');setMobNav('mob-notif')" style="position:relative"><span class="mi">🔔</span>Alerts<span id="mob-notif-badge" style="display:none;position:absolute;top:6px;right:8px;width:8px;height:8px;background:#FF4444;border-radius:50%"></span></button>
   <button class="mob-nav-btn" id="mob-settings" onclick="showPage('settings');setMobNav('mob-settings')" style="position:relative"><span class="mi">☰</span>More<span id="mob-friend-req-badge" style="display:none;position:absolute;top:6px;right:10px;width:8px;height:8px;background:#A855F7;border-radius:50%"></span></button>
 </div>
 
@@ -2130,7 +2133,7 @@ function showPage(page) {
   document.getElementById('page-' + page).classList.add('active');
   const navMap = { 'overview': 0, 'active-bills': 1, 'create-bill': 2, 'trip-hub': 3, 'friends': 4, 'history': 5, 'notifications': 6, 'invite': 7, 'settings': 8 };
   document.querySelectorAll('.nav-item')[navMap[page]]?.classList.add('active');
-  const mobMap = { 'overview':'mob-overview','active-bills':'mob-bills','create-bill':'mob-create','trip-hub':'mob-trip','friends':'mob-settings','settings':'mob-settings','history':'mob-settings','notifications':'mob-settings','invite':'mob-settings' };
+  const mobMap = { 'overview':'mob-overview','active-bills':'mob-bills','create-bill':'mob-create','trip-hub':'mob-trip','friends':'mob-settings','settings':'mob-settings','history':'mob-settings','notifications':'mob-notif','invite':'mob-settings' };
   if (mobMap[page]) setMobNav(mobMap[page]);
   if (page === 'active-bills') loadActiveBills();
   if (page === 'history') loadHistory();
@@ -4613,6 +4616,8 @@ function updateNotifBadge() {
   } else {
     badge.style.display = 'none';
   }
+  const mobBadge = document.getElementById('mob-notif-badge');
+  if (mobBadge) mobBadge.style.display = unread > 0 ? 'block' : 'none';
   const countEl = document.getElementById('notif-unread-count');
   if (countEl) countEl.textContent = unread > 0 ? '(' + unread + ')' : '';
 }
