@@ -402,6 +402,7 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
       <button class="nav-item" onclick="showPage('trip-hub')"><span class="ni">✈️</span> Trip Hub</button>
       <button class="nav-item" onclick="showPage('friends')" style="position:relative"><span class="ni">👥</span> Friends <span id="friends-dm-badge" style="display:none;position:absolute;top:6px;right:8px;min-width:16px;height:16px;padding:0 4px;background:var(--purple);border-radius:8px;font-size:10px;font-weight:700;color:#fff;align-items:center;justify-content:center"></span></button>
       <button class="nav-item" onclick="showPage('history')"><span class="ni">🕐</span> History</button>
+      <div style="flex:1"></div>
       <button class="nav-item" onclick="showPage('notifications')" style="position:relative"><span class="ni">🔔</span> Notifications <span id="notif-badge" style="display:none;margin-left:auto;background:#FF4444;color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;min-width:20px;text-align:center"></span></button>
       <button class="nav-item" onclick="showPage('invite')"><span class="ni">🎟</span> Invite Friends</button>
     </nav>
@@ -2147,8 +2148,11 @@ function showPage(page) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('page-' + page).classList.add('active');
-  const navMap = { 'overview': 0, 'active-bills': 1, 'create-bill': 2, 'trip-hub': 3, 'friends': 4, 'history': 5, 'notifications': 6, 'invite': 7, 'settings': 8 };
-  document.querySelectorAll('.nav-item')[navMap[page]]?.classList.add('active');
+  // Highlight nav item by matching onclick attribute
+  document.querySelectorAll('.nav-item').forEach(n => {
+    const oc = n.getAttribute('onclick') || '';
+    if (oc.includes("showPage('" + page + "')")) n.classList.add('active');
+  });
   const mobMap = { 'overview':'mob-overview','active-bills':'mob-bills','create-bill':'mob-create','trip-hub':'mob-trip','friends':'mob-settings','settings':'mob-settings','history':'mob-settings','notifications':'mob-settings','invite':'mob-settings' };
   if (mobMap[page]) setMobNav(mobMap[page]);
   if (page === 'active-bills') loadActiveBills();
