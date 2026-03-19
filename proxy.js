@@ -36,7 +36,8 @@ function serveStaticFile(req, res, filePath) {
       '.html': 'text/html', '.js': 'application/javascript',
       '.css': 'text/css', '.png': 'image/png', '.jpg': 'image/jpeg',
       '.ico': 'image/x-icon', '.json': 'application/json',
-      '.gif': 'image/gif', '.webp': 'image/webp', '.svg': 'image/svg+xml'
+      '.gif': 'image/gif', '.webp': 'image/webp', '.svg': 'image/svg+xml',
+      '.xml': 'application/xml; charset=utf-8', '.txt': 'text/plain; charset=utf-8'
     };
     res.writeHead(200, { 'Content-Type': types[ext] || 'application/octet-stream' });
     res.end(data);
