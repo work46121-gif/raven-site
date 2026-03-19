@@ -1669,6 +1669,8 @@ async function handleSignup() {
     '<div style="padding:12px 16px;background:rgba(48,209,88,0.07);border:1px solid rgba(48,209,88,0.2);border-radius:10px;font-size:13px;color:var(--green);margin-bottom:16px">✅ Once confirmed, come back and sign in</div>' +
     '<button onclick="location.reload()" style="background:none;border:none;color:var(--muted);font-family:\'Epilogue\',sans-serif;font-size:13px;cursor:pointer;text-decoration:underline">← Back to Sign In</button>';
   if (card) card.appendChild(confirmDiv);
+  // 🪶 Celebrate new account with flying ravens!
+  celebrateBillCreated();
 
   // If there's a pending join, handle it now before routing to onboarding
   if (data?.user) {
