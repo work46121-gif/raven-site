@@ -1469,6 +1469,20 @@ async function handlePendingJoinIfAny(userId, userEmail, knownDisplayName) {
 
 async function init() {
   try {
+    // Handle OAuth error params (e.g. from failed Google auth)
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('error')) {
+      console.warn('OAuth error:', params.get('error_description'));
+      history.replaceState(null, '', window.location.pathname);
+    }
+    // Handle PKCE OAuth code exchange (Supabase v2 default flow)
+    const code = params.get('code');
+    if (code) {
+      try {
+        await db.auth.exchangeCodeForSession(code);
+      } catch(e) { console.warn('Code exchange error:', e); }
+      history.replaceState(null, '', window.location.pathname);
+    }
     const hash = window.location.hash;
     if (hash && hash.includes('access_token')) { try { await db.auth.getSession(); } catch(e){} history.replaceState(null, '', window.location.pathname); }
     const { data: { session } } = await db.auth.getSession();
@@ -1542,7 +1556,7 @@ async function handleGoogleAuth() {
     const { error } = await db.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: window.location.origin + '/dashboard.html'
+        redirectTo: 'https://ravensplit.com/dashboard.html'
       }
     });
     if (error) showAuthError(error.message);
