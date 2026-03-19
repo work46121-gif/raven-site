@@ -776,23 +776,7 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
       </div>
     </div>
 
-    <!-- PROFILE CARD MODAL -->
-    <div id="profile-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);backdrop-filter:blur(12px);z-index:700;align-items:center;justify-content:center;padding:20px" onclick="if(event.target.id==='profile-modal')closeProfileModal()">
-      <div style="background:var(--dark);border:1px solid var(--border2);border-radius:20px;width:100%;max-width:400px;overflow:visible">
-        <div style="height:100px;background:linear-gradient(135deg,var(--purple),var(--green));position:relative;border-radius:20px 20px 0 0">
-          <button onclick="closeProfileModal()" style="position:absolute;top:12px;right:12px;background:rgba(0,0,0,0.3);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:14px">✕</button>
-          <!-- Avatar sits at bottom of banner, half overlapping -->
-          <div id="pm-avatar" style="position:absolute;bottom:-38px;left:24px;width:76px;height:76px;border-radius:50%;background:linear-gradient(135deg,var(--purple),var(--green));border:4px solid var(--dark);display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:700;color:#fff;overflow:hidden;flex-shrink:0"></div>
-        </div>
-        <div style="padding:48px 24px 28px;">
-          <div id="pm-name" style="font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:0.04em;margin-bottom:2px"></div>
-          <div id="pm-raven-id" style="font-size:13px;color:var(--purple3);font-weight:600;margin-bottom:6px"></div>
-          <div id="pm-email" style="font-size:12px;color:var(--muted);margin-bottom:18px"></div>
-          <div id="pm-payment-methods" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px"></div>
-          <div id="pm-action-btn"></div>
-        </div>
-      </div>
-    </div>
+
 
 <div id="page-settings" class="page">
       <div class="page-header"><h1 class="page-title">Account <span>Settings</span></h1></div>
@@ -1066,6 +1050,23 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
     </div>
 
   </main>
+
+  <!-- PROFILE CARD MODAL -->
+  <div id="profile-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);backdrop-filter:blur(12px);z-index:700;align-items:center;justify-content:center;padding:20px" onclick="if(event.target.id==='profile-modal')closeProfileModal()">
+    <div style="background:var(--dark);border:1px solid var(--border2);border-radius:20px;width:100%;max-width:400px;overflow:visible">
+      <div style="height:100px;background:linear-gradient(135deg,var(--purple),var(--green));position:relative;border-radius:20px 20px 0 0">
+        <button onclick="closeProfileModal()" style="position:absolute;top:12px;right:12px;background:rgba(0,0,0,0.3);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:14px">✕</button>
+        <div id="pm-avatar" style="position:absolute;bottom:-38px;left:24px;width:76px;height:76px;border-radius:50%;background:linear-gradient(135deg,var(--purple),var(--green));border:4px solid var(--dark);display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:700;color:#fff;overflow:hidden;flex-shrink:0"></div>
+      </div>
+      <div style="padding:48px 24px 28px;">
+        <div id="pm-name" style="font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:0.04em;margin-bottom:2px"></div>
+        <div id="pm-raven-id" style="font-size:13px;color:var(--purple3);font-weight:600;margin-bottom:6px"></div>
+        <div id="pm-email" style="font-size:12px;color:var(--muted);margin-bottom:18px"></div>
+        <div id="pm-payment-methods" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px"></div>
+        <div id="pm-action-btn"></div>
+      </div>
+    </div>
+  </div>
 
   <!-- CREATE TRIP MODAL -->
   <div id="create-trip-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);backdrop-filter:blur(8px);z-index:600;align-items:center;justify-content:center;padding:20px" onclick="if(event.target.id==='create-trip-modal')closeCreateTrip()">
@@ -3780,34 +3781,43 @@ async function createTrip() {
   const tripDate = document.getElementById('trip-date-input').value;
   if (!name) return showToast('Enter a trip name', 'error');
   if (tripPeople.length === 0) return showToast('Add at least one person', 'error');
-  const tripId = generateId();
-  const shareToken = Array.from({length:16}, () => 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'[Math.floor(Math.random()*62)]).join('');
-  const inviteToken = Array.from({length:12}, () => 'abcdefghijklmnopqrstuvwxyz0123456789'[Math.floor(Math.random()*36)]).join('');
-  const insertData = {
-    id: tripId, creator_email: currentUser.email, name,
-    people: JSON.stringify(tripPeople), share_token: shareToken,
-    invite_token: inviteToken,
-    total: 0, receipt_count: 0, status: 'active',
-    created_at: new Date().toISOString()
-  };
-  if (tripDate) insertData.trip_date = tripDate;
-  if (tripCoverBase64) insertData.cover_image = tripCoverBase64;
-  const { error } = await db.from('trips').insert(insertData);
-  if (error) { console.error(error); return showToast('Error creating trip: ' + error.message, 'error'); }
-  closeCreateTrip();
-  tripCoverBase64 = null;
-  showToast('✈️ Trip "' + name + '" created!', 'success');
-  const tripUrl = FRONTEND + '/trip/' + tripId + '?t=' + shareToken;
-  showToast('✅ Trip "' + name + '" created!', 'success');
-  setTimeout(async () => {
-    const myName = (() => { try { return JSON.parse(localStorage.getItem('raven_profile')||'{}').first_name || 'Someone'; } catch(e) { return 'Someone'; } })();
-    const msg = myName + ' invited you to join "' + name + '" on RAVEN 🪶\n\nSplit bills free with RAVEN | ravensplit.com\n\n' + tripUrl;
-    if (navigator.share) {
-      try { await navigator.share({ text: msg }); return; } catch(e) {}
-    }
-    navigator.clipboard.writeText(tripUrl).then(()=>showToast('✅ Link copied!','success')).catch(()=>{});
-  }, 500);
-  loadTrips();
+
+  const btn = document.querySelector('#create-trip-modal .submit-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Creating...'; }
+
+  try {
+    const body = { name, people: tripPeople, creator_email: currentUser.email };
+    if (tripDate) body.trip_date = tripDate;
+    if (tripCoverBase64) body.cover_image = tripCoverBase64;
+
+    const res = await fetch(BACKEND + '/trip/create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    if (!res.ok) { showToast('Error: ' + (data.error || 'Could not create trip'), 'error'); return; }
+
+    const { tripId, shareToken } = data;
+    closeCreateTrip();
+    tripCoverBase64 = null;
+    showToast('✈️ Trip "' + name + '" created!', 'success');
+    const tripUrl = FRONTEND + '/trip/' + tripId + '?t=' + shareToken;
+    setTimeout(async () => {
+      const myName = (() => { try { return JSON.parse(localStorage.getItem('raven_profile')||'{}').first_name || 'Someone'; } catch(e) { return 'Someone'; } })();
+      const msg = myName + ' invited you to join "' + name + '" on RAVEN 🪶\n\nSplit bills free with RAVEN | ravensplit.com\n\n' + tripUrl;
+      if (navigator.share) {
+        try { await navigator.share({ text: msg }); return; } catch(e) {}
+      }
+      navigator.clipboard.writeText(tripUrl).then(()=>showToast('✅ Link copied!','success')).catch(()=>{});
+    }, 500);
+    loadTrips();
+  } catch (err) {
+    console.error('createTrip error:', err);
+    showToast('Network error — try again', 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '✈️ Create Trip'; }
+  }
 }
 
 function openTrip(tripId) {
