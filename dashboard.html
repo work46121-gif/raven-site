@@ -996,6 +996,7 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
   
     <!-- NOTIFICATIONS PAGE -->
     <div id="page-notifications" class="page">
+      <div class="main-inner">
       <div class="page-header">
         <h1 class="page-title">Notifications <span id="notif-unread-count"></span></h1>
         <button id="mark-all-read-btn" onclick="markAllNotifsRead()" style="padding:8px 18px;background:rgba(124,58,237,0.12);border:1px solid rgba(124,58,237,0.25);border-radius:8px;color:var(--purple3);font-family:'Epilogue',sans-serif;font-size:13px;font-weight:600;cursor:pointer">✓ Mark all read</button>
@@ -1015,8 +1016,10 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
       </div>
     </div>
 
+      </div>
     <!-- INVITE PAGE -->
     <div id="page-invite" class="page">
+      <div class="main-inner">
       <div class="page-header"><h1 class="page-title">Invite <span>Friends</span></h1></div>
       <div style="max-width:560px;display:flex;flex-direction:column;gap:20px">
 
@@ -4560,6 +4563,7 @@ async function buildNotifications() {
 async function loadNotifications() {
   const container = document.getElementById('notif-list');
   if (!container) return;
+  if (!currentUser) { container.innerHTML = '<div style="color:var(--muted);text-align:center;padding:32px">Please sign in to view notifications</div>'; return; }
   container.innerHTML = '<div class="loading"><div class="spinner"></div> Loading...</div>';
   try {
     _allNotifs = await buildNotifications();
@@ -4567,7 +4571,8 @@ async function loadNotifications() {
     renderNotifList(_allNotifs);
     updateNotifBadge();
   } catch(e) {
-    container.innerHTML = '<div style="color:var(--muted);text-align:center;padding:32px">Could not load notifications</div>';
+    console.error('loadNotifications error:', e);
+    container.innerHTML = '<div style="color:var(--muted);text-align:center;padding:32px;font-size:13px">Could not load notifications<br><span style="font-size:11px;color:var(--muted)">' + e.message + '</span></div>';
   }
 }
 
@@ -4662,6 +4667,7 @@ function getMyInviteLink() {
 }
 
 async function loadInvitePage() {
+  if (!currentUser) return;
   const linkEl = document.getElementById('invite-link-text');
   if (linkEl) linkEl.textContent = getMyInviteLink();
   // Also try to get raven_id from DB if not in localStorage
