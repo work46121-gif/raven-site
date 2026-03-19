@@ -168,6 +168,8 @@ const server = http.createServer(async (req, res) => {
   if (urlPath === '/robots.txt') return serveStaticFile(req, res, './robots.txt');
   if (urlPath === '/') return serveStaticFile(req, res, './index.html');
   if (urlPath === '/dashboard.html' || urlPath === '/dashboard') return serveStaticFile(req, res, './dashboard.html');
+  if (urlPath === '/onboarding.html' || urlPath === '/onboarding') return serveStaticFile(req, res, './onboarding.html');
+  if (urlPath === '/raven-demo.html' || urlPath === '/raven-demo') return serveStaticFile(req, res, './raven-demo.html');
 
   if (path.extname(urlPath)) {
     const filePath = '.' + urlPath;
