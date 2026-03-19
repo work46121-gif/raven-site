@@ -1538,11 +1538,23 @@ async function checkOnboardingAndShow(userId) {
         const existing = JSON.parse(localStorage.getItem('raven_profile') || '{}');
         localStorage.setItem('raven_profile', JSON.stringify({ ...existing, user_id: userId, onboarding_complete: true, first_name: profile.first_name || existing.first_name || '', raven_id: profile.raven_id || existing.raven_id || '', email: currentUser.email }));
         showDashboard(); return;
-      } else { window.location.href = 'onboarding.html'; return; }
+      } else {
+        // Mark in localStorage that we're starting onboarding — prevents loop
+        const existing = JSON.parse(localStorage.getItem('raven_profile') || '{}');
+        localStorage.setItem('raven_profile', JSON.stringify({ ...existing, user_id: userId, onboarding_complete: false, email: currentUser.email, first_name: profile.first_name || '' }));
+        window.location.href = 'onboarding.html'; return;
+      }
     }
   } catch(e) { console.log('Profile check error:', e); }
-  const hasLocalData = localStorage.getItem('raven_profile');
-  if (hasLocalData) showDashboard(); else window.location.href = 'onboarding.html';
+  // No profile in DB yet (brand new Google user) — create stub and send to onboarding
+  try {
+    const googleName = currentUser.user_metadata?.full_name || currentUser.user_metadata?.name || '';
+    const firstName = googleName.split(' ')[0] || '';
+    await db.from('profiles').upsert({ id: userId, email: currentUser.email, first_name: firstName, onboarding_complete: false, updated_at: new Date().toISOString() }, { onConflict: 'id' });
+    const existing = JSON.parse(localStorage.getItem('raven_profile') || '{}');
+    localStorage.setItem('raven_profile', JSON.stringify({ ...existing, user_id: userId, onboarding_complete: false, email: currentUser.email, first_name: firstName }));
+  } catch(e) {}
+  window.location.href = 'onboarding.html';
 }
 
 function switchAuthTab(tab) {
