@@ -1298,7 +1298,14 @@ const { createClient } = supabase;
 let db;
 try {
   db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-    auth: { flowType: 'implicit' }
+    auth: {
+      storage: window.localStorage,
+      storageKey: 'raven-auth',
+      flowType: 'pkce',
+      detectSessionInUrl: true,
+      autoRefreshToken: true,
+      persistSession: true
+    }
   });
 } catch(e) {
   console.warn('Supabase init failed, clearing storage:', e.message);
@@ -1558,12 +1565,7 @@ async function handleGoogleAuth() {
     const { error } = await db.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: 'https://ravensplit.com/dashboard.html',
-        queryParams: {
-          access_type: 'offline',
-          prompt: 'consent',
-        },
-        flowType: 'implicit'
+        redirectTo: 'https://ravensplit.com/dashboard.html'
       }
     });
     if (error) showAuthError(error.message);
