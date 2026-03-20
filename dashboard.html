@@ -86,12 +86,13 @@
 html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(--black); color: var(--white); overflow-x: hidden; }
 
 #auth-screen {
-  display: flex;
+  min-height: 100vh;
+  display: none;
   align-items: center;
   justify-content: center;
   position: fixed;
   inset: 0;
-  z-index: 999;
+  z-index: 9999;
   overflow: hidden;
   background: var(--black);
 }
@@ -4903,7 +4904,7 @@ let currentChatTripId = null;
 let chatSubscription = null;
 let chatMessages = [];
 
-function openChat(tripId) { return openTripChat(tripId); }
+function openChat(tid) { openTripChat(tid); }
 async function openTripChat(tripId) {
   currentChatTripId = tripId;
   const modal = document.getElementById('trip-chat-modal');
