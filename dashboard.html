@@ -1654,22 +1654,32 @@ async function handleSignup() {
   const { data, error } = await db.auth.signUp({ email, password });
   if (error) { showAuthError(error.message); btn.textContent = 'Create Account →'; btn.disabled = false; return; }
 
-  // Save first name to profile + auto-generate Raven ID (sequential: mel → mel1 → mel2)
-  if (data?.user && firstName) {
+  // Always auto-generate Raven ID on signup — uses firstName if provided, else email prefix
+  if (data?.user) {
     try {
-      const base = firstName.toLowerCase().replace(/[^a-z0-9]/g, '') || 'user';
+      // Base: first name → email prefix → 'user'
+      const nameBase = firstName
+        ? firstName.toLowerCase().replace(/[^a-z0-9]/g, '')
+        : email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '');
+      const base = nameBase || 'user';
       let ravenId = null;
-      // Try base first, then base1, base2... base99
       for (let i = 0; i <= 99; i++) {
         const candidate = i === 0 ? base : base + i;
         const { data: existing } = await db.from('profiles').select('id').eq('raven_id', candidate).maybeSingle();
         if (!existing) { ravenId = candidate; break; }
       }
       if (!ravenId) ravenId = base + Date.now().toString().slice(-4);
-      await db.from('profiles').upsert({ id: data.user.id, email, first_name: firstName, raven_id: ravenId, onboarding_complete: false, updated_at: new Date().toISOString() }, { onConflict: 'id' });
+      await db.from('profiles').upsert({
+        id: data.user.id,
+        email,
+        first_name: firstName || '',
+        raven_id: ravenId,
+        onboarding_complete: false,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'id' });
       const existingLocal = JSON.parse(localStorage.getItem('raven_profile') || '{}');
-      localStorage.setItem('raven_profile', JSON.stringify({ ...existingLocal, first_name: firstName, raven_id: ravenId, user_id: data.user.id }));
-    } catch(e) {}
+      localStorage.setItem('raven_profile', JSON.stringify({ ...existingLocal, first_name: firstName || '', raven_id: ravenId, user_id: data.user.id }));
+    } catch(e) { console.warn('raven_id generation error:', e); }
   }
 
   btn.textContent = 'Create Account →'; btn.disabled = false;
