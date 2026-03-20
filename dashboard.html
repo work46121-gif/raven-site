@@ -1031,6 +1031,7 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
             <button onclick="shareInviteNative()" style="flex:1;padding:12px;background:var(--purple);border:none;border-radius:10px;color:#fff;font-family:'Epilogue',sans-serif;font-size:14px;font-weight:700;cursor:pointer">📤 Share</button>
             <button onclick="shareInviteSMS()" style="flex:1;padding:12px;background:rgba(48,209,88,0.15);border:1px solid rgba(48,209,88,0.3);border-radius:10px;color:var(--green);font-family:'Epilogue',sans-serif;font-size:14px;font-weight:700;cursor:pointer">💬 Text</button>
           </div>
+          <button onclick="inviteFromContacts()" style="width:100%;margin-top:10px;padding:12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:10px;color:var(--white);font-family:'Epilogue',sans-serif;font-size:14px;font-weight:700;cursor:pointer">📱 Invite from Contacts</button>
         </div>
 
         <!-- Share to apps -->
@@ -4545,6 +4546,8 @@ let _notifsLoaded = false;
 
 async function buildNotifications() {
   const notifs = [];
+  let _readIds;
+  try { _readIds = new Set(JSON.parse(localStorage.getItem('raven_read_notifs') || '[]')); } catch(e) { _readIds = new Set(); }
   try {
     // Friend requests
     const { data: reqs } = await db.from('raven_friends')
@@ -4646,7 +4649,16 @@ function renderNotifList(list) {
 
 function _notifAction(id) {
   const n = _allNotifs.find(x => x.id === id);
-  if (n && n.action) { n.unread = false; n.action(); updateNotifBadge(); }
+  if (n) {
+    n.unread = false;
+    updateNotifBadge();
+    // Persist read state so it doesn't reappear
+    try {
+      const read = JSON.parse(localStorage.getItem('raven_read_notifs') || '[]');
+      if (!read.includes(id)) { read.push(id); localStorage.setItem('raven_read_notifs', JSON.stringify(read.slice(-100))); }
+    } catch(e) {}
+    if (n.action) n.action();
+  }
 }
 
 function filterNotifs(type, btn) {
@@ -4717,23 +4729,25 @@ async function loadInvitePage() {
   if (linkEl) linkEl.textContent = getMyInviteLink();
   // Also try to get raven_id from DB if not in localStorage
   try {
-    const{data:prof}=await db.from('profiles').select('raven_id').eq('id',currentUser.id).maybeSingle();
-    if(prof?.raven_id){try{const ex=JSON.parse(localStorage.getItem('raven_profile')||'{}');ex.raven_id=prof.raven_id;localStorage.setItem('raven_profile',JSON.stringify(ex));}catch(e){}
-    if(linkEl)linkEl.textContent='https://ravensplit.com/friend-invite/'+prof.raven_id;}
-    else if(linkEl)linkEl.textContent=getMyInviteLink()||'https://ravensplit.com/dashboard.html';
-  }catch(e){if(linkEl)linkEl.textContent=getMyInviteLink()||'https://ravensplit.com/dashboard.html';}
+    const { data: prof } = await db.from('profiles').select('raven_id').eq('id', currentUser.id).maybeSingle();
+    if (prof?.raven_id) {
+      const existing = JSON.parse(localStorage.getItem('raven_profile') || '{}');
+      existing.raven_id = prof.raven_id;
+      localStorage.setItem('raven_profile', JSON.stringify(existing));
+      if (linkEl) linkEl.textContent = 'https://ravensplit.com/friend-invite/' + prof.raven_id;
+    }
+  } catch(e) {}
   loadInviteSuggestions();
 }
 
 async function loadInviteSuggestions() {
   const container = document.getElementById('invite-suggestions');
   if (!container) return;
-  container.innerHTML='';
   try {
     // People from recent bills who aren't friends yet
     const { data: bills } = await db.from('bills').select('id').eq('creator_phone', currentUser.email).limit(10);
     const billIds = (bills||[]).map(b=>b.id);
-    if(!billIds.length){container.innerHTML='<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px 0">Once you create a bill, people from it will appear here.</div>';return;}
+    if (!billIds.length) { container.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:16px">Create your first bill to see suggestions here</div>'; return; }
     const { data: parts } = await db.from('participants').select('name,phone').in('bill_id', billIds).limit(30);
     // Deduplicate by name
     const seen = new Set();
@@ -4759,6 +4773,32 @@ function invitePerson(name, phone, btn) {
     navigator.clipboard.writeText(msg).then(() => showToast('Copied invite for ' + name, 'success'));
   }
   btn.textContent = '✓ Sent'; btn.style.color = 'var(--green)'; btn.style.borderColor = 'rgba(48,209,88,0.3)'; btn.disabled = true;
+}
+
+async function inviteFromContacts() {
+  const link = getMyInviteLink();
+  const msg = 'Join me on RAVEN — AI splits bills from photos instantly! 🪶\n' + link;
+  // Try native Contact Picker API first (Chrome Android / some browsers)
+  if ('contacts' in navigator && navigator.contacts) {
+    try {
+      const contacts = await navigator.contacts.select(['name', 'tel'], { multiple: true });
+      if (!contacts || contacts.length === 0) return;
+      for (const c of contacts) {
+        const tel = c.tel?.[0];
+        const name = c.name?.[0] || 'friend';
+        if (tel) {
+          window.open('sms:' + tel + '?&body=' + encodeURIComponent('Hey ' + name + '! ' + msg), '_blank');
+        }
+      }
+      return;
+    } catch(e) { /* fall through */ }
+  }
+  // Fallback: open SMS with just the link (no specific contact)
+  if (navigator.share) {
+    navigator.share({ title: 'Join me on RAVEN', text: msg, url: link }).catch(()=>{});
+  } else {
+    window.open('sms:?&body=' + encodeURIComponent(msg), '_blank');
+  }
 }
 
 function copyInviteLink() {
