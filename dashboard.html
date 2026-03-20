@@ -990,11 +990,9 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
       </div>
       <div id="trips-list" class="bills-list"><div class="loading"><div class="spinner"></div> Loading trips...</div></div>
     </div>
-    </div><!-- /.main-inner -->
-  
+
     <!-- NOTIFICATIONS PAGE -->
     <div id="page-notifications" class="page">
-      <div class="main-inner">
       <div class="page-header">
         <h1 class="page-title">Notifications <span id="notif-unread-count"></span></h1>
         <button id="mark-all-read-btn" onclick="markAllNotifsRead()" style="padding:8px 18px;background:rgba(124,58,237,0.12);border:1px solid rgba(124,58,237,0.25);border-radius:8px;color:var(--purple3);font-family:'Epilogue',sans-serif;font-size:13px;font-weight:600;cursor:pointer">✓ Mark all read</button>
@@ -1014,10 +1012,8 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
       </div>
     </div>
 
-      </div>
     <!-- INVITE PAGE -->
     <div id="page-invite" class="page">
-      <div class="main-inner">
       <div class="page-header"><h1 class="page-title">Invite <span>Friends</span></h1></div>
       <div style="max-width:560px;display:flex;flex-direction:column;gap:20px">
 
@@ -1064,6 +1060,7 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
     </div>
   </div><!-- /.page-invite -->
 
+    </div><!-- /.main-inner -->
   </main>
 
   <!-- PROFILE CARD MODAL -->
@@ -2192,7 +2189,7 @@ function showPage(page) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('page-' + page).classList.add('active');
-  window.scrollTo(0, 0);
+  window.scrollTo(0,0);
   // Highlight nav item by matching onclick attribute
   document.querySelectorAll('.nav-item').forEach(n => {
     const oc = n.getAttribute('onclick') || '';
