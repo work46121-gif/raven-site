@@ -172,11 +172,30 @@ const server = http.createServer(async (req, res) => {
   if (urlPath === '/onboarding.html' || urlPath === '/onboarding') return serveStaticFile(req, res, './onboarding.html');
   if (urlPath === '/raven-demo.html' || urlPath === '/raven-demo') return serveStaticFile(req, res, './raven-demo.html');
 
+  // dashboard.html — always fetch fresh from raw GitHub so local stale copy is never used
+  if (urlPath === '/dashboard.html' || urlPath === '/dashboard') {
+    const rawUrl = 'https://raw.githubusercontent.com/work46121-gif/raven-site/main/dashboard.html';
+    const ghReq = https.get(rawUrl, ghRes => {
+      if (ghRes.statusCode !== 200) {
+        // Fallback to local if GitHub fails
+        return serveStaticFile(req, res, './dashboard.html');
+      }
+      let body = '';
+      ghRes.setEncoding('utf8');
+      ghRes.on('data', chunk => body += chunk);
+      ghRes.on('end', () => {
+        body = body.replace(/<script[^>]*src="\/cdn-cgi\/[^"]*"[^>]*><\/script>/gi, '');
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-cache, no-store, must-revalidate' });
+        res.end(body);
+      });
+    });
+    ghReq.on('error', () => serveStaticFile(req, res, './dashboard.html'));
+    return;
+  }
+
   if (path.extname(urlPath)) {
     const filePath = '.' + urlPath;
-    const ext = path.extname(urlPath).toLowerCase();
-    // Always fetch HTML from GitHub — never serve stale local copies
-    if (ext !== '.html' && fs.existsSync(filePath)) return serveStaticFile(req, res, filePath);
+    if (fs.existsSync(filePath)) return serveStaticFile(req, res, filePath);
     // Fetch from GitHub Pages server-side, strip Cloudflare injection
     const ghUrl = 'https://work46121-gif.github.io/raven-site' + urlPath;
     const ghReq = https.get(ghUrl, ghRes => {
