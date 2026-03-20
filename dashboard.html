@@ -60,7 +60,7 @@
 <link rel="apple-touch-icon" sizes="152x152" href="/icon-152.png">
 <link rel="apple-touch-icon" sizes="192x192" href="/icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Epilogue:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/supabase.js"></script>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
@@ -1294,24 +1294,21 @@ const SUPABASE_URL = 'https://ffjpzkpdumdcwnakpaje.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZmanB6a3BkdW1kY3duYWtwYWplIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5ODc4OTcsImV4cCI6MjA4ODU2Mzg5N30.JtDLVu4K1TJ8emcN_mvSHBu6e0y8-jPQv-ypoc9p0RU';
 const { createClient } = supabase;
 
-// ITP-safe storage: falls back to in-memory when localStorage is blocked
-const _memStore = {};
-const _safeStorage = {
-  getItem: (k) => { try { return localStorage.getItem(k); } catch(e) { return _memStore[k] ?? null; } },
-  setItem: (k, v) => { try { localStorage.setItem(k, v); } catch(e) { _memStore[k] = v; } },
-  removeItem: (k) => { try { localStorage.removeItem(k); } catch(e) { delete _memStore[k]; } }
+// Memory fallback in case localStorage is unavailable
+const _mem = {};
+const _store = {
+  getItem: k => { try { return localStorage.getItem(k); } catch(e) { return _mem[k]??null; } },
+  setItem: (k,v) => { try { localStorage.setItem(k,v); } catch(e) { _mem[k]=v; } },
+  removeItem: k => { try { localStorage.removeItem(k); } catch(e) { delete _mem[k]; } }
 };
-
 let db;
 try {
   db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-    auth: { flowType: 'implicit', detectSessionInUrl: true, persistSession: true, autoRefreshToken: true, storage: _safeStorage }
+    auth: { flowType:'implicit', detectSessionInUrl:true, persistSession:true, autoRefreshToken:true, storage:_store }
   });
 } catch(e) {
-  console.warn('Supabase init failed:', e.message);
-  try { Object.keys(localStorage).forEach(k => { if (k.startsWith('sb-') || k.includes('supabase')) localStorage.removeItem(k); }); } catch(e2) {}
-  try { db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { storage: _safeStorage } }); }
-  catch(e3) { console.error('Fatal: Supabase could not initialize'); }
+  try { Object.keys(localStorage).forEach(k=>{ if(k.startsWith('sb-')||k.includes('supabase')) localStorage.removeItem(k); }); } catch(e2){}
+  try { db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth:{storage:_store} }); } catch(e3){ console.error('Fatal: Supabase failed'); }
 }
 
 const BACKEND = 'https://raven-backend-production-fb1f.up.railway.app';
@@ -1449,7 +1446,7 @@ async function handlePendingJoinIfAny(userId, userEmail, knownDisplayName) {
       clearPendingJoin();
       // Save trip ID to localStorage immediately (works without any DB schema changes)
       try {
-        const localProfile = JSON.parse(_safeStorage.getItem('raven_profile') || '{}');
+        const localProfile = JSON.parse(localStorage.getItem('raven_profile') || '{}');
         const localJoined = Array.isArray(localProfile.joined_trips) ? localProfile.joined_trips : [];
         if (!localJoined.includes(pending.tripId)) localJoined.push(pending.tripId);
         localStorage.setItem('raven_profile', JSON.stringify({ ...localProfile, joined_trips: localJoined }));
@@ -1505,14 +1502,14 @@ async function checkOnboardingAndShow(userId) {
   // First handle any pending trip join — this may redirect away
   let knownName = '';
   try {
-    const local = JSON.parse(_safeStorage.getItem('raven_profile') || '{}');
+    const local = JSON.parse(localStorage.getItem('raven_profile') || '{}');
     knownName = local.first_name || '';
   } catch(e) {}
   const redirected = await handlePendingJoinIfAny(userId, currentUser.email, knownName);
   if (redirected) return;
 
   try {
-    const local = JSON.parse(_safeStorage.getItem('raven_profile') || '{}');
+    const local = JSON.parse(localStorage.getItem('raven_profile') || '{}');
     if (local.user_id === userId && local.onboarding_complete) { showDashboard(); return; }
   } catch(e) {}
   try {
@@ -1534,13 +1531,13 @@ async function checkOnboardingAndShow(userId) {
         } catch(e) {}
       }
       if (profile.onboarding_complete) {
-        const existing = JSON.parse(_safeStorage.getItem('raven_profile') || '{}');
+        const existing = JSON.parse(localStorage.getItem('raven_profile') || '{}');
         localStorage.setItem('raven_profile', JSON.stringify({ ...existing, user_id: userId, onboarding_complete: true, first_name: profile.first_name || existing.first_name || '', raven_id: profile.raven_id || existing.raven_id || '', email: currentUser.email }));
         showDashboard(); return;
       } else { window.location.href = 'onboarding.html'; return; }
     }
   } catch(e) { console.log('Profile check error:', e); }
-  const hasLocalData = _safeStorage.getItem('raven_profile');
+  const hasLocalData = localStorage.getItem('raven_profile');
   if (hasLocalData) showDashboard(); else window.location.href = 'onboarding.html';
 }
 
@@ -1693,7 +1690,7 @@ async function handleSignup() {
       }
       if (!ravenId) ravenId = base + Date.now().toString().slice(-4);
       await db.from('profiles').upsert({ id: data.user.id, email, first_name: firstName, raven_id: ravenId, onboarding_complete: false, updated_at: new Date().toISOString() }, { onConflict: 'id' });
-      const existingLocal = JSON.parse(_safeStorage.getItem('raven_profile') || '{}');
+      const existingLocal = JSON.parse(localStorage.getItem('raven_profile') || '{}');
       localStorage.setItem('raven_profile', JSON.stringify({ ...existingLocal, first_name: firstName, raven_id: ravenId, user_id: data.user.id }));
     } catch(e) {}
   }
@@ -1770,7 +1767,7 @@ async function openPayModal(participantId, billId, amount) {
   if (!profile || (!profile.venmo && !profile.cashapp && !profile.zelle && !profile.applepay)) {
     if (bill?.creator_phone === currentUser?.email) {
       try {
-        const local = JSON.parse(_safeStorage.getItem('raven_profile') || '{}');
+        const local = JSON.parse(localStorage.getItem('raven_profile') || '{}');
         if (local.venmo || local.cashapp || local.zelle || local.applepay) profile = { ...profile, ...local };
       } catch(e) {}
     }
@@ -1840,7 +1837,7 @@ async function loadSettings() {
   document.getElementById('set-email').value = currentUser.email;
   document.getElementById('set-email-display').textContent = currentUser.email;
   try {
-    const local = JSON.parse(_safeStorage.getItem('raven_profile') || '{}');
+    const local = JSON.parse(localStorage.getItem('raven_profile') || '{}');
     if (local.first_name) document.getElementById('set-first').value = local.first_name;
     if (local.last_name) document.getElementById('set-last').value = local.last_name;
     if (local.phone) document.getElementById('set-phone').value = local.phone;
@@ -1908,7 +1905,7 @@ async function handleAvatarUpload(event) {
     const base64 = resized;
     try {
       await db.from('profiles').upsert({ id: currentUser.id, avatar_url: base64, updated_at: new Date().toISOString() }, { onConflict: 'id' });
-      const existing = JSON.parse(_safeStorage.getItem('raven_profile') || '{}');
+      const existing = JSON.parse(localStorage.getItem('raven_profile') || '{}');
       localStorage.setItem('raven_profile', JSON.stringify({ ...existing, avatar_url: base64 }));
       renderAvatar(base64, null);
       showToast('📷 Profile photo updated!', 'success');
@@ -1948,7 +1945,7 @@ async function saveSettings() {
 
   try {
     await db.from('profiles').upsert(data, { onConflict: 'id' });
-    const existing = JSON.parse(_safeStorage.getItem('raven_profile') || '{}');
+    const existing = JSON.parse(localStorage.getItem('raven_profile') || '{}');
     localStorage.setItem('raven_profile', JSON.stringify({ ...existing, ...data }));
     document.getElementById('settings-saved').style.display = 'block';
     setTimeout(() => document.getElementById('settings-saved').style.display = 'none', 3000);
@@ -2075,7 +2072,7 @@ async function viewBillPage(billId) {
   const { data: bill } = await db.from('bills').select('share_token').eq('id', billId).single();
   const token = bill?.share_token ? '?t=' + bill.share_token : '';
   let url = FRONTEND + '/bill/' + billId + token;
-  try { const profile = JSON.parse(_safeStorage.getItem('raven_profile') || '{}'); if (profile.first_name) url += (token ? '&' : '?') + 'name=' + encodeURIComponent(profile.first_name); } catch(e) {}
+  try { const profile = JSON.parse(localStorage.getItem('raven_profile') || '{}'); if (profile.first_name) url += (token ? '&' : '?') + 'name=' + encodeURIComponent(profile.first_name); } catch(e) {}
   window.location.href = url;
 }
 
@@ -2084,14 +2081,11 @@ async function handleLogout() { localStorage.removeItem('raven_profile'); await 
 function showAuth() { document.getElementById('auth-screen').style.display = 'flex'; document.getElementById('dashboard-screen').style.display = 'none'; }
 
 async function showDashboard() {
-  const authEl = document.getElementById('auth-screen');
-  const dashEl = document.getElementById('dashboard-screen');
-  authEl.style.display = 'none';
-  authEl.style.visibility = 'hidden';
-  authEl.style.pointerEvents = 'none';
-  dashEl.style.display = 'block';
-  dashEl.style.visibility = 'visible';
-  dashEl.style.zIndex = '1';
+  const _auth = document.getElementById('auth-screen');
+  const _dash = document.getElementById('dashboard-screen');
+  _auth.style.cssText += ';display:none!important;visibility:hidden!important;pointer-events:none!important';
+  _dash.style.display = 'block';
+  _dash.style.visibility = 'visible';
   document.getElementById('sidebar-avatar').textContent = currentUser.email[0].toUpperCase();
   const mobAvatar = document.getElementById('mob-user-avatar');
   if (mobAvatar) mobAvatar.textContent = currentUser.email[0].toUpperCase();
@@ -2103,7 +2097,7 @@ async function showDashboard() {
 
   // Always fetch full profile from DB on load — avatar_url may not be in localStorage
   try {
-    const local = JSON.parse(_safeStorage.getItem('raven_profile') || '{}');
+    const local = JSON.parse(localStorage.getItem('raven_profile') || '{}');
     // Show cached avatar immediately while we fetch
     if (local.avatar_url) renderAvatar(local.avatar_url, local.first_name);
 
@@ -2113,7 +2107,7 @@ async function showDashboard() {
       const firstName = profile.first_name || local.first_name || '';
       const avatarUrl = profile.avatar_url || local.avatar_url || '';
       // Update localStorage with latest
-      const existing = JSON.parse(_safeStorage.getItem('raven_profile') || '{}');
+      const existing = JSON.parse(localStorage.getItem('raven_profile') || '{}');
       localStorage.setItem('raven_profile', JSON.stringify({ ...existing, first_name: firstName, avatar_url: avatarUrl, user_id: currentUser.id }));
       // Render avatar
       if (avatarUrl) renderAvatar(avatarUrl, firstName);
@@ -2211,8 +2205,8 @@ function showPage(page) {
 }
 
 async function loadAllData() {
-  loadOverview().catch(e => console.warn('loadOverview:', e));
-  loadActiveBills().catch(e => console.warn('loadActiveBills:', e));
+  loadOverview().catch(e=>console.warn('loadOverview:',e));
+  loadActiveBills().catch(e=>console.warn('loadActiveBills:',e));
 }
 
 async function loadOverview() {
@@ -2308,7 +2302,7 @@ function renderBillCard(b) {
   const isFullyPaid = owed === 0 && total > 0;
   const isCreator = b.creator_phone === currentUser.email;
   let billUrl = FRONTEND + '/bill/' + b.id + (b.share_token ? '?t=' + b.share_token : '');
-  try { const profile = JSON.parse(_safeStorage.getItem('raven_profile') || '{}'); if (profile.first_name) billUrl += (b.share_token ? '&' : '?') + 'name=' + encodeURIComponent(profile.first_name); } catch(e) {}
+  try { const profile = JSON.parse(localStorage.getItem('raven_profile') || '{}'); if (profile.first_name) billUrl += (b.share_token ? '&' : '?') + 'name=' + encodeURIComponent(profile.first_name); } catch(e) {}
   billUrlMap[b.id] = billUrl;
   const owedDisplay = isFullyPaid
     ? '<span style="color:var(--green);font-weight:700">✓ All paid</span>'
@@ -2476,7 +2470,7 @@ function closeBillModal() { document.getElementById('bill-modal').classList.remo
 
 async function shareBillLink(billId, billName, shareToken) {
   const url = FRONTEND + '/bill/' + billId + (shareToken ? '?t=' + shareToken : '');
-  const myName = (() => { try { return JSON.parse(_safeStorage.getItem('raven_profile')||'{}').first_name || 'Someone'; } catch(e) { return 'Someone'; } })();
+  const myName = (() => { try { return JSON.parse(localStorage.getItem('raven_profile')||'{}').first_name || 'Someone'; } catch(e) { return 'Someone'; } })();
   // Send URL alone — iMessage only generates rich preview card when URL is by itself
   const msg = myName + ' wants to split "' + (billName||'a bill') + '" with you on RAVEN 🪶\nSplit bills free with RAVEN | ravensplit.com';
   if (navigator.share) {
@@ -2494,7 +2488,7 @@ async function shareTripLink(tripId) {
   const trip = tripDataMap[tripId];
   if (!trip) return showToast('Trip not found', 'error');
   const url = FRONTEND + '/trip/' + tripId + '?t=' + trip.share_token;
-  const myName = (() => { try { return JSON.parse(_safeStorage.getItem('raven_profile')||'{}').first_name || 'Someone'; } catch(e) { return 'Someone'; } })();
+  const myName = (() => { try { return JSON.parse(localStorage.getItem('raven_profile')||'{}').first_name || 'Someone'; } catch(e) { return 'Someone'; } })();
   const titleMsg = myName + ' invited you to join "' + trip.name + '" on RAVEN 🪶\nSplit bills free with RAVEN | ravensplit.com';
 
   // If trip has a cover photo, share image file + text with URL embedded
@@ -3025,7 +3019,7 @@ async function shareRavenIdSMS() {
   const el = document.getElementById('my-raven-id-display');
   const ravenId = (el ? el.textContent : '').replace('@','').trim();
   if (!ravenId || ravenId === 'loading...') { showToast('Set your Raven ID in Settings first', 'error'); showPage('settings'); return; }
-  const name = (() => { try { return JSON.parse(_safeStorage.getItem('raven_profile')||'{}').first_name || 'Someone'; } catch(e) { return 'Someone'; } })();
+  const name = (() => { try { return JSON.parse(localStorage.getItem('raven_profile')||'{}').first_name || 'Someone'; } catch(e) { return 'Someone'; } })();
   const inviteUrl = FRONTEND + '/friend-invite/' + encodeURIComponent(ravenId);
   const msg = name + ' wants to connect with you on RAVEN 🪶\nTap to add @' + ravenId + ' as a friend\nSplit bills free with RAVEN | ravensplit.com';
   if (navigator.share) {
@@ -3733,7 +3727,7 @@ async function loadTrips() {
 
   // 2. Load joined trip IDs — from localStorage only (no DB column required)
   try {
-    const local = JSON.parse(_safeStorage.getItem('raven_profile') || '{}');
+    const local = JSON.parse(localStorage.getItem('raven_profile') || '{}');
     const joinedIds = Array.isArray(local.joined_trips) ? local.joined_trips : [];
     const newIds = joinedIds.filter(id => !createdIds.has(id));
     if (newIds.length > 0) {
@@ -3857,7 +3851,7 @@ async function createTrip() {
     showToast('✈️ Trip "' + name + '" created!', 'success');
     const tripUrl = FRONTEND + '/trip/' + tripId + '?t=' + shareToken;
     setTimeout(async () => {
-      const myName = (() => { try { return JSON.parse(_safeStorage.getItem('raven_profile')||'{}').first_name || 'Someone'; } catch(e) { return 'Someone'; } })();
+      const myName = (() => { try { return JSON.parse(localStorage.getItem('raven_profile')||'{}').first_name || 'Someone'; } catch(e) { return 'Someone'; } })();
       const msg = myName + ' invited you to join "' + name + '" on RAVEN 🪶\n\nSplit bills free with RAVEN | ravensplit.com\n\n' + tripUrl;
       if (navigator.share) {
         try { await navigator.share({ text: msg }); return; } catch(e) {}
@@ -3877,7 +3871,7 @@ function openTrip(tripId) {
   const base = tripUrlMap[tripId];
   if (!base) return;
   try {
-    const profile = JSON.parse(_safeStorage.getItem('raven_profile') || '{}');
+    const profile = JSON.parse(localStorage.getItem('raven_profile') || '{}');
     const name = (profile.first_name || '').trim();
     window.location.href = name ? base + '&name=' + encodeURIComponent(name) : base;
   } catch(e) { window.location.href = base; }
@@ -4575,22 +4569,21 @@ async function buildNotifications() {
 
   try {
     const { data: parts } = await db.from('participants')
-      .select('id,bill_id,name,amount,paid')
-      .eq('phone', currentUser.email).eq('paid', false).limit(10);
+      .select('id,bill_id,name,amount,paid').eq('phone', currentUser.email).eq('paid', false).limit(10);
     if (parts && parts.length > 0) {
-      const bIds = [...new Set(parts.map(p => p.bill_id).filter(Boolean))];
-      const { data: bData } = bIds.length ? await db.from('bills').select('id,name,created_at').in('id', bIds).order('created_at', {ascending:false}).limit(5) : {data:[]};
-      const cutoff = new Date(Date.now() - 7*86400000).toISOString();
-      const recentIds = new Set((bData||[]).filter(b=>b.created_at>cutoff).map(b=>b.id));
+      const bIds = [...new Set(parts.map(p=>p.bill_id).filter(Boolean))];
+      const { data: bData } = bIds.length ? await db.from('bills').select('id,name,created_at').in('id', bIds).order('created_at',{ascending:false}).limit(5) : {data:[]};
+      const cutoff = new Date(Date.now()-7*86400000).toISOString();
+      const recent = new Set((bData||[]).filter(b=>b.created_at>cutoff).map(b=>b.id));
       const bMap = {}; (bData||[]).forEach(b=>{bMap[b.id]=b;});
       for (const p of parts) {
-        if (!recentIds.has(p.bill_id)) continue;
+        if (!recent.has(p.bill_id)) continue;
         notifs.push({ id:'bill-'+p.id, type:'bill', icon:'🧾', iconBg:'rgba(48,209,88,0.1)',
           title:'New bill: '+(bMap[p.bill_id]?.name||'Bill'), sub:'You owe $'+parseFloat(p.amount).toFixed(2),
           time:bMap[p.bill_id]?.created_at||new Date().toISOString(), unread:true, action:()=>showPage('active-bills') });
       }
     }
-  } catch(e) { console.error('notif bills error:',e); }
+  } catch(e) { console.error('notif bills:',e); }
 
   try {
     // My bills — recent payments received
@@ -4725,7 +4718,7 @@ async function refreshNotifBadge() {
 
 function getMyInviteLink() {
   try {
-    const profile = JSON.parse(_safeStorage.getItem('raven_profile') || '{}');
+    const profile = JSON.parse(localStorage.getItem('raven_profile') || '{}');
     const ravenId = profile.raven_id || '';
     if (ravenId) return 'https://ravensplit.com/friend-invite/' + ravenId;
     return 'https://ravensplit.com/dashboard.html';
@@ -4738,17 +4731,13 @@ async function loadInvitePage() {
   if (linkEl) linkEl.textContent = getMyInviteLink();
   try {
     const { data: prof, error } = await db.from('profiles').select('raven_id').eq('id', currentUser.id).maybeSingle();
-    if (error) throw error;
-    if (prof?.raven_id) {
-      const existing = JSON.parse(_safeStorage.getItem('raven_profile') || '{}');
-      existing.raven_id = prof.raven_id;
-      _safeStorage.setItem('raven_profile', JSON.stringify(existing));
+    if (!error && prof?.raven_id) {
+      try { const ex=JSON.parse(localStorage.getItem('raven_profile')||'{}'); ex.raven_id=prof.raven_id; localStorage.setItem('raven_profile',JSON.stringify(ex)); } catch(se){}
       if (linkEl) linkEl.textContent = 'https://ravensplit.com/friend-invite/' + prof.raven_id;
     } else {
       if (linkEl) linkEl.textContent = getMyInviteLink() || 'https://ravensplit.com/dashboard.html';
     }
   } catch(e) {
-    console.error('loadInvitePage error:', e);
     if (linkEl) linkEl.textContent = getMyInviteLink() || 'https://ravensplit.com/dashboard.html';
   }
   loadInviteSuggestions();
@@ -4759,26 +4748,20 @@ async function loadInviteSuggestions() {
   if (!container) return;
   container.innerHTML = '';
   try {
-    const { data: bills, error: bErr } = await db.from('bills').select('id').eq('creator_phone', currentUser.email).limit(10);
-    if (bErr) throw bErr;
+    const { data: bills } = await db.from('bills').select('id').eq('creator_phone', currentUser.email).limit(10);
     const billIds = (bills||[]).map(b=>b.id);
-    if (!billIds.length) { container.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px 0;line-height:1.6">Once you create a bill,<br>people from it will appear here.</div>'; return; }
-    const { data: parts, error: pErr } = await db.from('participants').select('name,phone').in('bill_id', billIds).limit(30);
-    if (pErr) throw pErr;
+    if (!billIds.length) { container.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px 0">Once you create a bill, people from it will appear here.</div>'; return; }
+    const { data: parts } = await db.from('participants').select('name,phone').in('bill_id', billIds).limit(30);
     const seen = new Set();
-    const people = (parts||[]).filter(p => {
-      if (!p.name || p.name.toLowerCase().startsWith('unknown')) return false;
-      if (seen.has(p.name.toLowerCase())) return false;
-      seen.add(p.name.toLowerCase()); return true;
-    }).slice(0, 6);
+    const people = (parts||[]).filter(p=>{ if(!p.name||seen.has(p.name.toLowerCase())) return false; seen.add(p.name.toLowerCase()); return true; }).slice(0,6);
     if (!people.length) { container.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px 0">No suggestions yet.</div>'; return; }
     const grads = ['linear-gradient(135deg,#7C3AED,#A855F7)','linear-gradient(135deg,#E8633A,#FF6B35)','linear-gradient(135deg,#0EA5E9,#7C3AED)','linear-gradient(135deg,#30D158,#0EA5E9)','linear-gradient(135deg,#F59E0B,#EF4444)','linear-gradient(135deg,#EC4899,#8B5CF6)'];
-    container.innerHTML = people.map((p,i) => `<div style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--dark2);border:1px solid var(--border);border-radius:10px">
+    container.innerHTML = people.map((p,i)=>`<div style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--dark2);border:1px solid var(--border);border-radius:10px">
       <div style="width:36px;height:36px;border-radius:50%;background:${grads[i%6]};display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0">${p.name[0].toUpperCase()}</div>
       <div style="flex:1;font-size:14px;font-weight:600">${p.name}</div>
       <button onclick="invitePerson('${p.name.replace(/'/g,"\'")}','${(p.phone||'').replace(/'/g,"\'")}',this)" style="padding:7px 14px;background:rgba(124,58,237,0.12);border:1px solid rgba(124,58,237,0.25);border-radius:8px;color:var(--purple3);font-family:'Epilogue',sans-serif;font-size:12px;font-weight:700;cursor:pointer">Invite</button>
     </div>`).join('');
-  } catch(e) { console.error('loadInviteSuggestions:', e); container.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:16px">Could not load suggestions</div>'; }
+  } catch(e) { container.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:16px">Could not load suggestions</div>'; }
 }
 
 function invitePerson(name, phone, btn) {
@@ -4977,7 +4960,7 @@ function appendChatMessage(msg, scroll = true) {
   if (empty) empty.remove();
 
   const container = document.getElementById('chat-messages');
-  const local = JSON.parse(_safeStorage.getItem('raven_profile') || '{}');
+  const local = JSON.parse(localStorage.getItem('raven_profile') || '{}');
   const isMe = msg.user_id === local.user_id;
   const time = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
@@ -5009,7 +4992,7 @@ async function sendChatMessage() {
   input.value = '';
   input.style.height = 'auto';
 
-  const local = JSON.parse(_safeStorage.getItem('raven_profile') || '{}');
+  const local = JSON.parse(localStorage.getItem('raven_profile') || '{}');
   const senderName = local.first_name || currentUser.email?.split('@')[0] || 'Someone';
 
   try {
