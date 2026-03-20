@@ -3701,25 +3701,51 @@ async function loadTrips() {
   const container = document.getElementById('trips-list');
   container.innerHTML = '<div class="loading"><div class="spinner"></div> Loading...</div>';
 
-  // 1. Load trips created by this user
-  const { data: createdTrips } = await db.from('trips').select('*').eq('creator_email', currentUser.email).order('created_at', { ascending: false });
-  let trips = createdTrips || [];
-  const createdIds = new Set(trips.map(t => t.id));
-
-  // 2. Load joined trip IDs — from localStorage only (no DB column required)
-  try {
-    const local = JSON.parse(localStorage.getItem('raven_profile') || '{}');
-    const joinedIds = Array.isArray(local.joined_trips) ? local.joined_trips : [];
-    const newIds = joinedIds.filter(id => !createdIds.has(id));
-    if (newIds.length > 0) {
-      const { data: joinedTrips } = await db.from('trips').select('*').in('id', newIds);
-      if (joinedTrips) trips = [...trips, ...joinedTrips];
-    }
-  } catch(e) { console.log('joined trips lookup:', e); }
-
-  // 3. Deduplicate and sort
+  let trips = [];
   const seen = new Set();
-  trips = trips.filter(t => { if (seen.has(t.id)) return false; seen.add(t.id); return true; });
+
+  try {
+    // 1. Trips created by this user
+    const { data: createdTrips, error: e1 } = await db.from('trips').select('*')
+      .eq('creator_email', currentUser.email)
+      .order('created_at', { ascending: false });
+    if (e1) console.warn('loadTrips creator query:', e1.message);
+    (createdTrips || []).forEach(t => { if (!seen.has(t.id)) { seen.add(t.id); trips.push(t); } });
+
+    // 2. Trips where member_emails JSON string contains this user's email (added via raven_id)
+    const emailEscaped = currentUser.email.toLowerCase().replace(/[%_]/g, '\\$&');
+    const { data: memberTrips, error: e2 } = await db.from('trips').select('*')
+      .ilike('member_emails', '%' + emailEscaped + '%')
+      .order('created_at', { ascending: false });
+    if (e2) console.warn('loadTrips member_emails query:', e2.message);
+    (memberTrips || []).forEach(t => { if (!seen.has(t.id)) { seen.add(t.id); trips.push(t); } });
+
+    // 3. Trips stored in localStorage joined_trips (joined via invite link)
+    try {
+      const local = JSON.parse(localStorage.getItem('raven_profile') || '{}');
+      const joinedIds = Array.isArray(local.joined_trips) ? local.joined_trips : [];
+      const newIds = joinedIds.filter(id => !seen.has(id));
+      if (newIds.length > 0) {
+        const { data: joinedTrips } = await db.from('trips').select('*').in('id', newIds);
+        (joinedTrips || []).forEach(t => { if (!seen.has(t.id)) { seen.add(t.id); trips.push(t); } });
+      }
+    } catch(e) {}
+
+    // 4. Trips from DB profiles.joined_trips column (extra fallback)
+    try {
+      const { data: prof } = await db.from('profiles').select('joined_trips').eq('id', currentUser.id).maybeSingle();
+      if (prof?.joined_trips) {
+        let dbJoined = typeof prof.joined_trips === 'string' ? JSON.parse(prof.joined_trips) : prof.joined_trips;
+        const extraIds = (dbJoined || []).filter(id => !seen.has(id));
+        if (extraIds.length > 0) {
+          const { data: extraTrips } = await db.from('trips').select('*').in('id', extraIds);
+          (extraTrips || []).forEach(t => { if (!seen.has(t.id)) { seen.add(t.id); trips.push(t); } });
+        }
+      }
+    } catch(e) {}
+
+  } catch(e) { console.warn('loadTrips error:', e); }
+
   trips.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
   if (trips.length === 0) {
