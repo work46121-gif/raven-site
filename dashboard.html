@@ -1031,7 +1031,6 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
             <button onclick="shareInviteNative()" style="flex:1;padding:12px;background:var(--purple);border:none;border-radius:10px;color:#fff;font-family:'Epilogue',sans-serif;font-size:14px;font-weight:700;cursor:pointer">📤 Share</button>
             <button onclick="shareInviteSMS()" style="flex:1;padding:12px;background:rgba(48,209,88,0.15);border:1px solid rgba(48,209,88,0.3);border-radius:10px;color:var(--green);font-family:'Epilogue',sans-serif;font-size:14px;font-weight:700;cursor:pointer">💬 Text</button>
           </div>
-          <button onclick="inviteFromContacts()" style="width:100%;margin-top:10px;padding:12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:10px;color:var(--white);font-family:'Epilogue',sans-serif;font-size:14px;font-weight:700;cursor:pointer">📱 Invite from Contacts</button>
         </div>
 
         <!-- Share to apps -->
@@ -1051,7 +1050,10 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
 
         <!-- People you might know -->
         <div class="form-card" style="padding:24px">
-          <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted2);margin-bottom:14px">Friends on Recent Bills</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+            <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted2)">Your Contacts</div>
+            <button onclick="loadPhoneContacts()" style="padding:6px 14px;background:rgba(124,58,237,0.15);border:1px solid rgba(124,58,237,0.3);border-radius:8px;color:var(--purple3);font-family:'Epilogue',sans-serif;font-size:12px;font-weight:700;cursor:pointer">📱 Browse Contacts</button>
+          </div>
           <div id="invite-suggestions" style="display:flex;flex-direction:column;gap:8px">
             <div class="loading"><div class="spinner"></div> Loading...</div>
           </div>
@@ -4545,9 +4547,8 @@ let _allNotifs = [];
 let _notifsLoaded = false;
 
 async function buildNotifications() {
+  const _readIds = _getReadNotifs();
   const notifs = [];
-  let _readIds;
-  try { _readIds = new Set(JSON.parse(localStorage.getItem('raven_read_notifs') || '[]')); } catch(e) { _readIds = new Set(); }
   try {
     // Friend requests
     const { data: reqs } = await db.from('raven_friends')
@@ -4649,16 +4650,25 @@ function renderNotifList(list) {
 
 function _notifAction(id) {
   const n = _allNotifs.find(x => x.id === id);
-  if (n) {
-    n.unread = false;
-    updateNotifBadge();
-    // Persist read state so it doesn't reappear
-    try {
-      const read = JSON.parse(localStorage.getItem('raven_read_notifs') || '[]');
-      if (!read.includes(id)) { read.push(id); localStorage.setItem('raven_read_notifs', JSON.stringify(read.slice(-100))); }
-    } catch(e) {}
-    if (n.action) n.action();
-  }
+  if (!n) return;
+  n.unread = false;
+  renderNotifList(_allNotifs);
+  updateNotifBadge();
+  _saveReadNotif(id);
+  if (n.action) n.action();
+}
+function _saveReadNotif(id) {
+  try {
+    const key = 'raven_read_notifs_' + (currentUser?.id || 'u');
+    const arr = JSON.parse(localStorage.getItem(key) || '[]');
+    if (!arr.includes(id)) { arr.push(id); localStorage.setItem(key, JSON.stringify(arr.slice(-200))); }
+  } catch(e) {}
+}
+function _getReadNotifs() {
+  try {
+    const key = 'raven_read_notifs_' + (currentUser?.id || 'u');
+    return new Set(JSON.parse(localStorage.getItem(key) || '[]'));
+  } catch(e) { return new Set(); }
 }
 
 function filterNotifs(type, btn) {
@@ -4669,7 +4679,7 @@ function filterNotifs(type, btn) {
 }
 
 function markAllNotifsRead() {
-  _allNotifs.forEach(n => { n.unread = false; });
+  _allNotifs.forEach(n => { n.unread = false; _saveReadNotif(n.id); });
   renderNotifList(_allNotifs);
   updateNotifBadge();
   showToast('All notifications marked as read', 'success');
@@ -4743,23 +4753,45 @@ async function loadInvitePage() {
 async function loadInviteSuggestions() {
   const container = document.getElementById('invite-suggestions');
   if (!container) return;
-  try {
-    // People from recent bills who aren't friends yet
-    const { data: bills } = await db.from('bills').select('id').eq('creator_phone', currentUser.email).limit(10);
-    const billIds = (bills||[]).map(b=>b.id);
-    if (!billIds.length) { container.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:16px">Create your first bill to see suggestions here</div>'; return; }
-    const { data: parts } = await db.from('participants').select('name,phone').in('bill_id', billIds).limit(30);
-    // Deduplicate by name
-    const seen = new Set();
-    const people = (parts||[]).filter(p => { if(seen.has(p.name.toLowerCase())) return false; seen.add(p.name.toLowerCase()); return true; }).slice(0, 6);
-    if (!people.length) { container.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:16px">No suggestions yet</div>'; return; }
-    const avatarGrads = ['linear-gradient(135deg,#7C3AED,#A855F7)','linear-gradient(135deg,#E8633A,#FF6B35)','linear-gradient(135deg,#0EA5E9,#7C3AED)','linear-gradient(135deg,#30D158,#0EA5E9)','linear-gradient(135deg,#F59E0B,#EF4444)','linear-gradient(135deg,#EC4899,#8B5CF6)'];
-    container.innerHTML = people.map((p,i) => `<div style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--dark2);border:1px solid var(--border);border-radius:10px">
-      <div style="width:36px;height:36px;border-radius:50%;background:${avatarGrads[i%6]};display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0">${p.name[0].toUpperCase()}</div>
-      <div style="flex:1;font-size:14px;font-weight:600">${p.name}</div>
-      <button onclick="invitePerson('${p.name.replace(/'/g,"\'")}','${(p.phone||'').replace(/'/g,"\'")}',this)" style="padding:7px 14px;background:rgba(124,58,237,0.12);border:1px solid rgba(124,58,237,0.25);border-radius:8px;color:var(--purple3);font-family:'Epilogue',sans-serif;font-size:12px;font-weight:700;cursor:pointer">Invite</button>
-    </div>`).join('');
-  } catch(e) { container.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:16px">Could not load suggestions</div>'; }
+  container.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px 0;line-height:1.7">Tap <b style="color:var(--white)">Browse Contacts</b> to pick people<br>from your phone to invite to RAVEN.</div>';
+}
+
+async function loadPhoneContacts() {
+  const container = document.getElementById('invite-suggestions');
+  if (!container) return;
+  const link = getMyInviteLink();
+  const msg = 'Hey! Join me on RAVEN — it splits bills from photos with AI, no app needed 🪶\n' + link;
+
+  // Try native Contact Picker API (Chrome Android, some iOS)
+  if ('contacts' in navigator && navigator.contacts) {
+    try {
+      container.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:16px">Opening contacts...</div>';
+      const contacts = await navigator.contacts.select(['name','tel'], { multiple: true });
+      if (!contacts || contacts.length === 0) {
+        container.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:16px">No contacts selected.</div>';
+        return;
+      }
+      const grads = ['linear-gradient(135deg,#7C3AED,#A855F7)','linear-gradient(135deg,#E8633A,#FF6B35)','linear-gradient(135deg,#0EA5E9,#7C3AED)','linear-gradient(135deg,#30D158,#0EA5E9)','linear-gradient(135deg,#F59E0B,#EF4444)','linear-gradient(135deg,#EC4899,#8B5CF6)'];
+      container.innerHTML = contacts.map((c,i) => {
+        const name = (c.name && c.name[0]) || 'Contact';
+        const tel = (c.tel && c.tel[0]) || '';
+        return `<div style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--dark2);border:1px solid var(--border);border-radius:10px">
+          <div style="width:36px;height:36px;border-radius:50%;background:${grads[i%6]};display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0">${name[0].toUpperCase()}</div>
+          <div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:600">${name}</div>${tel ? '<div style="font-size:11px;color:var(--muted)">' + tel + '</div>' : ''}</div>
+          <button onclick="invitePerson('${name.replace(/'/g,"\'")}','${tel.replace(/'/g,"\'")}',this)" style="padding:7px 14px;background:rgba(124,58,237,0.12);border:1px solid rgba(124,58,237,0.25);border-radius:8px;color:var(--purple3);font-family:'Epilogue',sans-serif;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0">Invite</button>
+        </div>`;
+      }).join('');
+      return;
+    } catch(e) {
+      // User denied or API unavailable — fall through
+    }
+  }
+
+  // Fallback: open share/SMS with the invite link
+  container.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:16px">Contact picker not supported on this device.<br>Use the Share or Text buttons above to invite friends.</div>';
+  if (navigator.share) {
+    navigator.share({ title: 'Join me on RAVEN', text: msg, url: link }).catch(()=>{});
+  }
 }
 
 function invitePerson(name, phone, btn) {
@@ -4773,32 +4805,6 @@ function invitePerson(name, phone, btn) {
     navigator.clipboard.writeText(msg).then(() => showToast('Copied invite for ' + name, 'success'));
   }
   btn.textContent = '✓ Sent'; btn.style.color = 'var(--green)'; btn.style.borderColor = 'rgba(48,209,88,0.3)'; btn.disabled = true;
-}
-
-async function inviteFromContacts() {
-  const link = getMyInviteLink();
-  const msg = 'Join me on RAVEN — AI splits bills from photos instantly! 🪶\n' + link;
-  // Try native Contact Picker API first (Chrome Android / some browsers)
-  if ('contacts' in navigator && navigator.contacts) {
-    try {
-      const contacts = await navigator.contacts.select(['name', 'tel'], { multiple: true });
-      if (!contacts || contacts.length === 0) return;
-      for (const c of contacts) {
-        const tel = c.tel?.[0];
-        const name = c.name?.[0] || 'friend';
-        if (tel) {
-          window.open('sms:' + tel + '?&body=' + encodeURIComponent('Hey ' + name + '! ' + msg), '_blank');
-        }
-      }
-      return;
-    } catch(e) { /* fall through */ }
-  }
-  // Fallback: open SMS with just the link (no specific contact)
-  if (navigator.share) {
-    navigator.share({ title: 'Join me on RAVEN', text: msg, url: link }).catch(()=>{});
-  } else {
-    window.open('sms:?&body=' + encodeURIComponent(msg), '_blank');
-  }
 }
 
 function copyInviteLink() {
