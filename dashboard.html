@@ -2,10 +2,10 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<script>if('serviceWorker'in navigator)navigator.serviceWorker.getRegistrations().then(r=>r.forEach(s=>s.unregister()));</script>
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<script>if('serviceWorker'in navigator)navigator.serviceWorker.getRegistrations().then(r=>r.forEach(s=>s.unregister()));</script>
 
 <!-- Sentry Error Monitoring -->
 <script
@@ -86,7 +86,6 @@
 html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(--black); color: var(--white); overflow-x: hidden; }
 
 #auth-screen {
-  min-height: 100vh;
   display: none;
   align-items: center;
   justify-content: center;
@@ -2091,7 +2090,7 @@ function showAuth() { document.getElementById('auth-screen').style.display = 'fl
 async function showDashboard() {
   document.getElementById('auth-screen').style.display = 'none';
   document.getElementById('dashboard-screen').style.display = 'block';
-  window.scrollTo(0, 0);
+  window.scrollTo(0,0);
   document.getElementById('sidebar-avatar').textContent = currentUser.email[0].toUpperCase();
   const mobAvatar = document.getElementById('mob-user-avatar');
   if (mobAvatar) mobAvatar.textContent = currentUser.email[0].toUpperCase();
@@ -2211,17 +2210,14 @@ function showPage(page) {
 }
 
 async function loadAllData() {
-  loadOverview().catch(e=>console.warn('loadOverview:',e));
-  loadActiveBills().catch(e=>console.warn('loadActiveBills:',e));
+  loadOverview().catch(e=>console.warn(e));
+  loadActiveBills().catch(e=>console.warn(e));
 }
 
 async function loadOverview() {
-  const [bRes, pRes] = await Promise.all([
-    db.from('bills').select('*, participants(*)').eq('creator_phone', currentUser.email).neq('status', 'deleted').order('created_at', { ascending: false }),
-    db.from('participants').select('bill_id').eq('phone', currentUser.email)
-  ]);
-  const { data: myBills } = bRes;
-  const { data: partRows } = pRes;
+  // Fetch both bills I created AND bills I'm a participant in
+  const [bR,pR]=await Promise.all([db.from('bills').select('*,participants(*)').eq('creator_phone',currentUser.email).neq('status','deleted').order('created_at',{ascending:false}),db.from('participants').select('bill_id').eq('phone',currentUser.email)]);
+  const{data:myBills}=bR;const{data:partRows}=pR;
   // Fetch participant bills (where I'm listed but not creator)
   const partBillIds = (partRows || []).map(r => r.bill_id).filter(id => !(myBills || []).find(b => b.id === id));
   let partBills = [];
@@ -4574,22 +4570,10 @@ async function buildNotifications() {
   } catch(e) {}
 
   try {
+    // Recent bills where I'm a participant and haven't paid
     const { data: parts } = await db.from('participants')
-      .select('id,bill_id,name,amount,paid').eq('phone', currentUser.email).eq('paid', false).limit(10);
-    if (parts && parts.length > 0) {
-      const bIds = [...new Set(parts.map(p=>p.bill_id).filter(Boolean))];
-      const { data: bData } = bIds.length ? await db.from('bills').select('id,name,created_at').in('id', bIds).order('created_at',{ascending:false}).limit(5) : {data:[]};
-      const cutoff = new Date(Date.now()-7*86400000).toISOString();
-      const recent = new Set((bData||[]).filter(b=>b.created_at>cutoff).map(b=>b.id));
-      const bMap = {}; (bData||[]).forEach(b=>{bMap[b.id]=b;});
-      for (const p of parts) {
-        if (!recent.has(p.bill_id)) continue;
-        notifs.push({ id:'bill-'+p.id, type:'bill', icon:'🧾', iconBg:'rgba(48,209,88,0.1)',
-          title:'New bill: '+(bMap[p.bill_id]?.name||'Bill'), sub:'You owe $'+parseFloat(p.amount).toFixed(2),
-          time:bMap[p.bill_id]?.created_at||new Date().toISOString(), unread:true, action:()=>showPage('active-bills') });
-      }
-    }
-  } catch(e) {}
+      .select('id,bill_id,name,amount,paid').eq('phone',currentUser.email).eq('paid',false).limit(10);
+    if(parts&&parts.length>0){const bIds=[...new Set(parts.map(p=>p.bill_id).filter(Boolean))];const{data:bData}=bIds.length?await db.from('bills').select('id,name,created_at').in('id',bIds).order('created_at',{ascending:false}).limit(5):{data:[]};const cutoff=new Date(Date.now()-7*86400000).toISOString();const recent=new Set((bData||[]).filter(b=>b.created_at>cutoff).map(b=>b.id));const bMap={};(bData||[]).forEach(b=>{bMap[b.id]=b;});for(const p of parts){if(!recent.has(p.bill_id))continue;notifs.push({id:'bill-'+p.id,type:'bill',icon:'🧾',iconBg:'rgba(48,209,88,0.1)',title:'New bill: '+(bMap[p.bill_id]?.name||'Bill'),sub:'You owe $'+parseFloat(p.amount).toFixed(2),time:bMap[p.bill_id]?.created_at||new Date().toISOString(),unread:true,action:()=>showPage('active-bills')});}} } catch(e) {}
 
   try {
     // My bills — recent payments received
@@ -4603,8 +4587,8 @@ async function buildNotifications() {
         .select('id,bill_id,name,amount,paid_at,payment_method')
         .in('bill_id', billIds)
         .eq('paid', true)
-        .not('paid_at', 'is', null)
-        .order('paid_at', { ascending: false })
+        .not('paid_at','is',null)
+        .order('paid_at',{ascending:false})
         .limit(10);
       for (const p of (paid || [])) {
         if (!p.paid_at) continue;
@@ -4735,35 +4719,32 @@ async function loadInvitePage() {
   if (!currentUser) return;
   const linkEl = document.getElementById('invite-link-text');
   if (linkEl) linkEl.textContent = getMyInviteLink();
+  // Also try to get raven_id from DB if not in localStorage
   try {
-    const { data: prof } = await db.from('profiles').select('raven_id').eq('id', currentUser.id).maybeSingle();
-    if (prof?.raven_id) {
-      try { const ex=JSON.parse(localStorage.getItem('raven_profile')||'{}'); ex.raven_id=prof.raven_id; localStorage.setItem('raven_profile',JSON.stringify(ex)); } catch(e){}
-      if (linkEl) linkEl.textContent = 'https://ravensplit.com/friend-invite/' + prof.raven_id;
-    } else {
-      if (linkEl) linkEl.textContent = getMyInviteLink() || 'https://ravensplit.com/dashboard.html';
-    }
-  } catch(e) {
-    if (linkEl) linkEl.textContent = getMyInviteLink() || 'https://ravensplit.com/dashboard.html';
-  }
+    const{data:prof}=await db.from('profiles').select('raven_id').eq('id',currentUser.id).maybeSingle();
+    if(prof?.raven_id){try{const ex=JSON.parse(localStorage.getItem('raven_profile')||'{}');ex.raven_id=prof.raven_id;localStorage.setItem('raven_profile',JSON.stringify(ex));}catch(e){} if(linkEl)linkEl.textContent='https://ravensplit.com/friend-invite/'+prof.raven_id;}
+    else{if(linkEl)linkEl.textContent=getMyInviteLink()||'https://ravensplit.com/dashboard.html';}
+  } catch(e){if(linkEl)linkEl.textContent=getMyInviteLink()||'https://ravensplit.com/dashboard.html';}
   loadInviteSuggestions();
 }
 
 async function loadInviteSuggestions() {
   const container = document.getElementById('invite-suggestions');
   if (!container) return;
-  container.innerHTML = '';
+  container.innerHTML='';
   try {
+    // People from recent bills who aren't friends yet
     const { data: bills } = await db.from('bills').select('id').eq('creator_phone', currentUser.email).limit(10);
     const billIds = (bills||[]).map(b=>b.id);
-    if (!billIds.length) { container.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px 0">Once you create a bill, people from it will appear here.</div>'; return; }
+    if(!billIds.length){container.innerHTML='<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px 0">Once you create a bill, people from it will appear here.</div>';return;}
     const { data: parts } = await db.from('participants').select('name,phone').in('bill_id', billIds).limit(30);
+    // Deduplicate by name
     const seen = new Set();
-    const people = (parts||[]).filter(p=>{ if(!p.name||seen.has(p.name.toLowerCase())) return false; seen.add(p.name.toLowerCase()); return true; }).slice(0,6);
-    if (!people.length) { container.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px 0">No suggestions yet.</div>'; return; }
-    const grads = ['linear-gradient(135deg,#7C3AED,#A855F7)','linear-gradient(135deg,#E8633A,#FF6B35)','linear-gradient(135deg,#0EA5E9,#7C3AED)','linear-gradient(135deg,#30D158,#0EA5E9)','linear-gradient(135deg,#F59E0B,#EF4444)','linear-gradient(135deg,#EC4899,#8B5CF6)'];
-    container.innerHTML = people.map((p,i)=>`<div style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--dark2);border:1px solid var(--border);border-radius:10px">
-      <div style="width:36px;height:36px;border-radius:50%;background:${grads[i%6]};display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0">${p.name[0].toUpperCase()}</div>
+    const people = (parts||[]).filter(p => { if(seen.has(p.name.toLowerCase())) return false; seen.add(p.name.toLowerCase()); return true; }).slice(0, 6);
+    if (!people.length) { container.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:16px">No suggestions yet</div>'; return; }
+    const avatarGrads = ['linear-gradient(135deg,#7C3AED,#A855F7)','linear-gradient(135deg,#E8633A,#FF6B35)','linear-gradient(135deg,#0EA5E9,#7C3AED)','linear-gradient(135deg,#30D158,#0EA5E9)','linear-gradient(135deg,#F59E0B,#EF4444)','linear-gradient(135deg,#EC4899,#8B5CF6)'];
+    container.innerHTML = people.map((p,i) => `<div style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--dark2);border:1px solid var(--border);border-radius:10px">
+      <div style="width:36px;height:36px;border-radius:50%;background:${avatarGrads[i%6]};display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0">${p.name[0].toUpperCase()}</div>
       <div style="flex:1;font-size:14px;font-weight:600">${p.name}</div>
       <button onclick="invitePerson('${p.name.replace(/'/g,"\'")}','${(p.phone||'').replace(/'/g,"\'")}',this)" style="padding:7px 14px;background:rgba(124,58,237,0.12);border:1px solid rgba(124,58,237,0.25);border-radius:8px;color:var(--purple3);font-family:'Epilogue',sans-serif;font-size:12px;font-weight:700;cursor:pointer">Invite</button>
     </div>`).join('');
@@ -4904,7 +4885,7 @@ let currentChatTripId = null;
 let chatSubscription = null;
 let chatMessages = [];
 
-function openChat(tid) { openTripChat(tid); }
+function openChat(t){openTripChat(t);}
 async function openTripChat(tripId) {
   currentChatTripId = tripId;
   const modal = document.getElementById('trip-chat-modal');
