@@ -1294,7 +1294,15 @@ const SUPABASE_URL = 'https://ffjpzkpdumdcwnakpaje.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZmanB6a3BkdW1kY3duYWtwYWplIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5ODc4OTcsImV4cCI6MjA4ODU2Mzg5N30.JtDLVu4K1TJ8emcN_mvSHBu6e0y8-jPQv-ypoc9p0RU';
 const { createClient } = supabase;
 
-// Safe client creation — clears corrupted auth tokens if they cause a parse error
+// ITP-safe storage: falls back to in-memory when localStorage is blocked by tracking prevention
+const _memStore = {};
+const _safeStorage = {
+  getItem: (k) => { try { return localStorage.getItem(k); } catch(e) { return _memStore[k] ?? null; } },
+  setItem: (k, v) => { try { localStorage.setItem(k, v); } catch(e) { _memStore[k] = v; } },
+  removeItem: (k) => { try { localStorage.removeItem(k); } catch(e) { delete _memStore[k]; } }
+};
+
+// Safe client creation
 let db;
 try {
   db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
@@ -1302,17 +1310,19 @@ try {
       flowType: 'implicit',
       detectSessionInUrl: true,
       persistSession: true,
-      autoRefreshToken: true
+      autoRefreshToken: true,
+      storage: _safeStorage
     }
   });
 } catch(e) {
   console.warn('Supabase init failed, clearing storage:', e.message);
-  // Clear potentially corrupted Supabase session tokens from localStorage
-  Object.keys(localStorage).forEach(k => {
-    if (k.startsWith('sb-') || k.includes('supabase')) localStorage.removeItem(k);
-  });
-  // Retry after clearing
-  try { db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY); } catch(e2) { console.error('Fatal: Supabase could not initialize'); }
+  try {
+    Object.keys(localStorage).forEach(k => {
+      if (k.startsWith('sb-') || k.includes('supabase')) localStorage.removeItem(k);
+    });
+  } catch(e2) {}
+  try { db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { storage: _safeStorage } }); }
+  catch(e3) { console.error('Fatal: Supabase could not initialize'); }
 }
 
 const BACKEND = 'https://raven-backend-production-fb1f.up.railway.app';
@@ -2206,19 +2216,17 @@ function showPage(page) {
 }
 
 async function loadAllData() {
-  // Run independently so one failure doesn't blank the whole dashboard
   loadOverview().catch(e => console.warn('loadOverview error:', e));
   loadActiveBills().catch(e => console.warn('loadActiveBills error:', e));
 }
 
 async function loadOverview() {
-  // Fetch both bills I created AND bills I'm a participant in
   const [billsResult, partResult] = await Promise.all([
     db.from('bills').select('*, participants(*)').eq('creator_phone', currentUser.email).neq('status', 'deleted').order('created_at', { ascending: false }),
     db.from('participants').select('bill_id').eq('phone', currentUser.email)
   ]);
   const { data: myBills } = billsResult;
-  const { data: partRows } = partResult; // safe — may be null if participants 400s
+  const { data: partRows } = partResult;
   // Fetch participant bills (where I'm listed but not creator)
   const partBillIds = (partRows || []).map(r => r.bill_id).filter(id => !(myBills || []).find(b => b.id === id));
   let partBills = [];
@@ -4571,7 +4579,7 @@ async function buildNotifications() {
   } catch(e) {}
 
   try {
-    // Recent bills where I'm a participant and haven't paid — two-step, no created_at (column doesn't exist)
+    // Recent bills where I'm a participant and haven't paid — two-step, no created_at
     const { data: parts } = await db.from('participants')
       .select('id,bill_id,name,amount,paid')
       .eq('phone', currentUser.email)
@@ -4732,7 +4740,7 @@ async function refreshNotifBadge() {
 
 function getMyInviteLink() {
   try {
-    const profile = JSON.parse(localStorage.getItem('raven_profile') || '{}');
+    const profile = JSON.parse(_safeStorage.getItem('raven_profile') || '{}');
     const ravenId = profile.raven_id || '';
     if (ravenId) return 'https://ravensplit.com/friend-invite/' + ravenId;
     return 'https://ravensplit.com/dashboard.html';
@@ -4747,9 +4755,9 @@ async function loadInvitePage() {
     const { data: prof, error } = await db.from('profiles').select('raven_id').eq('id', currentUser.id).maybeSingle();
     if (error) throw error;
     if (prof?.raven_id) {
-      const existing = JSON.parse(localStorage.getItem('raven_profile') || '{}');
+      const existing = JSON.parse(_safeStorage.getItem('raven_profile') || '{}');
       existing.raven_id = prof.raven_id;
-      localStorage.setItem('raven_profile', JSON.stringify(existing));
+      _safeStorage.setItem('raven_profile', JSON.stringify(existing));
       if (linkEl) linkEl.textContent = 'https://ravensplit.com/friend-invite/' + prof.raven_id;
     } else {
       if (linkEl) linkEl.textContent = getMyInviteLink() || 'https://ravensplit.com/dashboard.html';
@@ -4764,7 +4772,7 @@ async function loadInvitePage() {
 async function loadInviteSuggestions() {
   const container = document.getElementById('invite-suggestions');
   if (!container) return;
-  container.innerHTML = ''; // clear spinner immediately so tab never looks blank
+  container.innerHTML = ''; // clear spinner immediately
   try {
     const { data: bills, error: billsErr } = await db.from('bills').select('id').eq('creator_phone', currentUser.email).limit(10);
     if (billsErr) throw billsErr;
