@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ravensplit-v1';
+const CACHE_NAME = 'ravensplit-v3';
 const OFFLINE_URL = '/offline.html';
 
 // Files to cache immediately on install
