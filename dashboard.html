@@ -2218,7 +2218,7 @@ async function loadOverview() {
     db.from('participants').select('bill_id').eq('phone', currentUser.email)
   ]);
   const { data: myBills } = billsResult;
-  const { data: partRows } = partResult; // may be null if participants table 400s — that's ok
+  const { data: partRows } = partResult; // safe — may be null if participants 400s
   // Fetch participant bills (where I'm listed but not creator)
   const partBillIds = (partRows || []).map(r => r.bill_id).filter(id => !(myBills || []).find(b => b.id === id));
   let partBills = [];
@@ -4571,7 +4571,7 @@ async function buildNotifications() {
   } catch(e) {}
 
   try {
-    // Recent bills where I'm a participant and haven't paid — use two-step to avoid FK join 400s
+    // Recent bills where I'm a participant and haven't paid — two-step to avoid FK join 400
     const cutoff = new Date(Date.now() - 7 * 86400000).toISOString();
     const { data: parts } = await db.from('participants')
       .select('id,bill_id,name,amount,paid,created_at')
@@ -4770,24 +4770,32 @@ async function loadInviteSuggestions() {
     const { data: bills, error: billsErr } = await db.from('bills').select('id').eq('creator_phone', currentUser.email).limit(10);
     if (billsErr) throw billsErr;
     const billIds = (bills||[]).map(b=>b.id);
-    if (!billIds.length) { container.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px 0;line-height:1.6">Once you create a bill,<br>people from it will appear here as suggestions.</div>'; return; }
+    if (!billIds.length) {
+      container.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px 0;line-height:1.6">Once you create a bill,<br>people from it will appear here as suggestions.</div>';
+      return;
+    }
     const { data: parts, error: partsErr } = await db.from('participants').select('name,phone').in('bill_id', billIds).limit(30);
     if (partsErr) throw partsErr;
-    // Deduplicate by name, skip blank/unknown
     const seen = new Set();
     const people = (parts||[]).filter(p => {
       if (!p.name || p.name.toLowerCase().startsWith('unknown')) return false;
       if (seen.has(p.name.toLowerCase())) return false;
       seen.add(p.name.toLowerCase()); return true;
     }).slice(0, 6);
-    if (!people.length) { container.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px 0">No suggestions yet — add people to a bill to see them here.</div>'; return; }
+    if (!people.length) {
+      container.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px 0">No suggestions yet — add people to a bill to see them here.</div>';
+      return;
+    }
     const avatarGrads = ['linear-gradient(135deg,#7C3AED,#A855F7)','linear-gradient(135deg,#E8633A,#FF6B35)','linear-gradient(135deg,#0EA5E9,#7C3AED)','linear-gradient(135deg,#30D158,#0EA5E9)','linear-gradient(135deg,#F59E0B,#EF4444)','linear-gradient(135deg,#EC4899,#8B5CF6)'];
     container.innerHTML = people.map((p,i) => `<div style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--dark2);border:1px solid var(--border);border-radius:10px">
       <div style="width:36px;height:36px;border-radius:50%;background:${avatarGrads[i%6]};display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0">${p.name[0].toUpperCase()}</div>
       <div style="flex:1;font-size:14px;font-weight:600">${p.name}</div>
       <button onclick="invitePerson('${p.name.replace(/'/g,"\'")}','${(p.phone||'').replace(/'/g,"\'")}',this)" style="padding:7px 14px;background:rgba(124,58,237,0.12);border:1px solid rgba(124,58,237,0.25);border-radius:8px;color:var(--purple3);font-family:'Epilogue',sans-serif;font-size:12px;font-weight:700;cursor:pointer">Invite</button>
     </div>`).join('');
-  } catch(e) { container.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:16px">Could not load suggestions</div>'; }
+  } catch(e) {
+    console.error('loadInviteSuggestions error:', e);
+    container.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:16px">Could not load suggestions</div>';
+  }
 }
 
 function invitePerson(name, phone, btn) {
