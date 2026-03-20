@@ -4,18 +4,6 @@ const fs = require('fs');
 const path = require('path');
 const serveHandler = require('serve-handler');
 
-// Self-host Supabase JS to avoid third-party storage blocking (Edge/Firefox tracking prevention)
-const SUPABASE_LOCAL = './supabase.min.js';
-const SUPABASE_CDN = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
-if (!fs.existsSync(SUPABASE_LOCAL)) {
-  console.log('Downloading Supabase JS for self-hosting...');
-  const file = fs.createWriteStream(SUPABASE_LOCAL);
-  https.get(SUPABASE_CDN, res => {
-    res.pipe(file);
-    file.on('finish', () => { file.close(); console.log('✓ Supabase JS cached locally'); });
-  }).on('error', e => { console.error('Failed to cache Supabase JS:', e.message); });
-}
-
 const BACKEND = 'https://raven-backend-production-fb1f.up.railway.app';
 
 const { createClient } = require('@supabase/supabase-js');
@@ -176,16 +164,6 @@ const server = http.createServer(async (req, res) => {
   // API routes → proxy to backend
   const PROXY_PATHS = ['/sms', '/waitlist', '/remind', '/ping', '/demo/', '/demo/scan', '/gif-search', '/trip-info'];
   if (PROXY_PATHS.some(p => urlPath.startsWith(p))) return proxyToBackend(req, res);
-
-  // Serve self-hosted Supabase JS (eliminates third-party storage blocking)
-  if (urlPath === '/supabase.js') {
-    if (fs.existsSync(SUPABASE_LOCAL)) {
-      return serveStaticFile(req, res, SUPABASE_LOCAL);
-    } else {
-      // Fallback: proxy from CDN
-      return proxyToBackend(req, res);
-    }
-  }
 
   // Static files
   if (urlPath === '/sitemap.xml') return serveStaticFile(req, res, './sitemap.xml');
