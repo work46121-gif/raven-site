@@ -4571,29 +4571,28 @@ async function buildNotifications() {
   } catch(e) {}
 
   try {
-    // Recent bills where I'm a participant and haven't paid — two-step to avoid FK join 400
-    const cutoff = new Date(Date.now() - 7 * 86400000).toISOString();
+    // Recent bills where I'm a participant and haven't paid — two-step, no created_at (column doesn't exist)
     const { data: parts } = await db.from('participants')
-      .select('id,bill_id,name,amount,paid,created_at')
+      .select('id,bill_id,name,amount,paid')
       .eq('phone', currentUser.email)
       .eq('paid', false)
-      .gt('created_at', cutoff)
-      .order('created_at', { ascending: false })
-      .limit(5);
+      .limit(10);
     if (parts && parts.length > 0) {
-      const billIds = parts.map(p => p.bill_id).filter(Boolean);
+      const billIds = [...new Set(parts.map(p => p.bill_id).filter(Boolean))];
       const { data: billsData } = billIds.length
-        ? await db.from('bills').select('id,name').in('id', billIds)
+        ? await db.from('bills').select('id,name,created_at').in('id', billIds).order('created_at', { ascending: false }).limit(5)
         : { data: [] };
+      const cutoff = new Date(Date.now() - 7 * 86400000).toISOString();
+      const recentBillIds = new Set((billsData || []).filter(b => b.created_at > cutoff).map(b => b.id));
       const billMap = {};
-      (billsData || []).forEach(b => { billMap[b.id] = b.name; });
+      (billsData || []).forEach(b => { billMap[b.id] = b; });
       for (const p of parts) {
-        if (!billMap[p.bill_id]) continue;
+        if (!recentBillIds.has(p.bill_id)) continue;
         notifs.push({
           id: 'bill-' + p.id, type: 'bill', icon: '🧾', iconBg: 'rgba(48,209,88,0.1)',
-          title: 'New bill: ' + billMap[p.bill_id],
+          title: 'New bill: ' + (billMap[p.bill_id]?.name || 'Bill'),
           sub: 'You owe $' + parseFloat(p.amount).toFixed(2),
-          time: p.created_at, unread: true,
+          time: billMap[p.bill_id]?.created_at || new Date().toISOString(), unread: true,
           action: () => showPage('active-bills')
         });
       }
@@ -4612,7 +4611,7 @@ async function buildNotifications() {
         .select('id,bill_id,name,amount,paid_at,payment_method')
         .in('bill_id', billIds)
         .eq('paid', true)
-        .gt('paid_at', cutoff2)
+        .not('paid_at', 'is', null)
         .order('paid_at', { ascending: false })
         .limit(10);
       for (const p of (paid || [])) {
