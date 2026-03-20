@@ -3754,8 +3754,7 @@ async function loadTrips() {
     tripDataMap[t.id] = t;
     const isCreator = t.creator_email === currentUser.email;
     const safeId = JSON.stringify(t.id); // trip IDs are alphanumeric — safe in onclick
-    return '<div class="bill-card" style="position:relative">'
-      + '<button onclick="event.stopPropagation();openTripChat(' + safeId + ')" style="position:absolute;top:12px;right:12px;background:rgba(124,58,237,0.12);border:1px solid rgba(124,58,237,0.25);border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:15px;z-index:2;transition:all 0.2s" id="chat-btn-' + t.id + '" title="Group Chat">💬</button>'
+    return '<div class="bill-card">'
       + '<div style="cursor:pointer" onclick="openTrip(' + safeId + ')"><div class="bill-name">✈️ ' + t.name.replace(/</g,'&lt;') + ' <span class="bill-id">' + t.id + '</span>' + (!isCreator ? ' <span style="font-size:10px;color:#A855F7;background:rgba(124,58,237,0.1);border:1px solid rgba(124,58,237,0.2);padding:2px 7px;border-radius:8px">member</span>' : ' <span style="font-size:10px;color:#30D158;background:rgba(48,209,88,0.08);border:1px solid rgba(48,209,88,0.2);padding:2px 7px;border-radius:8px">admin</span>') + '</div>'
       + '<div class="bill-meta"><span>' + people.length + ' people</span><span>' + (t.receipt_count || 0) + ' receipts</span><span style="color:var(--green)">$' + parseFloat(t.total || 0).toFixed(2) + '</span></div></div>'
       + '<div class="bill-amount" style="cursor:pointer" onclick="openTrip(' + safeId + ')">$' + parseFloat(t.total || 0).toFixed(2) + '</div>'
