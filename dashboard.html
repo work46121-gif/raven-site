@@ -1462,6 +1462,7 @@ async function init() {
     }
     const { data: { session } } = await db.auth.getSession();
     if (session?.user) { currentUser = session.user; await checkOnboardingAndShow(currentUser.id); }
+    else { showAuth(); }
     db.auth.onAuthStateChange(async (event, session) => {
       try {
         if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session?.user) {
