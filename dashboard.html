@@ -4732,39 +4732,62 @@ async function loadInvitePage() {
   if (!currentUser) return;
   const linkEl = document.getElementById('invite-link-text');
   if (linkEl) linkEl.textContent = getMyInviteLink();
-  // Also try to get raven_id from DB if not in localStorage
+  // Try to get raven_id from DB, fall back gracefully
   try {
-    const { data: prof } = await db.from('profiles').select('raven_id').eq('id', currentUser.id).maybeSingle();
+    const { data: prof, error } = await db.from('profiles').select('raven_id').eq('id', currentUser.id).maybeSingle();
+    if (error) throw error;
     if (prof?.raven_id) {
       const existing = JSON.parse(localStorage.getItem('raven_profile') || '{}');
       existing.raven_id = prof.raven_id;
       localStorage.setItem('raven_profile', JSON.stringify(existing));
       if (linkEl) linkEl.textContent = 'https://ravensplit.com/friend-invite/' + prof.raven_id;
+    } else {
+      if (linkEl) linkEl.textContent = getMyInviteLink() || 'https://ravensplit.com/dashboard.html';
     }
-  } catch(e) {}
+  } catch(e) {
+    console.error('loadInvitePage: profiles fetch failed', e);
+    if (linkEl) linkEl.textContent = getMyInviteLink() || 'https://ravensplit.com/dashboard.html';
+  }
   loadInviteSuggestions();
 }
 
 async function loadInviteSuggestions() {
   const container = document.getElementById('invite-suggestions');
   if (!container) return;
+  // Clear spinner immediately so the tab never looks blank
+  container.innerHTML = '';
   try {
-    // People from recent bills who aren't friends yet
-    const { data: bills } = await db.from('bills').select('id').eq('creator_phone', currentUser.email).limit(10);
+    const { data: bills, error: billsErr } = await db.from('bills').select('id').eq('creator_phone', currentUser.email).limit(10);
+    if (billsErr) throw billsErr;
     const billIds = (bills||[]).map(b=>b.id);
-    if (!billIds.length) { container.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:16px">Create your first bill to see suggestions here</div>'; return; }
-    const { data: parts } = await db.from('participants').select('name,phone').in('bill_id', billIds).limit(30);
-    // Deduplicate by name
+    if (!billIds.length) {
+      container.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px 0;line-height:1.6">Once you create a bill, people from it<br>will appear here as invite suggestions.</div>';
+      return;
+    }
+    const { data: parts, error: partsErr } = await db.from('participants').select('name,phone').in('bill_id', billIds).limit(30);
+    if (partsErr) throw partsErr;
+    // Deduplicate by name, skip blank/unknown entries
     const seen = new Set();
-    const people = (parts||[]).filter(p => { if(seen.has(p.name.toLowerCase())) return false; seen.add(p.name.toLowerCase()); return true; }).slice(0, 6);
-    if (!people.length) { container.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:16px">No suggestions yet</div>'; return; }
+    const people = (parts||[]).filter(p => {
+      if (!p.name || p.name.toLowerCase().startsWith('unknown')) return false;
+      if (seen.has(p.name.toLowerCase())) return false;
+      seen.add(p.name.toLowerCase());
+      return true;
+    }).slice(0, 6);
+    if (!people.length) {
+      container.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px 0">No suggestions yet — add people to your bills to see them here.</div>';
+      return;
+    }
     const avatarGrads = ['linear-gradient(135deg,#7C3AED,#A855F7)','linear-gradient(135deg,#E8633A,#FF6B35)','linear-gradient(135deg,#0EA5E9,#7C3AED)','linear-gradient(135deg,#30D158,#0EA5E9)','linear-gradient(135deg,#F59E0B,#EF4444)','linear-gradient(135deg,#EC4899,#8B5CF6)'];
     container.innerHTML = people.map((p,i) => `<div style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--dark2);border:1px solid var(--border);border-radius:10px">
       <div style="width:36px;height:36px;border-radius:50%;background:${avatarGrads[i%6]};display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0">${p.name[0].toUpperCase()}</div>
       <div style="flex:1;font-size:14px;font-weight:600">${p.name}</div>
       <button onclick="invitePerson('${p.name.replace(/'/g,"\'")}','${(p.phone||'').replace(/'/g,"\'")}',this)" style="padding:7px 14px;background:rgba(124,58,237,0.12);border:1px solid rgba(124,58,237,0.25);border-radius:8px;color:var(--purple3);font-family:'Epilogue',sans-serif;font-size:12px;font-weight:700;cursor:pointer">Invite</button>
     </div>`).join('');
-  } catch(e) { container.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:16px">Could not load suggestions</div>'; }
+  } catch(e) {
+    console.error('loadInviteSuggestions error:', e);
+    container.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:16px">Could not load suggestions</div>';
+  }
 }
 
 function invitePerson(name, phone, btn) {
