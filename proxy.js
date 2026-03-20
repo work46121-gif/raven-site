@@ -39,7 +39,9 @@ function serveStaticFile(req, res, filePath) {
       '.gif': 'image/gif', '.webp': 'image/webp', '.svg': 'image/svg+xml',
       '.xml': 'application/xml; charset=utf-8', '.txt': 'text/plain; charset=utf-8'
     };
-    res.writeHead(200, { 'Content-Type': types[ext] || 'application/octet-stream' });
+    const headers = { 'Content-Type': types[ext] || 'application/octet-stream' };
+    if (ext === '.html') headers['Cache-Control'] = 'no-cache, no-store, must-revalidate';
+    res.writeHead(200, headers);
     res.end(data);
   });
 }
