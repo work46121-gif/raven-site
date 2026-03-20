@@ -169,13 +169,14 @@ const server = http.createServer(async (req, res) => {
   if (urlPath === '/sitemap.xml') return serveStaticFile(req, res, './sitemap.xml');
   if (urlPath === '/robots.txt') return serveStaticFile(req, res, './robots.txt');
   if (urlPath === '/') return serveStaticFile(req, res, './index.html');
-  if (urlPath === '/dashboard.html' || urlPath === '/dashboard') return serveStaticFile(req, res, './dashboard.html');
   if (urlPath === '/onboarding.html' || urlPath === '/onboarding') return serveStaticFile(req, res, './onboarding.html');
   if (urlPath === '/raven-demo.html' || urlPath === '/raven-demo') return serveStaticFile(req, res, './raven-demo.html');
 
   if (path.extname(urlPath)) {
     const filePath = '.' + urlPath;
-    if (fs.existsSync(filePath)) return serveStaticFile(req, res, filePath);
+    const ext = path.extname(urlPath).toLowerCase();
+    // Always fetch HTML from GitHub — never serve stale local copies
+    if (ext !== '.html' && fs.existsSync(filePath)) return serveStaticFile(req, res, filePath);
     // Fetch from GitHub Pages server-side, strip Cloudflare injection
     const ghUrl = 'https://work46121-gif.github.io/raven-site' + urlPath;
     const ghReq = https.get(ghUrl, ghRes => {
