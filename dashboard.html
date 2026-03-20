@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<script>if('serviceWorker'in navigator)navigator.serviceWorker.getRegistrations().then(r=>r.forEach(s=>s.unregister()));</script>
+<script>history.scrollRestoration="manual";if("serviceWorker"in navigator)navigator.serviceWorker.getRegistrations().then(r=>r.forEach(s=>s.unregister()));</script>
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
@@ -2215,7 +2215,6 @@ async function loadAllData() {
 }
 
 async function loadOverview() {
-  // Fetch both bills I created AND bills I'm a participant in
   const [bR,pR]=await Promise.all([db.from('bills').select('*,participants(*)').eq('creator_phone',currentUser.email).neq('status','deleted').order('created_at',{ascending:false}),db.from('participants').select('bill_id').eq('phone',currentUser.email)]);
   const{data:myBills}=bR;const{data:partRows}=pR;
   // Fetch participant bills (where I'm listed but not creator)
@@ -4722,9 +4721,10 @@ async function loadInvitePage() {
   // Also try to get raven_id from DB if not in localStorage
   try {
     const{data:prof}=await db.from('profiles').select('raven_id').eq('id',currentUser.id).maybeSingle();
-    if(prof?.raven_id){try{const ex=JSON.parse(localStorage.getItem('raven_profile')||'{}');ex.raven_id=prof.raven_id;localStorage.setItem('raven_profile',JSON.stringify(ex));}catch(e){} if(linkEl)linkEl.textContent='https://ravensplit.com/friend-invite/'+prof.raven_id;}
-    else{if(linkEl)linkEl.textContent=getMyInviteLink()||'https://ravensplit.com/dashboard.html';}
-  } catch(e){if(linkEl)linkEl.textContent=getMyInviteLink()||'https://ravensplit.com/dashboard.html';}
+    if(prof?.raven_id){try{const ex=JSON.parse(localStorage.getItem('raven_profile')||'{}');ex.raven_id=prof.raven_id;localStorage.setItem('raven_profile',JSON.stringify(ex));}catch(e){}
+    if(linkEl)linkEl.textContent='https://ravensplit.com/friend-invite/'+prof.raven_id;}
+    else if(linkEl)linkEl.textContent=getMyInviteLink()||'https://ravensplit.com/dashboard.html';
+  }catch(e){if(linkEl)linkEl.textContent=getMyInviteLink()||'https://ravensplit.com/dashboard.html';}
   loadInviteSuggestions();
 }
 
