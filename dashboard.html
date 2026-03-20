@@ -2188,11 +2188,11 @@ async function showDashboard() {
 }
 
 function showPage(page) {
-  // Track page views in PostHog
   if (typeof posthog !== 'undefined') posthog.capture('page_view', { page });
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('page-' + page).classList.add('active');
+  window.scrollTo(0, 0);
   // Highlight nav item by matching onclick attribute
   document.querySelectorAll('.nav-item').forEach(n => {
     const oc = n.getAttribute('onclick') || '';
