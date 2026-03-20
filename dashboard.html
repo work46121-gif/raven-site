@@ -5,6 +5,14 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
+<script>
+// Unregister any service workers that might be caching stale content
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then(regs => {
+    regs.forEach(r => r.unregister());
+  });
+}
+</script>
 
 <!-- Sentry Error Monitoring -->
 <script
@@ -93,6 +101,7 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
   inset: 0;
   z-index: 999;
   overflow: hidden;
+  background: var(--black);
 }
 #auth-screen::before {
   content: '';
@@ -4588,7 +4597,7 @@ async function buildNotifications() {
           time:bMap[p.bill_id]?.created_at||new Date().toISOString(), unread:true, action:()=>showPage('active-bills') });
       }
     }
-  } catch(e) { console.error('notif bills:',e); }
+  } catch(e) {}
 
   try {
     // My bills — recent payments received
