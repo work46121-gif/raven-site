@@ -5,14 +5,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<script>
-// Unregister any service workers that might be caching stale content
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.getRegistrations().then(regs => {
-    regs.forEach(r => r.unregister());
-  });
-}
-</script>
+<script>if('serviceWorker'in navigator)navigator.serviceWorker.getRegistrations().then(r=>r.forEach(s=>s.unregister()));</script>
 
 <!-- Sentry Error Monitoring -->
 <script
@@ -93,7 +86,6 @@ if ('serviceWorker' in navigator) {
 html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(--black); color: var(--white); overflow-x: hidden; }
 
 #auth-screen {
-  min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2096,10 +2088,9 @@ async function handleLogout() { localStorage.removeItem('raven_profile'); await 
 function showAuth() { document.getElementById('auth-screen').style.display = 'flex'; document.getElementById('dashboard-screen').style.display = 'none'; }
 
 async function showDashboard() {
-  const _auth = document.getElementById('auth-screen');
-  const _dash = document.getElementById('dashboard-screen');
-  _auth.style.display = 'none';
-  _dash.style.display = 'block';
+  document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('dashboard-screen').style.display = 'block';
+  window.scrollTo(0, 0);
   document.getElementById('sidebar-avatar').textContent = currentUser.email[0].toUpperCase();
   const mobAvatar = document.getElementById('mob-user-avatar');
   if (mobAvatar) mobAvatar.textContent = currentUser.email[0].toUpperCase();
@@ -4744,9 +4735,9 @@ async function loadInvitePage() {
   const linkEl = document.getElementById('invite-link-text');
   if (linkEl) linkEl.textContent = getMyInviteLink();
   try {
-    const { data: prof, error } = await db.from('profiles').select('raven_id').eq('id', currentUser.id).maybeSingle();
-    if (!error && prof?.raven_id) {
-      try { const ex=JSON.parse(localStorage.getItem('raven_profile')||'{}'); ex.raven_id=prof.raven_id; localStorage.setItem('raven_profile',JSON.stringify(ex)); } catch(se){}
+    const { data: prof } = await db.from('profiles').select('raven_id').eq('id', currentUser.id).maybeSingle();
+    if (prof?.raven_id) {
+      try { const ex=JSON.parse(localStorage.getItem('raven_profile')||'{}'); ex.raven_id=prof.raven_id; localStorage.setItem('raven_profile',JSON.stringify(ex)); } catch(e){}
       if (linkEl) linkEl.textContent = 'https://ravensplit.com/friend-invite/' + prof.raven_id;
     } else {
       if (linkEl) linkEl.textContent = getMyInviteLink() || 'https://ravensplit.com/dashboard.html';
@@ -4912,6 +4903,7 @@ let currentChatTripId = null;
 let chatSubscription = null;
 let chatMessages = [];
 
+function openChat(tripId) { return openTripChat(tripId); }
 async function openTripChat(tripId) {
   currentChatTripId = tripId;
   const modal = document.getElementById('trip-chat-modal');
