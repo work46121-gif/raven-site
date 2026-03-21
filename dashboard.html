@@ -404,8 +404,8 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
       <div class="page-header"><h1 class="page-title">Welcome, <span id="greeting-name"></span></h1></div>
       <div class="stats-row">
         <div class="stat-card"><div class="stat-label">Active Bills</div><div class="stat-value purple" id="stat-active">—</div><div class="stat-sub">currently open</div></div>
-        <div class="stat-card"><div class="stat-label">Total Owed to You</div><div class="stat-value green" id="stat-owed">—</div><div class="stat-sub">across all bills</div></div>
-        <div class="stat-card"><div class="stat-label">Collected</div><div class="stat-value" id="stat-collected">—</div><div class="stat-sub">payments received</div></div>
+        <div class="stat-card"><div class="stat-label">Total Owed by You</div><div class="stat-value" id="stat-owed" style="color:#FF6B6B">—</div><div class="stat-sub">across all bills</div></div>
+        <div class="stat-card"><div class="stat-label">Collected</div><div class="stat-value green" id="stat-collected">—</div><div class="stat-sub">payments received</div></div>
         <div class="stat-card"><div class="stat-label">Bills Settled</div><div class="stat-value" id="stat-settled">—</div><div class="stat-sub">all time</div></div>
       </div>
       <div class="section-header">
@@ -2861,7 +2861,20 @@ function renderAdminMembers() {
     const removeBtn = document.createElement('button');
     removeBtn.textContent = 'Remove';
     removeBtn.style.cssText = 'padding:5px 10px;background:rgba(255,68,68,0.08);border:1px solid rgba(255,68,68,0.2);border-radius:7px;color:#FF6B6B;font-family:\'Epilogue\',sans-serif;font-size:11px;font-weight:600;cursor:pointer';
-    removeBtn.addEventListener('click', () => removeMemberAdmin(name));
+    removeBtn.dataset.confirming = '0';
+    removeBtn.addEventListener('click', () => {
+      if (removeBtn.dataset.confirming === '1') {
+        removeBtn.dataset.confirming = '0';
+        removeBtn.textContent = 'Remove';
+        removeBtn.style.borderColor = 'rgba(255,68,68,0.2)';
+        removeMemberAdmin(name);
+      } else {
+        removeBtn.dataset.confirming = '1';
+        removeBtn.textContent = '⚠️ Confirm?';
+        removeBtn.style.borderColor = 'rgba(255,68,68,0.6)';
+        setTimeout(() => { removeBtn.dataset.confirming='0'; removeBtn.textContent='Remove'; removeBtn.style.borderColor='rgba(255,68,68,0.2)'; }, 3000);
+      }
+    });
     actions.appendChild(adminBtn); actions.appendChild(removeBtn);
     row.appendChild(left); row.appendChild(actions);
     container.appendChild(row);
@@ -3759,15 +3772,30 @@ async function loadTrips() {
     // Store full trip data safely — never pass user content through onclick attributes
     tripDataMap[t.id] = t;
     const isCreator = t.creator_email === currentUser.email;
+    // Co-admin check: co_admins stores display names, match against profile name or email
+    let coAdminsList = [];
+    try { coAdminsList = Array.isArray(t.co_admins) ? t.co_admins : JSON.parse(t.co_admins || '[]'); } catch(e) {}
+    const userEmail = (currentUser.email || '').toLowerCase();
+    const userDisplayName = (profile?.first_name || userEmail.split('@')[0] || '').toLowerCase();
+    const isCoAdmin = coAdminsList.some(a => {
+      const al = a.toLowerCase();
+      return al === userEmail || al === userDisplayName || userEmail.startsWith(al + '@') || al === userEmail.split('@')[0];
+    });
+    const isAdmin = isCreator || isCoAdmin;
     const safeId = JSON.stringify(t.id); // trip IDs are alphanumeric — safe in onclick
+    const adminBadge = isCreator
+      ? ' <span style="font-size:10px;color:#30D158;background:rgba(48,209,88,0.08);border:1px solid rgba(48,209,88,0.2);padding:2px 7px;border-radius:8px">admin</span>'
+      : isCoAdmin
+      ? ' <span style="font-size:10px;color:#A855F7;background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.2);padding:2px 7px;border-radius:8px">co-admin</span>'
+      : ' <span style="font-size:10px;color:#A855F7;background:rgba(124,58,237,0.1);border:1px solid rgba(124,58,237,0.2);padding:2px 7px;border-radius:8px">member</span>';
     return '<div class="bill-card">'
-      + '<div style="cursor:pointer" onclick="openTrip(' + safeId + ')"><div class="bill-name">✈️ ' + t.name.replace(/</g,'&lt;') + ' <span class="bill-id">' + t.id + '</span>' + (!isCreator ? ' <span style="font-size:10px;color:#A855F7;background:rgba(124,58,237,0.1);border:1px solid rgba(124,58,237,0.2);padding:2px 7px;border-radius:8px">member</span>' : ' <span style="font-size:10px;color:#30D158;background:rgba(48,209,88,0.08);border:1px solid rgba(48,209,88,0.2);padding:2px 7px;border-radius:8px">admin</span>') + '</div>'
+      + '<div style="cursor:pointer" onclick="openTrip(' + safeId + ')"><div class="bill-name">✈️ ' + t.name.replace(/</g,'&lt;') + ' <span class="bill-id">' + t.id + '</span>' + adminBadge + '</div>'
       + '<div class="bill-meta"><span>' + people.length + ' people</span><span>' + (t.receipt_count || 0) + ' receipts</span><span style="color:var(--green)">$' + parseFloat(t.total || 0).toFixed(2) + '</span></div></div>'
       + '<div class="bill-amount" style="cursor:pointer" onclick="openTrip(' + safeId + ')">$' + parseFloat(t.total || 0).toFixed(2) + '</div>'
       + '<div class="bill-progress-wrap"><div class="bill-progress-label">Active</div><div class="bill-progress"><div class="bill-progress-fill" style="width:100%"></div></div></div>'
       + '<div class="bill-actions" onclick="event.stopPropagation()">'
       + '<a class="bill-action-btn btn-remind" href="' + tripUrlReceipt + '" style="display:inline-flex;align-items:center;text-decoration:none;background:rgba(48,209,88,0.1);color:var(--green);border:1px solid rgba(48,209,88,0.25)">📸 Receipt</a>'
-      + (isCreator ? '<button class="bill-action-btn admin-btn" data-tripid="' + t.id + '" style="background:rgba(124,58,237,0.1);color:var(--purple3);border:1px solid rgba(124,58,237,0.2)">⚙️ Admin</button>' : '')
+      + (isAdmin ? '<button class="bill-action-btn admin-btn" data-tripid="' + t.id + '" style="background:rgba(124,58,237,0.1);color:var(--purple3);border:1px solid rgba(124,58,237,0.2)">⚙️ Admin</button>' : '')
       + '<a class="bill-action-btn btn-view" href="' + tripUrl + '" style="display:inline-flex;align-items:center;text-decoration:none">Open Trip →</a>'
       + '</div></div>';
   }).join('');
