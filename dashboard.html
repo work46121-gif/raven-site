@@ -720,7 +720,7 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
         <div style="font-family:'Bebas Neue',sans-serif;font-size:48px;color:var(--green);letter-spacing:0.04em;margin-bottom:24px;line-height:1" id="pay-modal-amount">$0.00</div>
         <div id="pay-modal-methods" style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px"></div>
         <div id="pay-modal-method-btns" style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px"></div>
-        <button id="pay-modal-other-btn" onclick="cbToggleOtherMethods()" style="width:100%;padding:13px;background:transparent;border:1px solid var(--border2);border-radius:12px;color:var(--muted2);font-family:'Epilogue',sans-serif;font-size:14px;font-weight:600;cursor:pointer;margin-bottom:8px">✓ Paid via other method ▾</button>
+        <button id="pay-modal-other-btn" onclick="cbToggleOtherMethods()" style="width:100%;padding:13px;background:transparent;border:1px solid var(--border2);border-radius:12px;color:var(--muted2);font-family:'Epilogue',sans-serif;font-size:14px;font-weight:600;cursor:pointer;margin-bottom:8px">✓ Paid via method ›</button>
         <button onclick="cbClosePayModal()" style="width:100%;padding:12px;background:transparent;border:1px solid var(--border);border-radius:12px;color:var(--muted);font-family:'Epilogue',sans-serif;font-size:13px;cursor:pointer">I'll pay later</button>
       </div>
     </div>
@@ -1864,8 +1864,8 @@ async function openPayModal(participantId, billId, amount) {
 function cbToggleOtherMethods() {
   const container = document.getElementById('pay-modal-method-btns');
   if (!container) return;
-  if (container.children.length > 0) { container.innerHTML = ''; document.getElementById('pay-modal-other-btn').textContent = '✓ Paid via other method ▾'; return; }
-  document.getElementById('pay-modal-other-btn').textContent = '✓ Paid via other method ▴';
+  if (container.children.length > 0) { container.innerHTML = ''; document.getElementById('pay-modal-other-btn').textContent = '✓ Paid via method ›'; return; }
+  document.getElementById('pay-modal-other-btn').textContent = '✓ Paid via method ▴';
   ['Cash','Bank Transfer','Venmo','Cash App','Zelle','Apple Pay','Other'].forEach(function(m) {
     const b = document.createElement('button');
     b.textContent = m;
@@ -2416,8 +2416,23 @@ function generateId() { const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; return
 
 async function openBillModal(billId) {
   currentBillId = billId;
-  const { data: bill } = await db.from('bills').select('*, participants(*)').eq('id', billId).single();
+  // Fetch bill + participants. Also fetch item_selections to surface QR guests not yet flushed.
+  const [billRes, selectionsRes] = await Promise.all([
+    db.from('bills').select('*, participants(*)').eq('id', billId).single(),
+    db.from('item_selections').select('participant_name').eq('bill_id', billId)
+  ]);
+  const { data: bill } = billRes;
   if (!bill) return;
+  // Merge QR guest names from item_selections into participants
+  const existingNames = new Set((bill.participants || []).map(p => p.name.toLowerCase()));
+  const selectionNames = [...new Set((selectionsRes.data || []).map(s => s.participant_name).filter(Boolean))];
+  selectionNames.forEach(n => {
+    if (!existingNames.has(n.toLowerCase())) {
+      bill.participants = bill.participants || [];
+      bill.participants.push({ id: 'guest-' + n, name: n, amount: 0, paid: false, _guest: true });
+      existingNames.add(n.toLowerCase());
+    }
+  });
   document.getElementById('modal-bill-name').textContent = bill.name;
   let receiptHTML = '';
   if (bill.receipt_image) receiptHTML = '<div style="margin-bottom:16px"><div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted2);margin-bottom:8px">Receipt</div><img src="data:image/jpeg;base64,' + bill.receipt_image + '" style="width:100%;border-radius:10px;display:block"></div>';
