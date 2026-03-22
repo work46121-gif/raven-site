@@ -3892,7 +3892,36 @@ async function loadTrips() {
     const adminBadge = isCreator ? ' <span style="font-size:10px;color:#30D158;background:rgba(48,209,88,0.08);border:1px solid rgba(48,209,88,0.2);padding:2px 7px;border-radius:8px">admin</span>' : isCoAdmin ? ' <span style="font-size:10px;color:#A855F7;background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.2);padding:2px 7px;border-radius:8px">co-admin</span>' : ' <span style="font-size:10px;color:#A855F7;background:rgba(124,58,237,0.1);border:1px solid rgba(124,58,237,0.2);padding:2px 7px;border-radius:8px">member</span>';
     return '<div class="bill-card">'
       + '<div style="cursor:pointer" onclick="openTrip(' + safeId + ')"><div class="bill-name">✈️ ' + t.name.replace(/</g,'&lt;') + ' <span class="bill-id">' + t.id + '</span>' + adminBadge + '</div>'
-      + '<div class="bill-meta"><span>' + people.length + ' people</span><span>' + (t.receipt_count || 0) + ' receipts</span>'+(parseFloat(t.total||0)>0?'<span style="color:#FF9A3C;font-weight:600">$'+parseFloat(t.total||0).toFixed(2)+' outstanding</span>':'<span style="color:var(--green)">All settled ✓</span>')+'</div></div>'
+      + '<div class="bill-meta"><span>' + people.length + ' people</span><span>' + (t.receipt_count || 0) + ' receipts</span>' + (function() {
+          // Compute settled counts from settled_people
+          let sp = t.settled_people;
+          if (typeof sp === 'string') { try { sp = JSON.parse(sp); } catch(e) { sp = {}; } }
+          sp = (sp && typeof sp === 'object' && !Array.isArray(sp)) ? sp : {};
+          // Build per-person credits (receipt-level keys take priority over person-level)
+          const hasRcptKey = {};
+          Object.keys(sp).forEach(k => { if (k.includes('::receipt::')) hasRcptKey[k.split('::receipt::')[0].toLowerCase()] = true; });
+          const creds = {};
+          Object.entries(sp).forEach(([k, v]) => {
+            const val = parseFloat(v) || 0; if (val <= 0) return;
+            if (k.includes('::receipt::')) { const pk = k.split('::receipt::')[0].toLowerCase(); creds[pk] = (creds[pk]||0) + val; }
+            else if (!hasRcptKey[k.toLowerCase()]) { creds[k.toLowerCase()] = (creds[k.toLowerCase()]||0) + val; }
+          });
+          // Count debtors vs settled — we need receipt totals but don't have them here
+          // Use trips.total > 0 as signal there's outstanding debt, and settled_people keys as settled count
+          // Best we can do without receipts: count people with credit >= any amount as settled
+          const debtors = people.filter(p => {
+            // We don't have per-person rawOwed without receipts, so use credit existence as proxy
+            // A person is a debtor if they have any credit key OR if total > 0 and no credit
+            return true; // include everyone, refine below
+          });
+          // Actually: use the trip total and settled_people to derive counts
+          // settled = people who have receipt-level OR person-level credit entries
+          const settledNames = new Set(Object.keys(creds));
+          const settledCount = people.filter(p => settledNames.has(p.toLowerCase())).length;
+          const unsettledCount = people.length - settledCount;
+          if (parseFloat(t.total||0) <= 0) return ''; // all settled, no badge needed
+          return '<span style="color:#FF9A3C;font-weight:600">' + unsettledCount + '/' + people.length + ' unsettled</span>';
+        })() + (parseFloat(t.total||0) <= 0 ? '<span style="color:var(--green)">All settled ✓</span>' : '') + '</div></div>'
       + '<div class="bill-amount" style="cursor:pointer;color:' + (parseFloat(t.total||0)>0?'#FF9A3C':'var(--green)') + '" onclick="openTrip(' + safeId + ')">$' + parseFloat(t.total || 0).toFixed(2) + '</div>'
       + '<div class="bill-progress-wrap"><div class="bill-progress-label">Active</div><div class="bill-progress"><div class="bill-progress-fill" style="width:100%"></div></div></div>'
       + '<div class="bill-actions" onclick="event.stopPropagation()">'
