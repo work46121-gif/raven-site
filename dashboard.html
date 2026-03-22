@@ -2285,10 +2285,10 @@ async function loadOverview() {
   document.getElementById('stat-settled').textContent = completed.length;
   document.getElementById('active-count').textContent = active.length;
   const container = document.getElementById('overview-bills');
-  // Overview shows only active bills — completed/deleted go to History
+  // Overview shows only active bills (including shared/member bills) — completed/deleted go to History
   const activeBillsForOverview = bills.filter(b => b.status === 'active');
   container.innerHTML = activeBillsForOverview.length > 0
-    ? activeBillsForOverview.slice(0, 4).map(b => renderBillCard(b)).join('')
+    ? activeBillsForOverview.slice(0, 6).map(b => renderBillCard(b)).join('')
     : '<div class="empty-state"><span class="empty-icon">🎉</span><div class="empty-title">All settled up!</div><div class="empty-sub">No active bills right now. <a href="#" onclick="showPage(\'create-bill\')" style="color:var(--green)">Create one →</a></div></div>';
 }
 
@@ -4474,7 +4474,7 @@ function cbUpdateSummary() {
   const sr = document.getElementById('cb-service-row'); if (sr) sr.style.display = svc > 0 ? 'flex' : 'none';
   const mr = document.getElementById('cb-misc-row');    if (mr) mr.style.display = msc > 0 ? 'flex' : 'none';
   const liveEl = document.getElementById('cb-per-person-live');
-  if (liveEl && cbPeople.length > 0 && total > 0) {
+  if (liveEl && cbPeople.length > 0 && total > 0 && !cbLiveMode) {
     const amts = cbComputePersonAmounts();
     const paidBy = document.getElementById('cb-paidby')?.value || '';
     liveEl.innerHTML = '<div style="font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted2);font-weight:700;margin-bottom:6px">Per person</div>' +
@@ -4484,7 +4484,10 @@ function cbUpdateSummary() {
           '<span style="color:var(--muted)">@' + p + (isPayer ? ' <span style="font-size:10px;color:var(--purple3)">paid</span>' : '') + '</span>' +
           '<span style="color:' + (isPayer ? 'var(--purple3)' : 'var(--green)') + ';font-weight:700">$' + (amts[p]||0).toFixed(2) + '</span></div>';
       }).join('');
-  } else if (liveEl) { liveEl.innerHTML = ''; }
+  } else if (liveEl) {
+    if (cbLiveMode) liveEl.innerHTML = '<div style="font-size:12px;color:var(--muted);padding:6px 0">⚡ Amounts calculated live as guests claim items</div>';
+    else liveEl.innerHTML = '';
+  }
 }
 
 function cbBuildStep3() {
