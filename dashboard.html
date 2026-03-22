@@ -405,7 +405,7 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
       <div class="stats-row">
         <div class="stat-card"><div class="stat-label">Active Bills</div><div class="stat-value purple" id="stat-active">—</div><div class="stat-sub">currently open</div></div>
         <div class="stat-card"><div class="stat-label">Total Owed by You</div><div class="stat-value" id="stat-owed" style="color:#FF6B6B">—</div><div class="stat-sub" id="stat-owed-sub" style="display:none">across active bills</div></div>
-        <div class="stat-card"><div class="stat-label">Collected</div><div class="stat-value green" id="stat-collected" style="display:none">—</div><div class="stat-sub" id="stat-collected-sub" style="display:none">active payments received</div><div id="stat-collected-empty" style="color:var(--muted);font-size:13px">—</div></div>
+        <div class="stat-card"><div class="stat-label">You're Owed</div><div class="stat-value green" id="stat-collected" style="display:none">—</div><div class="stat-sub" id="stat-collected-sub" style="display:none">owed to you on active bills</div><div id="stat-collected-empty" style="color:var(--muted);font-size:13px">—</div></div>
         <div class="stat-card"><div class="stat-label">Bills Settled</div><div class="stat-value" id="stat-settled">—</div><div class="stat-sub">all time</div></div>
       </div>
       <div class="section-header">
@@ -2292,7 +2292,20 @@ async function loadOverview() {
   const completed = bills.filter(b => b.status === 'completed');
   // Only count active bills for owed/collected stats
   let totalOwed = 0, totalCollected = 0;
-  active.forEach(b => { b.participants?.forEach(p => { if (!p.paid) totalOwed += parseFloat(p.amount || 0); else totalCollected += parseFloat(p.amount || 0); }); });
+  active.forEach(b => {
+    const isCreator = b.creator_phone === currentUser.email;
+    b.participants?.forEach(p => {
+      // TOTAL OWED BY YOU: only rows where you are the participant and you haven't paid yet
+      if (!p.paid && p.phone === currentUser.email) {
+        totalOwed += parseFloat(p.amount || 0);
+      }
+      // COLLECTED: only bills you created, and only participants who paid you
+      // Exclude the payer/creator row itself (amount=0 when they paid the bill)
+      if (isCreator && p.paid && p.phone !== currentUser.email && parseFloat(p.amount || 0) > 0) {
+        totalCollected += parseFloat(p.amount || 0);
+      }
+    });
+  });
   document.getElementById('stat-active').textContent = active.length;
   // Show owed only if > 0
   const owedEl = document.getElementById('stat-owed');
@@ -2372,9 +2385,14 @@ function renderBillCard(b) {
   const paid = b.participants?.filter(p => p.paid).length || 0;
   const total = b.participants?.length || 0;
   const pct = total > 0 ? Math.round((paid / total) * 100) : 0;
-  const owed = b.participants?.filter(p => !p.paid).reduce((s, p) => s + parseFloat(p.amount || 0), 0) || 0;
-  const isFullyPaid = owed === 0 && total > 0;
   const isCreator = b.creator_phone === currentUser.email;
+  // For creator bills: owed = what others haven't paid yet
+  // For shared/member bills: owed = only what YOU owe
+  const myParticipantRow = b.participants?.find(p => p.phone === currentUser.email);
+  const owed = isCreator
+    ? (b.participants?.filter(p => !p.paid && p.phone !== currentUser.email).reduce((s, p) => s + parseFloat(p.amount || 0), 0) || 0)
+    : (myParticipantRow && !myParticipantRow.paid ? parseFloat(myParticipantRow.amount || 0) : 0);
+  const isFullyPaid = owed === 0 && total > 0;
   let billUrl = FRONTEND + '/bill/' + b.id + (b.share_token ? '?t=' + b.share_token : '');
   try { const profile = JSON.parse(localStorage.getItem('raven_profile') || '{}'); if (profile.first_name) billUrl += (b.share_token ? '&' : '?') + 'name=' + encodeURIComponent(profile.first_name); } catch(e) {}
   billUrlMap[b.id] = billUrl;
