@@ -2453,15 +2453,21 @@ async function openBillModal(billId) {
   const selectionNames = [...new Set((selectionsRes.data || []).map(s => s.participant_name).filter(Boolean))];
   const guestNames = selectionNames.filter(n => !existingNames.has(n.toLowerCase()));
   if (guestNames.length > 0) {
-    // Fetch real participant rows for these guests (they should exist after ghost-flush on bill page)
+    // Fetch real participant rows for these guests (populated by recalcBillAmounts on bill page)
     const { data: guestRows } = await db.from('participants').select('*').eq('bill_id', billId).in('name', guestNames);
-    // If real rows exist use them, otherwise fall back to placeholders
     const guestRowMap = {};
     (guestRows || []).forEach(r => { guestRowMap[r.name.toLowerCase()] = r; });
     guestNames.forEach(n => {
       bill.participants = bill.participants || [];
       const real = guestRowMap[n.toLowerCase()];
-      bill.participants.push(real || { id: 'guest-' + n, name: n, amount: 0, paid: false, _guest: true });
+      // If real row exists with amount > 0, use it; otherwise compute from item_selections
+      if (real && parseFloat(real.amount || 0) > 0) {
+        bill.participants.push(real);
+      } else {
+        // Compute amount from item_selections for display purposes
+        const personSelections = (selectionsRes.data || []).filter(s => s.participant_name?.toLowerCase() === n.toLowerCase());
+        bill.participants.push(real || { id: 'guest-' + n, name: n, amount: 0, paid: false, _guest: true, _selCount: personSelections.length });
+      }
       existingNames.add(n.toLowerCase());
     });
   }
@@ -2490,8 +2496,17 @@ async function openBillModal(billId) {
       badge = '<span class="participant-amount paid-tag">💳 Paid</span>';
       action = '';
     } else {
-      badge = '<span class="participant-amount owed-tag">$' + parseFloat(p.amount).toFixed(2) + ' owed</span>';
-      action = '<button class="mark-paid-btn" onclick="openPayModal(\'' + p.id + '\', \'' + billId + '\', ' + parseFloat(p.amount).toFixed(2) + ')">💳 Pay</button>';
+      const amt = parseFloat(p.amount || 0);
+      if (amt > 0) {
+        badge = '<span class="participant-amount owed-tag">$' + amt.toFixed(2) + ' owed</span>';
+        action = '<button class="mark-paid-btn" onclick="openPayModal(\'' + p.id + '\', \'' + billId + '\', ' + amt.toFixed(2) + ')">💳 Pay</button>';
+      } else if (p._selCount > 0) {
+        badge = '<span style="font-size:11px;color:var(--muted)">items claimed · visit bill page</span>';
+        action = '';
+      } else {
+        badge = '<span class="participant-amount owed-tag">$0.00 owed</span>';
+        action = '<button class="mark-paid-btn" onclick="openPayModal(\'' + p.id + '\', \'' + billId + '\', 0)">💳 Pay</button>';
+      }
     }
     return '<div class="participant-row"><div><div class="participant-name">@' + p.name + '</div>' +
       (p.paid && !isBillPayer && p.payment_method ? '<div style="font-size:11px;color:var(--muted);margin-top:3px">via ' + p.payment_method + '</div>' : '') +
