@@ -2285,7 +2285,11 @@ async function loadOverview() {
   document.getElementById('stat-settled').textContent = completed.length;
   document.getElementById('active-count').textContent = active.length;
   const container = document.getElementById('overview-bills');
-  container.innerHTML = bills.slice(0, 4).map(b => renderBillCard(b)).join('');
+  // Overview shows only active bills — completed/deleted go to History
+  const activeBillsForOverview = bills.filter(b => b.status === 'active');
+  container.innerHTML = activeBillsForOverview.length > 0
+    ? activeBillsForOverview.slice(0, 4).map(b => renderBillCard(b)).join('')
+    : '<div class="empty-state"><span class="empty-icon">🎉</span><div class="empty-title">All settled up!</div><div class="empty-sub">No active bills right now. <a href="#" onclick="showPage(\'create-bill\')" style="color:var(--green)">Create one →</a></div></div>';
 }
 
 async function loadActiveBills() {
@@ -4135,6 +4139,16 @@ function cbClearPhoto() {
   document.getElementById('cb-scanning').style.display = 'none';
   document.getElementById('cb-scan-result').style.display = 'none';
   document.getElementById('cb-file-input').value = '';
+  // Also reset scanned data so next receipt starts fresh
+  cbItems = [];
+  const taxEl = document.getElementById('cb-tax'); if (taxEl) taxEl.value = '';
+  const tipEl = document.getElementById('cb-tip'); if (tipEl) tipEl.value = '';
+  const svcEl = document.getElementById('cb-service'); if (svcEl) svcEl.value = '';
+  const nameEl = document.getElementById('cb-name'); if (nameEl) nameEl.value = '';
+  const scannedBadge = document.getElementById('cb-scanned-badge'); if (scannedBadge) scannedBadge.style.display = 'none';
+  cbSplitMode = 'even';
+  cbRenderItems();
+  cbUpdateSummary();
 }
 
 // Fetch with timeout helper
@@ -4225,11 +4239,13 @@ async function cbScanReceipt() {
       // Full success — got items
       if (data.success && data.items && data.items.length > 0) {
         clearInterval(iv);
-        if (data.bill_name && !document.getElementById('cb-name').value) document.getElementById('cb-name').value = data.bill_name;
+        // Always update name and tax from the new scan (overwrite previous)
+        if (data.bill_name) document.getElementById('cb-name').value = data.bill_name;
         cbItems = data.items.map((item, i) => ({ id: Date.now() + i, name: item.name, price: parseFloat(item.price) || 0, assignees: [] }));
         cbSplitMode = 'itemized';
-        if (data.tax  > 0) document.getElementById('cb-tax').value  = parseFloat(data.tax).toFixed(2);
-        if (data.tip  > 0) document.getElementById('cb-tip').value  = parseFloat(data.tip).toFixed(2);
+        // Always reset tax/tip to new receipt values (clear if not present)
+        const taxInput = document.getElementById('cb-tax'); if (taxInput) taxInput.value = data.tax > 0 ? parseFloat(data.tax).toFixed(2) : '';
+        const tipInput = document.getElementById('cb-tip'); if (tipInput) tipInput.value = data.tip > 0 ? parseFloat(data.tip).toFixed(2) : '';
         document.getElementById('cb-scanning').style.display = 'none';
         const badge = document.getElementById('cb-scanned-badge');
         if (badge) badge.style.display = 'flex';
@@ -4247,8 +4263,8 @@ async function cbScanReceipt() {
       // Partial success — got total but no line items
       if (data.success && data.total > 0 && (!data.items || data.items.length === 0)) {
         clearInterval(iv);
-        if (data.bill_name && !document.getElementById('cb-name').value) document.getElementById('cb-name').value = data.bill_name;
-        if (data.tax  > 0) document.getElementById('cb-tax').value  = parseFloat(data.tax).toFixed(2);
+        if (data.bill_name) document.getElementById('cb-name').value = data.bill_name;
+        const _taxEl = document.getElementById('cb-tax'); if (_taxEl) _taxEl.value = data.tax > 0 ? parseFloat(data.tax).toFixed(2) : '';
         cbSplitMode = 'even';
         document.getElementById('cb-even-total').value = parseFloat(data.total - (data.tax||0) - (data.tip||0)).toFixed(2);
         document.getElementById('cb-scanning').style.display = 'none';
