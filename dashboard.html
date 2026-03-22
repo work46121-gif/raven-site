@@ -4616,9 +4616,8 @@ async function cbCreateFinalBill() {
   }
   // Try to set live_mode after successful insert (gracefully skip if column doesn't exist)
   if (isLiveMode) {
-    try {
-      await db.from('bills').update({ live_mode: true, live_people_count: livePeopleCount }).eq('id', billId);
-    } catch(e) { console.warn('live_mode column not available yet — run SQL migration'); }
+    const { error: lmErr } = await db.from('bills').update({ live_mode: true, live_people_count: livePeopleCount }).eq('id', billId);
+    if (lmErr) console.warn('live_mode column not set:', lmErr.message);
   }
   // Look up Raven profiles for all people by first_name so bill appears in their overview
   let profileEmailMap = {};
