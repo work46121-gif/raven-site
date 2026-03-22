@@ -3915,7 +3915,7 @@ async function loadTrips() {
           }
           const unsettledCount = debtorCount - settledCount;
           if (unsettledCount <= 0) return '';
-          return '<span style="color:#FF9A3C;font-weight:600">' + unsettledCount + '/' + debtorCount + ' unsettled</span>';
+          return '<span style="color:#FF9A3C;font-weight:600">' + settledCount + '/' + debtorCount + ' settled</span>';
         })() + (parseFloat(t.total||0) <= 0 ? '<span style="color:var(--green)">All settled ✓</span>' : '') + '</div></div>'
       + '<div class="bill-amount" style="cursor:pointer;color:' + (parseFloat(t.total||0)>0?'#FF9A3C':'var(--green)') + '" onclick="openTrip(' + safeId + ')">$' + parseFloat(t.total || 0).toFixed(2) + '</div>'
       + '<div class="bill-progress-wrap"><div class="bill-progress-label">Active</div><div class="bill-progress"><div class="bill-progress-fill" style="width:100%"></div></div></div>'
