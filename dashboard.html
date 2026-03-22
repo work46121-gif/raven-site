@@ -3893,10 +3893,26 @@ async function loadTrips() {
     return '<div class="bill-card">'
       + '<div style="cursor:pointer" onclick="openTrip(' + safeId + ')"><div class="bill-name">✈️ ' + t.name.replace(/</g,'&lt;') + ' <span class="bill-id">' + t.id + '</span>' + adminBadge + '</div>'
       + '<div class="bill-meta"><span>' + people.length + ' people</span><span>' + (t.receipt_count || 0) + ' receipts</span>' + (function() {
-          // Use server-computed settled_count/debtor_count (accurate, updated on every settle/unsettle)
+          // Use server-computed settled_count/debtor_count when available (accurate)
+          // Fall back to settled_people parsing for trips not yet backfilled
           if (parseFloat(t.total||0) <= 0) return ''; // all settled, no badge needed
-          const debtorCount = t.debtor_count || people.length;
-          const settledCount = Math.min(t.settled_count || 0, debtorCount);
+          let debtorCount, settledCount;
+          if (t.debtor_count != null && t.settled_count != null) {
+            debtorCount = t.debtor_count;
+            settledCount = Math.min(t.settled_count, debtorCount);
+          } else {
+            // Fallback: parse settled_people
+            let sp = t.settled_people;
+            if (typeof sp === 'string') { try { sp = JSON.parse(sp); } catch(e) { sp = {}; } }
+            sp = (sp && typeof sp === 'object' && !Array.isArray(sp)) ? sp : {};
+            const rcptCr = {};
+            Object.entries(sp).forEach(([k, v]) => {
+              if ((parseFloat(v)||0) <= 0) return;
+              if (k.includes('::receipt::')) { const pk = k.split('::receipt::')[0].toLowerCase(); rcptCr[pk] = (rcptCr[pk]||0) + (parseFloat(v)||0); }
+            });
+            debtorCount = people.length;
+            settledCount = people.filter(p => rcptCr[p.toLowerCase()] > 0).length;
+          }
           const unsettledCount = debtorCount - settledCount;
           if (unsettledCount <= 0) return '';
           return '<span style="color:#FF9A3C;font-weight:600">' + unsettledCount + '/' + debtorCount + ' unsettled</span>';
