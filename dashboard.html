@@ -3893,36 +3893,13 @@ async function loadTrips() {
     return '<div class="bill-card">'
       + '<div style="cursor:pointer" onclick="openTrip(' + safeId + ')"><div class="bill-name">✈️ ' + t.name.replace(/</g,'&lt;') + ' <span class="bill-id">' + t.id + '</span>' + adminBadge + '</div>'
       + '<div class="bill-meta"><span>' + people.length + ' people</span><span>' + (t.receipt_count || 0) + ' receipts</span>' + (function() {
-          // Compute settled counts from settled_people
-          let sp = t.settled_people;
-          if (typeof sp === 'string') { try { sp = JSON.parse(sp); } catch(e) { sp = {}; } }
-          sp = (sp && typeof sp === 'object' && !Array.isArray(sp)) ? sp : {};
-          // A person is settled only if they have receipt-level keys (precise settled state)
-          // Person-level keys alone are legacy/sentinel data and not reliable for count
-          const rcptCredits = {};
-          Object.entries(sp).forEach(([k, v]) => {
-            const val = parseFloat(v) || 0; if (val <= 0) return;
-            if (k.includes('::receipt::')) {
-              const pk = k.split('::receipt::')[0].toLowerCase();
-              rcptCredits[pk] = (rcptCredits[pk]||0) + val;
-            }
-          });
-          // Fallback: if NO receipt-level keys exist at all (old data format),
-          // use person-level keys but only count them if value is substantial (> $1)
-          const hasAnyRcptKeys = Object.keys(rcptCredits).length > 0;
-          const settledNames = new Set();
-          if (hasAnyRcptKeys) {
-            Object.keys(rcptCredits).forEach(pk => settledNames.add(pk));
-          } else {
-            // Old format: person-level only — count if credit > $1 (ignore junk leftovers)
-            Object.entries(sp).forEach(([k, v]) => {
-              if (!k.includes('::') && (parseFloat(v)||0) > 1) settledNames.add(k.toLowerCase());
-            });
-          }
-          const settledCount = people.filter(p => settledNames.has(p.toLowerCase())).length;
-          const unsettledCount = people.length - settledCount;
+          // Use server-computed settled_count/debtor_count (accurate, updated on every settle/unsettle)
           if (parseFloat(t.total||0) <= 0) return ''; // all settled, no badge needed
-          return '<span style="color:#FF9A3C;font-weight:600">' + unsettledCount + '/' + people.length + ' unsettled</span>';
+          const debtorCount = t.debtor_count || people.length;
+          const settledCount = Math.min(t.settled_count || 0, debtorCount);
+          const unsettledCount = debtorCount - settledCount;
+          if (unsettledCount <= 0) return '';
+          return '<span style="color:#FF9A3C;font-weight:600">' + unsettledCount + '/' + debtorCount + ' unsettled</span>';
         })() + (parseFloat(t.total||0) <= 0 ? '<span style="color:var(--green)">All settled ✓</span>' : '') + '</div></div>'
       + '<div class="bill-amount" style="cursor:pointer;color:' + (parseFloat(t.total||0)>0?'#FF9A3C':'var(--green)') + '" onclick="openTrip(' + safeId + ')">$' + parseFloat(t.total || 0).toFixed(2) + '</div>'
       + '<div class="bill-progress-wrap"><div class="bill-progress-label">Active</div><div class="bill-progress"><div class="bill-progress-fill" style="width:100%"></div></div></div>'
