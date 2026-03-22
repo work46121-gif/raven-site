@@ -4500,6 +4500,22 @@ function cbBuildStep3() {
     list.appendChild(badge);
   }
 
+  // In Live Mode: show names only, no pre-computed amounts
+  if (cbLiveMode) {
+    const liveNote = document.createElement('div');
+    liveNote.style.cssText = 'padding:12px 14px;background:rgba(48,209,88,0.06);border:1px solid rgba(48,209,88,0.2);border-radius:10px;margin-bottom:8px';
+    liveNote.innerHTML = '<div style="font-size:13px;font-weight:700;color:#30D158;margin-bottom:4px">⚡ Live Mode active</div><div style="font-size:12px;color:var(--muted);line-height:1.5">Amounts are calculated live as guests claim their items. Share the QR code — everyone taps what they ordered.</div>';
+    list.appendChild(liveNote);
+    const nonPayers = cbPeople.filter(p => p !== paidBy);
+    nonPayers.forEach(p => {
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:11px 14px;background:var(--dark2);border:1px solid var(--border);border-radius:10px';
+      row.innerHTML = '<span style="font-size:14px;font-weight:600">@' + p + '</span><span style="font-size:12px;color:var(--muted)">will claim items live →</span>';
+      list.appendChild(row);
+    });
+    return;
+  }
+
   cbPeople.forEach(p => {
     const total_p = personAmounts[p] || 0;
     const isPayer = p === paidBy;
