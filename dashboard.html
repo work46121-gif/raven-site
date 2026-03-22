@@ -719,7 +719,8 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
         <div style="font-size:13px;color:var(--muted);margin-bottom:6px" id="pay-modal-sub">Send payment to bill payer</div>
         <div style="font-family:'Bebas Neue',sans-serif;font-size:48px;color:var(--green);letter-spacing:0.04em;margin-bottom:24px;line-height:1" id="pay-modal-amount">$0.00</div>
         <div id="pay-modal-methods" style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px"></div>
-        <button onclick="cbMarkPaidOther()" style="width:100%;padding:13px;background:transparent;border:1px solid var(--border2);border-radius:12px;color:var(--muted2);font-family:'Epilogue',sans-serif;font-size:14px;font-weight:600;cursor:pointer;margin-bottom:8px">✓ Mark as paid (other method)</button>
+        <div id="pay-modal-method-btns" style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px"></div>
+        <button id="pay-modal-other-btn" onclick="cbToggleOtherMethods()" style="width:100%;padding:13px;background:transparent;border:1px solid var(--border2);border-radius:12px;color:var(--muted2);font-family:'Epilogue',sans-serif;font-size:14px;font-weight:600;cursor:pointer;margin-bottom:8px">✓ Paid via other method ▾</button>
         <button onclick="cbClosePayModal()" style="width:100%;padding:12px;background:transparent;border:1px solid var(--border);border-radius:12px;color:var(--muted);font-family:'Epilogue',sans-serif;font-size:13px;cursor:pointer">I'll pay later</button>
       </div>
     </div>
@@ -1838,16 +1839,50 @@ async function openPayModal(participantId, billId, amount) {
   }
 
   if (mc.children.length === 0) {
-    mc.innerHTML = `<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">No payment methods set up for ${displayName}.<br><span style="font-size:11px">They need to add Venmo, Cash App, Zelle or Apple Pay in Settings.</span></div>`;
+    mc.innerHTML = '<div style="text-align:center;padding:12px;color:var(--muted);font-size:12px;margin-bottom:4px">' + displayName + ' hasn\'t set up payment methods yet.</div>';
+    // Auto-show the method submenu when no payment links are available
+    ['Cash','Bank Transfer','Venmo','Cash App','Zelle','Apple Pay','Other'].forEach(function(m) {
+      const b = document.createElement('button');
+      b.textContent = m;
+      b.style.cssText = 'display:block;width:100%;padding:11px 16px;margin-bottom:6px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:#F0EEF8;font-family:\'Epilogue\',sans-serif;font-size:13px;font-weight:600;cursor:pointer;text-align:left';
+      b.addEventListener('click', (function(method){ return async function() {
+        if (!payModalParticipantId || !payModalBillId) return;
+        await markPaid(payModalParticipantId, payModalBillId, method);
+        cbClosePayModal(); showToast('✅ Marked as paid via ' + method + '!', 'success');
+      }; })(m));
+      mc.appendChild(b);
+    });
+    // Hide the "other method" button since methods are already shown
+    const ob = document.getElementById('pay-modal-other-btn');
+    if (ob) ob.style.display = 'none';
+  } else {
+    const ob = document.getElementById('pay-modal-other-btn');
+    if (ob) ob.style.display = '';
   }
 }
 
+function cbToggleOtherMethods() {
+  const container = document.getElementById('pay-modal-method-btns');
+  if (!container) return;
+  if (container.children.length > 0) { container.innerHTML = ''; document.getElementById('pay-modal-other-btn').textContent = '✓ Paid via other method ▾'; return; }
+  document.getElementById('pay-modal-other-btn').textContent = '✓ Paid via other method ▴';
+  ['Cash','Bank Transfer','Venmo','Cash App','Zelle','Apple Pay','Other'].forEach(function(m) {
+    const b = document.createElement('button');
+    b.textContent = m;
+    b.style.cssText = 'width:100%;padding:11px 16px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:#F0EEF8;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;text-align:left';
+    b.addEventListener('click', (function(method){ return async function() {
+      if (!payModalParticipantId || !payModalBillId) return;
+      try { if (typeof posthog !== 'undefined') posthog.capture('payment_marked_paid', { bill_id: payModalBillId, method }); } catch(e) {}
+      await markPaid(payModalParticipantId, payModalBillId, method);
+      cbClosePayModal(); showToast('✅ Marked as paid via ' + method + '!', 'success');
+    }; })(m));
+    container.appendChild(b);
+  });
+}
+
 async function cbMarkPaidOther() {
-  if (!payModalParticipantId || !payModalBillId) return;
-  // Track payment marked
-  try { if (typeof posthog !== 'undefined') posthog.capture('payment_marked_paid', { bill_id: payModalBillId, method: 'other' }); } catch(e) {}
-  await markPaid(payModalParticipantId, payModalBillId);
-  cbClosePayModal(); showToast('✅ Marked as paid!', 'success');
+  // Legacy - just open the submenu
+  cbToggleOtherMethods();
 }
 function cbClosePayModal() { document.getElementById('cb-pay-modal').style.display = 'none'; payModalParticipantId = null; payModalBillId = null; }
 
@@ -2552,8 +2587,8 @@ async function shareTripLink(tripId) {
   catch(e) { prompt('Copy this link:', url); }
 }
 
-async function markPaid(participantId, billId) {
-  await db.from('participants').update({ paid: true, paid_at: new Date().toISOString() }).eq('id', participantId);
+async function markPaid(participantId, billId, method) {
+  await db.from('participants').update({ paid: true, paid_at: new Date().toISOString(), ...(method ? { payment_method: method } : {}) }).eq('id', participantId);
   // Check if all participants are now paid — if so, auto-complete the bill
   const { data: bill } = await db.from('bills').select('*, participants(*)').eq('id', billId).single();
   if (bill && bill.participants?.length > 0 && bill.participants.every(p => p.paid)) {
