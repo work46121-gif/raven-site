@@ -3959,10 +3959,13 @@ async function loadTrips() {
           // Use server-computed settled_count/debtor_count when available (accurate)
           // Fall back to settled_people parsing for trips not yet backfilled
           if (parseFloat(t.total||0) <= 0) return ''; // all settled, no badge needed
-          let debtorCount, settledCount;
+          // Count ALL people: payers (owe $0) count as settled, debtors who paid also count
+          const totalPeople = people.length;
+          let settledPeople = 0;
           if (t.debtor_count != null && t.settled_count != null) {
-            debtorCount = t.debtor_count;
-            settledCount = Math.min(t.settled_count, debtorCount);
+            // non-debtors (payers) = totalPeople - debtorCount, they're all settled
+            const nonDebtors = Math.max(0, totalPeople - t.debtor_count);
+            settledPeople = nonDebtors + Math.min(t.settled_count, t.debtor_count);
           } else {
             // Fallback: parse settled_people
             let sp = t.settled_people;
@@ -3973,12 +3976,10 @@ async function loadTrips() {
               if ((parseFloat(v)||0) <= 0) return;
               if (k.includes('::receipt::')) { const pk = k.split('::receipt::')[0].toLowerCase(); rcptCr[pk] = (rcptCr[pk]||0) + (parseFloat(v)||0); }
             });
-            debtorCount = people.length;
-            settledCount = people.filter(p => rcptCr[p.toLowerCase()] > 0).length;
+            settledPeople = people.filter(p => rcptCr[p.toLowerCase()] > 0).length;
           }
-          const unsettledCount = debtorCount - settledCount;
-          if (unsettledCount <= 0) return '';
-          return '<span style="color:#FF9A3C;font-weight:600">' + settledCount + '/' + debtorCount + ' settled</span>';
+          if (settledPeople >= totalPeople) return '';
+          return '<span style="color:#FF9A3C;font-weight:600">' + settledPeople + '/' + totalPeople + ' settled</span>';
         })() + (parseFloat(t.total||0) <= 0 ? '<span style="color:var(--green)">All settled ✓</span>' : '') + '</div></div>'
       + '<div class="bill-amount" style="cursor:pointer;color:' + (parseFloat(t.total||0)>0?'#FF9A3C':'var(--green)') + '" onclick="openTrip(' + safeId + ')">$' + parseFloat(t.total || 0).toFixed(2) + '</div>'
       + '<div class="bill-progress-wrap"><div class="bill-progress-label">Active</div><div class="bill-progress"><div class="bill-progress-fill" style="width:100%"></div></div></div>'
