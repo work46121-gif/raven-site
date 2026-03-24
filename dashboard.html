@@ -4179,7 +4179,7 @@ async function loadTrips() {
       const joinedIds = Array.isArray(local.joined_trips) ? local.joined_trips : [];
       const newIds = joinedIds.filter(id => !seen.has(id));
       if (newIds.length > 0) {
-        const { data: joinedTrips } = await db.from('trips').select('*').in('id', newIds);
+        const { data: joinedTrips } = await db.from('trips').select('*').in('id', newIds).neq('type', 'roommates');
         (joinedTrips || []).forEach(t => { if (!seen.has(t.id)) { seen.add(t.id); trips.push(t); } });
       }
     } catch(e) {}
@@ -4191,7 +4191,7 @@ async function loadTrips() {
         let dbJoined = typeof prof.joined_trips === 'string' ? JSON.parse(prof.joined_trips) : prof.joined_trips;
         const extraIds = (dbJoined || []).filter(id => !seen.has(id));
         if (extraIds.length > 0) {
-          const { data: extraTrips } = await db.from('trips').select('*').in('id', extraIds);
+          const { data: extraTrips } = await db.from('trips').select('*').in('id', extraIds).neq('type', 'roommates');
           (extraTrips || []).forEach(t => { if (!seen.has(t.id)) { seen.add(t.id); trips.push(t); } });
         }
       }
