@@ -165,6 +165,8 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
 .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
 .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(8px); z-index: 500; display: none; align-items: center; justify-content: center; padding: 20px; }
 .modal-overlay.open { display: flex; }
+.modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); z-index: 600; display: none; align-items: center; justify-content: center; padding: 20px; }
+.modal-bg.open { display: flex; }
 .modal { background: var(--dark); border: 1px solid var(--border2); border-radius: 20px; padding: 32px; width: 100%; max-width: 520px; max-height: 85vh; overflow-y: auto; position: relative; }
 .modal-close { position: absolute; top: 20px; right: 20px; background: var(--dark3); border: none; color: var(--muted); width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
 .modal-close:hover { background: var(--dark4); color: var(--white); }
