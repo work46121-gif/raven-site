@@ -379,6 +379,7 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
       <button class="nav-item" onclick="showPage('active-bills')"><span class="ni">📋</span> Active Bills <span class="nav-badge" id="active-count">0</span></button>
       <button class="nav-item" onclick="showPage('create-bill')"><span class="ni">➕</span> Create Bill</button>
       <button class="nav-item" onclick="showPage('trip-hub')"><span class="ni">✈️</span> Trip Hub</button>
+      <button class="nav-item" onclick="showPage('roommates')"><span class="ni">🏠</span> Roommates <span style="font-size:9px;font-weight:700;padding:1px 6px;background:rgba(48,209,88,0.15);border:1px solid rgba(48,209,88,0.3);border-radius:6px;color:var(--green);margin-left:4px;vertical-align:middle">BETA</span></button>
       <button class="nav-item" onclick="showPage('friends')" style="position:relative"><span class="ni">👥</span> Friends <span id="friends-dm-badge" style="display:none;position:absolute;top:6px;right:8px;min-width:16px;height:16px;padding:0 4px;background:var(--purple);border-radius:8px;font-size:10px;font-weight:700;color:#fff;align-items:center;justify-content:center"></span></button>
       <button class="nav-item" onclick="showPage('history')"><span class="ni">🕐</span> History</button>
       <div style="flex:1"></div>
@@ -806,6 +807,9 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
           <button onclick="showPage('trip-hub');setMobNav('mob-trip')" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:14px 8px;background:var(--dark);border:1px solid var(--border);border-radius:14px;cursor:pointer;-webkit-tap-highlight-color:transparent;text-align:center">
             <span style="font-size:22px">✈️</span><span style="font-size:11px;font-weight:600;color:var(--white)">Trips</span>
           </button>
+          <button onclick="showPage('roommates');setMobNav('mob-settings')" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:14px 8px;background:var(--dark);border:1px solid var(--border);border-radius:14px;cursor:pointer;-webkit-tap-highlight-color:transparent;text-align:center;position:relative">
+            <span style="font-size:22px">🏠</span><span style="font-size:11px;font-weight:600;color:var(--white)">Roommates</span><span style="position:absolute;top:6px;right:6px;font-size:8px;font-weight:700;padding:1px 4px;background:rgba(48,209,88,0.2);border-radius:4px;color:var(--green)">β</span>
+          </button>
           <button onclick="showPage('notifications');setMobNav('mob-settings')" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:14px 8px;background:var(--dark);border:1px solid var(--border);border-radius:14px;cursor:pointer;-webkit-tap-highlight-color:transparent;text-align:center;position:relative">
             <span style="font-size:22px">🔔</span><span style="font-size:11px;font-weight:600;color:var(--white)">Notifications</span>
             <span id="mob-notif-quick-badge" style="display:none;position:absolute;top:8px;right:8px;background:#FF4444;color:#fff;border-radius:50%;width:14px;height:14px;font-size:9px;font-weight:700;align-items:center;justify-content:center">!</span>
@@ -991,6 +995,18 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
       <div id="trips-list" class="bills-list"><div class="loading"><div class="spinner"></div> Loading trips...</div></div>
     </div>
 
+    <!-- ROOMMATES PAGE -->
+    <div id="page-roommates" class="page">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Roommates <span style="font-size:13px;font-weight:700;padding:2px 9px;background:rgba(48,209,88,0.12);border:1px solid rgba(48,209,88,0.3);border-radius:8px;color:var(--green);vertical-align:middle;margin-left:8px">BETA</span></h1>
+          <div style="font-size:13px;color:var(--muted);margin-top:4px">Track shared expenses with your housemates — rent, utilities, groceries and more.</div>
+        </div>
+        <button class="bill-action-btn" style="padding:10px 20px;font-size:13px;background:rgba(48,209,88,0.1);border:1px solid rgba(48,209,88,0.25);color:var(--green)" onclick="openCreateHouse()">🏠 New House</button>
+      </div>
+      <div id="houses-list" class="bills-list"><div class="loading"><div class="spinner"></div> Loading...</div></div>
+    </div>
+
     <!-- NOTIFICATIONS PAGE -->
     <div id="page-notifications" class="page">
       <div class="page-header">
@@ -1083,6 +1099,43 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
         <div id="pm-payment-methods" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px"></div>
         <div id="pm-action-btn"></div>
       </div>
+    </div>
+  </div>
+
+
+  <!-- CREATE HOUSE MODAL -->
+  <div class="modal-bg" id="create-house-modal" onclick="if(event.target.id==='create-house-modal')closeCreateHouse()">
+    <div style="background:var(--dark);border:1px solid var(--border2);border-radius:20px;padding:32px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+        <div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:0.05em">🏠 New House</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px">Set up a shared expense hub for your housemates</div>
+        </div>
+        <button onclick="closeCreateHouse()" style="background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:50%;width:32px;height:32px;color:var(--muted);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center">×</button>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">House name</label>
+        <input id="house-name-input" type="text" class="form-input" placeholder="e.g. The Fort, 5th Ave Apt...">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Housemates <span style="color:var(--muted);font-weight:400;font-size:11px">comma-separated names</span></label>
+        <input id="house-people-input" type="text" class="form-input" placeholder="e.g. Will, Mel, Arsalan, daddy">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Monthly recurring expenses <span style="color:var(--muted);font-weight:400;font-size:11px">optional</span></label>
+        <div id="house-recurring-list" style="margin-bottom:10px"></div>
+        <div style="display:flex;gap:8px">
+          <input id="new-exp-name" type="text" class="form-input" placeholder="Expense name" style="flex:2">
+          <input id="new-exp-amt" type="number" class="form-input" placeholder="$amount" style="flex:1">
+          <button onclick="addRecurringExpense()" style="padding:0 14px;background:rgba(48,209,88,0.1);border:1px solid rgba(48,209,88,0.25);border-radius:10px;color:var(--green);font-family:'Epilogue',sans-serif;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap">+ Add</button>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:6px">These will appear as expenses each month (e.g. Electric, WiFi, Netflix)</div>
+      </div>
+
+      <button id="create-house-btn" onclick="saveCreateHouse()" style="width:100%;padding:14px;background:var(--green);border:none;border-radius:12px;color:#000;font-family:'Epilogue',sans-serif;font-size:15px;font-weight:800;cursor:pointer;margin-top:8px">Create House →</button>
     </div>
   </div>
 
@@ -2244,7 +2297,7 @@ function showPage(page) {
     const oc = n.getAttribute('onclick') || '';
     if (oc.includes("showPage('" + page + "')")) n.classList.add('active');
   });
-  const mobMap = { 'overview':'mob-overview','active-bills':'mob-bills','create-bill':'mob-create','trip-hub':'mob-trip','friends':'mob-settings','settings':'mob-settings','history':'mob-settings','notifications':'mob-settings','invite':'mob-settings' };
+  const mobMap = { 'overview':'mob-overview','active-bills':'mob-bills','create-bill':'mob-create','trip-hub':'mob-trip','roommates':'mob-settings','friends':'mob-settings','settings':'mob-settings','history':'mob-settings','notifications':'mob-settings','invite':'mob-settings' };
   if (mobMap[page]) setMobNav(mobMap[page]);
   if (page === 'active-bills') loadActiveBills();
   if (page === 'history') loadHistory();
@@ -2252,6 +2305,7 @@ function showPage(page) {
   if (page === 'notifications') loadNotifications();
   if (page === 'invite') loadInvitePage();
   if (page === 'trip-hub') loadTrips();
+  if (page === 'roommates') loadHouses();
   if (page === 'friends') loadFriendsPage();
 }
 
@@ -3880,6 +3934,191 @@ let tripPeople = [];
 const tripUrlMap = {};
 const tripDataMap = {}; // stores full trip objects keyed by id — safe alternative to inline onclick data
 
+// ── ROOMMATES (BETA) ──────────────────────────────────────────────────────────
+const houseDataMap = {};
+
+async function loadHouses() {
+  const container = document.getElementById('houses-list');
+  if (!container) return;
+  container.innerHTML = '<div class="loading"><div class="spinner"></div> Loading...</div>';
+  let houses = [];
+  const seen = new Set();
+  try {
+    // Houses created by this user (trips with type='roommates')
+    const { data: created } = await db.from('trips').select('*')
+      .eq('creator_email', currentUser.email)
+      .eq('type', 'roommates')
+      .order('created_at', { ascending: false });
+    (created || []).forEach(h => { if (!seen.has(h.id)) { seen.add(h.id); houses.push(h); } });
+    // Houses where user is a member
+    const emailEscaped = currentUser.email.toLowerCase().replace(/[%_]/g, '\$&');
+    const { data: member } = await db.from('trips').select('*')
+      .ilike('member_emails', '%' + emailEscaped + '%')
+      .eq('type', 'roommates')
+      .order('created_at', { ascending: false });
+    (member || []).forEach(h => { if (!seen.has(h.id)) { seen.add(h.id); houses.push(h); } });
+  } catch(e) { console.warn('loadHouses error:', e); }
+
+  houses.forEach(h => { houseDataMap[h.id] = h; });
+
+  if (houses.length === 0) {
+    container.innerHTML = `<div class="empty-state">
+      <span class="empty-icon">🏠</span>
+      <div class="empty-title">No houses yet</div>
+      <div class="empty-sub">Create a house hub to start tracking shared expenses with your housemates</div>
+      <button onclick="openCreateHouse()" style="margin-top:16px;padding:10px 24px;background:rgba(48,209,88,0.1);border:1px solid rgba(48,209,88,0.25);border-radius:10px;color:var(--green);font-family:'Epilogue',sans-serif;font-size:14px;font-weight:700;cursor:pointer">🏠 Create a House</button>
+    </div>`;
+    return;
+  }
+  container.innerHTML = houses.map(h => renderHouseCard(h)).join('');
+}
+
+function renderHouseCard(h) {
+  const people = Array.isArray(h.people) ? h.people : JSON.parse(h.people || '[]');
+  const isCreator = h.creator_email === currentUser.email;
+  const outstanding = parseFloat(h.total || 0);
+  const safeId = JSON.stringify(h.id);
+  houseDataMap[h.id] = h;
+
+  // Parse settled count
+  let settledCount = 0, totalDebtors = 0;
+  try {
+    let sp = h.settled_people;
+    if (typeof sp === 'string') sp = JSON.parse(sp);
+    if (sp && typeof sp === 'object' && !Array.isArray(sp)) {
+      const rcptCr = {};
+      Object.entries(sp).forEach(([k, v]) => {
+        if ((parseFloat(v)||0) <= 0) return;
+        if (k.includes('::receipt::')) { const pk = k.split('::receipt::')[0].toLowerCase(); rcptCr[pk] = (rcptCr[pk]||0)+(parseFloat(v)||0); }
+      });
+      totalDebtors = people.length;
+      settledCount = people.filter(p => rcptCr[p.toLowerCase()] > 0).length;
+    }
+  } catch(e) {}
+
+  const receiptsCount = h.receipt_count || 0;
+  const shareToken = h.share_token || '';
+  const tripUrl = 'https://ravensplit.com/trip/' + h.id + '?t=' + shareToken;
+
+  return `<div class="bill-card" onclick="openHouse(${safeId})">
+    <div>
+      <div class="bill-name">🏠 ${h.name} <span class="bill-id">${h.id}</span></div>
+      <div class="bill-meta">
+        <span>${people.length} housemate${people.length !== 1 ? 's' : ''}</span>
+        <span>${receiptsCount} expense${receiptsCount !== 1 ? 's' : ''}</span>
+        ${outstanding > 0 ? `<span style="color:var(--orange);font-weight:600">$${outstanding.toFixed(2)} outstanding</span>` : '<span style="color:var(--green)">All settled ✓</span>'}
+      </div>
+    </div>
+    <div class="bill-amount" style="color:${outstanding > 0 ? 'var(--orange)' : 'var(--green)'}">$${outstanding.toFixed(2)}</div>
+    <div class="bill-progress-wrap">
+      <div class="bill-progress-label">${settledCount}/${people.length} settled</div>
+      <div class="bill-progress"><div class="bill-progress-fill" style="width:${people.length > 0 ? Math.round(settledCount/people.length*100) : 0}%;background:var(--green)"></div></div>
+    </div>
+    <div class="bill-actions" onclick="event.stopPropagation()">
+      ${isCreator ? `<button class="bill-action-btn btn-remind" onclick="sendHouseReminder(${safeId})">🔔 Remind</button>` : ''}
+      <button class="bill-action-btn" onclick="navigator.clipboard.writeText('${tripUrl}').then(()=>showToast('Link copied!','success'))" style="background:rgba(0,140,255,0.1);border:1px solid rgba(0,140,255,0.2);color:#4DB8FF">📤 Share</button>
+      <a class="bill-action-btn btn-view" href="${tripUrl}" style="display:inline-flex;align-items:center;text-decoration:none">View →</a>
+    </div>
+  </div>`;
+}
+
+function openHouse(houseId) {
+  const h = houseDataMap[houseId];
+  if (!h) return;
+  const shareToken = h.share_token || '';
+  window.location.href = 'https://ravensplit.com/trip/' + houseId + '?t=' + shareToken;
+}
+
+function sendHouseReminder(houseId) {
+  showToast('Reminders sent to housemates!', 'success');
+}
+
+function openCreateHouse() {
+  document.getElementById('create-house-modal').classList.add('open');
+  document.getElementById('house-name-input').value = '';
+  document.getElementById('house-people-input').value = '';
+  document.getElementById('house-recurring-list').innerHTML = '';
+  renderRecurringExpenses([]);
+}
+
+function closeCreateHouse() {
+  document.getElementById('create-house-modal').classList.remove('open');
+}
+
+let _houseRecurring = [];
+
+function addRecurringExpense() {
+  const name = document.getElementById('new-exp-name').value.trim();
+  const amt = parseFloat(document.getElementById('new-exp-amt').value);
+  if (!name || !amt) { showToast('Enter expense name and amount', 'error'); return; }
+  _houseRecurring.push({ name, amount: amt, day: 1 });
+  document.getElementById('new-exp-name').value = '';
+  document.getElementById('new-exp-amt').value = '';
+  renderRecurringExpenses(_houseRecurring);
+}
+
+function removeRecurringExpense(i) {
+  _houseRecurring.splice(i, 1);
+  renderRecurringExpenses(_houseRecurring);
+}
+
+function renderRecurringExpenses(list) {
+  const el = document.getElementById('house-recurring-list');
+  if (!el) return;
+  if (list.length === 0) { el.innerHTML = '<div style="font-size:12px;color:var(--muted);padding:8px 0">No recurring expenses added yet</div>'; return; }
+  el.innerHTML = list.map((e, i) => `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--dark2);border-radius:8px;margin-bottom:6px">
+    <span style="font-size:13px;font-weight:600">${e.name}</span>
+    <div style="display:flex;align-items:center;gap:8px">
+      <span style="font-size:13px;color:var(--green)">$${e.amount.toFixed(2)}/mo</span>
+      <button onclick="removeRecurringExpense(${i})" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:0">×</button>
+    </div>
+  </div>`).join('');
+}
+
+async function saveCreateHouse() {
+  const name = document.getElementById('house-name-input').value.trim();
+  const peopleRaw = document.getElementById('house-people-input').value.trim();
+  if (!name) { showToast('Enter a house name', 'error'); return; }
+  const people = peopleRaw ? peopleRaw.split(',').map(p => p.trim()).filter(Boolean) : [];
+  const myName = JSON.parse(localStorage.getItem('raven_profile') || '{}').first_name || currentUser.email.split('@')[0];
+  if (!people.includes(myName)) people.unshift(myName);
+
+  const btn = document.getElementById('create-house-btn');
+  btn.textContent = 'Creating...'; btn.disabled = true;
+
+  try {
+    const shareToken = Math.random().toString(36).substr(2, 10);
+    const inviteToken = Math.random().toString(36).substr(2, 10);
+    const houseId = Math.random().toString(36).substr(2, 6).toUpperCase();
+    const { data: house, error } = await db.from('trips').insert({
+      id: houseId,
+      name,
+      type: 'roommates',
+      creator_email: currentUser.email,
+      people: JSON.stringify(people),
+      total: 0,
+      receipt_count: 0,
+      share_token: shareToken,
+      invite_token: inviteToken,
+      recurring_expenses: JSON.stringify(_houseRecurring),
+      created_at: new Date().toISOString()
+    }).select().single();
+
+    if (error) throw error;
+    showToast('🏠 ' + name + ' created!', 'success');
+    closeCreateHouse();
+    _houseRecurring = [];
+    loadHouses();
+  } catch(e) {
+    console.error('createHouse error:', e);
+    showToast('Error creating house: ' + e.message, 'error');
+    btn.textContent = 'Create House'; btn.disabled = false;
+  }
+}
+// ── END ROOMMATES ──────────────────────────────────────────────────────────────
+
+
+
 async function loadTrips() {
   const container = document.getElementById('trips-list');
   container.innerHTML = '<div class="loading"><div class="spinner"></div> Loading...</div>';
@@ -3891,6 +4130,7 @@ async function loadTrips() {
     // 1. Trips created by this user
     const { data: createdTrips, error: e1 } = await db.from('trips').select('*')
       .eq('creator_email', currentUser.email)
+      .neq('type', 'roommates')
       .order('created_at', { ascending: false });
     if (e1) console.warn('loadTrips creator query:', e1.message);
     (createdTrips || []).forEach(t => { if (!seen.has(t.id)) { seen.add(t.id); trips.push(t); } });
@@ -3899,6 +4139,7 @@ async function loadTrips() {
     const emailEscaped = currentUser.email.toLowerCase().replace(/[%_]/g, '\\$&');
     const { data: memberTrips, error: e2 } = await db.from('trips').select('*')
       .ilike('member_emails', '%' + emailEscaped + '%')
+      .neq('type', 'roommates')
       .order('created_at', { ascending: false });
     if (e2) console.warn('loadTrips member_emails query:', e2.message);
     (memberTrips || []).forEach(t => { if (!seen.has(t.id)) { seen.add(t.id); trips.push(t); } });
