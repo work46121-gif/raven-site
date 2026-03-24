@@ -807,7 +807,7 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
           <button onclick="showPage('trip-hub');setMobNav('mob-trip')" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:14px 8px;background:var(--dark);border:1px solid var(--border);border-radius:14px;cursor:pointer;-webkit-tap-highlight-color:transparent;text-align:center">
             <span style="font-size:22px">✈️</span><span style="font-size:11px;font-weight:600;color:var(--white)">Trips</span>
           </button>
-          <button onclick="showPage('roommates');setMobNav('mob-roommates')" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:14px 8px;background:var(--dark);border:1px solid var(--border);border-radius:14px;cursor:pointer;-webkit-tap-highlight-color:transparent;text-align:center;position:relative">
+          <button onclick="showPage('roommates');setMobNav('mob-settings')" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:14px 8px;background:var(--dark);border:1px solid var(--border);border-radius:14px;cursor:pointer;-webkit-tap-highlight-color:transparent;text-align:center;position:relative">
             <span style="font-size:22px">🏠</span><span style="font-size:11px;font-weight:600;color:var(--white)">Roommates</span><span style="position:absolute;top:6px;right:6px;font-size:8px;font-weight:700;padding:1px 4px;background:rgba(48,209,88,0.2);border-radius:4px;color:var(--green)">β</span>
           </button>
           <button onclick="showPage('notifications');setMobNav('mob-settings')" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:14px 8px;background:var(--dark);border:1px solid var(--border);border-radius:14px;cursor:pointer;-webkit-tap-highlight-color:transparent;text-align:center;position:relative">
@@ -1337,7 +1337,6 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
   <button class="mob-nav-btn" id="mob-bills" onclick="showPage('active-bills');setMobNav('mob-bills')"><span class="mi">📋</span>Bills</button>
   <button class="mob-nav-btn" id="mob-create" onclick="showPage('create-bill');setMobNav('mob-create')"><span class="mi" style="width:36px;height:36px;background:var(--green);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;color:#000;margin-bottom:1px">➕</span>New</button>
   <button class="mob-nav-btn" id="mob-trip" onclick="showPage('trip-hub');setMobNav('mob-trip')"><span class="mi">✈️</span>Trips</button>
-  <button class="mob-nav-btn" id="mob-roommates" onclick="showPage('roommates');setMobNav('mob-roommates')"><span class="mi">🏠</span>Rooms</button>
   <button class="mob-nav-btn" id="mob-settings" onclick="showPage('settings');setMobNav('mob-settings')" style="position:relative"><span class="mi">☰</span>More<span id="mob-friend-req-badge" style="display:none;position:absolute;top:6px;right:10px;width:8px;height:8px;background:#A855F7;border-radius:50%"></span></button>
 </div>
 
@@ -2191,10 +2190,6 @@ async function showDashboard() {
   document.getElementById('auth-screen').style.display = 'none';
   document.getElementById('dashboard-screen').style.display = 'block';
   window.scrollTo(0,0);
-  const mainEl = document.querySelector('.main');
-  if (mainEl) mainEl.scrollTop = 0;
-  document.documentElement.scrollTop = 0;
-  document.body.scrollTop = 0;
   document.getElementById('sidebar-avatar').textContent = currentUser.email[0].toUpperCase();
   const mobAvatar = document.getElementById('mob-user-avatar');
   if (mobAvatar) mobAvatar.textContent = currentUser.email[0].toUpperCase();
@@ -2293,25 +2288,45 @@ async function showDashboard() {
 
 function showPage(page) {
   if (typeof posthog !== 'undefined') posthog.capture('page_view', { page });
+  // Hide all pages, show only the target
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const targetPage = document.getElementById('page-' + page);
+  if (!targetPage) { console.warn('showPage: no element for page-' + page); return; }
+  targetPage.classList.add('active');
+  // Scroll to top — handle fixed sidebar layout
+  window.scrollTo(0, 0);
+  document.documentElement.scrollTop = 0;
+  document.body.scrollTop = 0;
+  const mainEl = document.querySelector('.main');
+  if (mainEl) mainEl.scrollTop = 0;
+  // Highlight sidebar nav
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  document.getElementById('page-' + page).classList.add('active');
-  window.scrollTo(0,0);
-  // Highlight nav item by matching onclick attribute
   document.querySelectorAll('.nav-item').forEach(n => {
-    const oc = n.getAttribute('onclick') || '';
-    if (oc.includes("showPage('" + page + "')")) n.classList.add('active');
+    if ((n.getAttribute('onclick') || '').includes("showPage('" + page + "')")) n.classList.add('active');
   });
-  const mobMap = { 'overview':'mob-overview','active-bills':'mob-bills','create-bill':'mob-create','trip-hub':'mob-trip','roommates':'mob-roommates','friends':'mob-settings','settings':'mob-settings','history':'mob-settings','notifications':'mob-settings','invite':'mob-settings' };
+  // Mobile bottom nav highlight — Rooms stays under More (mob-settings)
+  const mobMap = {
+    'overview':     'mob-overview',
+    'active-bills': 'mob-bills',
+    'create-bill':  'mob-create',
+    'trip-hub':     'mob-trip',
+    'settings':     'mob-settings',
+    'roommates':    'mob-settings',
+    'friends':      'mob-settings',
+    'history':      'mob-settings',
+    'notifications':'mob-settings',
+    'invite':       'mob-settings'
+  };
   if (mobMap[page]) setMobNav(mobMap[page]);
-  if (page === 'active-bills') loadActiveBills();
-  if (page === 'history') loadHistory();
-  if (page === 'settings') loadSettings();
+  // Load data for the page
+  if (page === 'active-bills')  loadActiveBills();
+  if (page === 'history')       loadHistory();
+  if (page === 'settings')      loadSettings();
   if (page === 'notifications') loadNotifications();
-  if (page === 'invite') loadInvitePage();
-  if (page === 'trip-hub') loadTrips();
-  if (page === 'roommates') loadHouses();
-  if (page === 'friends') loadFriendsPage();
+  if (page === 'invite')        loadInvitePage();
+  if (page === 'trip-hub')      loadTrips();
+  if (page === 'roommates')     loadHouses();
+  if (page === 'friends')       loadFriendsPage();
 }
 
 async function loadAllData() {
@@ -3949,34 +3964,27 @@ async function loadHouses() {
   let houses = [];
   const seen = new Set();
   try {
-    // Houses created by this user (trips with type='roommates')
     const { data: created, error: e1 } = await db.from('trips').select('*')
       .eq('creator_email', currentUser.email)
       .eq('type', 'roommates')
       .order('created_at', { ascending: false });
-    if (e1) {
-      // 'type' column likely doesn't exist yet — show migration prompt
-      if (e1.message && (e1.message.includes('type') || e1.code === '42703')) {
-        container.innerHTML = `<div class="empty-state">
-          <span class="empty-icon">⚙️</span>
-          <div class="empty-title">One-time setup needed</div>
-          <div class="empty-sub" style="max-width:420px;margin:0 auto">Run this in your <a href="https://supabase.com/dashboard" target="_blank" style="color:var(--green)">Supabase SQL Editor</a> to enable Roommates:</div>
-          <pre style="background:var(--dark2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin:16px auto;max-width:480px;text-align:left;font-size:12px;color:#A78BFA;overflow-x:auto;white-space:pre-wrap">ALTER TABLE trips ADD COLUMN IF NOT EXISTS type TEXT DEFAULT NULL;
+    if (e1 && (e1.code === '42703' || (e1.message && e1.message.includes('type')))) {
+      container.innerHTML = `<div class="empty-state">
+        <span class="empty-icon">⚙️</span>
+        <div class="empty-title">One-time setup needed</div>
+        <div class="empty-sub" style="max-width:400px;margin:0 auto">Run this in your <a href="https://supabase.com/dashboard" target="_blank" style="color:var(--green)">Supabase SQL Editor</a> to enable Roommates:</div>
+        <pre style="background:var(--dark2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin:16px auto;max-width:480px;text-align:left;font-size:12px;color:#A78BFA;overflow-x:auto;white-space:pre-wrap">ALTER TABLE trips ADD COLUMN IF NOT EXISTS type TEXT DEFAULT NULL;
 ALTER TABLE trips ADD COLUMN IF NOT EXISTS recurring_expenses JSONB DEFAULT '[]';</pre>
-          <div class="empty-sub" style="margin-top:8px">After running, refresh this page.</div>
-        </div>`;
-        return;
-      }
-      console.warn('loadHouses creator query:', e1.message);
+        <div class="empty-sub">After running, refresh this page.</div>
+      </div>`;
+      return;
     }
     (created || []).forEach(h => { if (!seen.has(h.id)) { seen.add(h.id); houses.push(h); } });
-    // Houses where user is a member
     const emailEscaped = currentUser.email.toLowerCase().replace(/[%_]/g, '\$&');
-    const { data: member, error: e2 } = await db.from('trips').select('*')
+    const { data: member } = await db.from('trips').select('*')
       .ilike('member_emails', '%' + emailEscaped + '%')
       .eq('type', 'roommates')
       .order('created_at', { ascending: false });
-    if (e2) console.warn('loadHouses member query:', e2.message);
     (member || []).forEach(h => { if (!seen.has(h.id)) { seen.add(h.id); houses.push(h); } });
   } catch(e) { console.warn('loadHouses error:', e); }
 
@@ -4027,7 +4035,7 @@ function renderHouseCard(h) {
       <div class="bill-meta">
         <span>${people.length} housemate${people.length !== 1 ? 's' : ''}</span>
         <span>${receiptsCount} expense${receiptsCount !== 1 ? 's' : ''}</span>
-        ${outstanding > 0.02 ? `<span style="color:var(--orange);font-weight:600">$${outstanding.toFixed(2)} outstanding</span>` : '<span style="color:var(--green)">All settled ✓</span>'}
+        ${outstanding > 0 ? `<span style="color:var(--orange);font-weight:600">$${outstanding.toFixed(2)} outstanding</span>` : '<span style="color:var(--green)">All settled ✓</span>'}
       </div>
     </div>
     <div class="bill-amount" style="color:${outstanding > 0 ? 'var(--orange)' : 'var(--green)'}">$${outstanding.toFixed(2)}</div>
@@ -4111,24 +4119,20 @@ async function saveCreateHouse() {
     const shareToken = Math.random().toString(36).substr(2, 10);
     const inviteToken = Math.random().toString(36).substr(2, 10);
     const houseId = Math.random().toString(36).substr(2, 6).toUpperCase();
-    // Try with all columns first, fall back without optional columns if missing
-    let house, error;
-    const fullPayload = {
-      id: houseId, name, type: 'roommates',
+    const { data: house, error } = await db.from('trips').insert({
+      id: houseId,
+      name,
+      type: 'roommates',
       creator_email: currentUser.email,
       people: JSON.stringify(people),
-      total: 0, receipt_count: 0,
-      share_token: shareToken, invite_token: inviteToken,
+      total: 0,
+      receipt_count: 0,
+      share_token: shareToken,
+      invite_token: inviteToken,
       recurring_expenses: JSON.stringify(_houseRecurring),
       created_at: new Date().toISOString()
-    };
-    ({ data: house, error } = await db.from('trips').insert(fullPayload).select().single());
-    if (error && error.code === '42703') {
-      // Missing column — retry without optional columns
-      const { type: _t, recurring_expenses: _r, ...basicPayload } = fullPayload;
-      ({ data: house, error } = await db.from('trips').insert(basicPayload).select().single());
-      if (!error) showToast('⚠️ House created but Roommates DB setup incomplete. Run the SQL migration in Supabase.', 'error');
-    }
+    }).select().single();
+
     if (error) throw error;
     showToast('🏠 ' + name + ' created!', 'success');
     closeCreateHouse();
