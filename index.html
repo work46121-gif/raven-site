@@ -114,6 +114,8 @@
   --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);
   --white:#F0EEF8;--muted:#6E6B80;--muted2:#9896A8;
   --green:#30D158;--green-glow:rgba(48,209,88,0.25);
+  --teal:#1BC6BE;--teal-soft:#7BE7DE;
+  --sky:#7BC8FF;--sand:#FFB86B;
   --purple:#7C3AED;--purple2:#A855F7;--purple3:#C084FC;
   --orange:#FF6B35;
 }
@@ -126,7 +128,7 @@ body::after{content:'';position:fixed;inset:0;background-image:url("data:image/s
 /* NAV */
 nav{position:fixed;top:0;left:0;right:0;z-index:500;height:64px;display:flex;align-items:center;justify-content:space-between;padding:0 52px;background:rgba(6,6,10,0.92);backdrop-filter:blur(24px);border-bottom:1px solid var(--border)}
 .nav-logo{display:flex;align-items:center;gap:10px;text-decoration:none}
-.nav-logo-text{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:0.2em;background:linear-gradient(135deg,var(--white) 20%,var(--purple3));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.nav-logo-text{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:0.2em;background:linear-gradient(135deg,var(--white) 20%,var(--teal-soft));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
 .nav-links{display:flex;gap:28px;list-style:none;align-items:center}
 .nav-links a{color:var(--muted);text-decoration:none;font-size:13px;letter-spacing:0.04em;transition:color 0.2s}
 .nav-links a:hover{color:var(--white)}
@@ -140,14 +142,14 @@ nav{position:fixed;top:0;left:0;right:0;z-index:500;height:64px;display:flex;ali
 
 /* HERO */
 .hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:120px 48px 80px;position:relative;overflow:hidden}
-.hero-bg{position:absolute;top:-300px;left:50%;transform:translateX(-50%);width:1200px;height:800px;background:radial-gradient(ellipse,rgba(48,209,88,0.07) 0%,rgba(124,58,237,0.05) 40%,transparent 70%);pointer-events:none}
+.hero-bg{position:absolute;top:-300px;left:50%;transform:translateX(-50%);width:1200px;height:800px;background:radial-gradient(ellipse,rgba(48,209,88,0.07) 0%,rgba(27,198,190,0.07) 38%,transparent 70%);pointer-events:none}
 .hero-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,0.016) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.016) 1px,transparent 1px);background-size:80px 80px;mask-image:radial-gradient(ellipse 80% 60% at 50% 0%,black 20%,transparent 100%);pointer-events:none}
 .hero-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(48,209,88,0.08);border:1px solid rgba(48,209,88,0.22);padding:6px 16px;border-radius:20px;font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:var(--green);margin-bottom:32px;animation:fadeUp 0.7s ease both}
 .badge-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:bpulse 2s infinite;box-shadow:0 0 8px var(--green)}
 @keyframes bpulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.5;transform:scale(1.5)}}
 .hero-title{font-family:'Bebas Neue',sans-serif;font-size:clamp(64px,11vw,148px);line-height:0.88;letter-spacing:0.02em;margin-bottom:10px;animation:fadeUp 0.7s 0.08s ease both}
 .t1{display:block;color:var(--white)}
-.t2{display:block;background:linear-gradient(120deg,var(--green) 0%,var(--purple2) 55%,var(--orange) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.t2{display:block;background:linear-gradient(120deg,var(--green) 0%,var(--teal-soft) 52%,var(--sand) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
 .hero-sub{font-size:18px;font-weight:300;color:var(--muted);max-width:520px;line-height:1.85;margin:24px auto 44px;animation:fadeUp 0.7s 0.16s ease both}
 .hero-sub strong{color:var(--white);font-weight:500}
 .hero-actions{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;animation:fadeUp 0.7s 0.24s ease both}
@@ -165,7 +167,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:500;height:64px;display:flex;ali
 .receipt-hero{margin-top:60px;animation:fadeUp 0.7s 0.36s ease both;position:relative}
 .receipt-hero::before{content:'';position:absolute;inset:-60px;background:radial-gradient(ellipse,rgba(48,209,88,0.05) 0%,transparent 70%);pointer-events:none;z-index:-1}
 .receipt-card{background:var(--dark);border:1px solid var(--border2);border-radius:20px;padding:24px;width:340px;box-shadow:0 40px 100px rgba(0,0,0,0.6),0 0 0 1px rgba(124,58,237,0.08);position:relative;overflow:hidden;text-align:left}
-.receipt-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--purple),var(--green))}
+.receipt-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--teal),var(--green))}
 .r-scan{display:inline-flex;align-items:center;gap:6px;background:rgba(48,209,88,0.1);border:1px solid rgba(48,209,88,0.25);padding:4px 10px;border-radius:12px;font-size:10px;font-weight:700;color:var(--green);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:12px}
 .r-title{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:0.06em;margin-bottom:2px}
 .r-meta{font-size:11px;color:var(--muted);margin-bottom:14px}
@@ -188,7 +190,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:500;height:64px;display:flex;ali
 
 /* SECTIONS */
 .sec{padding:100px 48px;max-width:1140px;margin:0 auto}
-.sec-lbl{font-size:11px;letter-spacing:0.22em;text-transform:uppercase;color:var(--purple3);display:block;margin-bottom:14px}
+.sec-lbl{font-size:11px;letter-spacing:0.22em;text-transform:uppercase;color:var(--teal-soft);display:block;margin-bottom:14px}
 .sec-h{font-family:'Bebas Neue',sans-serif;font-size:clamp(40px,5.5vw,72px);letter-spacing:0.04em;line-height:1;margin-bottom:12px}
 .sec-p{color:var(--muted);font-size:15px;line-height:1.8;max-width:560px}
 
@@ -196,8 +198,9 @@ nav{position:fixed;top:0;left:0;right:0;z-index:500;height:64px;display:flex;ali
 .steps{display:grid;grid-template-columns:repeat(4,1fr);gap:2px;background:var(--border);border:1px solid var(--border);border-radius:20px;overflow:hidden;margin-top:56px}
 .step{background:var(--dark);padding:36px 28px;transition:background 0.2s}
 .step:hover{background:var(--dark2)}
-.sn{font-family:'Bebas Neue',sans-serif;font-size:52px;line-height:1;background:linear-gradient(135deg,rgba(48,209,88,0.15),rgba(124,58,237,0.1));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:16px}
-.si{font-size:26px;margin-bottom:14px;display:block}
+.sn{font-family:'Bebas Neue',sans-serif;font-size:52px;line-height:1;background:linear-gradient(135deg,rgba(48,209,88,0.16),rgba(27,198,190,0.14));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:16px}
+.si{font-size:26px;margin-bottom:14px;display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:14px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06)}
+.si svg{width:24px;height:24px;display:block}
 .st{font-weight:700;font-size:15px;margin-bottom:8px}
 .sd{font-size:13px;color:var(--muted);line-height:1.75}
 
@@ -210,14 +213,16 @@ nav{position:fixed;top:0;left:0;right:0;z-index:500;height:64px;display:flex;ali
 .bc::before{content:'';position:absolute;inset:0;opacity:0;transition:opacity 0.25s;pointer-events:none}
 .bc:hover::before{opacity:1}
 .bc.cg::before{background:radial-gradient(circle at 0% 0%,rgba(48,209,88,0.06),transparent 60%)}
-.bc.cp::before{background:radial-gradient(circle at 100% 0%,rgba(124,58,237,0.08),transparent 60%)}
+.bc.cp::before{background:radial-gradient(circle at 100% 0%,rgba(27,198,190,0.09),transparent 60%)}
 .bc.co::before{background:radial-gradient(circle at 50% 0%,rgba(255,107,53,0.07),transparent 60%)}
-.bi{font-size:32px;margin-bottom:18px;display:block}
+.bi{font-size:32px;margin-bottom:18px;display:inline-flex;align-items:center;justify-content:center;width:54px;height:54px;border-radius:18px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06)}
+.bi svg{width:30px;height:30px;display:block}
 .bt{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:0.06em;margin-bottom:10px}
 .bd{font-size:13px;color:var(--muted);line-height:1.78}
 .b-accent{display:inline-flex;align-items:center;gap:6px;margin-top:16px;padding:5px 12px;border-radius:20px;font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase}
 .ag{background:rgba(48,209,88,0.1);color:var(--green);border:1px solid rgba(48,209,88,0.2)}
-.ap{background:rgba(124,58,237,0.1);color:var(--purple3);border:1px solid rgba(124,58,237,0.2)}
+.ap{background:rgba(27,198,190,0.1);color:var(--teal-soft);border:1px solid rgba(27,198,190,0.22)}
+.lp-sprite{position:absolute;width:0;height:0;overflow:hidden;pointer-events:none}
 
 /* TRIP MINI */
 .tmini{background:var(--dark2);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-top:20px}
@@ -302,6 +307,68 @@ footer{border-top:1px solid var(--border);padding:36px 52px;display:flex;align-i
 </style>
 </head>
 <body>
+<svg class="lp-sprite" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="lpGradA" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#30D158"></stop>
+      <stop offset="100%" stop-color="#1BC6BE"></stop>
+    </linearGradient>
+    <linearGradient id="lpGradB" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#7BC8FF"></stop>
+      <stop offset="100%" stop-color="#1BC6BE"></stop>
+    </linearGradient>
+    <linearGradient id="lpGradC" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#FFB86B"></stop>
+      <stop offset="100%" stop-color="#30D158"></stop>
+    </linearGradient>
+  </defs>
+  <symbol id="lp-scan" viewBox="0 0 32 32">
+    <path d="M8 6H24C25.7 6 27 7.3 27 9V23L24.6 21.2L22.3 23L20 21.2L17.7 23L15.4 21.2L13.1 23L10.8 21.2L8 23V9C8 7.3 9.3 6 11 6Z" fill="none" stroke="url(#lpGradA)" stroke-width="2"></path>
+    <path d="M12 12H20M12 16H20M12 20H17" stroke="url(#lpGradB)" stroke-width="2" stroke-linecap="round"></path>
+    <path d="M4.5 11.5V8.5H7.5M24.5 4.5H27.5V7.5M27.5 24.5V27.5H24.5M7.5 27.5H4.5V24.5" stroke="#FFB86B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+  </symbol>
+  <symbol id="lp-pick" viewBox="0 0 32 32">
+    <circle cx="16" cy="16" r="11" fill="none" stroke="url(#lpGradB)" stroke-width="2"></circle>
+    <path d="M11.2 16.4L14.6 19.8L21.2 12.8" stroke="url(#lpGradA)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path>
+    <circle cx="24.6" cy="9.2" r="2.2" fill="#FFB86B"></circle>
+  </symbol>
+  <symbol id="lp-tracking" viewBox="0 0 32 32">
+    <rect x="6" y="17" width="5" height="9" rx="1.8" fill="url(#lpGradB)"></rect>
+    <rect x="13.5" y="11" width="5" height="15" rx="1.8" fill="url(#lpGradA)"></rect>
+    <rect x="21" y="7" width="5" height="19" rx="1.8" fill="url(#lpGradC)"></rect>
+    <circle cx="24.6" cy="25.2" r="2.1" fill="#30D158"></circle>
+  </symbol>
+  <symbol id="lp-pay" viewBox="0 0 32 32">
+    <path d="M7 11C7 8.8 8.8 7 11 7H21C23.2 7 25 8.8 25 11V21C25 23.2 23.2 25 21 25H11C8.8 25 7 23.2 7 21V11Z" fill="none" stroke="url(#lpGradA)" stroke-width="2"></path>
+    <path d="M16 10V22M11 16H21" stroke="url(#lpGradC)" stroke-width="2.4" stroke-linecap="round"></path>
+  </symbol>
+  <symbol id="lp-ai" viewBox="0 0 32 32">
+    <path d="M9 8H23C24.7 8 26 9.3 26 11V21C26 22.7 24.7 24 23 24H9C7.3 24 6 22.7 6 21V11C6 9.3 7.3 8 9 8Z" fill="none" stroke="url(#lpGradB)" stroke-width="2"></path>
+    <path d="M11 14H21M11 18H18" stroke="url(#lpGradA)" stroke-width="2" stroke-linecap="round"></path>
+    <circle cx="24.4" cy="9.4" r="2.2" fill="#30D158"></circle>
+    <path d="M8.2 8.2L6.4 6.4M23.8 24L25.6 25.8" stroke="#FFB86B" stroke-width="2" stroke-linecap="round"></path>
+  </symbol>
+  <symbol id="lp-link" viewBox="0 0 32 32">
+    <path d="M12.4 19.6L9.6 22.4C7.6 24.4 7.6 27.6 9.6 29.6C11.6 31.6 14.8 31.6 16.8 29.6L19.6 26.8" fill="none" stroke="url(#lpGradA)" stroke-width="2.2" stroke-linecap="round"></path>
+    <path d="M19.6 12.4L22.4 9.6C24.4 7.6 27.6 7.6 29.6 9.6C31.6 11.6 31.6 14.8 29.6 16.8L26.8 19.6" fill="none" stroke="url(#lpGradB)" stroke-width="2.2" stroke-linecap="round"></path>
+    <path d="M12 20L20 12" stroke="url(#lpGradC)" stroke-width="2.4" stroke-linecap="round"></path>
+  </symbol>
+  <symbol id="lp-trip" viewBox="0 0 32 32">
+    <path d="M4 18.5L16.4 14.8L28 5.8L21.8 15.6L26.2 17.8L19.8 18.8L15.6 25.2L13.4 18.6L4 18.5Z" fill="none" stroke="url(#lpGradA)" stroke-width="2" stroke-linejoin="round"></path>
+    <circle cx="25.5" cy="22.5" r="2.3" fill="#FFB86B"></circle>
+  </symbol>
+  <symbol id="lp-card" viewBox="0 0 32 32">
+    <rect x="5.5" y="8" width="21" height="16" rx="3.5" fill="none" stroke="url(#lpGradB)" stroke-width="2"></rect>
+    <path d="M8.5 14H23.5" stroke="url(#lpGradA)" stroke-width="2" stroke-linecap="round"></path>
+    <circle cx="21.8" cy="20.2" r="2.1" fill="#FFB86B"></circle>
+  </symbol>
+  <symbol id="lp-contacts" viewBox="0 0 32 32">
+    <circle cx="12" cy="12.5" r="4" fill="none" stroke="url(#lpGradB)" stroke-width="2"></circle>
+    <path d="M5.5 24.5C5.5 20.9 8.4 18 12 18C15.6 18 18.5 20.9 18.5 24.5" fill="none" stroke="url(#lpGradA)" stroke-width="2" stroke-linecap="round"></path>
+    <circle cx="22.3" cy="13.6" r="3" fill="none" stroke="url(#lpGradC)" stroke-width="2"></circle>
+    <path d="M20.5 24C21 21.6 22.5 19.7 24.8 18.9" fill="none" stroke="url(#lpGradC)" stroke-width="2" stroke-linecap="round"></path>
+  </symbol>
+</svg>
 <div class="cur" id="cur"></div>
 <div class="cur-ring" id="curR"></div>
 
@@ -405,10 +472,10 @@ footer{border-top:1px solid var(--border);padding:36px 52px;display:flex;align-i
       <p class="sec-p">From receipt photo to everyone paid — in under two minutes. No spreadsheets. No calculator. No chasing.</p>
     </div>
     <div class="steps reveal">
-      <div class="step"><div class="sn">01</div><span class="si">📸</span><div class="st">Snap or upload receipt</div><p class="sd">Take a photo of any receipt — restaurant, Airbnb, groceries. RAVEN's AI reads every item, price, tax, and tip in seconds.</p></div>
-      <div class="step"><div class="sn">02</div><span class="si">☑️</span><div class="st">Everyone picks their items</div><p class="sd">Share a link with your group. Each person taps what they ordered. Tax and tip split proportionally. Zero math required.</p></div>
-      <div class="step"><div class="sn">03</div><span class="si">📊</span><div class="st">See who owes what</div><p class="sd">Your dashboard shows a live breakdown — who's paid, who's pending, and exactly how much. One tap to remind anyone.</p></div>
-      <div class="step"><div class="sn">04</div><span class="si">💸</span><div class="st">Get paid your way</div><p class="sd">Venmo, Cash App, Zelle, Apple Pay — everyone pays however they want. RAVEN marks it done and updates live.</p></div>
+      <div class="step"><div class="sn">01</div><span class="si"><svg><use href="#lp-scan"></use></svg></span><div class="st">Snap or upload receipt</div><p class="sd">Take a photo of any receipt — restaurant, Airbnb, groceries. RAVEN's AI reads every item, price, tax, and tip in seconds.</p></div>
+      <div class="step"><div class="sn">02</div><span class="si"><svg><use href="#lp-pick"></use></svg></span><div class="st">Everyone picks their items</div><p class="sd">Share a link with your group. Each person taps what they ordered. Tax and tip split proportionally. Zero math required.</p></div>
+      <div class="step"><div class="sn">03</div><span class="si"><svg><use href="#lp-tracking"></use></svg></span><div class="st">See who owes what</div><p class="sd">Your dashboard shows a live breakdown — who's paid, who's pending, and exactly how much. One tap to remind anyone.</p></div>
+      <div class="step"><div class="sn">04</div><span class="si"><svg><use href="#lp-pay"></use></svg></span><div class="st">Get paid your way</div><p class="sd">Venmo, Cash App, Zelle, Apple Pay — everyone pays however they want. RAVEN marks it done and updates live.</p></div>
     </div>
   </div>
 </section>
@@ -421,7 +488,7 @@ footer{border-top:1px solid var(--border);padding:36px 52px;display:flex;align-i
   </div>
   <div class="bento reveal">
     <div class="bc big cg">
-      <span class="bi">✨</span>
+      <span class="bi"><svg><use href="#lp-ai"></use></svg></span>
       <div class="bt">AI Receipt Scanning</div>
       <p class="bd">Upload any receipt photo and Claude AI extracts every item, price, tax, and tip — even messy handwritten checks or dark restaurant photos. No manual entry. Takes 3 seconds.</p>
       <div class="b-accent ag">Powered by Claude AI</div>
@@ -431,13 +498,13 @@ footer{border-top:1px solid var(--border);padding:36px 52px;display:flex;align-i
       </div>
     </div>
     <div class="bc cp">
-      <span class="bi">🔗</span>
+      <span class="bi"><svg><use href="#lp-link"></use></svg></span>
       <div class="bt">One Link, Everyone's In</div>
       <p class="bd">Every bill gets a secure shareable link. Send it in your group chat — no account needed to view or pay. Works on any device, any browser.</p>
       <div class="b-accent ap">No signup for guests</div>
     </div>
     <div class="bc tall co" id="trips">
-      <span class="bi">✈️</span>
+      <span class="bi"><svg><use href="#lp-trip"></use></svg></span>
       <div class="bt">Trip Hub</div>
       <p class="bd">Going on a group trip? Create a hub, share one link, and everyone adds receipts throughout the trip. RAVEN tallies across all receipts and shows each person's running total — live.</p>
       <div class="tmini">
@@ -452,12 +519,12 @@ footer{border-top:1px solid var(--border);padding:36px 52px;display:flex;align-i
       </div>
     </div>
     <div class="bc cg">
-      <span class="bi">📊</span>
+      <span class="bi"><svg><use href="#lp-tracking"></use></svg></span>
       <div class="bt">Live Payment Tracking</div>
       <p class="bd">Your dashboard shows every bill in real time — who's paid, who hasn't, and how much you've collected. Across all your bills at once.</p>
     </div>
     <div class="bc cp">
-      <span class="bi">💳</span>
+      <span class="bi"><svg><use href="#lp-card"></use></svg></span>
       <div class="bt">Pay Any Way</div>
       <p class="bd">Set your payment methods once. When someone pays, RAVEN shows them your Venmo, Cash App, Zelle, or Apple Pay — and marks it done.</p>
       <div class="pchips">
@@ -468,7 +535,7 @@ footer{border-top:1px solid var(--border);padding:36px 52px;display:flex;align-i
       </div>
     </div>
     <div class="bc co">
-      <span class="bi">👥</span>
+      <span class="bi"><svg><use href="#lp-contacts"></use></svg></span>
       <div class="bt">Contacts & History</div>
       <p class="bd">Save your people. Add them to any bill in one tap from your contacts. Full history of every bill — paid, active, settled, or archived.</p>
     </div>
