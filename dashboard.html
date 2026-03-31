@@ -260,13 +260,14 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
   -webkit-tap-highlight-color: transparent; transition: color 0.15s;
   letter-spacing: 0.02em; text-transform: uppercase;
 }
-.mob-nav-btn .mi { width: 22px; height: 22px; display:flex; align-items:center; justify-content:center; line-height: 1; margin-bottom: 1px; }
-.mob-nav-btn .mi svg { width: 22px; height: 22px; display:block; }
+.mob-nav-btn .mi { width: 24px; height: 24px; display:flex; align-items:center; justify-content:center; line-height: 1; margin-bottom: 2px; }
+.mob-nav-btn .mi svg { width: 24px; height: 24px; display:block; }
 .mob-nav-btn.active { color: var(--green); }
-.mob-nav-btn.active .mi svg { filter: drop-shadow(0 0 10px rgba(48,209,88,0.18)); }
-.mob-nav-btn.active .mi-ring { background: rgba(48,209,88,0.12); border-color: rgba(48,209,88,0.28); }
+.mob-nav-btn.active .mi svg { filter: drop-shadow(0 0 10px rgba(48,209,88,0.16)); }
+.mob-nav-btn.active .mi-ring { background: rgba(48,209,88,0.1); border-color: rgba(48,209,88,0.24); }
 .mob-nav-btn.create-btn .mi-ring { width: 40px; height: 40px; border-radius: 50%; background: var(--green); border: 1px solid rgba(48,209,88,0.32); color:#000; box-shadow: 0 10px 24px rgba(48,209,88,0.2); }
-.mi-ring { display:flex; align-items:center; justify-content:center; width: 30px; height: 30px; border-radius: 14px; border: 1px solid transparent; transition: all 0.15s; }
+.mob-nav-btn.create-btn .mi svg { width: 22px; height: 22px; }
+.mi-ring { display:flex; align-items:center; justify-content:center; width: 32px; height: 32px; border-radius: 14px; border: 1px solid transparent; transition: all 0.15s; }
 #mobile-header {
   display: none; position: sticky; top: 0;
   background: rgba(12,12,18,0.98);
@@ -392,6 +393,29 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
     <path d="M3 5.2H12.2M5.8 9H15M3 12.8H12.2" stroke="url(#ravenGradient)" stroke-width="1.8" stroke-linecap="round"></path>
     <circle cx="14.3" cy="5.2" r="1.25" fill="#30D158"></circle>
     <circle cx="3.7" cy="12.8" r="1.15" fill="#A855F7"></circle>
+  </symbol>
+  <symbol id="mob-icon-overview" viewBox="0 0 24 24">
+    <rect x="4" y="12" width="3.2" height="7" rx="1.2" fill="currentColor" opacity="0.72"></rect>
+    <rect x="10.4" y="8" width="3.2" height="11" rx="1.2" fill="currentColor"></rect>
+    <rect x="16.8" y="4.5" width="3.2" height="14.5" rx="1.2" fill="currentColor" opacity="0.82"></rect>
+    <circle cx="19.4" cy="18.8" r="1.8" fill="currentColor"></circle>
+  </symbol>
+  <symbol id="mob-icon-bills" viewBox="0 0 24 24">
+    <path d="M7 4.5H15.2C16.53 4.5 17.6 5.57 17.6 6.9V18.7L15.9 17.4L14.3 18.7L12.7 17.4L11.1 18.7L9.5 17.4L7 19.1V4.5Z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"></path>
+    <path d="M9.5 8.8H14M9.5 12H14M9.5 15.2H12.3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path>
+    <path d="M17.3 7.2L20 8.5L17.3 10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
+  </symbol>
+  <symbol id="mob-icon-create" viewBox="0 0 24 24">
+    <path d="M12 6.2V17.8M6.2 12H17.8" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"></path>
+  </symbol>
+  <symbol id="mob-icon-trips" viewBox="0 0 24 24">
+    <path d="M3.7 13.8L12.1 11.3L20 5.2L15.8 11.9L18.8 13.4L14.4 14.1L11.5 18.5L10 14L3.7 13.8Z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"></path>
+    <circle cx="17.8" cy="16.7" r="1.7" fill="currentColor"></circle>
+  </symbol>
+  <symbol id="mob-icon-more" viewBox="0 0 24 24">
+    <path d="M5 7H15.2M8 12H19M5 17H15.2" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
+    <circle cx="17.9" cy="7" r="1.6" fill="currentColor"></circle>
+    <circle cx="6.7" cy="17" r="1.45" fill="currentColor"></circle>
   </symbol>
 </svg>
 
@@ -1443,11 +1467,11 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
 
 <!-- MOBILE BOTTOM NAV -->
 <div id="mobile-nav">
-  <button class="mob-nav-btn active" id="mob-overview" onclick="showPage('overview');setMobNav('mob-overview')"><span class="mi"><span class="mi-ring"><svg class="raven-icon"><use href="#icon-overview"></use></svg></span></span>Overview</button>
-  <button class="mob-nav-btn" id="mob-bills" onclick="showPage('active-bills');setMobNav('mob-bills')"><span class="mi"><span class="mi-ring"><svg class="raven-icon"><use href="#icon-active-bills"></use></svg></span></span>Bills</button>
-  <button class="mob-nav-btn create-btn" id="mob-create" onclick="showPage('create-bill');setMobNav('mob-create')"><span class="mi"><span class="mi-ring"><svg class="raven-icon"><use href="#icon-create-bill"></use></svg></span></span>New</button>
-  <button class="mob-nav-btn" id="mob-trip" onclick="showPage('trip-hub');setMobNav('mob-trip')"><span class="mi"><span class="mi-ring"><svg class="raven-icon"><use href="#icon-trip-hub"></use></svg></span></span>Trips</button>
-  <button class="mob-nav-btn" id="mob-settings" onclick="showPage('settings');setMobNav('mob-settings')" style="position:relative"><span class="mi"><span class="mi-ring"><svg class="raven-icon"><use href="#icon-more"></use></svg></span></span>More<span id="mob-friend-req-badge" style="display:none;position:absolute;top:6px;right:10px;width:8px;height:8px;background:#A855F7;border-radius:50%"></span></button>
+  <button class="mob-nav-btn active" id="mob-overview" onclick="showPage('overview');setMobNav('mob-overview')"><span class="mi"><span class="mi-ring"><svg class="raven-icon"><use href="#mob-icon-overview"></use></svg></span></span>Overview</button>
+  <button class="mob-nav-btn" id="mob-bills" onclick="showPage('active-bills');setMobNav('mob-bills')"><span class="mi"><span class="mi-ring"><svg class="raven-icon"><use href="#mob-icon-bills"></use></svg></span></span>Bills</button>
+  <button class="mob-nav-btn create-btn" id="mob-create" onclick="showPage('create-bill');setMobNav('mob-create')"><span class="mi"><span class="mi-ring"><svg class="raven-icon"><use href="#mob-icon-create"></use></svg></span></span>New</button>
+  <button class="mob-nav-btn" id="mob-trip" onclick="showPage('trip-hub');setMobNav('mob-trip')"><span class="mi"><span class="mi-ring"><svg class="raven-icon"><use href="#mob-icon-trips"></use></svg></span></span>Trips</button>
+  <button class="mob-nav-btn" id="mob-settings" onclick="showPage('settings');setMobNav('mob-settings')" style="position:relative"><span class="mi"><span class="mi-ring"><svg class="raven-icon"><use href="#mob-icon-more"></use></svg></span></span>More<span id="mob-friend-req-badge" style="display:none;position:absolute;top:6px;right:10px;width:8px;height:8px;background:#A855F7;border-radius:50%"></span></button>
 </div>
 
 <div class="toast" id="toast"></div>
