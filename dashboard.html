@@ -249,25 +249,30 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
   backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
   border-top: 1px solid rgba(255,255,255,0.08);
   z-index: 200;
-  padding: 8px 0;
-  padding-bottom: calc(8px + env(safe-area-inset-bottom));
+  padding: 12px 0 10px;
+  padding-bottom: calc(10px + env(safe-area-inset-bottom));
 }
 .mob-nav-btn {
-  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px;
-  padding: 6px 2px; border: none; background: none;
-  color: var(--muted); font-family: 'Epilogue', sans-serif;
-  font-size: 9px; font-weight: 600; cursor: pointer;
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px;
+  padding: 4px 2px; border: none; background: none;
+  color: rgba(182,171,208,0.92); font-family: 'Epilogue', sans-serif;
+  font-size: 9px; font-weight: 700; cursor: pointer;
   -webkit-tap-highlight-color: transparent; transition: color 0.15s;
-  letter-spacing: 0.02em; text-transform: uppercase;
+  letter-spacing: 0.03em; text-transform: uppercase;
 }
-.mob-nav-btn .mi { width: 24px; height: 24px; display:flex; align-items:center; justify-content:center; line-height: 1; margin-bottom: 2px; }
-.mob-nav-btn .mi svg { width: 24px; height: 24px; display:block; }
+.mob-nav-btn .mi { width: 26px; height: 26px; display:flex; align-items:center; justify-content:center; line-height: 1; margin-bottom: 1px; }
+.mob-nav-btn .mi svg { width: 22px; height: 22px; display:block; }
+.mob-nav-btn .mi svg * { vector-effect: non-scaling-stroke; }
+.mob-nav-btn:not(.create-btn) .mi svg { color: #a98af6; }
 .mob-nav-btn.active { color: var(--green); }
-.mob-nav-btn.active .mi svg { filter: drop-shadow(0 0 10px rgba(48,209,88,0.16)); }
+.mob-nav-btn.active .mi svg { color: var(--green); filter: drop-shadow(0 0 10px rgba(48,209,88,0.16)); }
 .mob-nav-btn.active .mi-ring { background: rgba(48,209,88,0.1); border-color: rgba(48,209,88,0.24); }
-.mob-nav-btn.create-btn .mi-ring { width: 40px; height: 40px; border-radius: 50%; background: var(--green); border: 1px solid rgba(48,209,88,0.32); color:#000; box-shadow: 0 10px 24px rgba(48,209,88,0.2); }
+.mob-nav-btn .mi-ring { box-shadow: inset 0 1px 0 rgba(255,255,255,0.03); }
+.mob-nav-btn:not(.create-btn):not(.active) .mi-ring { background: rgba(168,85,247,0.08); border-color: rgba(168,85,247,0.16); }
+.mob-nav-btn.create-btn { transform: translateY(-4px); }
+.mob-nav-btn.create-btn .mi-ring { width: 46px; height: 46px; border-radius: 50%; background: var(--green); border: 1px solid rgba(48,209,88,0.32); color:#000; box-shadow: 0 14px 28px rgba(48,209,88,0.22); }
 .mob-nav-btn.create-btn .mi svg { width: 22px; height: 22px; }
-.mi-ring { display:flex; align-items:center; justify-content:center; width: 32px; height: 32px; border-radius: 14px; border: 1px solid transparent; transition: all 0.15s; }
+.mi-ring { display:flex; align-items:center; justify-content:center; width: 36px; height: 36px; border-radius: 14px; border: 1px solid transparent; transition: all 0.15s; }
 #mobile-header {
   display: none; position: sticky; top: 0;
   background: rgba(12,12,18,0.98);
@@ -413,9 +418,10 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
     <circle cx="17.8" cy="16.7" r="1.7" fill="currentColor"></circle>
   </symbol>
   <symbol id="mob-icon-more" viewBox="0 0 24 24">
-    <path d="M5 7H15.2M8 12H19M5 17H15.2" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
-    <circle cx="17.9" cy="7" r="1.6" fill="currentColor"></circle>
-    <circle cx="6.7" cy="17" r="1.45" fill="currentColor"></circle>
+    <path d="M6 7H18M6 12H18M6 17H18" stroke="currentColor" stroke-width="2.15" stroke-linecap="round"></path>
+    <circle cx="18" cy="7" r="1.4" fill="currentColor"></circle>
+    <circle cx="6" cy="12" r="1.4" fill="currentColor"></circle>
+    <circle cx="18" cy="17" r="1.4" fill="currentColor"></circle>
   </symbol>
 </svg>
 
