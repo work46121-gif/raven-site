@@ -283,6 +283,17 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
 .pay-method-name { font-size:15px;font-weight:600;color:#fff; }
 .pay-method-handle { font-size:12px;color:rgba(255,255,255,0.5);margin-top:2px; }
 .pay-method-arrow { font-size:16px;color:rgba(255,255,255,0.4); }
+
+.raven-r-mark::before {
+  content: '';
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  background-image: url("data:image/svg+xml,%3Csvg width='28' height='28' viewBox='0 0 28 28' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3ClinearGradient id='rg' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%23C084FC'/%3E%3Cstop offset='100%25' stop-color='%237C3AED'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ctext x='2' y='22' font-family='Bebas Neue, sans-serif' font-size='24' fill='url(%23rg)'%3ER%3C/text%3E%3Ccircle cx='11' cy='24' r='3' fill='%2330D158'/%3E%3C/svg%3E");
+  background-size: contain;
+  background-repeat: no-repeat;
+  vertical-align: middle;
+}
 </style>
 </head>
 <body>
@@ -292,13 +303,13 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
   <div class="auth-grid"></div>
   <div class="auth-box">
     <div class="auth-logo">
-      <span class="auth-logo-icon">🪶</span>
+      <span class="auth-logo-icon" style="display:flex;align-items:center;justify-content:center"><svg width="44" height="44" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0"><defs><linearGradient id="rg1a" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#C084FC"/><stop offset="100%" stop-color="#7C3AED"/></linearGradient></defs><text x="3" y="32" font-family="Bebas Neue, sans-serif" font-size="36" fill="url(#rg1a)">R</text><circle cx="14" cy="26" r="4" fill="#30D158"/></svg></span>
       <div class="auth-logo-name">RAVEN</div>
       <div class="auth-logo-sub">Request Automatically Via Every Network</div>
     </div>
     <!-- Join trip banner — shown when coming from an invite link -->
     <div class="join-banner" id="join-banner">
-      ✈️ You've been invited to join <b id="join-trip-name-display">a trip</b> on RAVEN.<br>
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="vertical-align:middle;margin-right:4px"><path d="M14 5.5a2 2 0 0 1-2 2l-2.5 0L6 13H4.5l1.5-5.5H3.5L2.5 9H1l1-3.5L1 2h1.5l1 1.5H6L4.5 0H6l3.5 5.5H13a1.5 1.5 0 0 1 1 1.5z" fill="currentColor"/></svg> You've been invited to join <b id="join-trip-name-display">a trip</b> on RAVEN.<br>
       <span style="font-size:12px;color:#9896A8;margin-top:4px;display:block">Create an account or sign in to join.</span>
     </div>
     <div class="auth-card">
@@ -362,7 +373,7 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
 
 <!-- MOBILE HEADER -->
 <div id="mobile-header">
-  <a href="index.html" style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:0.15em;text-decoration:none;background:linear-gradient(135deg,var(--white),var(--purple3));-webkit-background-clip:text;-webkit-text-fill-color:transparent;">🪶 RAVEN</a>
+  <a href="index.html" style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:0.15em;text-decoration:none;background:linear-gradient(135deg,var(--white),var(--purple3));-webkit-background-clip:text;-webkit-text-fill-color:transparent;display:flex;align-items:center;gap:6px"><svg width="22" height="22" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg" style="-webkit-text-fill-color:initial;flex-shrink:0"><defs><linearGradient id="rg_mob" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#C084FC"/><stop offset="100%" stop-color="#7C3AED"/></linearGradient></defs><text x="2" y="22" font-family="Bebas Neue, sans-serif" font-size="24" fill="url(#rg_mob)">R</text><circle cx="11" cy="24" r="3" fill="#30D158"/></svg> RAVEN</a>
   <div style="display:flex;align-items:center;gap:10px">
     <button onclick="handleLogout()" style="padding:6px 12px;background:rgba(255,68,68,0.08);border:1px solid rgba(255,68,68,0.18);border-radius:8px;color:#FF6B6B;font-family:'Epilogue',sans-serif;font-size:11px;font-weight:600;cursor:pointer;-webkit-tap-highlight-color:transparent">⎋ Sign Out</button>
     <div id="mob-user-avatar" onclick="showPage('settings');setMobNav('mob-settings')" style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--purple),var(--green));display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;cursor:pointer;overflow:hidden">?</div>
@@ -373,20 +384,20 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
 <div id="dashboard-screen">
   <aside class="sidebar">
     <a href="index.html" class="sidebar-logo">
-      <span class="sidebar-logo-mark">🪶</span>
+      <span class="sidebar-logo-mark" style="display:flex;align-items:center"><svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0"><defs><linearGradient id="rg1" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#C084FC"/><stop offset="100%" stop-color="#7C3AED"/></linearGradient></defs><text x="2" y="22" font-family="Bebas Neue, sans-serif" font-size="24" fill="url(#rg1)">R</text><circle cx="11" cy="24" r="3" fill="#30D158"/></svg></span>
       <span class="sidebar-logo-text">RAVEN</span>
     </a>
     <nav class="sidebar-nav">
-      <button class="nav-item active" onclick="showPage('overview')"><span class="ni">📊</span> Overview</button>
-      <button class="nav-item" onclick="showPage('active-bills')"><span class="ni">📋</span> Active Bills <span class="nav-badge" id="active-count">0</span></button>
-      <button class="nav-item" onclick="showPage('create-bill')"><span class="ni">➕</span> Create Bill</button>
-      <button class="nav-item" onclick="showPage('trip-hub')"><span class="ni">✈️</span> Trip Hub</button>
-      <button class="nav-item" onclick="showPage('roommates')"><span class="ni">🏠</span> Roommates <span style="font-size:9px;font-weight:700;padding:1px 6px;background:rgba(48,209,88,0.15);border:1px solid rgba(48,209,88,0.3);border-radius:6px;color:var(--green);margin-left:4px;vertical-align:middle">BETA</span></button>
-      <button class="nav-item" onclick="showPage('friends')" style="position:relative"><span class="ni">👥</span> Friends <span id="friends-dm-badge" style="display:none;position:absolute;top:6px;right:8px;min-width:16px;height:16px;padding:0 4px;background:var(--purple);border-radius:8px;font-size:10px;font-weight:700;color:#fff;align-items:center;justify-content:center"></span></button>
-      <button class="nav-item" onclick="showPage('history')"><span class="ni">🕐</span> History</button>
+      <button class="nav-item active" onclick="showPage('overview')"><span class="ni"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="9" width="3" height="6" rx="1" fill="currentColor" opacity="0.7"/><rect x="6" y="5" width="3" height="10" rx="1" fill="currentColor"/><rect x="11" y="2" width="3" height="13" rx="1" fill="currentColor" opacity="0.7"/></svg></span> Overview</button>
+      <button class="nav-item" onclick="showPage('active-bills')"><span class="ni"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="1" width="10" height="14" rx="2" stroke="currentColor" stroke-width="1.3"/><path d="M5 5h4M5 8h4M5 11h2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M12 3l2 1.5L12 6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span> Active Bills <span class="nav-badge" id="active-count">0</span></button>
+      <button class="nav-item" onclick="showPage('create-bill')"><span class="ni"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.3"/><path d="M8 5v6M5 8h6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></span> Create Bill</button>
+      <button class="nav-item" onclick="showPage('trip-hub')"><span class="ni"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M14 5.5a2 2 0 0 1-2 2l-2.5 0L6 13H4.5l1.5-5.5H3.5L2.5 9H1l1-3.5L1 2h1.5l1 1.5H6L4.5 0H6l3.5 5.5H13a1.5 1.5 0 0 1 1 1.5z" fill="currentColor"/></svg></span> Trip Hub</button>
+      <button class="nav-item" onclick="showPage('roommates')"><span class="ni"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 7.5L8 2l7 5.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><rect x="3" y="7" width="10" height="7" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="6" y="10" width="4" height="4" rx="0.5" fill="currentColor" opacity="0.6"/></svg></span> Roommates <span style="font-size:9px;font-weight:700;padding:1px 6px;background:rgba(48,209,88,0.15);border:1px solid rgba(48,209,88,0.3);border-radius:6px;color:var(--green);margin-left:4px;vertical-align:middle">BETA</span></button>
+      <button class="nav-item" onclick="showPage('friends')" style="position:relative"><span class="ni"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="6" cy="4.5" r="2.5" stroke="currentColor" stroke-width="1.3"/><path d="M1 13c0-2.8 2.2-5 5-5s5 2.2 5 5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="12" cy="5" r="2" stroke="currentColor" stroke-width="1.3"/><path d="M14 13c0-2.2-1.3-4-3-4.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></span> Friends <span id="friends-dm-badge" style="display:none;position:absolute;top:6px;right:8px;min-width:16px;height:16px;padding:0 4px;background:var(--purple);border-radius:8px;font-size:10px;font-weight:700;color:#fff;align-items:center;justify-content:center"></span></button>
+      <button class="nav-item" onclick="showPage('history')"><span class="ni"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.3"/><path d="M8 4.5V8l2.5 2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></span> History</button>
       <div style="flex:1"></div>
-      <button class="nav-item" onclick="showPage('notifications')" style="position:relative"><span class="ni">🔔</span> Notifications <span id="notif-badge" style="display:none;margin-left:auto;background:#FF4444;color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;min-width:20px;text-align:center"></span></button>
-      <button class="nav-item" onclick="showPage('invite')"><span class="ni">🎟</span> Invite Friends</button>
+      <button class="nav-item" onclick="showPage('notifications')" style="position:relative"><span class="ni"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 2a4 4 0 0 0-4 4v3l-1 1.5h10L12 9V6a4 4 0 0 0-4-4z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M6.5 12.5a1.5 1.5 0 0 0 3 0" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="8" cy="1.5" r="1" fill="currentColor"/></svg></span> Notifications <span id="notif-badge" style="display:none;margin-left:auto;background:#FF4444;color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;min-width:20px;text-align:center"></span></button>
+      <button class="nav-item" onclick="showPage('invite')"><span class="ni"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 2v12M3 7h10" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><rect x="2" y="4" width="12" height="8" rx="1.5" stroke="currentColor" stroke-width="1.3"/></svg></span> Invite Friends</button>
     </nav>
     <div class="sidebar-user">
       <button onclick="showPage('settings')" style="width:100%;display:flex;align-items:center;gap:10px;padding:10px 12px;background:transparent;border:none;border-radius:10px;cursor:pointer;transition:background 0.2s;text-align:left" onmouseover="this.style.background='var(--dark3)'" onmouseout="this.style.background='transparent'">
@@ -515,10 +526,10 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
           <div style="display:flex;flex-direction:column;gap:20px">
             <!-- Scan button / status -->
             <div id="cb-scan-wrap" style="display:none">
-              <button onclick="cbScanReceipt()" id="cb-scan-btn" style="width:100%;padding:18px;background:linear-gradient(135deg,var(--purple),var(--green));color:#fff;border:none;border-radius:14px;font-family:'Epilogue',sans-serif;font-size:16px;font-weight:800;cursor:pointer;box-shadow:0 4px 24px rgba(124,58,237,0.4);letter-spacing:0.02em">🪶 RAVEN Scan — Extract All Items</button>
+              <button onclick="cbScanReceipt()" id="cb-scan-btn" style="width:100%;padding:18px;background:linear-gradient(135deg,var(--purple),var(--green));color:#fff;border:none;border-radius:14px;font-family:'Epilogue',sans-serif;font-size:16px;font-weight:800;cursor:pointer;box-shadow:0 4px 24px rgba(124,58,237,0.4);letter-spacing:0.02em"><svg width="18" height="18" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0"><text x="2" y="22" font-family="Bebas Neue, sans-serif" font-size="24" fill="white">R</text><circle cx="11" cy="24" r="3" fill="#30D158"/></svg> RAVEN Scan — Extract All Items</button>
             </div>
             <div id="cb-scanning" style="display:none;padding:24px;background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.2);border-radius:14px;text-align:center">
-              <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:10px"><div style="width:22px;height:22px;border:2px solid rgba(124,58,237,0.3);border-top-color:var(--purple2);border-radius:50%;animation:spin 0.8s linear infinite"></div><span style="font-weight:700;color:var(--purple3);font-size:15px">RAVEN is reading your receipt...</span></div>
+              <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:10px"><div style="width:22px;height:22px;border:2px solid rgba(124,58,237,0.3);border-top-color:var(--purple2);border-radius:50%;animation:spin 0.8s linear infinite"></div><span style="font-weight:700;color:var(--purple3);font-size:15px">RAVEN is reading your receipt…</span></div>
               <div style="font-size:13px;color:var(--muted)" id="cb-scan-status">Analyzing items, prices, tax and tip</div>
             </div>
             <div id="cb-scan-result" style="display:none"></div>
@@ -532,7 +543,7 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
                   <div><div style="font-size:14px;font-weight:600;margin-bottom:3px">Upload your receipt</div><div style="font-size:12px;color:var(--muted);line-height:1.6">Any restaurant, bar, or store receipt — even blurry ones</div></div>
                 </div>
                 <div style="display:flex;gap:14px;align-items:flex-start">
-                  <div style="width:36px;height:36px;border-radius:10px;background:rgba(124,58,237,0.1);border:1px solid rgba(124,58,237,0.2);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🪶</div>
+                  <div style="width:36px;height:36px;border-radius:10px;background:rgba(124,58,237,0.1);border:1px solid rgba(124,58,237,0.2);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0"><svg width="18" height="18" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="rg_item" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#C084FC"/><stop offset="100%" stop-color="#7C3AED"/></linearGradient></defs><text x="2" y="22" font-family="Bebas Neue, sans-serif" font-size="24" fill="url(#rg_item)">R</text><circle cx="11" cy="24" r="3" fill="#30D158"/></svg></div>
                   <div><div style="font-size:14px;font-weight:600;margin-bottom:3px">RAVEN extracts everything</div><div style="font-size:12px;color:var(--muted);line-height:1.6">Items, prices, tax, and tip — automatically</div></div>
                 </div>
                 <div style="display:flex;gap:14px;align-items:flex-start">
@@ -565,7 +576,7 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
               <div style="display:flex;gap:8px;margin-bottom:10px">
                 <input id="cb-person-input" type="text" class="add-person-input" placeholder="Add name (e.g. Jake)" style="flex:1" onkeydown="if(event.key==='Enter')cbAddPerson()">
                 <button class="add-person-btn" onclick="cbAddPerson()">+ Add</button>
-                <button class="add-person-btn" onclick="cbOpenContactsPicker()" style="background:rgba(48,209,88,0.1);border-color:rgba(48,209,88,0.25);color:var(--green)" title="Add from contacts">👥</button>
+                <button class="add-person-btn" onclick="cbOpenContactsPicker()" style="background:rgba(48,209,88,0.1);border-color:rgba(48,209,88,0.25);color:var(--green)" title="Add from contacts"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="6" cy="4.5" r="2.5" stroke="currentColor" stroke-width="1.3"/><path d="M1 13c0-2.8 2.2-5 5-5s5 2.2 5 5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M12 7v4M14 9h-4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></button>
               </div>
               <div id="cb-people-chips" class="people-list" style="margin-bottom:14px"></div>
               <div style="border-top:1px solid var(--border);padding-top:14px">
@@ -609,7 +620,7 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
                 <!-- Tax -->
                 <div style="background:var(--dark2);border:1px solid var(--border);border-radius:10px;padding:12px 14px">
                   <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
-                    <span style="font-size:13px;font-weight:600;flex:1">🧾 Tax</span>
+                    <span style="font-size:13px;font-weight:600;flex:1">Tax</span>
                     <div style="position:relative"><span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:12px">$</span><input id="cb-tax" type="number" class="add-person-input" placeholder="0.00" step="0.01" style="width:90px;padding-left:24px;font-size:13px" oninput="cbUpdateSummary()"></div>
                   </div>
                   <div style="display:flex;gap:6px">
@@ -700,7 +711,7 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
                 <span style="font-size:16px;font-weight:700">Grand Total</span>
                 <span style="font-family:'Bebas Neue',sans-serif;font-size:40px;color:var(--green);letter-spacing:0.03em" id="cb-final-total">$0.00</span>
               </div>
-              <button onclick="cbCreateFinalBill()" class="submit-btn" id="cb-final-btn" style="font-size:16px;padding:17px;letter-spacing:0.02em">🪶 Create Bill &amp; Notify Everyone</button>
+              <button onclick="cbCreateFinalBill()" class="submit-btn" id="cb-final-btn" style="font-size:16px;padding:17px;letter-spacing:0.02em"><svg width="16" height="16" viewBox="0 0 28 28" fill="none" style="flex-shrink:0"><text x="2" y="22" font-family="Bebas Neue, sans-serif" font-size="24" fill="white">R</text><circle cx="11" cy="24" r="3" fill="#30D158"/></svg> Create Bill &amp; Notify Everyone</button>
             </div>
             <div style="background:rgba(48,209,88,0.04);border:1px solid rgba(48,209,88,0.15);border-radius:12px;padding:16px;font-size:12px;color:var(--muted);line-height:1.7">
               ✅ A shareable link will be created<br>
@@ -748,7 +759,7 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
 
       <!-- Your Raven ID card -->
       <div style="background:linear-gradient(135deg,rgba(124,58,237,0.15),rgba(48,209,88,0.08));border:1px solid rgba(124,58,237,0.25);border-radius:16px;padding:20px 24px;margin-bottom:24px;max-width:520px">
-        <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--purple3);margin-bottom:10px">🪶 Your Raven ID</div>
+        <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--purple3);margin-bottom:10px"><svg width="14" height="14" viewBox="0 0 28 28" fill="none" style="flex-shrink:0;vertical-align:middle"><defs><linearGradient id="rg_hd" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#C084FC"/><stop offset="100%" stop-color="#7C3AED"/></linearGradient></defs><text x="2" y="22" font-family="Bebas Neue, sans-serif" font-size="24" fill="url(#rg_hd)">R</text><circle cx="11" cy="24" r="3" fill="#30D158"/></svg> Your Raven ID</div>
         <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
           <div>
             <div id="my-raven-id-display" style="font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:0.05em;color:var(--white)">@loading...</div>
@@ -774,7 +785,7 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
       <!-- Notification Center — always shown, populated by JS -->
       <div style="max-width:520px;margin-bottom:24px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-          <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted2)">🔔 Notifications</div>
+          <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted2)"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" style="vertical-align:middle;margin-right:4px"><path d="M8 2a4 4 0 0 0-4 4v3l-1 1.5h10L12 9V6a4 4 0 0 0-4-4z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M6.5 12.5a1.5 1.5 0 0 0 3 0" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg> Notifications</div>
           <span id="friend-req-count" style="display:none;background:var(--purple);color:#fff;border-radius:10px;padding:2px 8px;font-size:11px;font-weight:700"></span>
         </div>
         <div id="friend-requests-section">
@@ -848,7 +859,7 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
           <div class="form-group"><label class="form-label">Phone Number</label><input id="set-phone" type="tel" class="form-input" placeholder="+1 (555) 000-0000"></div>
           <div class="form-group"><label class="form-label">Email</label><input id="set-email" type="text" class="form-input" disabled style="opacity:0.5;cursor:not-allowed"></div>
           <div class="form-group">
-            <label class="form-label" style="display:flex;align-items:center;gap:8px">🪶 Raven ID <span style="font-size:11px;color:var(--muted);font-weight:400">— how friends find you</span></label>
+            <label class="form-label" style="display:flex;align-items:center;gap:8px"><svg width="14" height="14" viewBox="0 0 28 28" fill="none" style="flex-shrink:0;vertical-align:middle"><defs><linearGradient id="rg_id" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#C084FC"/><stop offset="100%" stop-color="#7C3AED"/></linearGradient></defs><text x="2" y="22" font-family="Bebas Neue, sans-serif" font-size="24" fill="url(#rg_id)">R</text><circle cx="11" cy="24" r="3" fill="#30D158"/></svg> Raven ID <span style="font-size:11px;color:var(--muted);font-weight:400">— how friends find you</span></label>
             <div style="display:flex;gap:8px;align-items:center">
               <span style="color:var(--purple3);font-size:16px;font-weight:700;flex-shrink:0">@</span>
               <input id="set-raven-id" type="text" class="form-input" placeholder="yourhandle" style="flex:1" oninput="this.value=this.value.toLowerCase().replace(/[^a-z0-9_]/g,'')">
@@ -863,7 +874,7 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
         <div style="padding:16px;background:linear-gradient(135deg,rgba(124,58,237,0.1),rgba(48,209,88,0.06));border:1px solid rgba(124,58,237,0.22);border-radius:16px">
           <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:0" id="pwa-install-main">
             <div style="display:flex;align-items:center;gap:12px;min-width:0">
-              <div style="font-size:26px;flex-shrink:0">🪶</div>
+              <div style="font-size:26px;flex-shrink:0"><svg width="18" height="18" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="rg_item" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#C084FC"/><stop offset="100%" stop-color="#7C3AED"/></linearGradient></defs><text x="2" y="22" font-family="Bebas Neue, sans-serif" font-size="24" fill="url(#rg_item)">R</text><circle cx="11" cy="24" r="3" fill="#30D158"/></svg></div>
               <div>
                 <div style="font-size:13px;font-weight:700;color:var(--white);margin-bottom:2px">Add RAVEN to Home Screen</div>
                 <div style="font-size:11px;color:var(--muted);line-height:1.4">Works offline · feels like a native app</div>
@@ -992,7 +1003,7 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
     <div id="page-trip-hub" class="page">
       <div class="page-header">
         <h1 class="page-title">Trip <span>Hub</span></h1>
-        <button class="bill-action-btn btn-remind" style="padding:10px 20px;font-size:13px" onclick="openCreateTrip()">✈️ New Trip</button>
+        <button class="bill-action-btn btn-remind" style="padding:10px 20px;font-size:13px" onclick="openCreateTrip()"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" style="vertical-align:middle;margin-right:4px"><path d="M14 5.5a2 2 0 0 1-2 2l-2.5 0L6 13H4.5l1.5-5.5H3.5L2.5 9H1l1-3.5L1 2h1.5l1 1.5H6L4.5 0H6l3.5 5.5H13a1.5 1.5 0 0 1 1 1.5z" fill="currentColor"/></svg> New Trip</button>
       </div>
       <div id="trips-list" class="bills-list"><div class="loading"><div class="spinner"></div> Loading trips...</div></div>
     </div>
@@ -1004,7 +1015,7 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
           <h1 class="page-title">Roommates <span style="font-size:13px;font-weight:700;padding:2px 9px;background:rgba(48,209,88,0.12);border:1px solid rgba(48,209,88,0.3);border-radius:8px;color:var(--green);vertical-align:middle;margin-left:8px">BETA</span></h1>
           <div style="font-size:13px;color:var(--muted);margin-top:4px">Track shared expenses with your housemates — rent, utilities, groceries and more.</div>
         </div>
-        <button class="bill-action-btn" style="padding:10px 20px;font-size:13px;background:rgba(48,209,88,0.1);border:1px solid rgba(48,209,88,0.25);color:var(--green)" onclick="openCreateHouse()">🏠 New House</button>
+        <button class="bill-action-btn" style="padding:10px 20px;font-size:13px;background:rgba(48,209,88,0.1);border:1px solid rgba(48,209,88,0.25);color:var(--green)" onclick="openCreateHouse()"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" style="vertical-align:middle;margin-right:4px"><path d="M1 7.5L8 2l7 5.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><rect x="3" y="7" width="10" height="7" rx="1" stroke="currentColor" stroke-width="1.3"/></svg> New House</button>
       </div>
       <div id="houses-list" class="bills-list"><div class="loading"><div class="spinner"></div> Loading...</div></div>
     </div>
@@ -1110,7 +1121,7 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
     <div style="background:var(--dark);border:1px solid var(--border2);border-radius:20px;padding:32px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
         <div>
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:0.05em">🏠 New House</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:0.05em"><svg width="22" height="22" viewBox="0 0 16 16" fill="none" style="vertical-align:middle;margin-right:6px"><path d="M1 7.5L8 2l7 5.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><rect x="3" y="7" width="10" height="7" rx="1" stroke="currentColor" stroke-width="1.3"/></svg> New House</div>
           <div style="font-size:12px;color:var(--muted);margin-top:2px">Set up a shared expense hub for your housemates</div>
         </div>
         <button onclick="closeCreateHouse()" style="background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:50%;width:32px;height:32px;color:var(--muted);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center">×</button>
@@ -1164,13 +1175,13 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
         <div style="display:flex;gap:8px;margin-bottom:10px">
           <input id="trip-person-input" type="text" class="add-person-input" placeholder="Add name" style="flex:1" onkeydown="if(event.key==='Enter')tripAddPerson()">
           <button class="add-person-btn" onclick="tripAddPerson()">+ Add</button>
-          <button class="add-person-btn" onclick="tripOpenContacts()" style="background:rgba(48,209,88,0.1);border-color:rgba(48,209,88,0.25);color:var(--green)">👥</button>
+          <button class="add-person-btn" onclick="tripOpenContacts()" style="background:rgba(48,209,88,0.1);border-color:rgba(48,209,88,0.25);color:var(--green)"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="6" cy="4.5" r="2.5" stroke="currentColor" stroke-width="1.3"/><path d="M1 13c0-2.8 2.2-5 5-5s5 2.2 5 5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M12 7v4M14 9h-4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></button>
         </div>
         <div id="trip-people-chips" class="people-list"></div>
       </div>
       <div style="display:flex;gap:10px;margin-top:8px">
         <button onclick="closeCreateTrip()" style="flex:1;padding:13px;background:transparent;border:1px solid var(--border);border-radius:10px;color:var(--muted);font-family:'Epilogue',sans-serif;font-size:14px;cursor:pointer">Cancel</button>
-        <button onclick="createTrip()" class="submit-btn" style="flex:2">✈️ Create Trip</button>
+        <button onclick="createTrip()" class="submit-btn" style="flex:2"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" style="vertical-align:middle;margin-right:4px"><path d="M14 5.5a2 2 0 0 1-2 2l-2.5 0L6 13H4.5l1.5-5.5H3.5L2.5 9H1l1-3.5L1 2h1.5l1 1.5H6L4.5 0H6l3.5 5.5H13a1.5 1.5 0 0 1 1 1.5z" fill="currentColor"/></svg> Create Trip</button>
       </div>
     </div>
   </div>
@@ -1235,8 +1246,8 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
 
         <!-- TABS -->
         <div style="display:flex;background:var(--dark2);border-radius:10px;padding:4px;gap:4px">
-          <button id="atab-members" onclick="switchAdminTab('members')" style="flex:1;padding:9px;background:var(--dark3);border:none;color:var(--white);font-family:'Epilogue',sans-serif;font-size:13px;font-weight:600;border-radius:7px;cursor:pointer">👥 Members</button>
-          <button id="atab-receipts" onclick="switchAdminTab('receipts')" style="flex:1;padding:9px;background:transparent;border:none;color:var(--muted);font-family:'Epilogue',sans-serif;font-size:13px;font-weight:600;border-radius:7px;cursor:pointer">🧾 Receipts</button>
+          <button id="atab-members" onclick="switchAdminTab('members')" style="flex:1;padding:9px;background:var(--dark3);border:none;color:var(--white);font-family:'Epilogue',sans-serif;font-size:13px;font-weight:600;border-radius:7px;cursor:pointer"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" style="vertical-align:middle;margin-right:4px"><circle cx="6" cy="4.5" r="2.5" stroke="currentColor" stroke-width="1.3"/><path d="M1 13c0-2.8 2.2-5 5-5s5 2.2 5 5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="12" cy="5" r="2" stroke="currentColor" stroke-width="1.3"/><path d="M14 13c0-2.2-1.3-4-3-4.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg> Members</button>
+          <button id="atab-receipts" onclick="switchAdminTab('receipts')" style="flex:1;padding:9px;background:transparent;border:none;color:var(--muted);font-family:'Epilogue',sans-serif;font-size:13px;font-weight:600;border-radius:7px;cursor:pointer"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" style="vertical-align:middle;margin-right:4px"><rect x="2" y="1" width="10" height="14" rx="2" stroke="currentColor" stroke-width="1.3"/><path d="M5 5h4M5 8h4M5 11h2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg> Receipts</button>
           <button id="atab-comments" onclick="switchAdminTab('comments')" style="flex:1;padding:9px;background:transparent;border:none;color:var(--muted);font-family:'Epilogue',sans-serif;font-size:13px;font-weight:600;border-radius:7px;cursor:pointer">💬 Comments</button>
           <button id="atab-danger" onclick="switchAdminTab('danger')" style="flex:1;padding:9px;background:transparent;border:none;color:var(--muted);font-family:'Epilogue',sans-serif;font-size:13px;font-weight:600;border-radius:7px;cursor:pointer">⚠️ Danger</button>
         </div>
@@ -1291,9 +1302,9 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
     <div id="modal-receipt"></div>
     <div id="modal-participants" class="participants-list"></div>
     <div class="modal-actions">
-      <button class="modal-btn modal-btn-view" id="modal-view-btn">🔗 Open Bill Page</button>
+      <button class="modal-btn modal-btn-view" id="modal-view-btn"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" style="vertical-align:middle;margin-right:4px"><path d="M6 3H3a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1v-3M10 2h4v4M14 2l-6 6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg> Open Bill Page</button>
       <button class="modal-btn" id="modal-share-btn" style="background:rgba(0,140,255,0.1);border:1px solid rgba(0,140,255,0.25);color:#4DB8FF">📤 Share Link</button>
-      <button class="modal-btn modal-btn-remind" id="modal-remind-btn">🔔 Remind Unpaid</button>
+      <button class="modal-btn modal-btn-remind" id="modal-remind-btn"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" style="vertical-align:middle;margin-right:4px"><path d="M8 2a4 4 0 0 0-4 4v3l-1 1.5h10L12 9V6a4 4 0 0 0-4-4z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M6.5 12.5a1.5 1.5 0 0 0 3 0" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg> Remind Unpaid</button>
       <button class="modal-btn" id="modal-edit-toggle-btn" style="background:rgba(48,209,88,0.08);border:1px solid rgba(48,209,88,0.2);color:var(--green)" onclick="toggleBillEditPanel()">✏️ Edit Bill</button>
       <button class="modal-btn" id="modal-add-person-btn" style="background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.2);color:var(--purple3)">👤 Add Person</button>
       <button class="modal-btn modal-btn-delete" id="modal-delete-btn">🗑 Delete</button>
@@ -1335,10 +1346,10 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
 
 <!-- MOBILE BOTTOM NAV -->
 <div id="mobile-nav">
-  <button class="mob-nav-btn active" id="mob-overview" onclick="showPage('overview');setMobNav('mob-overview')"><span class="mi">📊</span>Overview</button>
-  <button class="mob-nav-btn" id="mob-bills" onclick="showPage('active-bills');setMobNav('mob-bills')"><span class="mi">📋</span>Bills</button>
-  <button class="mob-nav-btn" id="mob-create" onclick="showPage('create-bill');setMobNav('mob-create')"><span class="mi" style="width:36px;height:36px;background:var(--green);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;color:#000;margin-bottom:1px">➕</span>New</button>
-  <button class="mob-nav-btn" id="mob-trip" onclick="showPage('trip-hub');setMobNav('mob-trip')"><span class="mi">✈️</span>Trips</button>
+  <button class="mob-nav-btn active" id="mob-overview" onclick="showPage('overview');setMobNav('mob-overview')"><span class="mi"><svg width="21" height="21" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="9" width="3" height="6" rx="1" fill="currentColor" opacity="0.7"/><rect x="6" y="5" width="3" height="10" rx="1" fill="currentColor"/><rect x="11" y="2" width="3" height="13" rx="1" fill="currentColor" opacity="0.7"/></svg></span>Overview</button>
+  <button class="mob-nav-btn" id="mob-bills" onclick="showPage('active-bills');setMobNav('mob-bills')"><span class="mi"><svg width="21" height="21" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="1" width="10" height="14" rx="2" stroke="currentColor" stroke-width="1.3"/><path d="M5 5h4M5 8h4M5 11h2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg></span>Bills</button>
+  <button class="mob-nav-btn" id="mob-create" onclick="showPage('create-bill');setMobNav('mob-create')"><span class="mi" style="width:36px;height:36px;background:var(--green);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#000;margin-bottom:1px"><svg width="18" height="18" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>New</button>
+  <button class="mob-nav-btn" id="mob-trip" onclick="showPage('trip-hub');setMobNav('mob-trip')"><span class="mi"><svg width="21" height="21" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M14 5.5a2 2 0 0 1-2 2l-2.5 0L6 13H4.5l1.5-5.5H3.5L2.5 9H1l1-3.5L1 2h1.5l1 1.5H6L4.5 0H6l3.5 5.5H13a1.5 1.5 0 0 1 1 1.5z" fill="currentColor"/></svg></span>Trips</button>
   <button class="mob-nav-btn" id="mob-settings" onclick="showPage('settings');setMobNav('mob-settings')" style="position:relative"><span class="mi">☰</span>More<span id="mob-friend-req-badge" style="display:none;position:absolute;top:6px;right:10px;width:8px;height:8px;background:#A855F7;border-radius:50%"></span></button>
 </div>
 
@@ -2231,7 +2242,7 @@ async function showDashboard() {
         }
       } else {
         const greetingEl = document.getElementById('greeting-name');
-        if (greetingEl) greetingEl.closest('h1').innerHTML = 'Welcome Back <span style="color:var(--green)">🪶</span>';
+        if (greetingEl) greetingEl.closest('h1').innerHTML = 'Welcome Back <span style="color:var(--green)" class="raven-r-mark"></span>';
       }
     } else {
       // No profile yet — fall back to localStorage
@@ -2240,12 +2251,12 @@ async function showDashboard() {
       else if (firstName) renderAvatar(null, firstName);
       const greetingEl = document.getElementById('greeting-name');
       if (firstName && greetingEl) greetingEl.textContent = firstName.charAt(0).toUpperCase() + firstName.slice(1);
-      else if (greetingEl) greetingEl.closest('h1').innerHTML = 'Welcome Back <span style="color:var(--green)">🪶</span>';
+      else if (greetingEl) greetingEl.closest('h1').innerHTML = 'Welcome Back <span style="color:var(--green)" class="raven-r-mark"></span>';
     }
   } catch(e) {
     // Fallback — just use email initial
     const greetingEl = document.getElementById('greeting-name');
-    if (greetingEl) greetingEl.closest('h1').innerHTML = 'Welcome Back <span style="color:var(--green)">🪶</span>';
+    if (greetingEl) greetingEl.closest('h1').innerHTML = 'Welcome Back <span style="color:var(--green)" class="raven-r-mark"></span>';
   }
   loadAllData();
   // Check pending friend requests for notification badges
@@ -2356,7 +2367,7 @@ async function loadOverview() {
     const _ce=document.getElementById('stat-collected-empty'); if(_ce){_ce.style.display='';_ce.textContent='—';}
     document.getElementById('stat-settled').textContent = '0';
     document.getElementById('active-count').textContent = '0';
-    document.getElementById('overview-bills').innerHTML = '<div class="empty-state"><span class="empty-icon">🪶</span><div class="empty-title">No bills yet</div><div class="empty-sub">Create your first bill to get started</div></div>';
+    document.getElementById('overview-bills').innerHTML = '<div class="empty-state"><span class="empty-icon raven-r-mark" style="font-size:0"></span><div class="empty-title">No bills yet</div><div class="empty-sub">Create your first bill to get started</div></div>';
     return;
   }
   // Auto-complete bills where all participants have paid
@@ -2807,7 +2818,7 @@ async function deleteBill(billId) {
   const wrap = document.createElement('div');
   wrap.id = 'delete-confirm-wrap';
   wrap.style.cssText = 'margin-top:12px;padding:14px;background:rgba(255,68,68,0.06);border:1px solid rgba(255,68,68,0.2);border-radius:10px';
-  wrap.innerHTML = '<div style="font-size:13px;font-weight:600;color:#FF6B6B;margin-bottom:10px">⚠️ Delete this bill? This cannot be undone.</div>' +
+  wrap.innerHTML = '<div style="font-size:13px;font-weight:600;color:#FF6B6B;margin-bottom:10px">⚠ Delete this bill? This cannot be undone.</div>' +
     '<div style="display:flex;gap:8px">' +
     '<button id="delete-cancel-btn" style="flex:1;padding:10px;background:var(--dark2);border:1px solid var(--border);border-radius:8px;color:var(--muted);font-family:\'Epilogue\',sans-serif;font-size:13px;font-weight:600;cursor:pointer">Cancel</button>' +
     '<button id="delete-confirm-btn" style="flex:1;padding:10px;background:rgba(255,68,68,0.15);border:1px solid rgba(255,68,68,0.3);border-radius:8px;color:#FF6B6B;font-family:\'Epilogue\',sans-serif;font-size:13px;font-weight:700;cursor:pointer">Yes, Delete</button>' +
@@ -5059,7 +5070,7 @@ async function cbCreateFinalBill() {
     insertError = error;
   }
   if (!inserted) {
-    btn.textContent = '🪶 Create Bill'; btn.disabled = false;
+    btn.textContent = 'Create Bill'; btn.disabled = false;
     return showToast('Error: ' + (insertError?.message || 'Could not create bill'), 'error');
   }
   // Try to set live_mode after successful insert (gracefully skip if column doesn't exist)
@@ -5102,7 +5113,7 @@ async function cbCreateFinalBill() {
       if (selectionRows.length > 0) await db.from('item_selections').insert(selectionRows);
     }
   }
-  btn.textContent = '🪶 Create Bill'; btn.disabled = false;
+  btn.textContent = 'Create Bill'; btn.disabled = false;
   showToast('✅ "' + name + '" created! ID: ' + billId, 'success');
   celebrateBillCreated();
   // Track bill creation in PostHog
