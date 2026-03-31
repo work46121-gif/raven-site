@@ -294,9 +294,96 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
   background-repeat: no-repeat;
   vertical-align: middle;
 }
+.raven-sprite { position:absolute; width:0; height:0; overflow:hidden; pointer-events:none; }
+.raven-icon { width:18px; height:18px; display:inline-block; vertical-align:middle; flex-shrink:0; }
+.raven-icon.lg { width:22px; height:22px; }
+.raven-icon.xl { width:26px; height:26px; }
+.raven-icon.empty { width:54px; height:54px; opacity:0.82; }
+.nav-item .ni { width:20px; height:20px; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; }
+.mob-quick-glyph { width:28px; height:28px; display:inline-flex; align-items:center; justify-content:center; }
+.notif-icon .raven-icon { width:20px; height:20px; }
+.trip-title-icon,.bill-action-icon { width:15px; height:15px; display:inline-block; vertical-align:-2px; margin-right:6px; flex-shrink:0; }
+.bill-action-icon { margin-right:5px; }
+.empty-icon.empty-icon-svg { width:auto; height:auto; opacity:1; display:inline-flex; align-items:center; justify-content:center; }
 </style>
 </head>
 <body>
+<svg class="raven-sprite" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="ravenGradient" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#C084FC"></stop>
+      <stop offset="100%" stop-color="#7C3AED"></stop>
+    </linearGradient>
+    <linearGradient id="ravenGradientSoft" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#A855F7"></stop>
+      <stop offset="100%" stop-color="#6D28D9"></stop>
+    </linearGradient>
+  </defs>
+  <symbol id="raven-mark" viewBox="0 0 28 28">
+    <text x="2" y="22" font-family="Bebas Neue, sans-serif" font-size="24" fill="url(#ravenGradient)">R</text>
+    <circle cx="11" cy="24" r="3" fill="#30D158"></circle>
+  </symbol>
+  <symbol id="icon-overview" viewBox="0 0 18 18">
+    <rect x="2" y="9" width="3" height="7" rx="1.2" fill="url(#ravenGradient)" opacity="0.72"></rect>
+    <rect x="7.5" y="5.5" width="3" height="10.5" rx="1.2" fill="url(#ravenGradient)"></rect>
+    <rect x="13" y="2" width="3" height="14" rx="1.2" fill="url(#ravenGradient)" opacity="0.56"></rect>
+    <circle cx="15.2" cy="15.2" r="1.45" fill="#30D158"></circle>
+  </symbol>
+  <symbol id="icon-active-bills" viewBox="0 0 18 18">
+    <path d="M4 2.5H11.2C12.2 2.5 13 3.3 13 4.3V15.2L11.4 14L9.9 15.2L8.4 14L6.9 15.2L5.4 14L4 15.2V2.5Z" fill="none" stroke="url(#ravenGradient)" stroke-width="1.4" stroke-linejoin="round"></path>
+    <path d="M6.3 6.1H10.1M6.3 8.9H10.1M6.3 11.7H8.5" stroke="url(#ravenGradientSoft)" stroke-width="1.35" stroke-linecap="round"></path>
+    <path d="M12.7 4.1L15.4 5.4L12.7 6.9" stroke="#30D158" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"></path>
+  </symbol>
+  <symbol id="icon-create-bill" viewBox="0 0 18 18">
+    <path d="M3.1 3.4C3.1 2.63 3.73 2 4.5 2H11.6C12.37 2 13 2.63 13 3.4V14.8L11.6 13.7L10.2 14.8L8.8 13.7L7.4 14.8L6 13.7L4.6 14.8L3.1 13.8V3.4Z" fill="none" stroke="rgba(192,132,252,0.5)" stroke-width="1.2" stroke-linejoin="round"></path>
+    <path d="M8 5.3V11.6M4.9 8.45H11.1" stroke="url(#ravenGradient)" stroke-width="1.9" stroke-linecap="round"></path>
+    <path d="M8 11.6L6.9 13.1M8 11.6L9.2 13.1" stroke="#A855F7" stroke-width="1.05" stroke-linecap="round"></path>
+    <circle cx="14.55" cy="14.55" r="1.45" fill="#30D158"></circle>
+  </symbol>
+  <symbol id="icon-trip-hub" viewBox="0 0 18 18">
+    <path d="M2.1 10.5L8.9 8.3L15.9 2.8L12.1 9L14.8 10.3L11.4 10.9L9.2 14.9L8.1 10.8L2.1 10.5Z" fill="none" stroke="url(#ravenGradient)" stroke-width="1.35" stroke-linejoin="round"></path>
+    <path d="M8.9 8.3L12.1 9" stroke="url(#ravenGradientSoft)" stroke-width="1.2" stroke-linecap="round"></path>
+    <circle cx="14.8" cy="12.8" r="1.4" fill="#30D158"></circle>
+  </symbol>
+  <symbol id="icon-roommates" viewBox="0 0 18 18">
+    <path d="M2.4 7.9L9 3L15.6 7.9" fill="none" stroke="url(#ravenGradient)" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"></path>
+    <path d="M4.1 7.7H13.9V14.9H4.1V7.7Z" fill="none" stroke="url(#ravenGradient)" stroke-width="1.35" stroke-linejoin="round"></path>
+    <rect x="7.05" y="10.1" width="3.9" height="4.8" rx="0.8" fill="url(#ravenGradientSoft)" opacity="0.72"></rect>
+    <circle cx="13.9" cy="13.9" r="1.35" fill="#30D158"></circle>
+  </symbol>
+  <symbol id="icon-friends" viewBox="0 0 18 18">
+    <circle cx="6.2" cy="5.25" r="2.45" fill="none" stroke="url(#ravenGradient)" stroke-width="1.3"></circle>
+    <path d="M2 14C2 11.51 3.88 9.55 6.2 9.55C8.52 9.55 10.4 11.51 10.4 14" fill="none" stroke="url(#ravenGradient)" stroke-width="1.3" stroke-linecap="round"></path>
+    <circle cx="12.8" cy="6" r="1.9" fill="none" stroke="url(#ravenGradientSoft)" stroke-width="1.2"></circle>
+    <path d="M12.2 10.2C13.78 10.48 15 11.93 15 13.85" fill="none" stroke="url(#ravenGradientSoft)" stroke-width="1.2" stroke-linecap="round"></path>
+    <circle cx="13.8" cy="13.8" r="1.3" fill="#30D158"></circle>
+  </symbol>
+  <symbol id="icon-history" viewBox="0 0 18 18">
+    <circle cx="9" cy="9" r="6.25" fill="none" stroke="url(#ravenGradient)" stroke-width="1.3"></circle>
+    <path d="M9 5.15V9L11.85 11.35" fill="none" stroke="url(#ravenGradientSoft)" stroke-width="1.45" stroke-linecap="round" stroke-linejoin="round"></path>
+    <path d="M3.45 7.2C3.05 8.12 2.98 9.4 3.44 10.63C4.11 12.42 5.47 13.8 7.19 14.5" fill="none" stroke="#30D158" stroke-width="1.05" stroke-linecap="round" stroke-dasharray="2.2 2.4"></path>
+  </symbol>
+  <symbol id="icon-notifications" viewBox="0 0 18 18">
+    <path d="M5.1 12.2C3.6 10.95 3 9.23 3 7.25C3 4.63 5.37 2.45 8.98 2.45C12.59 2.45 14.95 4.63 14.95 7.25C14.95 9.23 14.36 10.95 12.85 12.2H5.1Z" fill="none" stroke="url(#ravenGradient)" stroke-width="1.3" stroke-linejoin="round"></path>
+    <path d="M7 13.35C7.32 14.24 8.09 14.8 9 14.8C9.91 14.8 10.68 14.24 11 13.35" fill="none" stroke="url(#ravenGradientSoft)" stroke-width="1.3" stroke-linecap="round"></path>
+    <circle cx="13.65" cy="4.15" r="1.7" fill="#FF4444"></circle>
+    <circle cx="9" cy="1.95" r="1.05" fill="#30D158"></circle>
+  </symbol>
+  <symbol id="icon-invite" viewBox="0 0 18 18">
+    <circle cx="11.9" cy="5" r="2.3" fill="none" stroke="url(#ravenGradientSoft)" stroke-width="1.25"></circle>
+    <path d="M8.7 13.8C8.95 11.64 10.15 9.8 11.9 9.8C13.65 9.8 14.85 11.64 15.1 13.8" fill="none" stroke="url(#ravenGradientSoft)" stroke-width="1.25" stroke-linecap="round"></path>
+    <path d="M2.2 14.4C3.25 10.65 5.85 7.25 8.25 5.05" fill="none" stroke="url(#ravenGradient)" stroke-width="1.6" stroke-linecap="round"></path>
+    <path d="M5 12C5.65 11.25 6.4 10.7 7.25 10.35M6.9 9.5C7.5 8.7 8.1 8.05 8.8 7.5" fill="none" stroke="#A855F7" stroke-width="1.02" stroke-linecap="round"></path>
+    <path d="M8.25 5.05L7.7 6.4L9.1 6.8Z" fill="url(#ravenGradient)"></path>
+    <circle cx="14.95" cy="13.95" r="1.3" fill="#30D158"></circle>
+  </symbol>
+  <symbol id="icon-privacy" viewBox="0 0 18 18">
+    <path d="M9 2.4L14 4.4V8.3C14 11.5 11.95 13.98 9 15.2C6.05 13.98 4 11.5 4 8.3V4.4L9 2.4Z" fill="none" stroke="url(#ravenGradient)" stroke-width="1.3" stroke-linejoin="round"></path>
+    <path d="M7.1 8.55V7.65C7.1 6.58 7.95 5.75 9 5.75C10.05 5.75 10.9 6.58 10.9 7.65V8.55" fill="none" stroke="url(#ravenGradientSoft)" stroke-width="1.2" stroke-linecap="round"></path>
+    <rect x="6.15" y="8.4" width="5.7" height="4.35" rx="1" fill="none" stroke="url(#ravenGradientSoft)" stroke-width="1.2"></rect>
+    <circle cx="12.95" cy="12.95" r="1.2" fill="#30D158"></circle>
+  </symbol>
+</svg>
 
 <!-- AUTH SCREEN -->
 <div id="auth-screen">
@@ -373,7 +460,7 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
 
 <!-- MOBILE HEADER -->
 <div id="mobile-header">
-  <a href="index.html" style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:0.15em;text-decoration:none;background:linear-gradient(135deg,var(--white),var(--purple3));-webkit-background-clip:text;-webkit-text-fill-color:transparent;display:flex;align-items:center;gap:6px"><svg width="22" height="22" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg" style="-webkit-text-fill-color:initial;flex-shrink:0"><defs><linearGradient id="rg_mob" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#C084FC"/><stop offset="100%" stop-color="#7C3AED"/></linearGradient></defs><text x="2" y="22" font-family="Bebas Neue, sans-serif" font-size="24" fill="url(#rg_mob)">R</text><circle cx="11" cy="24" r="3" fill="#30D158"/></svg> RAVEN</a>
+  <a href="index.html" style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:0.15em;text-decoration:none;background:linear-gradient(135deg,var(--white),var(--purple3));-webkit-background-clip:text;-webkit-text-fill-color:transparent;display:flex;align-items:center;gap:6px"><svg class="raven-icon lg" style="-webkit-text-fill-color:initial"><use href="#raven-mark"></use></svg> RAVEN</a>
   <div style="display:flex;align-items:center;gap:10px">
     <button onclick="handleLogout()" style="padding:6px 12px;background:rgba(255,68,68,0.08);border:1px solid rgba(255,68,68,0.18);border-radius:8px;color:#FF6B6B;font-family:'Epilogue',sans-serif;font-size:11px;font-weight:600;cursor:pointer;-webkit-tap-highlight-color:transparent">⎋ Sign Out</button>
     <div id="mob-user-avatar" onclick="showPage('settings');setMobNav('mob-settings')" style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--purple),var(--green));display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;cursor:pointer;overflow:hidden">?</div>
@@ -384,20 +471,20 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
 <div id="dashboard-screen">
   <aside class="sidebar">
     <a href="index.html" class="sidebar-logo">
-      <span class="sidebar-logo-mark" style="display:flex;align-items:center"><svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0"><defs><linearGradient id="rg1" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#C084FC"/><stop offset="100%" stop-color="#7C3AED"/></linearGradient></defs><text x="2" y="22" font-family="Bebas Neue, sans-serif" font-size="24" fill="url(#rg1)">R</text><circle cx="11" cy="24" r="3" fill="#30D158"/></svg></span>
+      <span class="sidebar-logo-mark" style="display:flex;align-items:center"><svg class="raven-icon lg"><use href="#raven-mark"></use></svg></span>
       <span class="sidebar-logo-text">RAVEN</span>
     </a>
     <nav class="sidebar-nav">
-      <button class="nav-item active" onclick="showPage('overview')"><span class="ni"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="9" width="3" height="6" rx="1" fill="currentColor" opacity="0.7"/><rect x="6" y="5" width="3" height="10" rx="1" fill="currentColor"/><rect x="11" y="2" width="3" height="13" rx="1" fill="currentColor" opacity="0.7"/></svg></span> Overview</button>
-      <button class="nav-item" onclick="showPage('active-bills')"><span class="ni"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="1" width="10" height="14" rx="2" stroke="currentColor" stroke-width="1.3"/><path d="M5 5h4M5 8h4M5 11h2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M12 3l2 1.5L12 6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span> Active Bills <span class="nav-badge" id="active-count">0</span></button>
-      <button class="nav-item" onclick="showPage('create-bill')"><span class="ni"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.3"/><path d="M8 5v6M5 8h6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></span> Create Bill</button>
-      <button class="nav-item" onclick="showPage('trip-hub')"><span class="ni"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M14 5.5a2 2 0 0 1-2 2l-2.5 0L6 13H4.5l1.5-5.5H3.5L2.5 9H1l1-3.5L1 2h1.5l1 1.5H6L4.5 0H6l3.5 5.5H13a1.5 1.5 0 0 1 1 1.5z" fill="currentColor"/></svg></span> Trip Hub</button>
-      <button class="nav-item" onclick="showPage('roommates')"><span class="ni"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 7.5L8 2l7 5.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><rect x="3" y="7" width="10" height="7" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="6" y="10" width="4" height="4" rx="0.5" fill="currentColor" opacity="0.6"/></svg></span> Roommates <span style="font-size:9px;font-weight:700;padding:1px 6px;background:rgba(48,209,88,0.15);border:1px solid rgba(48,209,88,0.3);border-radius:6px;color:var(--green);margin-left:4px;vertical-align:middle">BETA</span></button>
-      <button class="nav-item" onclick="showPage('friends')" style="position:relative"><span class="ni"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="6" cy="4.5" r="2.5" stroke="currentColor" stroke-width="1.3"/><path d="M1 13c0-2.8 2.2-5 5-5s5 2.2 5 5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="12" cy="5" r="2" stroke="currentColor" stroke-width="1.3"/><path d="M14 13c0-2.2-1.3-4-3-4.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></span> Friends <span id="friends-dm-badge" style="display:none;position:absolute;top:6px;right:8px;min-width:16px;height:16px;padding:0 4px;background:var(--purple);border-radius:8px;font-size:10px;font-weight:700;color:#fff;align-items:center;justify-content:center"></span></button>
-      <button class="nav-item" onclick="showPage('history')"><span class="ni"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.3"/><path d="M8 4.5V8l2.5 2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></span> History</button>
+      <button class="nav-item active" onclick="showPage('overview')"><span class="ni"><svg class="raven-icon"><use href="#icon-overview"></use></svg></span> Overview</button>
+      <button class="nav-item" onclick="showPage('active-bills')"><span class="ni"><svg class="raven-icon"><use href="#icon-active-bills"></use></svg></span> Active Bills <span class="nav-badge" id="active-count">0</span></button>
+      <button class="nav-item" onclick="showPage('create-bill')"><span class="ni"><svg class="raven-icon"><use href="#icon-create-bill"></use></svg></span> Create Bill</button>
+      <button class="nav-item" onclick="showPage('trip-hub')"><span class="ni"><svg class="raven-icon"><use href="#icon-trip-hub"></use></svg></span> Trip Hub</button>
+      <button class="nav-item" onclick="showPage('roommates')"><span class="ni"><svg class="raven-icon"><use href="#icon-roommates"></use></svg></span> Roommates <span style="font-size:9px;font-weight:700;padding:1px 6px;background:rgba(48,209,88,0.15);border:1px solid rgba(48,209,88,0.3);border-radius:6px;color:var(--green);margin-left:4px;vertical-align:middle">BETA</span></button>
+      <button class="nav-item" onclick="showPage('friends')" style="position:relative"><span class="ni"><svg class="raven-icon"><use href="#icon-friends"></use></svg></span> Friends <span id="friends-dm-badge" style="display:none;position:absolute;top:6px;right:8px;min-width:16px;height:16px;padding:0 4px;background:var(--purple);border-radius:8px;font-size:10px;font-weight:700;color:#fff;align-items:center;justify-content:center"></span></button>
+      <button class="nav-item" onclick="showPage('history')"><span class="ni"><svg class="raven-icon"><use href="#icon-history"></use></svg></span> History</button>
       <div style="flex:1"></div>
-      <button class="nav-item" onclick="showPage('notifications')" style="position:relative"><span class="ni"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 2a4 4 0 0 0-4 4v3l-1 1.5h10L12 9V6a4 4 0 0 0-4-4z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M6.5 12.5a1.5 1.5 0 0 0 3 0" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="8" cy="1.5" r="1" fill="currentColor"/></svg></span> Notifications <span id="notif-badge" style="display:none;margin-left:auto;background:#FF4444;color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;min-width:20px;text-align:center"></span></button>
-      <button class="nav-item" onclick="showPage('invite')"><span class="ni"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 2v12M3 7h10" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><rect x="2" y="4" width="12" height="8" rx="1.5" stroke="currentColor" stroke-width="1.3"/></svg></span> Invite Friends</button>
+      <button class="nav-item" onclick="showPage('notifications')" style="position:relative"><span class="ni"><svg class="raven-icon"><use href="#icon-notifications"></use></svg></span> Notifications <span id="notif-badge" style="display:none;margin-left:auto;background:#FF4444;color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;min-width:20px;text-align:center"></span></button>
+      <button class="nav-item" onclick="showPage('invite')"><span class="ni"><svg class="raven-icon"><use href="#icon-invite"></use></svg></span> Invite Friends</button>
     </nav>
     <div class="sidebar-user">
       <button onclick="showPage('settings')" style="width:100%;display:flex;align-items:center;gap:10px;padding:10px 12px;background:transparent;border:none;border-radius:10px;cursor:pointer;transition:background 0.2s;text-align:left" onmouseover="this.style.background='var(--dark3)'" onmouseout="this.style.background='transparent'">
@@ -811,27 +898,27 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
       <div id="mob-quick-nav" style="display:none;margin-bottom:20px">
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:20px">
           <button onclick="showPage('friends');setMobNav('mob-settings')" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:14px 8px;background:var(--dark);border:1px solid var(--border);border-radius:14px;cursor:pointer;-webkit-tap-highlight-color:transparent;text-align:center;position:relative">
-            <span style="font-size:22px">👥</span><span style="font-size:11px;font-weight:600;color:var(--white)">Friends</span>
+            <span class="mob-quick-glyph"><svg class="raven-icon xl"><use href="#icon-friends"></use></svg></span><span style="font-size:11px;font-weight:600;color:var(--white)">Friends</span>
             <span id="mob-friends-badge" style="display:none;position:absolute;top:8px;right:8px;background:#A855F7;color:#fff;border-radius:10px;font-size:9px;font-weight:700;padding:1px 5px">!</span>
           </button>
           <button onclick="showPage('history');setMobNav('mob-settings')" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:14px 8px;background:var(--dark);border:1px solid var(--border);border-radius:14px;cursor:pointer;-webkit-tap-highlight-color:transparent;text-align:center">
-            <span style="font-size:22px">🕐</span><span style="font-size:11px;font-weight:600;color:var(--white)">History</span>
+            <span class="mob-quick-glyph"><svg class="raven-icon xl"><use href="#icon-history"></use></svg></span><span style="font-size:11px;font-weight:600;color:var(--white)">History</span>
           </button>
           <button onclick="showPage('trip-hub');setMobNav('mob-trip')" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:14px 8px;background:var(--dark);border:1px solid var(--border);border-radius:14px;cursor:pointer;-webkit-tap-highlight-color:transparent;text-align:center">
-            <span style="font-size:22px">✈️</span><span style="font-size:11px;font-weight:600;color:var(--white)">Trips</span>
+            <span class="mob-quick-glyph"><svg class="raven-icon xl"><use href="#icon-trip-hub"></use></svg></span><span style="font-size:11px;font-weight:600;color:var(--white)">Trips</span>
           </button>
           <button onclick="showPage('roommates');setMobNav('mob-settings')" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:14px 8px;background:var(--dark);border:1px solid var(--border);border-radius:14px;cursor:pointer;-webkit-tap-highlight-color:transparent;text-align:center;position:relative">
-            <span style="font-size:22px">🏠</span><span style="font-size:11px;font-weight:600;color:var(--white)">Roommates</span><span style="position:absolute;top:6px;right:6px;font-size:8px;font-weight:700;padding:1px 4px;background:rgba(48,209,88,0.2);border-radius:4px;color:var(--green)">β</span>
+            <span class="mob-quick-glyph"><svg class="raven-icon xl"><use href="#icon-roommates"></use></svg></span><span style="font-size:11px;font-weight:600;color:var(--white)">Roommates</span><span style="position:absolute;top:6px;right:6px;font-size:8px;font-weight:700;padding:1px 4px;background:rgba(48,209,88,0.2);border-radius:4px;color:var(--green)">β</span>
           </button>
           <button onclick="showPage('notifications');setMobNav('mob-settings')" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:14px 8px;background:var(--dark);border:1px solid var(--border);border-radius:14px;cursor:pointer;-webkit-tap-highlight-color:transparent;text-align:center;position:relative">
-            <span style="font-size:22px">🔔</span><span style="font-size:11px;font-weight:600;color:var(--white)">Notifications</span>
+            <span class="mob-quick-glyph"><svg class="raven-icon xl"><use href="#icon-notifications"></use></svg></span><span style="font-size:11px;font-weight:600;color:var(--white)">Notifications</span>
             <span id="mob-notif-quick-badge" style="display:none;position:absolute;top:8px;right:8px;background:#FF4444;color:#fff;border-radius:50%;width:14px;height:14px;font-size:9px;font-weight:700;align-items:center;justify-content:center">!</span>
           </button>
           <button onclick="showPage('invite');setMobNav('mob-settings')" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:14px 8px;background:var(--dark);border:1px solid var(--border);border-radius:14px;cursor:pointer;-webkit-tap-highlight-color:transparent;text-align:center">
-            <span style="font-size:22px">🎟</span><span style="font-size:11px;font-weight:600;color:var(--white)">Invite</span>
+            <span class="mob-quick-glyph"><svg class="raven-icon xl"><use href="#icon-invite"></use></svg></span><span style="font-size:11px;font-weight:600;color:var(--white)">Invite</span>
           </button>
           <button onclick="document.getElementById('privacy-section').scrollIntoView({behavior:'smooth'})" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:14px 8px;background:var(--dark);border:1px solid var(--border);border-radius:14px;cursor:pointer;-webkit-tap-highlight-color:transparent;text-align:center">
-            <span style="font-size:22px">🔒</span><span style="font-size:11px;font-weight:600;color:var(--white)">Privacy</span>
+            <span class="mob-quick-glyph"><svg class="raven-icon xl"><use href="#icon-privacy"></use></svg></span><span style="font-size:11px;font-weight:600;color:var(--white)">Privacy</span>
           </button>
           <button onclick="handleLogout()" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:14px 8px;background:rgba(255,68,68,0.07);border:1px solid rgba(255,68,68,0.15);border-radius:14px;cursor:pointer;-webkit-tap-highlight-color:transparent;text-align:center">
             <span style="font-size:22px">⎋</span><span style="font-size:11px;font-weight:600;color:#FF6B6B">Sign Out</span>
@@ -2426,7 +2513,7 @@ async function loadOverview() {
   const activeBillsForOverview = bills.filter(b => b.status === 'active');
   container.innerHTML = activeBillsForOverview.length > 0
     ? activeBillsForOverview.slice(0, 6).map(b => renderBillCard(b)).join('')
-    : '<div class="empty-state"><span class="empty-icon">🎉</span><div class="empty-title">All settled up!</div><div class="empty-sub">No active bills right now. <a href="#" onclick="showPage(\'create-bill\')" style="color:var(--green)">Create one →</a></div></div>';
+    : '<div class="empty-state"><span class="empty-icon empty-icon-svg"><svg class="raven-icon empty"><use href="#icon-overview"></use></svg></span><div class="empty-title">All settled up!</div><div class="empty-sub">No active bills right now. <a href="#" onclick="showPage(\'create-bill\')" style="color:var(--green)">Create one →</a></div></div>';
 }
 
 async function loadActiveBills() {
@@ -2443,7 +2530,7 @@ async function loadActiveBills() {
   const bills = [...(myBills || []), ...partBills].sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
   await augmentBillsWithGuests(bills);
   const container = document.getElementById('active-bills-list');
-  if (bills.length === 0) { container.innerHTML = '<div class="empty-state"><span class="empty-icon">📋</span><div class="empty-title">No active bills</div><div class="empty-sub">Create a bill to start splitting</div></div>'; return; }
+  if (bills.length === 0) { container.innerHTML = '<div class="empty-state"><span class="empty-icon empty-icon-svg"><svg class="raven-icon empty"><use href="#icon-active-bills"></use></svg></span><div class="empty-title">No active bills</div><div class="empty-sub">Create a bill to start splitting</div></div>'; return; }
   container.innerHTML = bills.map(b => renderBillCard(b)).join('');
 }
 
@@ -2482,7 +2569,7 @@ async function loadHistory() {
   }
   const bills = [...(myBills || []), ...partBills].sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
   const container = document.getElementById('history-content');
-  if (bills.length === 0) { container.innerHTML = '<div class="empty-state"><span class="empty-icon">🕐</span><div class="empty-title">No history yet</div></div>'; return; }
+  if (bills.length === 0) { container.innerHTML = '<div class="empty-state"><span class="empty-icon empty-icon-svg"><svg class="raven-icon empty"><use href="#icon-history"></use></svg></span><div class="empty-title">No history yet</div></div>'; return; }
   container.innerHTML = '<table class="history-table"><thead><tr><th>Bill</th><th>Total</th><th>People</th><th>Collected</th><th>Status</th><th>Date</th></tr></thead><tbody>' + bills.map(b => {
     const paid = b.participants?.filter(p => p.paid).length || 0;
     const total = Math.max(b.participants?.length || 0, b.live_people_count || 0);
@@ -3409,7 +3496,7 @@ async function loadFriendRequests() {
     const sidebarFriends = document.querySelector('.nav-item[onclick*="friends"]');
     if (mobBadge) mobBadge.style.display = reqCount > 0 ? 'block' : 'none';
     if (mobFriendsBadge) { mobFriendsBadge.style.display = reqCount > 0 ? 'block' : 'none'; mobFriendsBadge.textContent = reqCount; }
-    if (sidebarFriends) sidebarFriends.innerHTML = '<span class="ni">👥</span> Friends' + (reqCount > 0 ? ' <span style="background:#A855F7;color:#fff;border-radius:8px;font-size:10px;padding:1px 6px;font-weight:700">' + reqCount + '</span>' : '');
+    if (sidebarFriends) sidebarFriends.innerHTML = '<span class="ni"><svg class="raven-icon"><use href="#icon-friends"></use></svg></span> Friends' + (reqCount > 0 ? ' <span style="background:#A855F7;color:#fff;border-radius:8px;font-size:10px;padding:1px 6px;font-weight:700">' + reqCount + '</span>' : '');
 
     if (!requests || requests.length === 0) { list.innerHTML = '<div style="padding:16px;background:var(--dark);border:1px solid var(--border);border-radius:12px;text-align:center;color:var(--muted);font-size:13px">No new notifications</div>'; return; }
     // Fetch requester profiles
@@ -4215,7 +4302,7 @@ async function loadTrips() {
   trips.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
   if (trips.length === 0) {
-    container.innerHTML = '<div class="empty-state"><span class="empty-icon">✈️</span><div class="empty-title">No trips yet</div><div class="empty-sub">Create a trip hub or join one via an invite link</div></div>';
+    container.innerHTML = '<div class="empty-state"><span class="empty-icon empty-icon-svg"><svg class="raven-icon empty"><use href="#icon-trip-hub"></use></svg></span><div class="empty-title">No trips yet</div><div class="empty-sub">Create a trip hub or join one via an invite link</div></div>';
     return;
   }
 
@@ -4237,7 +4324,7 @@ async function loadTrips() {
     const safeId = JSON.stringify(t.id);
     const adminBadge = isCreator ? ' <span style="font-size:10px;color:#30D158;background:rgba(48,209,88,0.08);border:1px solid rgba(48,209,88,0.2);padding:2px 7px;border-radius:8px">admin</span>' : isCoAdmin ? ' <span style="font-size:10px;color:#A855F7;background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.2);padding:2px 7px;border-radius:8px">co-admin</span>' : ' <span style="font-size:10px;color:#A855F7;background:rgba(124,58,237,0.1);border:1px solid rgba(124,58,237,0.2);padding:2px 7px;border-radius:8px">member</span>';
     return '<div class="bill-card">'
-      + '<div style="cursor:pointer" onclick="openTrip(' + safeId + ')"><div class="bill-name">✈️ ' + t.name.replace(/</g,'&lt;') + ' <span class="bill-id">' + t.id + '</span>' + adminBadge + '</div>'
+      + '<div style="cursor:pointer" onclick="openTrip(' + safeId + ')"><div class="bill-name"><svg class="trip-title-icon"><use href="#icon-trip-hub"></use></svg>' + t.name.replace(/</g,'&lt;') + ' <span class="bill-id">' + t.id + '</span>' + adminBadge + '</div>'
       + '<div class="bill-meta"><span>' + people.length + ' people</span><span>' + (t.receipt_count || 0) + ' receipts</span>' + (function() {
           // Use server-computed settled_count/debtor_count when available (accurate)
           // Fall back to settled_people parsing for trips not yet backfilled
@@ -4267,8 +4354,8 @@ async function loadTrips() {
       + '<div class="bill-amount" style="cursor:pointer;color:' + (parseFloat(t.total||0)>0?'#FF9A3C':'var(--green)') + '" onclick="openTrip(' + safeId + ')">$' + parseFloat(t.total || 0).toFixed(2) + '</div>'
       + '<div class="bill-progress-wrap"><div class="bill-progress-label">Active</div><div class="bill-progress"><div class="bill-progress-fill" style="width:100%"></div></div></div>'
       + '<div class="bill-actions" onclick="event.stopPropagation()">'
-      + '<a class="bill-action-btn btn-remind" href="' + tripUrlReceipt + '" style="display:inline-flex;align-items:center;text-decoration:none;background:rgba(48,209,88,0.1);color:var(--green);border:1px solid rgba(48,209,88,0.25)">📸 Receipt</a>'
-      + (isAdmin ? '<button class="bill-action-btn admin-btn" data-tripid="' + t.id + '" style="background:rgba(124,58,237,0.1);color:var(--purple3);border:1px solid rgba(124,58,237,0.2)">⚙️ Admin</button>' : '')
+      + '<a class="bill-action-btn btn-remind" href="' + tripUrlReceipt + '" style="display:inline-flex;align-items:center;text-decoration:none;background:rgba(48,209,88,0.1);color:var(--green);border:1px solid rgba(48,209,88,0.25)"><svg class="bill-action-icon"><use href="#icon-active-bills"></use></svg>Receipt</a>'
+      + (isAdmin ? '<button class="bill-action-btn admin-btn" data-tripid="' + t.id + '" style="background:rgba(124,58,237,0.1);color:var(--purple3);border:1px solid rgba(124,58,237,0.2)"><svg class="bill-action-icon"><use href="#icon-roommates"></use></svg>Admin</button>' : '')
       + '<a class="bill-action-btn btn-view" href="' + tripUrl + '" style="display:inline-flex;align-items:center;text-decoration:none">Open Trip →</a>'
       + '</div></div>';
   }).join('');
@@ -5148,7 +5235,7 @@ async function buildNotifications() {
       const { data: p } = await db.from('profiles').select('first_name,last_name,raven_id,avatar_url').eq('id', req.user_id).maybeSingle();
       const name = p ? ([p.first_name, p.last_name].filter(Boolean).join(' ') || ('@' + p.raven_id)) : 'Someone';
       notifs.push({
-        id: 'fr-' + req.id, type: 'friend', icon: '👥', iconBg: 'rgba(124,58,237,0.15)',
+        id: 'fr-' + req.id, type: 'friend', icon: '<svg class="raven-icon"><use href="#icon-friends"></use></svg>', iconBg: 'rgba(124,58,237,0.15)',
         title: name + ' sent you a friend request',
         sub: p?.raven_id ? '@' + p.raven_id : 'Tap to accept or decline',
         time: req.created_at, unread: true,
@@ -5161,7 +5248,7 @@ async function buildNotifications() {
     // Recent bills where I'm a participant and haven't paid
     const { data: parts } = await db.from('participants')
       .select('id,bill_id,name,amount,paid').eq('phone',currentUser.email).eq('paid',false).limit(10);
-    if(parts&&parts.length>0){const bIds=[...new Set(parts.map(p=>p.bill_id).filter(Boolean))];const{data:bData}=bIds.length?await db.from('bills').select('id,name,created_at').in('id',bIds).order('created_at',{ascending:false}).limit(5):{data:[]};const cutoff=new Date(Date.now()-7*86400000).toISOString();const recent=new Set((bData||[]).filter(b=>b.created_at>cutoff).map(b=>b.id));const bMap={};(bData||[]).forEach(b=>{bMap[b.id]=b;});for(const p of parts){if(!recent.has(p.bill_id))continue;notifs.push({id:'bill-'+p.id,type:'bill',icon:'🧾',iconBg:'rgba(48,209,88,0.1)',title:'New bill: '+(bMap[p.bill_id]?.name||'Bill'),sub:'You owe $'+parseFloat(p.amount).toFixed(2),time:bMap[p.bill_id]?.created_at||new Date().toISOString(),unread:true,action:()=>showPage('active-bills')});}} } catch(e) {}
+    if(parts&&parts.length>0){const bIds=[...new Set(parts.map(p=>p.bill_id).filter(Boolean))];const{data:bData}=bIds.length?await db.from('bills').select('id,name,created_at').in('id',bIds).order('created_at',{ascending:false}).limit(5):{data:[]};const cutoff=new Date(Date.now()-7*86400000).toISOString();const recent=new Set((bData||[]).filter(b=>b.created_at>cutoff).map(b=>b.id));const bMap={};(bData||[]).forEach(b=>{bMap[b.id]=b;});for(const p of parts){if(!recent.has(p.bill_id))continue;notifs.push({id:'bill-'+p.id,type:'bill',icon:'<svg class="raven-icon"><use href="#icon-active-bills"></use></svg>',iconBg:'rgba(48,209,88,0.1)',title:'New bill: '+(bMap[p.bill_id]?.name||'Bill'),sub:'You owe $'+parseFloat(p.amount).toFixed(2),time:bMap[p.bill_id]?.created_at||new Date().toISOString(),unread:true,action:()=>showPage('active-bills')});}} } catch(e) {}
 
   try {
     // My bills — recent payments received
@@ -5182,7 +5269,7 @@ async function buildNotifications() {
         if (!p.paid_at) continue;
         const method = p.payment_method ? ' via ' + p.payment_method : '';
         notifs.push({
-          id: 'pay-' + p.id, type: 'payment', icon: '💸', iconBg: 'rgba(48,209,88,0.12)',
+          id: 'pay-' + p.id, type: 'payment', icon: '<svg class="raven-icon"><use href="#icon-create-bill"></use></svg>', iconBg: 'rgba(48,209,88,0.12)',
           title: p.name + ' paid their share' + method,
           sub: '$' + parseFloat(p.amount).toFixed(2) + ' — ' + (billNameMap[p.bill_id] || 'Bill'),
           time: p.paid_at, unread: false,
@@ -5217,7 +5304,7 @@ function renderNotifList(list) {
   const container = document.getElementById('notif-list');
   if (!container) return;
   if (list.length === 0) {
-    container.innerHTML = '<div style="text-align:center;padding:48px 20px;color:var(--muted)"><div style="font-size:48px;margin-bottom:16px;opacity:0.3">🔔</div><div style="font-size:15px;font-weight:600;color:var(--muted2);margin-bottom:6px">All caught up!</div><div style="font-size:13px">No new notifications</div></div>';
+    container.innerHTML = '<div style="text-align:center;padding:48px 20px;color:var(--muted)"><div style="margin-bottom:16px;opacity:0.82;display:flex;justify-content:center"><svg class="raven-icon empty"><use href="#icon-notifications"></use></svg></div><div style="font-size:15px;font-weight:600;color:var(--muted2);margin-bottom:6px">All caught up!</div><div style="font-size:13px">No new notifications</div></div>';
     return;
   }
   container.innerHTML = list.map(n => {
