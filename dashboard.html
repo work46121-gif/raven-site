@@ -1725,22 +1725,16 @@ async function checkOnboardingAndShow(userId) {
       // Ensure every profile has a raven_id — generate one if missing (mel → mel1 → mel2)
       if (!profile.raven_id && profile.first_name) {
         try {
-          const base = profile.first_name.toLowerCase().replace(/[^a-z0-9]/g, '') || 'user';
-          let ravenId = null;
-          for (let attempt = 0; attempt < 20; attempt++) {
-            const digits = String(Math.floor(Math.random() * 900) + 100);
-            const candidate = base + digits;
-            const { data: existing } = await db.from('profiles').select('id').eq('raven_id', candidate).maybeSingle();
-            if (!existing) { ravenId = candidate; break; }
-          }
-          if (!ravenId) ravenId = base + Date.now().toString().slice(-3);
-          await db.from('profiles').update({ raven_id: ravenId }).eq('id', userId);
+          const ravenId = await generateUniqueRavenId(sanitizeRavenBase(profile.first_name), userId);
+          await persistRavenHandle(userId, ravenId);
           profile.raven_id = ravenId;
         } catch(e) {}
+      } else if (profile.raven_id && profile.username !== profile.raven_id) {
+        try { await persistRavenHandle(userId, profile.raven_id); } catch(e) {}
       }
       if (profile.onboarding_complete) {
         const existing = JSON.parse(localStorage.getItem('raven_profile') || '{}');
-        localStorage.setItem('raven_profile', JSON.stringify({ ...existing, user_id: userId, onboarding_complete: true, first_name: profile.first_name || existing.first_name || '', raven_id: profile.raven_id || existing.raven_id || '', email: currentUser.email }));
+        localStorage.setItem('raven_profile', JSON.stringify({ ...existing, user_id: userId, onboarding_complete: true, first_name: profile.first_name || existing.first_name || '', raven_id: profile.raven_id || existing.raven_id || '', username: profile.raven_id || existing.username || existing.raven_id || '', email: currentUser.email }));
         showDashboard(); return;
       } else { window.location.href = 'onboarding.html'; return; }
     }
@@ -1882,31 +1876,51 @@ async function handleSignup() {
   if (password.length < 6) return showAuthError('Password must be at least 6 characters.');
   const btn = document.querySelector('#signup-form .auth-btn');
   btn.textContent = 'Creating account...'; btn.disabled = true;
-  const { data, error } = await db.auth.signUp({ email, password });
+  let ravenId = '';
+  try {
+    ravenId = await generateUniqueRavenId(sanitizeRavenBase(firstName || email.split('@')[0]));
+  } catch(e) { console.warn('raven_id pre-generation error:', e); }
+  const { data, error } = await db.auth.signUp({
+    email,
+    password,
+    options: {
+      data: {
+        first_name: firstName || '',
+        username: ravenId || '',
+        raven_id: ravenId || ''
+      }
+    }
+  });
   if (error) { showAuthError(error.message); btn.textContent = 'Create Account →'; btn.disabled = false; return; }
 
   // Always auto-generate Raven ID on signup — firstName + 3 random digits (e.g. mel847)
   if (data?.user) {
     try {
-      const nameBase = firstName
-        ? firstName.toLowerCase().replace(/[^a-z0-9]/g, '')
-        : email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '');
-      const base = nameBase || 'user';
       // Always append 3 random digits — retry if collision
-      let ravenId = null;
-      for (let attempt = 0; attempt < 20; attempt++) {
+      ravenId = ravenId || null;
+      for (let attempt = 0; attempt < 0; attempt++) {
         const digits = String(Math.floor(Math.random() * 900) + 100); // 100–999
-        const candidate = base + digits;
+        const candidate = (sanitizeRavenBase(firstName || email.split('@')[0]) + digits).slice(0, 20);
         const { data: existing } = await db.from('profiles').select('id').eq('raven_id', candidate).maybeSingle();
         if (!existing) { ravenId = candidate; break; }
       }
-      if (!ravenId) ravenId = base + Date.now().toString().slice(-3);
-      await db.from('profiles').upsert({
-        id: data.user.id, email, first_name: firstName || '',
-        raven_id: ravenId, onboarding_complete: false, updated_at: new Date().toISOString()
-      }, { onConflict: 'id' });
+      if (!ravenId) ravenId = await generateUniqueRavenId(sanitizeRavenBase(firstName || email.split('@')[0]), data.user.id);
+      let profileUpsertFailed = false;
+      try {
+        const { error: profileErr } = await db.from('profiles').upsert({
+          id: data.user.id, email, first_name: firstName || '',
+          raven_id: ravenId, username: ravenId, onboarding_complete: false, updated_at: new Date().toISOString()
+        }, { onConflict: 'id' });
+        profileUpsertFailed = !!profileErr;
+      } catch(e) { profileUpsertFailed = true; }
+      if (profileUpsertFailed) {
+        await db.from('profiles').upsert({
+          id: data.user.id, email, first_name: firstName || '',
+          raven_id: ravenId, onboarding_complete: false, updated_at: new Date().toISOString()
+        }, { onConflict: 'id' });
+      }
       const existingLocal = JSON.parse(localStorage.getItem('raven_profile') || '{}');
-      localStorage.setItem('raven_profile', JSON.stringify({ ...existingLocal, first_name: firstName || '', raven_id: ravenId, user_id: data.user.id }));
+      localStorage.setItem('raven_profile', JSON.stringify({ ...existingLocal, first_name: firstName || '', raven_id: ravenId, username: ravenId, user_id: data.user.id }));
     } catch(e) { console.warn('raven_id generation error:', e); }
   }
 
@@ -2194,8 +2208,9 @@ async function saveSettings() {
 
   try {
     await db.from('profiles').upsert(data, { onConflict: 'id' });
+    if (data.raven_id) await persistRavenHandle(currentUser.id, data.raven_id);
     const existing = JSON.parse(localStorage.getItem('raven_profile') || '{}');
-    localStorage.setItem('raven_profile', JSON.stringify({ ...existing, ...data }));
+    localStorage.setItem('raven_profile', JSON.stringify({ ...existing, ...data, username: data.raven_id || existing.username || '' }));
     document.getElementById('settings-saved').style.display = 'block';
     setTimeout(() => document.getElementById('settings-saved').style.display = 'none', 3000);
     if (data.first_name) { const greetEl = document.getElementById('greeting-name'); if (greetEl) greetEl.textContent = data.first_name.charAt(0).toUpperCase() + data.first_name.slice(1); }
@@ -3414,19 +3429,33 @@ async function shareRavenIdSMS() {
 
 // Generate a unique Raven ID: tries base, then base1, base2, base3...
 // excludeUserId = current user so we don't conflict with themselves
+function sanitizeRavenBase(base) {
+  return (base || '').toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 16) || 'raven';
+}
+
+async function persistRavenHandle(userId, ravenId) {
+  if (!userId || !ravenId) return;
+  const payload = { raven_id: ravenId, username: ravenId, updated_at: new Date().toISOString() };
+  try {
+    const { error } = await db.from('profiles').update(payload).eq('id', userId);
+    if (!error) return;
+  } catch(e) {}
+  try {
+    await db.from('profiles').update({ raven_id: ravenId, updated_at: new Date().toISOString() }).eq('id', userId);
+  } catch(e) {}
+}
+
 async function generateUniqueRavenId(base, excludeUserId) {
-  const clean = base.toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 20) || 'user';
+  const clean = sanitizeRavenBase(base);
   // Try the clean base first
-  const { data: first } = await db.from('profiles').select('id').eq('raven_id', clean).neq('id', excludeUserId || '').maybeSingle();
-  if (!first) return clean;
-  // Try base1, base2, ... base99
-  for (let i = 1; i <= 99; i++) {
-    const candidate = clean + i;
+  for (let i = 0; i < 40; i++) {
+    const digits = String(Math.floor(Math.random() * 10000)).padStart(4, '0');
+    const candidate = (clean + digits).slice(0, 20);
     const { data: exists } = await db.from('profiles').select('id').eq('raven_id', candidate).neq('id', excludeUserId || '').maybeSingle();
     if (!exists) return candidate;
   }
   // Absolute fallback — append timestamp fragment
-  return clean + Date.now().toString().slice(-4);
+  return (clean + Date.now().toString().slice(-4)).slice(0, 20);
 }
 
 async function checkRavenId() {
