@@ -173,14 +173,90 @@ body::after {
 .input-hint { font-size: 11px; color: var(--muted); margin-top: 2px; }
 
 /* Phone input with flag */
-.phone-wrap { position: relative; }
-.phone-prefix {
-  position: absolute;
-  left: 16px; top: 50%; transform: translateY(-50%);
-  font-size: 14px; color: var(--muted2);
-  pointer-events: none;
+.phone-wrap {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+  padding: 10px;
+  background: linear-gradient(135deg, rgba(255,255,255,0.03), rgba(124,58,237,0.05));
+  border: 1px solid rgba(255,255,255,0.09);
+  border-radius: 16px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
 }
-.input-phone { padding-left: 44px; }
+.phone-wrap:focus-within {
+  border-color: rgba(124,58,237,0.45);
+  box-shadow: 0 0 0 3px rgba(124,58,237,0.12), inset 0 1px 0 rgba(255,255,255,0.05);
+}
+.phone-prefix {
+  min-width: 104px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 14px;
+  border-radius: 12px;
+  background: rgba(10,10,16,0.9);
+  border: 1px solid rgba(255,255,255,0.08);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--white);
+  letter-spacing: 0.02em;
+  flex-shrink: 0;
+}
+.phone-prefix small {
+  color: var(--muted2);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.input-phone {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  padding: 12px 6px 12px 2px;
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--white);
+  box-shadow: none;
+}
+.input-phone:focus { border: none; box-shadow: none; }
+.phone-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 10px;
+}
+.phone-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(48,209,88,0.09);
+  border: 1px solid rgba(48,209,88,0.18);
+  color: var(--green);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.phone-chip::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 10px rgba(48,209,88,0.55);
+}
+.phone-preview {
+  font-size: 12px;
+  color: var(--muted2);
+  font-weight: 500;
+}
 
 /* DOB */
 .dob-row { display: grid; grid-template-columns: 2fr 2fr 3fr; gap: 8px; }
@@ -314,6 +390,14 @@ body::after {
 .spinner { width: 36px; height: 36px; border: 3px solid var(--border2); border-top-color: var(--purple); border-radius: 50%; animation: spin 0.8s linear infinite; }
 @keyframes spin { to{transform:rotate(360deg)} }
 .loading-text { font-size: 14px; color: var(--muted); }
+@media (max-width: 560px) {
+  .card { padding: 28px 20px; border-radius: 20px; }
+  .step-title { font-size: 28px; }
+  .phone-wrap { flex-direction: column; gap: 8px; padding: 10px; }
+  .phone-prefix { min-width: 0; justify-content: flex-start; padding: 12px 14px; }
+  .input-phone { padding: 10px 4px 6px; font-size: 18px; }
+  .phone-meta { flex-direction: column; align-items: flex-start; }
+}
 </style>
 </head>
 <body>
@@ -515,10 +599,14 @@ body::after {
         <div class="field">
           <label class="label">Mobile Number</label>
           <div class="phone-wrap">
-            <span class="phone-prefix">🇺🇸 +1</span>
+            <span class="phone-prefix"><span>🇺🇸 +1</span><small>US</small></span>
             <input id="phone-number" type="tel" class="input input-phone" placeholder="(555) 867-5309" maxlength="14" oninput="formatPhone(this)" autocomplete="tel">
           </div>
-          <div class="input-hint">US numbers only. Used to identify you in group splits.</div>
+          <div class="phone-meta">
+            <div class="phone-chip">Used for group bill matching</div>
+            <div id="phone-preview" class="phone-preview">No number added yet</div>
+          </div>
+          <div class="input-hint">US numbers only. This helps RAVEN tag you cleanly when friends text in receipts or shared splits.</div>
         </div>
         <div id="error-2" class="error-msg"></div>
         <button class="btn-next" onclick="submitStep2()">Continue →</button>
@@ -581,6 +669,136 @@ const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 let currentUser = null;
 let profileData = {};
 
+function sanitizeRavenBase(base) {
+  return (base || '').toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 16) || 'raven';
+}
+
+async function generateUniqueRavenId(base, excludeUserId) {
+  const clean = sanitizeRavenBase(base);
+  for (let i = 0; i < 40; i++) {
+    const digits = String(Math.floor(Math.random() * 9000) + 1000);
+    const candidate = (clean + digits).slice(0, 20);
+    let query = db.from('profiles').select('id').eq('raven_id', candidate);
+    if (excludeUserId) query = query.neq('id', excludeUserId);
+    const { data: exists } = await query.maybeSingle();
+    if (!exists) return candidate;
+  }
+  return (clean + Date.now().toString().slice(-4)).slice(0, 20);
+}
+
+async function ensureGeneratedRavenId() {
+  if (!currentUser?.id) return '';
+  try {
+    const { data: profile } = await db.from('profiles').select('first_name,raven_id').eq('id', currentUser.id).maybeSingle();
+    if (profile?.raven_id) return profile.raven_id;
+    const base = profile?.first_name || profileData.first_name || currentUser.user_metadata?.first_name || currentUser.email?.split('@')[0] || 'raven';
+    const ravenId = await generateUniqueRavenId(base, currentUser.id);
+    await db.from('profiles').upsert({
+      id: currentUser.id,
+      email: currentUser.email,
+      raven_id: ravenId,
+      username: ravenId,
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'id' });
+    const existing = JSON.parse(localStorage.getItem('raven_profile') || '{}');
+    localStorage.setItem('raven_profile', JSON.stringify({ ...existing, user_id: currentUser.id, raven_id: ravenId, username: ravenId }));
+    return ravenId;
+  } catch(e) {
+    console.warn('ensureGeneratedRavenId failed:', e);
+    return '';
+  }
+}
+
+function updatePhonePreview() {
+  const input = document.getElementById('phone-number');
+  const preview = document.getElementById('phone-preview');
+  if (!input || !preview) return;
+  const digits = input.value.replace(/\D/g, '');
+  preview.textContent = digits.length ? `RAVEN will save: +1 ${input.value}` : 'No number added yet';
+}
+
+function launchRavenSignupFlight() {
+  const canvas = document.createElement('canvas');
+  canvas.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:9999';
+  document.body.appendChild(canvas);
+  const ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  class Bird {
+    constructor(color, side, delay) {
+      this.color = color;
+      this.delay = delay;
+      this.t = -delay;
+      this.side = side;
+      this.x = side === 'left' ? -50 : canvas.width + 50;
+      this.y = 90 + Math.random() * Math.max(180, canvas.height - 180);
+      this.vx = side === 'left' ? 2.8 + Math.random() * 2.4 : -(2.8 + Math.random() * 2.4);
+      this.vy = (Math.random() - 0.5) * 1.1;
+      this.wingPhase = Math.random() * Math.PI * 2;
+      this.wingSpeed = 0.13 + Math.random() * 0.08;
+      this.size = 14 + Math.random() * 10;
+      this.alpha = 0;
+      this.alive = true;
+    }
+    update() {
+      this.t++;
+      if (this.t < 0) return;
+      if (this.alpha < 1) this.alpha = Math.min(1, this.alpha + 0.08);
+      this.x += this.vx;
+      this.y += this.vy;
+      this.vy += (Math.random() - 0.5) * 0.12;
+      this.vy *= 0.97;
+      this.wingPhase += this.wingSpeed;
+      if (this.x < -120 || this.x > canvas.width + 120 || this.y < -80 || this.y > canvas.height + 80) this.alive = false;
+    }
+    draw() {
+      if (this.t < 0 || !this.alive) return;
+      ctx.save();
+      ctx.globalAlpha = this.alpha;
+      ctx.translate(this.x, this.y);
+      if (this.vx < 0) ctx.scale(-1, 1);
+      const s = this.size;
+      const wing = Math.sin(this.wingPhase) * 0.6;
+      ctx.fillStyle = this.color;
+      ctx.beginPath(); ctx.ellipse(0, 0, s * 0.72, s * 0.28, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(s * 0.6, -s * 0.04, s * 0.2, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(s * 0.12, -s * 0.08);
+      ctx.bezierCurveTo(-s * 0.2, -s * (0.52 + wing), -s * 0.72, -s * (0.62 + wing), -s * 0.95, -s * (0.12 + wing * 0.35));
+      ctx.bezierCurveTo(-s * 0.52, -s * 0.1, -s * 0.12, -s * 0.04, s * 0.12, -s * 0.08);
+      ctx.closePath();
+      ctx.fill();
+      ctx.lineWidth = 1.7;
+      ctx.strokeStyle = this.color;
+      ctx.beginPath();
+      ctx.moveTo(-s * 0.64, 0); ctx.lineTo(-s * 1.12, -s * 0.21);
+      ctx.moveTo(-s * 0.64, 0); ctx.lineTo(-s * 1.16, s * 0.03);
+      ctx.moveTo(-s * 0.64, 0); ctx.lineTo(-s * 1.06, s * 0.22);
+      ctx.stroke();
+      ctx.restore();
+    }
+  }
+
+  const birds = [];
+  const colors = ['#30D158', '#A855F7', '#F0EEF8'];
+  let id = 0;
+  for (let i = 0; i < 7; i++) { birds.push(new Bird(colors[id % colors.length], 'left', i * 9)); id++; }
+  for (let i = 0; i < 7; i++) { birds.push(new Bird(colors[id % colors.length], 'right', i * 9 + 4)); id++; }
+
+  function loop() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (let i = birds.length - 1; i >= 0; i--) {
+      birds[i].update();
+      birds[i].draw();
+      if (!birds[i].alive && birds[i].t >= 0) birds.splice(i, 1);
+    }
+    if (birds.length) requestAnimationFrame(loop);
+    else canvas.remove();
+  }
+  loop();
+}
+
 // ── INIT ──
 async function init() {
   const hash = window.location.hash;
@@ -596,6 +814,7 @@ async function init() {
   }
 
   currentUser = session.user;
+  await ensureGeneratedRavenId();
 
   // Check localStorage first (fast)
   const localProfile = JSON.parse(localStorage.getItem('raven_profile') || '{}');
@@ -623,6 +842,7 @@ async function init() {
   } catch(e) {
     console.log('Profile check failed:', e);
   }
+  updatePhonePreview();
 }
 
 // ── STEP 1: Personal Info ──
@@ -674,6 +894,7 @@ async function submitStep3() {
   const zelle = document.getElementById('zelle').value.trim();
 
   showLoading();
+  await ensureGeneratedRavenId();
   await saveProfile({ venmo, cashapp, zelle, onboarding_complete: true });
   hideLoading();
   goToStep('success');
@@ -681,7 +902,7 @@ async function submitStep3() {
 
 function skipStep3() {
   showLoading();
-  saveProfile({ onboarding_complete: true }).then(() => {
+  ensureGeneratedRavenId().then(() => saveProfile({ onboarding_complete: true })).then(() => {
     hideLoading();
     goToStep('success');
   });
@@ -690,7 +911,8 @@ function skipStep3() {
 // ── HELPERS ──
 async function saveProfile(data) {
   try {
-    const payload = { id: currentUser.id, email: currentUser.email, updated_at: new Date().toISOString(), ...data };
+    const ravenId = await ensureGeneratedRavenId();
+    const payload = { id: currentUser.id, email: currentUser.email, updated_at: new Date().toISOString(), ...(ravenId ? { raven_id: ravenId, username: ravenId } : {}), ...data };
     const { error } = await db.from('profiles').upsert(payload, { onConflict: 'id' });
     if (error) console.error('Supabase save error:', error);
   } catch(e) {
@@ -719,6 +941,7 @@ function goToStep(step) {
   const labels = {1:'Step 1 of 3', 2:'Step 2 of 3', 3:'Step 3 of 3', success:'All done!'};
   document.getElementById('prog-label').textContent = labels[step] || '';
   if (step === 'success') {
+    launchRavenSignupFlight();
     document.querySelectorAll('.progress-step').forEach(b => b.className = 'progress-step done');
   }
 }
@@ -743,6 +966,7 @@ function formatPhone(input) {
   if (v.length >= 6) v = `(${v.slice(0,3)}) ${v.slice(3,6)}-${v.slice(6)}`;
   else if (v.length >= 3) v = `(${v.slice(0,3)}) ${v.slice(3)}`;
   input.value = v;
+  updatePhonePreview();
 }
 
 // ── START ──
