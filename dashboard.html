@@ -1966,10 +1966,7 @@ async function handleSignup() {
     try {
       ravenId = ravenId || null;
       for (let attempt = 0; attempt < 12 && !ravenId; attempt++) {
-        const digitsLength = Math.random() > 0.5 ? 4 : 3;
-        const min = digitsLength === 4 ? 1000 : 100;
-        const max = digitsLength === 4 ? 9000 : 900;
-        const digits = String(Math.floor(Math.random() * max) + min);
+        const digits = String(Math.floor(Math.random() * 900) + 100);
         const candidate = (sanitizeRavenBase(firstName || email.split('@')[0]) + digits).slice(0, 20);
         const { data: existing } = await db.from('profiles').select('id').eq('raven_id', candidate).maybeSingle();
         if (!existing) { ravenId = candidate; break; }
@@ -3558,15 +3555,13 @@ async function persistRavenHandle(userId, ravenId) {
 
 async function generateUniqueRavenId(base, excludeUserId) {
   const clean = sanitizeRavenBase(base);
-  // Try the clean base first
   for (let i = 0; i < 40; i++) {
-    const digits = String(Math.floor(Math.random() * 10000)).padStart(4, '0');
+    const digits = String(Math.floor(Math.random() * 900) + 100);
     const candidate = (clean + digits).slice(0, 20);
     const { data: exists } = await db.from('profiles').select('id').eq('raven_id', candidate).neq('id', excludeUserId || '').maybeSingle();
     if (!exists) return candidate;
   }
-  // Absolute fallback — append timestamp fragment
-  return (clean + Date.now().toString().slice(-4)).slice(0, 20);
+  return (clean + String(Date.now()).slice(-3)).slice(0, 20);
 }
 
 async function checkRavenId() {
