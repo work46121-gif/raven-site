@@ -670,7 +670,18 @@ let currentUser = null;
 let profileData = {};
 
 function sanitizeRavenBase(base) {
-  return (base || '').toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 16) || 'raven';
+  return (String(base || '').trim().split(/\s+/)[0] || '').toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 16) || 'raven';
+}
+
+function shouldRefreshAutoRavenId(existingRavenId, firstName, email) {
+  const rid = String(existingRavenId || '').toLowerCase().trim();
+  const first = sanitizeRavenBase(firstName || '');
+  const emailBase = sanitizeRavenBase(String(email || '').split('@')[0] || '');
+  if (!rid) return true;
+  if (/^ravensplit\d{3,}$/.test(rid)) return true;
+  if (emailBase && rid === emailBase && first && first !== emailBase) return true;
+  if (emailBase && new RegExp('^' + emailBase + '\\d{3,}$').test(rid) && first && first !== emailBase) return true;
+  return false;
 }
 
 async function generateUniqueRavenId(base, excludeUserId) {
@@ -690,8 +701,8 @@ async function ensureGeneratedRavenId() {
   if (!currentUser?.id) return '';
   try {
     const { data: profile } = await db.from('profiles').select('first_name,raven_id').eq('id', currentUser.id).maybeSingle();
-    if (profile?.raven_id) return profile.raven_id;
-    const base = profile?.first_name || profileData.first_name || currentUser.user_metadata?.first_name || currentUser.email?.split('@')[0] || 'raven';
+    if (profile?.raven_id && !shouldRefreshAutoRavenId(profile.raven_id, profile?.first_name || profileData.first_name, currentUser.email)) return profile.raven_id;
+    const base = profile?.first_name || profileData.first_name || currentUser.user_metadata?.first_name || 'raven';
     const ravenId = await generateUniqueRavenId(base, currentUser.id);
     await db.from('profiles').upsert({
       id: currentUser.id,
