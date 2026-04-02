@@ -1242,6 +1242,7 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
         <div id="pm-email" style="font-size:12px;color:var(--muted);margin-bottom:18px"></div>
         <div id="pm-payment-methods" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px"></div>
         <div id="pm-action-btn"></div>
+        <div id="pm-inline-picker" style="display:none;margin-top:12px;padding:14px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:14px"></div>
       </div>
     </div>
   </div>
@@ -2854,6 +2855,25 @@ async function addPersonToBill(billId, bill) {
   openBillModal(billId); // refresh
 }
 
+async function addPersonToBill(billId, bill) {
+  const input = document.getElementById('modal-add-person-input');
+  const raw = input?.value.trim();
+  if (!raw) return showToast('Enter a name or @RavenID', 'error');
+  const btn = document.getElementById('modal-add-person-btn-submit');
+  btn.textContent = 'Adding...';
+  btn.disabled = true;
+  try {
+    await addPersonToExistingBill(bill, raw);
+    if (input) input.value = '';
+    openBillModal(billId);
+  } catch(e) {
+    showToast('Error: ' + (e.message || 'Could not add person'), 'error');
+  } finally {
+    btn.textContent = 'Add';
+    btn.disabled = false;
+  }
+}
+
 function closeBillModal() { document.getElementById('bill-modal').classList.remove('open'); currentBillId = null; }
 
 async function shareBillLink(billId, billName, shareToken) {
@@ -3688,6 +3708,136 @@ async function loadFriendsList() {
 
 // ── PROFILE MODAL ──
 let _profileModalData = null;
+let _profilePickerState = null;
+
+async function fetchAddableTrips() {
+  const email = (currentUser?.email || '').toLowerCase();
+  const trips = [];
+  const seen = new Set();
+  try {
+    const { data: mine } = await db.from('trips').select('*').eq('creator_email', currentUser.email).neq('type', 'roommates');
+    (mine || []).forEach(t => { if (t?.id && !seen.has(t.id)) { seen.add(t.id); trips.push(t); tripDataMap[t.id] = t; } });
+  } catch(e) {}
+  try {
+    const emailEscaped = email.replace(/"/g, '\\"');
+    const { data: memberTrips } = await db.from('trips').select('*').ilike('member_emails', '%' + emailEscaped + '%').neq('type', 'roommates');
+    (memberTrips || []).forEach(t => { if (t?.id && !seen.has(t.id)) { seen.add(t.id); trips.push(t); tripDataMap[t.id] = t; } });
+  } catch(e) {}
+  try {
+    const local = JSON.parse(localStorage.getItem('raven_profile') || '{}');
+    const joined = Array.isArray(local.joined_trips) ? local.joined_trips : [];
+    if (joined.length > 0) {
+      const { data: joinedTrips } = await db.from('trips').select('*').in('id', joined).neq('type', 'roommates');
+      (joinedTrips || []).forEach(t => { if (t?.id && !seen.has(t.id)) { seen.add(t.id); trips.push(t); tripDataMap[t.id] = t; } });
+    }
+  } catch(e) {}
+  return trips.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+}
+
+async function fetchAddableBills() {
+  try {
+    const { data: bills } = await db.from('bills').select('id,name,status,created_at,share_token,participants(*)').eq('creator_phone', currentUser.email).neq('status', 'deleted').order('created_at', { ascending: false });
+    return bills || [];
+  } catch(e) {
+    return [];
+  }
+}
+
+function hideProfileInlinePicker() {
+  _profilePickerState = null;
+  const picker = document.getElementById('pm-inline-picker');
+  if (!picker) return;
+  picker.style.display = 'none';
+  picker.innerHTML = '';
+}
+
+async function showProfileInlinePicker(type) {
+  if (!_profileModalData) return;
+  const picker = document.getElementById('pm-inline-picker');
+  if (!picker) return;
+  const targetName = [_profileModalData.first_name, _profileModalData.last_name].filter(Boolean).join(' ') || _profileModalData.raven_id || 'this friend';
+  picker.style.display = 'block';
+  picker.innerHTML = '<div style="font-size:12px;color:var(--muted)">Loading options...</div>';
+  _profilePickerState = { type };
+
+  const items = type === 'trip' ? await fetchAddableTrips() : await fetchAddableBills();
+  if (!items.length) {
+    picker.innerHTML = '<div style="font-size:13px;font-weight:700;margin-bottom:6px">No ' + (type === 'trip' ? 'trips' : 'bills') + ' yet</div>'
+      + '<div style="font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:12px">Create one first, then you can add ' + targetName + ' directly from here.</div>'
+      + '<div style="display:flex;gap:8px">'
+      + (type === 'trip'
+        ? '<button onclick="hideProfileInlinePicker();closeProfileModal();openCreateTrip()" style="flex:1;padding:10px 12px;background:var(--green);border:none;border-radius:10px;color:#000;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">Create Trip</button>'
+        : '<button onclick="hideProfileInlinePicker();closeProfileModal();showPage(\'create-bill\')" style="flex:1;padding:10px 12px;background:rgba(48,209,88,0.12);border:1px solid rgba(48,209,88,0.2);border-radius:10px;color:var(--green);font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">Create Bill</button>')
+      + '<button onclick="hideProfileInlinePicker()" style="padding:10px 12px;background:transparent;border:1px solid var(--border);border-radius:10px;color:var(--muted);font-family:inherit;font-size:13px;cursor:pointer">Cancel</button>'
+      + '</div>';
+    return;
+  }
+
+  const options = items.map(item => {
+    const label = (item.name || 'Untitled').replace(/</g, '&lt;');
+    const sub = type === 'trip'
+      ? (() => { try { const people = Array.isArray(item.people) ? item.people : JSON.parse(item.people || '[]'); return people.length + ' people'; } catch(e) { return 'Trip'; } })()
+      : ((item.participants || []).length + ' people');
+    return '<option value="' + item.id + '">' + label + ' • ' + sub + '</option>';
+  }).join('');
+
+  picker.innerHTML = '<div style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Add to ' + (type === 'trip' ? 'Trip' : 'Bill') + '</div>'
+    + '<div style="font-size:13px;color:var(--white);margin-bottom:10px">Choose where to add ' + targetName + '.</div>'
+    + '<select id="pm-inline-select" class="form-input" style="margin-bottom:12px">' + options + '</select>'
+    + '<div style="display:flex;gap:8px">'
+    + '<button onclick="confirmProfileInlineAdd()" style="flex:1;padding:10px 12px;background:' + (type === 'trip' ? 'var(--green)' : 'rgba(48,209,88,0.12)') + ';border:' + (type === 'trip' ? 'none' : '1px solid rgba(48,209,88,0.2)') + ';border-radius:10px;color:' + (type === 'trip' ? '#000' : 'var(--green)') + ';font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">Add Now</button>'
+    + '<button onclick="hideProfileInlinePicker()" style="padding:10px 12px;background:transparent;border:1px solid var(--border);border-radius:10px;color:var(--muted);font-family:inherit;font-size:13px;cursor:pointer">Cancel</button>'
+    + '</div>';
+}
+
+async function confirmProfileInlineAdd() {
+  if (!_profileModalData || !_profilePickerState) return;
+  const select = document.getElementById('pm-inline-select');
+  const picker = document.getElementById('pm-inline-picker');
+  if (!select || !picker) return;
+  const selectedId = select.value;
+  if (!selectedId) return;
+  picker.querySelectorAll('button,select').forEach(el => el.disabled = true);
+  const friendLookup = _profileModalData.raven_id ? '@' + _profileModalData.raven_id : ([_profileModalData.first_name, _profileModalData.last_name].filter(Boolean).join(' ') || _profileModalData.first_name || 'Friend');
+  try {
+    if (_profilePickerState.type === 'trip') {
+      let trip = tripDataMap[selectedId];
+      if (!trip) {
+        const { data } = await db.from('trips').select('*').eq('id', selectedId).single();
+        trip = data;
+      }
+      if (!trip) throw new Error('Trip not found');
+      const existingPeople = Array.isArray(trip.people) ? trip.people : JSON.parse(trip.people || '[]');
+      const displayName = _profileModalData.first_name || _profileModalData.raven_id || friendLookup.replace(/^@/, '');
+      if (existingPeople.some(p => String(p || '').toLowerCase() === displayName.toLowerCase())) {
+        showToast(displayName + ' is already on this trip', 'success');
+      } else {
+        const res = await fetch(BACKEND + '/trip/' + selectedId + '/add-members', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: trip.share_token, members: [friendLookup] })
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) throw new Error(data.error || 'Could not add to trip');
+        trip.people = JSON.stringify(data.people || existingPeople);
+        tripDataMap[selectedId] = trip;
+        showToast(displayName + ' added to ' + (trip.name || 'trip'), 'success');
+        loadTrips();
+      }
+    } else {
+      const { data: bill } = await db.from('bills').select('*,participants(*)').eq('id', selectedId).single();
+      if (!bill) throw new Error('Bill not found');
+      await addPersonToExistingBill(bill, friendLookup);
+      loadActiveBills();
+      loadOverview();
+    }
+    hideProfileInlinePicker();
+    closeProfileModal();
+  } catch(e) {
+    showToast(e.message || 'Could not add friend', 'error');
+    picker.querySelectorAll('button,select').forEach(el => el.disabled = false);
+  }
+}
 
 function openProfileModal(p) {
   _profileModalData = p;
@@ -3754,6 +3904,88 @@ function addFriendToBill() {
     if (!cbPeople.includes(name)) { cbPeople.push(name); cbRenderPeople(); cbRenderItems(); cbUpdateSummary(); cbGoToStep(2); showToast(name + ' added to bill', 'success'); }
     else { showToast(name + ' already on bill', 'success'); }
   }, 300);
+}
+
+async function addPersonToExistingBill(bill, raw) {
+  if (!bill?.id) throw new Error('Bill not found');
+  const perPerson = parseFloat(bill.per_person || 0) || (bill.participants?.length > 0 ? parseFloat(bill.total) / (bill.participants.length + 1) : parseFloat(bill.total));
+  let personEmail = null;
+  let personName = raw.replace(/^@/, '');
+  const query = raw.startsWith('@') ? raw.slice(1) : raw;
+  try {
+    const { data: profile } = await db.from('profiles').select('id,first_name,last_name,email,raven_id').or('raven_id.eq.' + query.toLowerCase() + ',first_name.ilike.' + query + ',last_name.ilike.' + query).maybeSingle();
+    if (profile) {
+      personEmail = profile.email;
+      personName = profile.first_name || profile.raven_id || personName;
+    }
+  } catch(e) {}
+  const alreadyOn = (bill.participants || []).some(p => p.name.toLowerCase() === personName.toLowerCase());
+  if (alreadyOn) throw new Error(personName + ' is already on this bill');
+  const { error } = await db.from('participants').insert({
+    bill_id: bill.id,
+    phone: personEmail || ('unknown_' + personName.toLowerCase().replace(/\s+/g,'_') + '_' + bill.id),
+    name: personName,
+    amount: perPerson,
+    paid: false
+  });
+  if (error) throw error;
+  showToast(personName + ' added to ' + (bill.name || 'bill') + (personEmail ? ' — will see it on their dashboard' : ''), 'success');
+}
+
+function openProfileModal(p) {
+  _profileModalData = p;
+  const name = [p.first_name, p.last_name].filter(Boolean).join(' ') || p.raven_id || 'Unknown';
+  const av = document.getElementById('pm-avatar');
+  if (av) {
+    if (p.avatar_url) {
+      av.innerHTML = '<img src="' + p.avatar_url + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';
+      av.style.background = 'transparent';
+    } else {
+      av.textContent = name[0].toUpperCase();
+      av.style.background = avatarGradients[name.charCodeAt(0) % avatarGradients.length];
+    }
+  }
+  const el = id => document.getElementById(id);
+  if (el('pm-name')) el('pm-name').textContent = name;
+  if (el('pm-raven-id')) el('pm-raven-id').textContent = p.raven_id ? '@' + p.raven_id : '';
+  if (el('pm-email')) el('pm-email').style.display = 'none';
+  hideProfileInlinePicker();
+  const pm = el('pm-payment-methods');
+  if (pm) {
+    const chips = [];
+    if (p.venmo) chips.push('<span style="display:inline-flex;align-items:center;gap:5px;padding:5px 10px;background:#0084FF;border-radius:8px;font-size:12px;font-weight:700;color:#fff"><b>V</b> Venmo</span>');
+    if (p.cashapp) chips.push('<span style="display:inline-flex;align-items:center;gap:5px;padding:5px 10px;background:#00D632;border-radius:8px;font-size:12px;font-weight:700;color:#000"><b>$</b> Cash App</span>');
+    if (p.applepay) chips.push('<span style="display:inline-flex;align-items:center;gap:5px;padding:5px 10px;background:#1a1a1a;border:1px solid #444;border-radius:8px;font-size:12px;font-weight:700;color:#fff">Apple Pay</span>');
+    pm.innerHTML = chips.length ? chips.join('') : '<span style="font-size:12px;color:var(--muted)">No payment methods set up yet</span>';
+  }
+  const ab = el('pm-action-btn');
+  if (ab) {
+    ab.innerHTML = '';
+    const mkBtn = (label, bg, color, border, handler) => {
+      const b = document.createElement('button');
+      b.innerHTML = label;
+      b.style.cssText = 'width:100%;padding:12px;background:'+bg+';border:'+(border||'none')+';border-radius:10px;font-family:\'Epilogue\',sans-serif;font-size:14px;font-weight:700;color:'+color+';cursor:pointer;display:block;margin-bottom:8px';
+      b.addEventListener('click', handler);
+      ab.appendChild(b);
+      return b;
+    };
+    mkBtn('Add to Trip', 'var(--green)', '#000', 'none', () => showProfileInlinePicker('trip'));
+    mkBtn('Add to Bill', 'rgba(48,209,88,0.08)', 'var(--green)', '1px solid rgba(48,209,88,0.2)', () => showProfileInlinePicker('bill'));
+    mkBtn('Message', 'rgba(124,58,237,0.1)', 'var(--purple3)', '1px solid rgba(124,58,237,0.25)', () => openDirectMessage(p.id, name, p));
+    const rmBtn = mkBtn('Remove Friend', 'rgba(255,68,68,0.06)', '#FF6B6B', '1px solid rgba(255,68,68,0.15)', () => removeFriend(p.id, name));
+    rmBtn.id = 'remove-friend-btn-' + (p.id || '');
+    rmBtn.style.fontWeight = '600';
+    rmBtn.style.marginBottom = '0';
+  }
+  const modal = el('profile-modal');
+  if (modal) modal.style.display = 'flex';
+}
+
+function closeProfileModal() {
+  const modal = document.getElementById('profile-modal');
+  if (modal) modal.style.display = 'none';
+  hideProfileInlinePicker();
+  _profileModalData = null;
 }
 
 async function removeFriend(friendId, name) {
