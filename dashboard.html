@@ -1056,13 +1056,12 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
           <div class="form-group"><label class="form-label">Phone Number</label><input id="set-phone" type="tel" class="form-input" placeholder="+1 (555) 000-0000"></div>
           <div class="form-group"><label class="form-label">Email</label><input id="set-email" type="text" class="form-input" disabled style="opacity:0.5;cursor:not-allowed"></div>
           <div class="form-group">
-            <label class="form-label" style="display:flex;align-items:center;gap:8px"><svg width="14" height="14" viewBox="0 0 28 28" fill="none" style="flex-shrink:0;vertical-align:middle"><defs><linearGradient id="rg_id" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#C084FC"/><stop offset="100%" stop-color="#7C3AED"/></linearGradient></defs><text x="2" y="22" font-family="Bebas Neue, sans-serif" font-size="24" fill="url(#rg_id)">R</text><circle cx="11" cy="24" r="3" fill="#30D158"/></svg> Raven ID <span style="font-size:11px;color:var(--muted);font-weight:400">— how friends find you</span></label>
+            <label class="form-label" style="display:flex;align-items:center;gap:8px"><svg width="14" height="14" viewBox="0 0 28 28" fill="none" style="flex-shrink:0;vertical-align:middle"><defs><linearGradient id="rg_id" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#C084FC"/><stop offset="100%" stop-color="#7C3AED"/></linearGradient></defs><text x="2" y="22" font-family="Bebas Neue, sans-serif" font-size="24" fill="url(#rg_id)">R</text><circle cx="11" cy="24" r="3" fill="#30D158"/></svg> Raven ID <span style="font-size:11px;color:var(--muted);font-weight:400">— generated for discovery</span></label>
             <div style="display:flex;gap:8px;align-items:center">
               <span style="color:var(--purple3);font-size:16px;font-weight:700;flex-shrink:0">@</span>
-              <input id="set-raven-id" type="text" class="form-input" placeholder="yourhandle" style="flex:1" oninput="this.value=this.value.toLowerCase().replace(/[^a-z0-9_]/g,'')">
-              <button onclick="checkRavenId()" style="padding:10px 14px;background:rgba(124,58,237,0.12);border:1px solid rgba(124,58,237,0.25);border-radius:9px;color:var(--purple3);font-family:'Epilogue',sans-serif;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">Check</button>
+              <input id="set-raven-id" type="text" class="form-input" placeholder="generating..." style="flex:1;background:rgba(255,255,255,0.03);color:var(--white);opacity:0.88;cursor:not-allowed" readonly disabled>
             </div>
-            <div id="raven-id-status" style="font-size:12px;margin-top:6px"></div>
+            <div id="raven-id-status" style="font-size:12px;margin-top:6px;color:var(--muted)">Your Raven ID is assigned automatically so friends can always find you.</div>
           </div>
         </div>
       </div>
@@ -1962,13 +1961,15 @@ async function handleSignup() {
   });
   if (error) { showAuthError(error.message); btn.textContent = 'Create Account →'; btn.disabled = false; return; }
 
-  // Always auto-generate Raven ID on signup — firstName + 3 random digits (e.g. mel847)
+  // Always auto-generate Raven ID on signup — firstName + 3-4 random digits (e.g. mel8472)
   if (data?.user) {
     try {
-      // Always append 3 random digits — retry if collision
       ravenId = ravenId || null;
-      for (let attempt = 0; attempt < 0; attempt++) {
-        const digits = String(Math.floor(Math.random() * 900) + 100); // 100–999
+      for (let attempt = 0; attempt < 12 && !ravenId; attempt++) {
+        const digitsLength = Math.random() > 0.5 ? 4 : 3;
+        const min = digitsLength === 4 ? 1000 : 100;
+        const max = digitsLength === 4 ? 9000 : 900;
+        const digits = String(Math.floor(Math.random() * max) + min);
         const candidate = (sanitizeRavenBase(firstName || email.split('@')[0]) + digits).slice(0, 20);
         const { data: existing } = await db.from('profiles').select('id').eq('raven_id', candidate).maybeSingle();
         if (!existing) { ravenId = candidate; break; }
@@ -2193,6 +2194,19 @@ async function loadSettings() {
       document.getElementById('profile-display-name').textContent = displayName;
     }
   } catch(e) {}
+  try {
+    const ravenIdField = document.getElementById('set-raven-id');
+    if (ravenIdField && !ravenIdField.value) {
+      const base = document.getElementById('set-first').value.trim() || currentUser.email.split('@')[0];
+      const generated = await generateUniqueRavenId(base, currentUser.id);
+      await persistRavenHandle(currentUser.id, generated);
+      ravenIdField.value = generated;
+      const status = document.getElementById('raven-id-status');
+      if (status) status.textContent = 'Your Raven ID is assigned automatically so friends can always find you.';
+      const existing = JSON.parse(localStorage.getItem('raven_profile') || '{}');
+      localStorage.setItem('raven_profile', JSON.stringify({ ...existing, raven_id: generated, username: generated }));
+    }
+  } catch(e) { console.warn('settings raven id ensure failed:', e); }
   if (window.innerWidth <= 768) { const qn = document.getElementById('mob-quick-nav'); if (qn) qn.style.display = 'block'; }
   loadPrivacyToggles();
   setupPwaInstallCard();
@@ -2252,28 +2266,12 @@ async function saveSettings() {
   let ravenIdInput = document.getElementById('set-raven-id').value.trim().toLowerCase().replace(/[^a-z0-9_]/g,'');
   const data = { id: currentUser.id, email: currentUser.email, first_name: document.getElementById('set-first').value.trim(), last_name: document.getElementById('set-last').value.trim(), phone: document.getElementById('set-phone').value.trim(), venmo: document.getElementById('set-venmo').value.trim(), cashapp: document.getElementById('set-cashapp').value.trim(), zelle: document.getElementById('set-zelle').value.trim(), applepay: document.getElementById('set-applepay').value.trim(), onboarding_complete: true, updated_at: new Date().toISOString() };
 
-  // If user typed a Raven ID, check it's not taken by someone else
-  if (ravenIdInput) {
-    const { data: conflict } = await db.from('profiles').select('id').eq('raven_id', ravenIdInput).neq('id', currentUser.id).maybeSingle();
-    if (conflict) {
-      // Suggest the next available one
-      const suggested = await generateUniqueRavenId(ravenIdInput, currentUser.id);
-      const status = document.getElementById('raven-id-status');
-      if (status) { status.style.color = '#FF6B6B'; status.textContent = '✗ @' + ravenIdInput + ' is taken — try @' + suggested; }
-      document.getElementById('set-raven-id').value = ravenIdInput;
-      showToast('@' + ravenIdInput + ' is taken. Try @' + suggested, 'error');
-      btn.textContent = '💾 Save Settings'; btn.disabled = false;
-      return;
-    }
-    data.raven_id = ravenIdInput;
-  } else if (data.first_name) {
-    // Auto-generate from first name if no ID set yet
-    const { data: existing } = await db.from('profiles').select('raven_id').eq('id', currentUser.id).single();
-    if (!existing?.raven_id) {
-      data.raven_id = await generateUniqueRavenId(data.first_name.toLowerCase().replace(/[^a-z0-9_]/g,''), currentUser.id);
-      document.getElementById('set-raven-id').value = data.raven_id;
-    }
+  if (!ravenIdInput) {
+    const base = data.first_name || currentUser.email.split('@')[0];
+    ravenIdInput = await generateUniqueRavenId(base, currentUser.id);
+    document.getElementById('set-raven-id').value = ravenIdInput;
   }
+  data.raven_id = ravenIdInput;
 
   try {
     await db.from('profiles').upsert(data, { onConflict: 'id' });
@@ -2283,7 +2281,7 @@ async function saveSettings() {
     document.getElementById('settings-saved').style.display = 'block';
     setTimeout(() => document.getElementById('settings-saved').style.display = 'none', 3000);
     if (data.first_name) { const greetEl = document.getElementById('greeting-name'); if (greetEl) greetEl.textContent = data.first_name.charAt(0).toUpperCase() + data.first_name.slice(1); }
-    if (data.raven_id) { const status = document.getElementById('raven-id-status'); if (status) { status.style.color = 'var(--green)'; status.textContent = '✓ @' + data.raven_id + ' saved'; } }
+    if (data.raven_id) { const status = document.getElementById('raven-id-status'); if (status) { status.style.color = 'var(--green)'; status.textContent = '✓ @' + data.raven_id + ' is active and ready to share'; } }
   } catch(e) { showToast('Error saving settings', 'error'); }
   btn.textContent = '💾 Save Settings'; btn.disabled = false;
 }
