@@ -189,6 +189,8 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
 .house-avatar-stack { display:flex; align-items:center; }
 .house-avatar { width:34px; height:34px; border-radius:50%; border:2px solid #0B0B10; display:flex; align-items:center; justify-content:center; margin-left:-8px; font-size:11px; font-weight:800; color:#fff; box-shadow:0 4px 14px rgba(0,0,0,0.28); }
 .house-avatar:first-child { margin-left:0; }
+.raven-home-link { transition: filter 0.2s ease, text-shadow 0.2s ease, transform 0.2s ease; }
+.raven-home-link.raven-armed { filter: drop-shadow(0 0 12px rgba(48,209,88,0.55)); text-shadow: 0 0 14px rgba(48,209,88,0.45); transform: scale(1.03); }
 .house-card-actions { display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
 .house-btn { padding:9px 12px; border-radius:10px; font-family:'Epilogue',sans-serif; font-size:12px; font-weight:700; cursor:pointer; border:1px solid; background:none; }
 .house-btn.remind { background:rgba(124,58,237,0.12); border-color:rgba(124,58,237,0.26); color:var(--purple3); }
@@ -568,7 +570,7 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
 
 <!-- MOBILE HEADER -->
 <div id="mobile-header">
-  <a href="index.html" style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:0.15em;text-decoration:none;background:linear-gradient(135deg,var(--white),var(--purple3));-webkit-background-clip:text;-webkit-text-fill-color:transparent;display:flex;align-items:center;gap:6px"><svg class="raven-icon lg" style="-webkit-text-fill-color:initial"><use href="#raven-mark"></use></svg> RAVEN</a>
+  <a href="index.html" id="dashboard-raven-home-link" class="raven-home-link" style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:0.15em;text-decoration:none;background:linear-gradient(135deg,var(--white),var(--purple3));-webkit-background-clip:text;-webkit-text-fill-color:transparent;display:flex;align-items:center;gap:6px"><svg class="raven-icon lg" style="-webkit-text-fill-color:initial"><use href="#raven-mark"></use></svg> RAVEN</a>
   <div style="display:flex;align-items:center;gap:10px">
     <button onclick="handleLogout()" style="padding:6px 12px;background:rgba(255,68,68,0.08);border:1px solid rgba(255,68,68,0.18);border-radius:8px;color:#FF6B6B;font-family:'Epilogue',sans-serif;font-size:11px;font-weight:600;cursor:pointer;-webkit-tap-highlight-color:transparent">⎋ Sign Out</button>
     <div id="mob-user-avatar" onclick="showPage('settings');setMobNav('mob-settings')" style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--purple),var(--green));display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;cursor:pointer;overflow:hidden">?</div>
@@ -3081,6 +3083,31 @@ function showToast(msg, type = 'success') {
   t.textContent = msg; t.className = 'toast ' + type + ' show';
   setTimeout(() => t.classList.remove('show'), 3500);
 }
+
+let dashboardRavenHomeArmedUntil = 0;
+function setupDashboardRavenHomeGuard() {
+  const link = document.getElementById('dashboard-raven-home-link');
+  if (!link || link.dataset.guardReady === '1') return;
+  link.dataset.guardReady = '1';
+  link.addEventListener('click', function(e) {
+    const now = Date.now();
+    if (now <= dashboardRavenHomeArmedUntil) {
+      dashboardRavenHomeArmedUntil = 0;
+      link.classList.remove('raven-armed');
+      return;
+    }
+    e.preventDefault();
+    dashboardRavenHomeArmedUntil = now + 2200;
+    link.classList.add('raven-armed');
+    showToast('Tap RAVEN again to go home', 'success');
+    clearTimeout(link._armTimer);
+    link._armTimer = setTimeout(() => {
+      dashboardRavenHomeArmedUntil = 0;
+      link.classList.remove('raven-armed');
+    }, 2200);
+  });
+}
+setupDashboardRavenHomeGuard();
 
 document.addEventListener('keydown', e => {
   if (e.key === 'Enter') {
