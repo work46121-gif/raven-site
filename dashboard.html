@@ -1791,11 +1791,12 @@ async function checkOnboardingAndShow(userId) {
     const { data: profile, error } = await db.from('profiles').select('*').eq('id', userId).single();
     if (!error && profile) {
       // Ensure every profile has a raven_id — generate one if missing (mel → mel1 → mel2)
-      if (!profile.raven_id && profile.first_name) {
+      if ((shouldRefreshAutoRavenId(profile.raven_id, profile.first_name, currentUser.email)) && profile.first_name) {
         try {
           const ravenId = await generateUniqueRavenId(sanitizeRavenBase(profile.first_name), userId);
           await persistRavenHandle(userId, ravenId);
           profile.raven_id = ravenId;
+          profile.username = ravenId;
         } catch(e) {}
       } else if (profile.raven_id && profile.username !== profile.raven_id) {
         try { await persistRavenHandle(userId, profile.raven_id); } catch(e) {}
@@ -1946,7 +1947,7 @@ async function handleSignup() {
   btn.textContent = 'Creating account...'; btn.disabled = true;
   let ravenId = '';
   try {
-    ravenId = await generateUniqueRavenId(sanitizeRavenBase(firstName || email.split('@')[0]));
+    ravenId = await generateUniqueRavenId(sanitizeRavenBase(firstName || 'raven'));
   } catch(e) { console.warn('raven_id pre-generation error:', e); }
   const { data, error } = await db.auth.signUp({
     email,
@@ -1967,11 +1968,11 @@ async function handleSignup() {
       ravenId = ravenId || null;
       for (let attempt = 0; attempt < 12 && !ravenId; attempt++) {
         const digits = String(Math.floor(Math.random() * 900) + 100);
-        const candidate = (sanitizeRavenBase(firstName || email.split('@')[0]) + digits).slice(0, 20);
+        const candidate = (sanitizeRavenBase(firstName || 'raven') + digits).slice(0, 20);
         const { data: existing } = await db.from('profiles').select('id').eq('raven_id', candidate).maybeSingle();
         if (!existing) { ravenId = candidate; break; }
       }
-      if (!ravenId) ravenId = await generateUniqueRavenId(sanitizeRavenBase(firstName || email.split('@')[0]), data.user.id);
+      if (!ravenId) ravenId = await generateUniqueRavenId(sanitizeRavenBase(firstName || 'raven'), data.user.id);
       let profileUpsertFailed = false;
       try {
         const { error: profileErr } = await db.from('profiles').upsert({
@@ -2195,7 +2196,7 @@ async function loadSettings() {
     const ravenIdField = document.getElementById('set-raven-id');
     if (ravenIdField && !ravenIdField.value) {
       const base = document.getElementById('set-first').value.trim() || currentUser.email.split('@')[0];
-      const generated = await generateUniqueRavenId(base, currentUser.id);
+      const generated = await generateUniqueRavenId(base || 'raven', currentUser.id);
       await persistRavenHandle(currentUser.id, generated);
       ravenIdField.value = generated;
       const status = document.getElementById('raven-id-status');
@@ -2264,7 +2265,7 @@ async function saveSettings() {
   const data = { id: currentUser.id, email: currentUser.email, first_name: document.getElementById('set-first').value.trim(), last_name: document.getElementById('set-last').value.trim(), phone: document.getElementById('set-phone').value.trim(), venmo: document.getElementById('set-venmo').value.trim(), cashapp: document.getElementById('set-cashapp').value.trim(), zelle: document.getElementById('set-zelle').value.trim(), applepay: document.getElementById('set-applepay').value.trim(), onboarding_complete: true, updated_at: new Date().toISOString() };
 
   if (!ravenIdInput) {
-    const base = data.first_name || currentUser.email.split('@')[0];
+    const base = data.first_name || 'raven';
     ravenIdInput = await generateUniqueRavenId(base, currentUser.id);
     document.getElementById('set-raven-id').value = ravenIdInput;
   }
@@ -3538,7 +3539,18 @@ async function shareRavenIdSMS() {
 // Generate a unique Raven ID: tries base, then base1, base2, base3...
 // excludeUserId = current user so we don't conflict with themselves
 function sanitizeRavenBase(base) {
-  return (base || '').toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 16) || 'raven';
+  return (String(base || '').trim().split(/\s+/)[0] || '').toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 16) || 'raven';
+}
+
+function shouldRefreshAutoRavenId(existingRavenId, firstName, email) {
+  const rid = String(existingRavenId || '').toLowerCase().trim();
+  const first = sanitizeRavenBase(firstName || '');
+  const emailBase = sanitizeRavenBase(String(email || '').split('@')[0] || '');
+  if (!rid) return true;
+  if (/^ravensplit\d{3,}$/.test(rid)) return true;
+  if (emailBase && rid === emailBase && first && first !== emailBase) return true;
+  if (emailBase && new RegExp('^' + emailBase + '\\d{3,}$').test(rid) && first && first !== emailBase) return true;
+  return false;
 }
 
 async function persistRavenHandle(userId, ravenId) {
