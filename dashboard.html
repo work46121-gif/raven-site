@@ -1237,6 +1237,7 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
       </div>
       <div style="padding:48px 24px 28px;">
         <div id="pm-name" style="font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:0.04em;margin-bottom:2px"></div>
+        <div style="font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:4px">RAVEN ID</div>
         <div id="pm-raven-id" style="font-size:13px;color:var(--purple3);font-weight:600;margin-bottom:6px"></div>
         <div id="pm-email" style="font-size:12px;color:var(--muted);margin-bottom:18px"></div>
         <div id="pm-payment-methods" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px"></div>
@@ -3481,12 +3482,38 @@ async function searchFriends() {
   if (!query) { container.innerHTML = ''; return; }
   container.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:8px 0">Searching...</div>';
   try {
-    // Search by raven_id or first_name
-    const { data: results } = await db.from('profiles')
+    const normalizedQuery = query.replace(/[^a-z0-9_]/g, '');
+    let orderedResults = [];
+    const seenIds = new Set();
+
+    if (normalizedQuery) {
+      const { data: exactMatches } = await db.from('profiles')
+        .select('id,first_name,last_name,raven_id,avatar_url,venmo,cashapp,applepay')
+        .eq('raven_id', normalizedQuery)
+        .neq('id', currentUser.id)
+        .limit(3);
+      (exactMatches || []).forEach(p => {
+        if (!seenIds.has(p.id)) {
+          seenIds.add(p.id);
+          orderedResults.push(p);
+        }
+      });
+    }
+
+    const { data: broadResults } = await db.from('profiles')
       .select('id,first_name,last_name,raven_id,avatar_url,venmo,cashapp,applepay')
-      .or('raven_id.ilike.%' + query + '%,first_name.ilike.%' + query + '%')
+      .or('raven_id.ilike.%' + query + '%,first_name.ilike.%' + query + '%,last_name.ilike.%' + query + '%')
       .neq('id', currentUser.id)
-      .limit(8);
+      .limit(12);
+
+    (broadResults || []).forEach(p => {
+      if (!seenIds.has(p.id)) {
+        seenIds.add(p.id);
+        orderedResults.push(p);
+      }
+    });
+
+    const results = orderedResults.slice(0, 8);
 
     if (!results || results.length === 0) {
       container.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:8px 0">No users found for "' + query + '"</div>';
