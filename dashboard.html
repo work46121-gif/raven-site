@@ -2185,7 +2185,8 @@ async function loadSettings() {
       if (profile.cashapp) document.getElementById('set-cashapp').value = profile.cashapp;
       if (profile.zelle) document.getElementById('set-zelle').value = profile.zelle;
       if (profile.applepay) document.getElementById('set-applepay').value = profile.applepay || '';
-      if (profile.raven_id) document.getElementById('set-raven-id').value = profile.raven_id;
+      const ensuredRavenId = await ensureCurrentUserRavenId(profile);
+      if (ensuredRavenId) document.getElementById('set-raven-id').value = ensuredRavenId;
       if (profile.avatar_url) renderAvatar(profile.avatar_url, profile.first_name);
       else if (profile.first_name) renderAvatar(null, profile.first_name);
       const displayName = [profile.first_name, profile.last_name].filter(Boolean).join(' ') || currentUser.email;
@@ -2194,15 +2195,11 @@ async function loadSettings() {
   } catch(e) {}
   try {
     const ravenIdField = document.getElementById('set-raven-id');
-    if (ravenIdField && !ravenIdField.value) {
-      const base = document.getElementById('set-first').value.trim() || currentUser.email.split('@')[0];
-      const generated = await generateUniqueRavenId(base || 'raven', currentUser.id);
-      await persistRavenHandle(currentUser.id, generated);
+    if (ravenIdField && (!ravenIdField.value || shouldRefreshAutoRavenId(ravenIdField.value, document.getElementById('set-first').value.trim(), currentUser.email))) {
+      const generated = await ensureCurrentUserRavenId();
       ravenIdField.value = generated;
       const status = document.getElementById('raven-id-status');
       if (status) status.textContent = 'Your Raven ID is assigned automatically so friends can always find you.';
-      const existing = JSON.parse(localStorage.getItem('raven_profile') || '{}');
-      localStorage.setItem('raven_profile', JSON.stringify({ ...existing, raven_id: generated, username: generated }));
     }
   } catch(e) { console.warn('settings raven id ensure failed:', e); }
   if (window.innerWidth <= 768) { const qn = document.getElementById('mob-quick-nav'); if (qn) qn.style.display = 'block'; }
@@ -3503,8 +3500,8 @@ async function loadFriendsPage() {
   startDMPolling(); // load unread counts and keep them fresh
   // Load my Raven ID
   try {
-    const { data: me } = await db.from('profiles').select('raven_id,first_name').eq('id', currentUser.id).single();
-    const rid = me?.raven_id || '';
+    const { data: me } = await db.from('profiles').select('raven_id,first_name,username,email').eq('id', currentUser.id).single();
+    const rid = await ensureCurrentUserRavenId(me);
     const display = document.getElementById('my-raven-id-display');
     if (display) display.textContent = rid ? '@' + rid : '⚠️ Set your Raven ID in Settings';
   } catch(e) {}
@@ -3574,6 +3571,21 @@ async function generateUniqueRavenId(base, excludeUserId) {
     if (!exists) return candidate;
   }
   return (clean + String(Date.now()).slice(-3)).slice(0, 20);
+}
+
+async function ensureCurrentUserRavenId(profileOverride) {
+  if (!currentUser?.id) return '';
+  const profile = profileOverride || (await db.from('profiles').select('first_name,raven_id,username,email').eq('id', currentUser.id).maybeSingle()).data;
+  const firstName = profile?.first_name || document.getElementById('set-first')?.value.trim() || JSON.parse(localStorage.getItem('raven_profile') || '{}').first_name || '';
+  const existingRavenId = profile?.raven_id || '';
+  if (!shouldRefreshAutoRavenId(existingRavenId, firstName, currentUser.email)) {
+    return existingRavenId;
+  }
+  const generated = await generateUniqueRavenId(firstName || 'raven', currentUser.id);
+  await persistRavenHandle(currentUser.id, generated);
+  const existing = JSON.parse(localStorage.getItem('raven_profile') || '{}');
+  localStorage.setItem('raven_profile', JSON.stringify({ ...existing, first_name: firstName || existing.first_name || '', raven_id: generated, username: generated, email: currentUser.email, user_id: currentUser.id }));
+  return generated;
 }
 
 async function checkRavenId() {
