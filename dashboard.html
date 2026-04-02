@@ -3544,6 +3544,7 @@ function shouldRefreshAutoRavenId(existingRavenId, firstName, email) {
   const first = sanitizeRavenBase(firstName || '');
   const emailBase = sanitizeRavenBase(String(email || '').split('@')[0] || '');
   if (!rid) return true;
+  if (/^raven\d{3,}$/.test(rid) && first && first !== 'raven') return true;
   if (/^ravensplit\d{3,}$/.test(rid)) return true;
   if (emailBase && rid === emailBase && first && first !== emailBase) return true;
   if (emailBase && new RegExp('^' + emailBase + '\\d{3,}$').test(rid) && first && first !== emailBase) return true;
