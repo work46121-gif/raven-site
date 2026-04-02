@@ -676,14 +676,14 @@ function sanitizeRavenBase(base) {
 async function generateUniqueRavenId(base, excludeUserId) {
   const clean = sanitizeRavenBase(base);
   for (let i = 0; i < 40; i++) {
-    const digits = String(Math.floor(Math.random() * 9000) + 1000);
+    const digits = String(Math.floor(Math.random() * 900) + 100);
     const candidate = (clean + digits).slice(0, 20);
     let query = db.from('profiles').select('id').eq('raven_id', candidate);
     if (excludeUserId) query = query.neq('id', excludeUserId);
     const { data: exists } = await query.maybeSingle();
     if (!exists) return candidate;
   }
-  return (clean + Date.now().toString().slice(-4)).slice(0, 20);
+  return (clean + Date.now().toString().slice(-3)).slice(0, 20);
 }
 
 async function ensureGeneratedRavenId() {
