@@ -2047,16 +2047,23 @@ async function openPayModal(participantId, billId, amount) {
   // Priority: look up the paid_by person's profile by first_name
   if (paidByName) {
     try {
-      const { data } = await db.from('profiles').select('first_name,venmo,cashapp,zelle,applepay').ilike('first_name', paidByName).maybeSingle();
-      if (data) profile = data;
+      const { data } = await db.from('profiles')
+        .select('first_name,phone,email,venmo,cashapp,zelle,applepay,updated_at')
+        .ilike('first_name', paidByName)
+        .limit(8);
+      profile = chooseBestPaymentProfile(data, paidByName);
     } catch(e) {}
   }
 
   // Fallback: creator's profile
   if (!profile && bill?.creator_phone) {
     try {
-      const { data } = await db.from('profiles').select('first_name,venmo,cashapp,zelle,applepay').eq('email', bill.creator_phone).maybeSingle();
-      if (data) profile = data;
+      const { data: emailMatch } = await db.from('profiles').select('first_name,phone,email,venmo,cashapp,zelle,applepay,updated_at').eq('email', bill.creator_phone).maybeSingle();
+      if (emailMatch) profile = emailMatch;
+      if (!profile) {
+        const { data: phoneMatch } = await db.from('profiles').select('first_name,phone,email,venmo,cashapp,zelle,applepay,updated_at').eq('phone', bill.creator_phone).maybeSingle();
+        if (phoneMatch) profile = phoneMatch;
+      }
     } catch(e) {}
   }
 
@@ -2112,9 +2119,9 @@ async function openPayModal(participantId, billId, amount) {
     const ap = profile.applepay;
     const applePayHref = buildApplePayHref(ap, amt, paymentContextName);
     if (applePayHref) {
-      addLinkRow(applePayHref, null, '#1a1a1a', '#333', 'Pay', 'Apple Pay', 'Opens iMessage to ' + ap);
+      addLinkRow(applePayHref, null, '#1a1a1a', '#333', 'Pay', 'Apple Pay', 'Opens iMessage to ' + ap + ' · send Apple Pay manually');
     } else {
-      addCopyRow(ap, '#1a1a1a', '#333', 'Pay', 'Apple Pay', ap + ' · tap to copy');
+      addCopyRow(ap, '#1a1a1a', '#333', 'Pay', 'Apple Pay', ap + ' · copy, then send Apple Pay manually');
     }
   }
 
@@ -2768,6 +2775,26 @@ function buildApplePayHref(target, amount, contextName) {
   if (digits.length < 7) return null;
   const e164 = digits.length === 10 ? '+1' + digits : (digits[0] === '1' ? '+' + digits : '+' + digits);
   return 'sms:' + e164 + '&body=' + encodeURIComponent(buildRavenPaymentMessage(amount, contextName, 'Apple Pay'));
+}
+
+function paymentMethodCount(profile) {
+  if (!profile) return 0;
+  return ['venmo', 'cashapp', 'zelle', 'applepay'].reduce((count, key) => count + (profile[key] ? 1 : 0), 0);
+}
+
+function chooseBestPaymentProfile(profiles, preferredName) {
+  const list = (profiles || []).filter(Boolean);
+  if (!list.length) return null;
+  const normalizedPreferred = String(preferredName || '').trim().toLowerCase();
+  return list.slice().sort((a, b) => {
+    const aExact = String(a.first_name || '').trim().toLowerCase() === normalizedPreferred ? 1 : 0;
+    const bExact = String(b.first_name || '').trim().toLowerCase() === normalizedPreferred ? 1 : 0;
+    if (aExact !== bExact) return bExact - aExact;
+    const aMethods = paymentMethodCount(a);
+    const bMethods = paymentMethodCount(b);
+    if (aMethods !== bMethods) return bMethods - aMethods;
+    return String(b.updated_at || '').localeCompare(String(a.updated_at || ''));
+  })[0];
 }
 
 function normalizeBillPreviewParticipantName(name) {
