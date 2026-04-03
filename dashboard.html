@@ -2071,6 +2071,7 @@ async function openPayModal(participantId, billId, amount) {
   }
 
   const displayName = paidByName || profile?.first_name || bill?.creator_phone?.split('@')[0] || 'Bill payer';
+  const paymentContextName = bill?.name || 'this bill';
   document.getElementById('pay-modal-sub').textContent = 'Send $' + amt + ' to ' + displayName;
 
   const mc = document.getElementById('pay-modal-methods');
@@ -2103,14 +2104,15 @@ async function openPayModal(participantId, billId, amount) {
     addLinkRow('https://cash.app/$'+clean+'/'+amt, '_blank', '#004d12', '#00D632', '$', 'Cash App', tag + ' · $' + amt);
   }
   if (profile?.zelle) {
-    addCopyRow(profile.zelle, '#2a0a52', '#6D1ED4', 'Z', 'Zelle', profile.zelle + ' · tap to copy');
+    const zelleHref = buildZellePaymentHref(profile.zelle, amt, paymentContextName);
+    if (zelleHref) addLinkRow(zelleHref, '_blank', '#2a0a52', '#6D1ED4', 'Z', 'Zelle', profile.zelle + (profile.zelle.includes('@') ? ' · opens Mail' : ' · opens Messages'));
+    else addCopyRow(profile.zelle, '#2a0a52', '#6D1ED4', 'Z', 'Zelle', profile.zelle + ' · tap to copy');
   }
   if (profile?.applepay) {
     const ap = profile.applepay;
-    const dig = ap.replace(/\D/g,'');
-    if (dig.length >= 7) {
-      const e164 = dig.length===10?'+1'+dig:(dig.length===11&&dig[0]==='1'?'+'+dig:'+'+dig);
-      addLinkRow('sms:'+e164+'&body='+encodeURIComponent('Sending $'+amt+' via Apple Pay'), null, '#1a1a1a', '#333', 'Pay', 'Apple Pay', 'Opens iMessage to ' + ap);
+    const applePayHref = buildApplePayHref(ap, amt, paymentContextName);
+    if (applePayHref) {
+      addLinkRow(applePayHref, null, '#1a1a1a', '#333', 'Pay', 'Apple Pay', 'Opens iMessage to ' + ap);
     } else {
       addCopyRow(ap, '#1a1a1a', '#333', 'Pay', 'Apple Pay', ap + ' · tap to copy');
     }
@@ -2660,18 +2662,22 @@ async function augmentBillsWithGuests(bills) {
   try {
     const billIds = bills.map(b => b.id);
     const { data: selRows } = await db.from('item_selections').select('bill_id,participant_name').in('bill_id', billIds);
-    if (!selRows || selRows.length === 0) return;
+    if (!selRows || selRows.length === 0) {
+      bills.forEach(b => { b.participants = dedupeBillPreviewParticipants(b.participants || []); });
+      return;
+    }
     const selByBill = {};
-    selRows.forEach(s => { if (!selByBill[s.bill_id]) selByBill[s.bill_id] = new Set(); selByBill[s.bill_id].add(s.participant_name.toLowerCase()); });
+    selRows.forEach(s => { if (!selByBill[s.bill_id]) selByBill[s.bill_id] = new Set(); selByBill[s.bill_id].add(billPreviewParticipantKey(s.participant_name)); });
     bills.forEach(b => {
-      const existingNames = new Set((b.participants || []).map(p => p.name.toLowerCase()));
+      const existingNames = new Set((b.participants || []).map(p => billPreviewParticipantKey(p.name)));
       const selNames = selByBill[b.id] || new Set();
       selNames.forEach(n => {
         if (!existingNames.has(n)) {
           b.participants = b.participants || [];
-          b.participants.push({ id: 'guest-' + n, name: n, amount: 0, paid: false });
+          b.participants.push({ id: 'guest-' + n, name: canonicalBillPreviewName([n]), amount: 0, paid: false });
         }
       });
+      b.participants = dedupeBillPreviewParticipants(b.participants || []);
     });
   } catch(e) {}
 }
@@ -2691,9 +2697,10 @@ async function loadHistory() {
   const container = document.getElementById('history-content');
   if (bills.length === 0) { container.innerHTML = '<div class="empty-state"><span class="empty-icon empty-icon-svg"><svg class="raven-icon empty"><use href="#icon-history"></use></svg></span><div class="empty-title">No history yet</div></div>'; return; }
   container.innerHTML = '<table class="history-table"><thead><tr><th>Bill</th><th>Total</th><th>People</th><th>Collected</th><th>Status</th><th>Date</th></tr></thead><tbody>' + bills.map(b => {
-    const paid = b.participants?.filter(p => p.paid).length || 0;
-    const total = Math.max(b.participants?.length || 0, b.live_people_count || 0);
-    const collected = b.participants?.filter(p => p.paid).reduce((s, p) => s + parseFloat(p.amount || 0), 0) || 0;
+    const parts = dedupeBillPreviewParticipants(b.participants || []);
+    const paid = parts.filter(p => p.paid).length || 0;
+    const total = Math.max(parts.length || 0, b.live_people_count || 0);
+    const collected = parts.filter(p => p.paid).reduce((s, p) => s + parseFloat(p.amount || 0), 0) || 0;
     const date = new Date(b.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     const isCreator = b.creator_phone === currentUser.email;
     return '<tr style="cursor:pointer"><td onclick="openBillModal(\'' + b.id + '\')">' + b.name + (isCreator ? '' : ' <span style="font-size:10px;color:var(--muted);background:var(--dark2);padding:2px 6px;border-radius:4px;vertical-align:middle">shared</span>') + '</td><td onclick="openBillModal(\'' + b.id + '\')">$' + parseFloat(b.total).toFixed(2) + '</td><td onclick="openBillModal(\'' + b.id + '\')">'+total+' people</td><td onclick="openBillModal(\'' + b.id + '\')" style="color:var(--green)">$' + collected.toFixed(2) + '</td><td><span class="status-badge ' + (b.status === 'active' ? 'status-active' : 'status-completed') + '">' + (b.status === 'active' ? '● Active' : b.status === 'deleted' ? '✕ Deleted' : '✓ Done') + '</span></td><td onclick="openBillModal(\'' + b.id + '\')">' + date + '</td></tr>';
@@ -2701,16 +2708,17 @@ async function loadHistory() {
 }
 
 function renderBillCard(b) {
-  const paid = b.participants?.filter(p => p.paid).length || 0;
+  const parts = dedupeBillPreviewParticipants(b.participants || []);
+  const paid = parts.filter(p => p.paid).length || 0;
   // Use live_people_count as a floor — QR joiners may not be in participants yet
-  const total = Math.max(b.participants?.length || 0, b.live_people_count || 0);
+  const total = Math.max(parts.length || 0, b.live_people_count || 0);
   const pct = total > 0 ? Math.round((paid / total) * 100) : 0;
   const isCreator = b.creator_phone === currentUser.email;
   // For creator bills: owed = what others haven't paid yet
   // For shared/member bills: owed = only what YOU owe
-  const myParticipantRow = b.participants?.find(p => p.phone === currentUser.email);
+  const myParticipantRow = parts.find(p => p.phone === currentUser.email);
   const owed = isCreator
-    ? (b.participants?.filter(p => !p.paid && p.phone !== currentUser.email).reduce((s, p) => s + parseFloat(p.amount || 0), 0) || 0)
+    ? (parts.filter(p => !p.paid && p.phone !== currentUser.email).reduce((s, p) => s + parseFloat(p.amount || 0), 0) || 0)
     : (myParticipantRow && !myParticipantRow.paid ? parseFloat(myParticipantRow.amount || 0) : 0);
   const isFullyPaid = owed === 0 && total > 0;
   let billUrl = FRONTEND + '/bill/' + b.id + (b.share_token ? '?t=' + b.share_token : '');
@@ -2733,6 +2741,97 @@ function renderBillCard(b) {
 
 function generateId() { const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; return Array.from({length: 5}, () => chars[Math.floor(Math.random() * chars.length)]).join(''); }
 
+function buildRavenPaymentMessage(amount, contextName, methodLabel) {
+  const cleanAmount = parseFloat(amount || 0).toFixed(2);
+  const cleanContext = String(contextName || 'your bill').trim();
+  return 'Sending $' + cleanAmount + ' via RAVEN' + (methodLabel ? ' on ' + methodLabel : '') + ' for ' + cleanContext;
+}
+
+function buildZellePaymentHref(target, amount, contextName) {
+  const value = String(target || '').trim();
+  const message = buildRavenPaymentMessage(amount, contextName, 'Zelle');
+  if (!value) return null;
+  if (value.includes('@')) {
+    return 'mailto:' + encodeURIComponent(value) + '?subject=' + encodeURIComponent('RAVEN payment') + '&body=' + encodeURIComponent(message);
+  }
+  const digits = value.replace(/\D/g, '');
+  if (digits.length >= 7) {
+    const e164 = digits.length === 10 ? '+1' + digits : (digits[0] === '1' ? '+' + digits : '+' + digits);
+    return 'sms:' + e164 + '&body=' + encodeURIComponent(message);
+  }
+  return null;
+}
+
+function buildApplePayHref(target, amount, contextName) {
+  const value = String(target || '').trim();
+  const digits = value.replace(/\D/g, '');
+  if (digits.length < 7) return null;
+  const e164 = digits.length === 10 ? '+1' + digits : (digits[0] === '1' ? '+' + digits : '+' + digits);
+  return 'sms:' + e164 + '&body=' + encodeURIComponent(buildRavenPaymentMessage(amount, contextName, 'Apple Pay'));
+}
+
+function normalizeBillPreviewParticipantName(name) {
+  return String(name || '').trim().replace(/\s+/g, ' ');
+}
+
+function billPreviewParticipantKey(name) {
+  return normalizeBillPreviewParticipantName(name).toLowerCase();
+}
+
+function canonicalBillPreviewName(names) {
+  const clean = (names || []).map(normalizeBillPreviewParticipantName).filter(Boolean);
+  if (!clean.length) return '';
+  const titled = clean.find(n => /[A-Z]/.test(n.charAt(0)));
+  if (titled) return titled;
+  return clean[0].split(' ').filter(Boolean).map(part => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase()).join(' ');
+}
+
+function dedupeBillPreviewParticipants(parts) {
+  const map = {};
+  (parts || []).forEach(p => {
+    const key = billPreviewParticipantKey(p.name);
+    if (!key) return;
+    if (!map[key]) {
+      map[key] = { ...p, _sourceNames: [p.name], _dupeIds: p.id ? [p.id] : [] };
+      return;
+    }
+    const existing = map[key];
+    existing._sourceNames.push(p.name);
+    if (p.id) existing._dupeIds.push(p.id);
+    const existingAmt = parseFloat(existing.amount || 0);
+    const nextAmt = parseFloat(p.amount || 0);
+    if ((String(existing.phone || '').startsWith('unknown_') && !String(p.phone || '').startsWith('unknown_')) || nextAmt > existingAmt || (!!p.paid && !existing.paid)) {
+      map[key] = { ...existing, ...p, _sourceNames: existing._sourceNames, _dupeIds: existing._dupeIds };
+    } else {
+      existing.amount = Math.max(existingAmt, nextAmt);
+      existing.paid = existing.paid || p.paid;
+      existing.payment_method = existing.payment_method || p.payment_method;
+    }
+  });
+  return Object.values(map).map(p => ({ ...p, name: canonicalBillPreviewName(p._sourceNames || [p.name]) }));
+}
+
+async function cleanupBillPreviewDuplicates(billId, parts) {
+  const deduped = dedupeBillPreviewParticipants(parts);
+  for (const person of deduped) {
+    const ids = [...new Set(person._dupeIds || [])];
+    if (ids.length > 1) {
+      const keepId = person.id;
+      const deleteIds = ids.filter(id => id !== keepId);
+      if (deleteIds.length) await db.from('participants').delete().in('id', deleteIds);
+    }
+    if (person.id) {
+      await db.from('participants').update({
+        name: person.name,
+        amount: parseFloat(person.amount || 0),
+        paid: !!person.paid,
+        payment_method: person.payment_method || null
+      }).eq('id', person.id);
+    }
+  }
+  return deduped;
+}
+
 async function openBillModal(billId) {
   currentBillId = billId;
   // Fetch bill + participants. Also fetch item_selections to surface QR guests not yet flushed.
@@ -2742,36 +2841,38 @@ async function openBillModal(billId) {
   ]);
   const { data: bill } = billRes;
   if (!bill) return;
+  bill.participants = await cleanupBillPreviewDuplicates(billId, bill.participants || []);
   // Merge QR guest names from item_selections into participants
-  const existingNames = new Set((bill.participants || []).map(p => p.name.toLowerCase()));
-  const selectionNames = [...new Set((selectionsRes.data || []).map(s => s.participant_name).filter(Boolean))];
-  const guestNames = selectionNames.filter(n => !existingNames.has(n.toLowerCase()));
+  const existingNames = new Set((bill.participants || []).map(p => billPreviewParticipantKey(p.name)));
+  const selectionNames = [...new Set((selectionsRes.data || []).map(s => normalizeBillPreviewParticipantName(s.participant_name)).filter(Boolean))];
+  const guestNames = selectionNames.filter(n => !existingNames.has(billPreviewParticipantKey(n)));
   if (guestNames.length > 0) {
     // Fetch real participant rows for these guests (populated by recalcBillAmounts on bill page)
     const { data: guestRows } = await db.from('participants').select('*').eq('bill_id', billId).in('name', guestNames);
     const guestRowMap = {};
-    (guestRows || []).forEach(r => { guestRowMap[r.name.toLowerCase()] = r; });
+    (guestRows || []).forEach(r => { guestRowMap[billPreviewParticipantKey(r.name)] = r; });
     guestNames.forEach(n => {
       bill.participants = bill.participants || [];
-      const real = guestRowMap[n.toLowerCase()];
+      const real = guestRowMap[billPreviewParticipantKey(n)];
       // If real row exists with amount > 0, use it; otherwise compute from item_selections
       if (real && parseFloat(real.amount || 0) > 0) {
         bill.participants.push(real);
       } else {
         // Compute amount from item_selections for display purposes
-        const personSelections = (selectionsRes.data || []).filter(s => s.participant_name?.toLowerCase() === n.toLowerCase());
+        const personSelections = (selectionsRes.data || []).filter(s => billPreviewParticipantKey(s.participant_name) === billPreviewParticipantKey(n));
         bill.participants.push(real || { id: 'guest-' + n, name: n, amount: 0, paid: false, _guest: true, _selCount: personSelections.length });
       }
-      existingNames.add(n.toLowerCase());
+      existingNames.add(billPreviewParticipantKey(n));
     });
   }
+  bill.participants = dedupeBillPreviewParticipants(bill.participants || []);
   document.getElementById('modal-bill-name').textContent = bill.name;
   let receiptHTML = '';
   if (bill.receipt_image) receiptHTML = '<div style="margin-bottom:16px"><div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted2);margin-bottom:8px">Receipt</div><img src="data:image/jpeg;base64,' + bill.receipt_image + '" style="width:100%;border-radius:10px;display:block"></div>';
   const receiptEl = document.getElementById('modal-receipt');
   if (receiptEl) receiptEl.innerHTML = receiptHTML;
 
-  const paidByName = (bill.paid_by || '').toLowerCase();
+  const paidByName = billPreviewParticipantKey(bill.paid_by || '');
   document.getElementById('modal-bill-meta').textContent = 'ID: ' + bill.id + '  ·  Total: $' + parseFloat(bill.total).toFixed(2) + (bill.paid_by ? '  ·  💳 ' + bill.paid_by + ' paid' : '');
 
   const parts = bill.participants || [];
@@ -2781,7 +2882,7 @@ async function openBillModal(billId) {
   // 2. Non-payer who settled (p.paid=true) → green "💳 Paid" badge, no action
   // 3. Non-payer who hasn't settled (p.paid=false) → orange owed amount + Pay button
   document.getElementById('modal-participants').innerHTML = parts.map(p => {
-    const isBillPayer = paidByName && p.name.toLowerCase() === paidByName;
+    const isBillPayer = paidByName && billPreviewParticipantKey(p.name) === paidByName;
     let badge, action;
     if (isBillPayer) {
       badge = '<span class="participant-amount" style="background:rgba(124,58,237,0.12);border:1px solid rgba(124,58,237,0.25);color:#C084FC;padding:3px 10px;border-radius:8px;font-size:12px;font-weight:700">💳 Paid the bill</span>';
@@ -2802,9 +2903,10 @@ async function openBillModal(billId) {
         action = '<button class="mark-paid-btn" onclick="openPayModal(\'' + p.id + '\', \'' + billId + '\', 0)">💳 Pay</button>';
       }
     }
+    const removeBtn = '<button class="mark-paid-btn" style="background:rgba(255,68,68,0.08);border:1px solid rgba(255,68,68,0.2);color:#FF6B6B" onclick="removeParticipantFromBillPreview(\'' + billId + '\', \'' + String(p.name || '').replace(/'/g, "\\'") + '\')">Remove</button>';
     return '<div class="participant-row"><div><div class="participant-name">@' + p.name + '</div>' +
       (p.paid && !isBillPayer && p.payment_method ? '<div style="font-size:11px;color:var(--muted);margin-top:3px">via ' + p.payment_method + '</div>' : '') +
-      '</div><div style="display:flex;align-items:center;gap:10px">' + badge + action + '</div></div>';
+      '</div><div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end">' + badge + action + removeBtn + '</div></div>';
   }).join('');
 
   document.getElementById('modal-view-btn').onclick = () => viewBillPage(billId);
@@ -2818,7 +2920,7 @@ async function openBillModal(billId) {
   const editPaidBy = document.getElementById('modal-edit-paidby');
   if (editPaidBy) {
     editPaidBy.innerHTML = '<option value="">— Select who paid —</option>' +
-      parts.map(p => '<option value="' + p.name + '"' + (paidByName === p.name.toLowerCase() ? ' selected' : '') + '>' + p.name + '</option>').join('');
+      parts.map(p => '<option value="' + p.name + '"' + (paidByName === billPreviewParticipantKey(p.name) ? ' selected' : '') + '>' + p.name + '</option>').join('');
   }
   // Hide edit panel on open
   const editPanel = document.getElementById('modal-edit-panel');
@@ -2931,6 +3033,42 @@ async function addPersonToBill(billId, bill) {
   } finally {
     btn.textContent = 'Add';
     btn.disabled = false;
+  }
+}
+
+async function removeParticipantFromBillPreview(billId, participantName) {
+  const cleanName = normalizeBillPreviewParticipantName(participantName);
+  if (!cleanName) return;
+  const key = billPreviewParticipantKey(cleanName);
+  const confirmKey = 'bill_remove_confirm_' + billId + '_' + key;
+  const now = Date.now();
+  const lastTap = parseInt(sessionStorage.getItem(confirmKey) || '0', 10);
+  if (!lastTap || (now - lastTap) > 3000) {
+    sessionStorage.setItem(confirmKey, String(now));
+    showToast('Tap remove again to delete ' + cleanName, 'error');
+    return;
+  }
+  sessionStorage.removeItem(confirmKey);
+  try {
+    const { data: partRows } = await db.from('participants').select('id,name').eq('bill_id', billId);
+    const idsToDelete = (partRows || []).filter(p => billPreviewParticipantKey(p.name) === key).map(p => p.id);
+    if (idsToDelete.length) {
+      await db.from('participants').delete().in('id', idsToDelete);
+    }
+    const { data: selRows } = await db.from('item_selections').select('id,participant_name').eq('bill_id', billId);
+    const selIds = (selRows || []).filter(s => billPreviewParticipantKey(s.participant_name) === key).map(s => s.id);
+    if (selIds.length) {
+      await db.from('item_selections').delete().in('id', selIds);
+    }
+    const { data: bill } = await db.from('bills').select('paid_by').eq('id', billId).single();
+    if (bill?.paid_by && billPreviewParticipantKey(bill.paid_by) === key) {
+      await db.from('bills').update({ paid_by: null }).eq('id', billId);
+    }
+    showToast(cleanName + ' removed from this bill', 'success');
+    await openBillModal(billId);
+    loadAllData();
+  } catch(e) {
+    showToast('Could not remove ' + cleanName, 'error');
   }
 }
 
@@ -3555,12 +3693,18 @@ async function persistRavenHandle(userId, ravenId) {
   if (!userId || !ravenId) return;
   const payload = { raven_id: ravenId, username: ravenId, updated_at: new Date().toISOString() };
   try {
-    const { error } = await db.from('profiles').update(payload).eq('id', userId);
-    if (!error) return;
-  } catch(e) {}
-  try {
-    await db.from('profiles').update({ raven_id: ravenId, updated_at: new Date().toISOString() }).eq('id', userId);
-  } catch(e) {}
+    const { error } = await db.from('profiles').upsert({ id: userId, ...payload }, { onConflict: 'id' });
+    if (error) throw error;
+    const { data: verify, error: verifyErr } = await db.from('profiles').select('raven_id,username').eq('id', userId).single();
+    if (verifyErr) throw verifyErr;
+    if (String(verify?.raven_id || '') !== ravenId || String(verify?.username || '') !== ravenId) {
+      throw new Error('Raven ID verification failed');
+    }
+    return true;
+  } catch(e) {
+    console.warn('persistRavenHandle failed:', e);
+    throw e;
+  }
 }
 
 async function generateUniqueRavenId(base, excludeUserId) {
@@ -3584,6 +3728,10 @@ async function ensureCurrentUserRavenId(profileOverride) {
   }
   const generated = await generateUniqueRavenId(firstName || 'raven', currentUser.id);
   await persistRavenHandle(currentUser.id, generated);
+  if (profileOverride) {
+    profileOverride.raven_id = generated;
+    profileOverride.username = generated;
+  }
   const existing = JSON.parse(localStorage.getItem('raven_profile') || '{}');
   localStorage.setItem('raven_profile', JSON.stringify({ ...existing, first_name: firstName || existing.first_name || '', raven_id: generated, username: generated, email: currentUser.email, user_id: currentUser.id }));
   return generated;
