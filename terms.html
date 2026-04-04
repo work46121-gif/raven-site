@@ -3,265 +3,80 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Terms of Service — RAVEN</title>
-<meta name="description" content="RAVEN Terms of Service — the rules of the road for our AI receipt scanning and bill-splitting platform.">
-<link rel="icon" type="image/x-icon" href="favicon.ico">
-<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Epilogue:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<title>Terms of Service - RAVEN</title>
+<meta name="description" content="RAVEN terms of service, including SMS terms and user responsibilities.">
 <style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --black:#06060A;--dark:#0C0C12;--dark2:#13131A;--dark3:#1A1A24;--dark4:#22222E;
-  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);
-  --white:#F0EEF8;--muted:#6E6B80;--muted2:#9896A8;
-  --green:#30D158;--green-glow:rgba(48,209,88,0.25);
-  --purple:#7C3AED;--purple2:#A855F7;--purple3:#C084FC;
-  --orange:#FF6B35;
-}
-html{scroll-behavior:smooth}
-body{font-family:'Epilogue',sans-serif;background:var(--black);color:var(--white);line-height:1.75;min-height:100vh}
-body::after{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");pointer-events:none;z-index:900;opacity:0.35}
-
-nav{position:fixed;top:0;left:0;right:0;z-index:500;height:64px;display:flex;align-items:center;justify-content:space-between;padding:0 52px;background:rgba(6,6,10,0.92);backdrop-filter:blur(24px);border-bottom:1px solid var(--border)}
-.nav-logo{display:flex;align-items:center;gap:10px;text-decoration:none}
-.nav-logo-text{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:0.2em;background:linear-gradient(135deg,var(--white) 20%,var(--purple3));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.nav-back{color:var(--muted);text-decoration:none;font-size:13px;letter-spacing:0.04em;transition:color 0.2s}
-.nav-back:hover{color:var(--white)}
-
-.page-hero{padding:120px 52px 60px;position:relative;overflow:hidden}
-.page-hero::before{content:'';position:absolute;top:-200px;right:-100px;width:600px;height:500px;background:radial-gradient(ellipse,rgba(48,209,88,0.06),transparent 70%);pointer-events:none}
-.page-hero-inner{max-width:800px;position:relative}
-.hero-tag{display:inline-flex;align-items:center;gap:8px;background:rgba(48,209,88,0.08);border:1px solid rgba(48,209,88,0.2);padding:5px 14px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;color:var(--green);margin-bottom:20px}
-.hero-tag-dot{width:5px;height:5px;border-radius:50%;background:var(--green)}
-h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(52px,8vw,96px);letter-spacing:0.03em;line-height:0.9;color:var(--white);margin-bottom:16px}
-.hero-sub{font-size:15px;color:var(--muted);max-width:560px;line-height:1.8}
-.hero-meta{display:flex;align-items:center;gap:16px;margin-top:20px;flex-wrap:wrap}
-.meta-chip{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;background:var(--dark2);border:1px solid var(--border);border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted2)}
-
-.content-wrap{max-width:800px;padding:0 52px 100px}
-.sec{padding:40px 0;border-bottom:1px solid var(--border)}
-.sec:last-child{border-bottom:none}
-.sec-label{display:inline-flex;align-items:center;gap:8px;font-size:10px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:var(--green);margin-bottom:14px}
-.sec-label::before{content:'';display:inline-block;width:16px;height:1px;background:var(--green);opacity:0.5}
-h2{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:0.05em;color:var(--white);margin-bottom:16px}
-p{font-size:15px;color:var(--muted2);margin-bottom:12px;line-height:1.8}
-p:last-child{margin-bottom:0}
-ul{list-style:none;margin:12px 0}
-ul li{padding:7px 0 7px 20px;position:relative;font-size:14px;color:var(--muted2);line-height:1.7}
-ul li::before{content:'—';position:absolute;left:0;color:var(--green);font-family:'JetBrains Mono',monospace;font-size:12px}
-strong{color:var(--white);font-weight:600}
-a{color:var(--green);text-decoration:none;border-bottom:1px solid rgba(48,209,88,0.25);transition:border-color 0.2s}
-a:hover{border-color:var(--green)}
-
-.callout{background:var(--dark);border:1px solid var(--border);border-left:3px solid var(--orange);border-radius:0 10px 10px 0;padding:16px 20px;margin:20px 0;font-size:14px;color:var(--muted2);line-height:1.7}
-.callout strong{color:var(--orange)}
-.callout-green{border-left-color:var(--green)}
-.callout-green strong{color:var(--green)}
-
-.toc{background:var(--dark);border:1px solid var(--border);border-radius:14px;padding:20px 24px;margin-bottom:40px}
-.toc-title{font-size:11px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
-.toc-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
-.toc-link{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:8px;color:var(--muted2);text-decoration:none;font-size:13px;transition:all 0.15s;border:none}
-.toc-link:hover{background:var(--dark2);color:var(--white)}
-.toc-num{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--purple3);flex-shrink:0}
-
-footer{border-top:1px solid var(--border);padding:36px 52px;display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:24px}
-.f-logo{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:0.15em;color:var(--muted2);margin-bottom:6px}
-.f-tag{font-size:12px;color:var(--muted);margin-bottom:12px}
-.f-links{display:flex;gap:20px;flex-wrap:wrap;align-items:center}
-.f-links a{color:var(--muted);text-decoration:none;font-size:12px;transition:color 0.2s;border:none}
-.f-links a:hover{color:var(--white)}
-.f-copy{font-size:11px;color:rgba(110,107,128,0.4)}
-
-@media(max-width:768px){
-  nav{padding:0 16px;height:56px}
-  .page-hero{padding:84px 20px 40px}
-  .content-wrap{padding:0 20px 80px}
-  .toc-grid{grid-template-columns:1fr}
-  footer{padding:28px 20px;flex-direction:column}
-}
+  :root{
+    --bg:#07070b;--panel:#11111a;--panel2:#171723;--text:#f2eff8;--muted:#a29db3;
+    --green:#30d158;--purple:#8b5cf6;--border:rgba(255,255,255,.08)
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;background:var(--bg);color:var(--text);line-height:1.7}
+  .wrap{max-width:920px;margin:0 auto;padding:32px 20px 80px}
+  .hero{padding:24px 0 20px;border-bottom:1px solid var(--border);margin-bottom:28px}
+  .brand{font-weight:800;letter-spacing:.18em;font-size:14px;color:var(--muted);text-transform:uppercase}
+  h1{font-size:44px;line-height:1.05;margin:12px 0 10px}
+  h2{font-size:24px;margin:32px 0 12px}
+  p,li{font-size:16px;color:var(--muted)}
+  strong{color:var(--text)}
+  a{color:var(--green)}
+  .card{background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--border);border-radius:18px;padding:20px 22px;margin:18px 0}
+  ul{padding-left:20px}
+  .meta{display:flex;gap:12px;flex-wrap:wrap;margin-top:14px}
+  .chip{padding:8px 12px;border:1px solid var(--border);border-radius:999px;color:var(--muted);font-size:13px}
+  .footer{margin-top:42px;padding-top:20px;border-top:1px solid var(--border);font-size:14px;color:var(--muted)}
 </style>
 </head>
 <body>
+  <div class="wrap">
+    <div class="hero">
+      <div class="brand">RAVEN</div>
+      <h1>Terms of Service</h1>
+      <p>These Terms of Service govern your use of RAVEN and its bill, receipt, trip, and messaging features.</p>
+      <div class="meta">
+        <div class="chip">Effective April 4, 2026</div>
+        <div class="chip">Ravensplit.com</div>
+      </div>
+    </div>
 
-<svg width="0" height="0" style="position:absolute">
-  <defs>
-    <linearGradient id="bodyGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#1a0533"/><stop offset="40%" style="stop-color:#2d1060"/><stop offset="100%" style="stop-color:#0d0d1a"/></linearGradient>
-    <linearGradient id="eyeGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#30D158"/><stop offset="100%" style="stop-color:#A855F7"/></linearGradient>
-    <linearGradient id="beakGrad" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" style="stop-color:#2a2a3a"/><stop offset="100%" style="stop-color:#111120"/></linearGradient>
-    <linearGradient id="tailGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#2d1060;stop-opacity:0.9"/><stop offset="100%" style="stop-color:#30D158;stop-opacity:0.4"/></linearGradient>
-    <filter id="eyeGlow" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="2.5" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-    <filter id="softShadow"><feDropShadow dx="0" dy="3" stdDeviation="6" flood-color="#7C3AED" flood-opacity="0.35"/></filter>
-  </defs>
-</svg>
+    <h2>Using RAVEN</h2>
+    <p>By using RAVEN, you agree to use the service lawfully and only for legitimate bill-splitting, trip, and expense-sharing activity.</p>
 
-<nav>
-  <a href="index.html" class="nav-logo">
-    <svg width="32" height="32" viewBox="0 0 200 200"><g transform="scale(0.19)"><path d="M85 95 C70 90 45 88 28 78 C20 73 15 65 18 58 C22 50 32 48 42 52 C50 55 56 62 62 70 C68 78 74 86 85 95Z" fill="url(#bodyGrad)"/><path d="M115 95 C130 90 155 88 172 78 C180 73 185 65 182 58 C178 50 168 48 158 52 C150 55 144 62 138 70 C132 78 126 86 115 95Z" fill="url(#bodyGrad)"/><path d="M75 100 C68 108 65 118 66 128 C67 140 72 150 80 156 C87 161 93 160 100 158 C107 160 113 161 120 156 C128 150 133 140 134 128 C135 118 132 108 125 100 C118 92 108 88 100 88 C92 88 82 92 75 100Z" fill="url(#bodyGrad)" filter="url(#softShadow)"/><path d="M78 72 C76 60 80 48 88 40 C94 34 100 32 106 34 C116 37 122 46 122 56 C122 66 118 76 112 83 C108 88 104 90 100 90 C93 90 86 85 82 80 C80 77 79 75 78 72Z" fill="url(#bodyGrad)" filter="url(#softShadow)"/><path d="M78 72 C72 68 62 66 56 68 C52 70 51 74 54 77 C58 80 65 79 72 76 C75 75 77 74 78 72Z" fill="url(#beakGrad)"/><path d="M100 155 C98 165 95 178 92 188 C90 194 88 197 90 198 C92 199 95 194 98 186 C100 180 101 170 100 155Z" fill="url(#tailGrad)"/><ellipse cx="97" cy="58" rx="7" ry="6.5" fill="#06060f" filter="url(#eyeGlow)"/><ellipse cx="97" cy="58" rx="4.5" ry="4" fill="url(#eyeGrad)" opacity="0.9"/><ellipse cx="94" cy="55" rx="1.5" ry="1.2" fill="white" opacity="0.95" transform="rotate(-20 94 55)"/></g></svg>
-    <span class="nav-logo-text">RAVEN</span>
-  </a>
-  <a href="index.html" class="nav-back">← Back to home</a>
-</nav>
+    <h2>Accounts</h2>
+    <p>You are responsible for the accuracy of the information you provide and for activity that occurs through your account or shared bill participation.</p>
 
-<div class="page-hero">
-  <div class="page-hero-inner">
-    <div class="hero-tag"><span class="hero-tag-dot"></span>Legal · Terms</div>
-    <h1>Terms of<br>Service</h1>
-    <p class="hero-sub">By using RAVEN to scan receipts, split bills, or manage group trips, you agree to these terms. We've written them to be clear and fair.</p>
-    <div class="hero-meta">
-      <div class="meta-chip">📅 Effective: March 1, 2026</div>
-      <div class="meta-chip">📍 Governed by New York law</div>
+    <h2>Payments</h2>
+    <p>RAVEN helps people organize what they owe and who paid. RAVEN is not a bank or payment processor and does not directly move funds between users.</p>
+
+    <h2>SMS Terms</h2>
+    <div class="card">
+      <p><strong>Program name:</strong> RAVEN bill and payment notifications</p>
+      <p><strong>Message type:</strong> Transactional SMS messages about bills, trips, payment reminders, payment confirmations, and account activity.</p>
+      <p><strong>Message frequency:</strong> Varies based on your participation and account activity.</p>
+      <p><strong>Message and data rates may apply.</strong></p>
+      <p><strong>Opt out:</strong> Reply STOP to any message.</p>
+      <p><strong>Help:</strong> Reply HELP or contact <a href="mailto:support@ravensplit.com">support@ravensplit.com</a>.</p>
+      <p><strong>Consent:</strong> By entering your phone number and checking the opt-in box in our signup or billing flow, you agree to receive transactional SMS messages from RAVEN.</p>
+      <p>Consent is not a condition of purchase.</p>
+    </div>
+
+    <h2>Acceptable Use</h2>
+    <ul>
+      <li>Do not use RAVEN to send spam, harass others, or impersonate another person.</li>
+      <li>Do not attempt to break, reverse engineer, or abuse the service.</li>
+      <li>Do not use the platform for unlawful activity.</li>
+    </ul>
+
+    <h2>Termination</h2>
+    <p>We may suspend or terminate access if the service is abused or used in violation of these terms.</p>
+
+    <h2>Contact</h2>
+    <p>If you have questions about these terms, contact <a href="mailto:support@ravensplit.com">support@ravensplit.com</a>.</p>
+
+    <div class="footer">
+      <p>RAVEN by RavenSplit</p>
+      <p><a href="https://ravensplit.com/privacy">Privacy Policy</a></p>
     </div>
   </div>
-</div>
-
-<div class="content-wrap">
-
-  <div class="toc">
-    <div class="toc-title">Jump to section</div>
-    <div class="toc-grid">
-      <a href="#agreement" class="toc-link"><span class="toc-num">01</span> Agreement</a>
-      <a href="#service" class="toc-link"><span class="toc-num">02</span> The Service</a>
-      <a href="#account" class="toc-link"><span class="toc-num">03</span> Your Account</a>
-      <a href="#acceptable" class="toc-link"><span class="toc-num">04</span> Acceptable Use</a>
-      <a href="#ai" class="toc-link"><span class="toc-num">05</span> AI Features</a>
-      <a href="#disclaimers" class="toc-link"><span class="toc-num">06</span> Disclaimers</a>
-      <a href="#ip" class="toc-link"><span class="toc-num">07</span> Intellectual Property</a>
-      <a href="#sms" class="toc-link"><span class="toc-num">08</span> SMS &amp; Texts</a>
-      <a href="#contact-terms" class="toc-link"><span class="toc-num">09</span> Contact</a>
-    </div>
-  </div>
-
-  <div class="sec" id="agreement">
-    <div class="sec-label">01 — Agreement</div>
-    <h2>You Agree to These Terms</h2>
-    <p>By creating a RAVEN account or using any part of the service — including scanning receipts, creating bills, or sharing trip hubs — you agree to these Terms of Service.</p>
-    <p>If you don't agree, please stop using RAVEN. These terms apply to all users.</p>
-  </div>
-
-  <div class="sec" id="service">
-    <div class="sec-label">02 — The Service</div>
-    <h2>What RAVEN Does</h2>
-    <p>RAVEN is an AI-powered receipt scanning and bill-splitting platform. The service lets you:</p>
-    <ul>
-      <li>Upload receipt photos and have AI extract items, prices, tax, and tip</li>
-      <li>Create shareable bills where group members can pick their items and pay</li>
-      <li>Build trip hubs that track expenses across multiple receipts for the whole group</li>
-      <li>Track payment status and send reminders via your dashboard</li>
-      <li>Connect your Venmo, Cash App, Zelle, or Apple Pay so others can pay you</li>
-    </ul>
-    <div class="callout callout-green">
-      <strong>Important:</strong> RAVEN facilitates tracking of payments between people. We are not a payment processor and do not hold, move, or take a cut of any funds. All actual payments happen directly between users via their chosen payment apps.
-    </div>
-  </div>
-
-  <div class="sec" id="account">
-    <div class="sec-label">03 — Your Account</div>
-    <h2>Account &amp; Use</h2>
-    <p>By using RAVEN, you confirm that:</p>
-    <ul>
-      <li>You are at least 13 years of age</li>
-      <li>You have the legal right to use the email or phone number you register with</li>
-      <li>You will only use RAVEN for lawful purposes</li>
-      <li>You will not use RAVEN to harass, spam, or deceive other people</li>
-      <li>You are responsible for all activity that occurs under your account</li>
-      <li>You will keep your password secure and notify us immediately of any unauthorized use</li>
-    </ul>
-  </div>
-
-  <div class="sec" id="acceptable">
-    <div class="sec-label">04 — Acceptable Use</div>
-    <h2>What You Can't Do</h2>
-    <p>To keep RAVEN safe and functional for everyone, you agree <em>not</em> to:</p>
-    <ul>
-      <li>Use RAVEN to send unsolicited messages, spam, or harass other users</li>
-      <li>Attempt to reverse-engineer, hack, or disrupt the service or its infrastructure</li>
-      <li>Use RAVEN for fraudulent, deceptive, or illegal activity of any kind</li>
-      <li>Impersonate another person or entity</li>
-      <li>Upload malicious content, harmful code, or inappropriate images</li>
-      <li>Scrape or systematically extract data from RAVEN without written permission</li>
-    </ul>
-    <p>Violation of these terms may result in immediate suspension or termination of your account.</p>
-  </div>
-
-  <div class="sec" id="ai">
-    <div class="sec-label">05 — AI Features</div>
-    <h2>AI Receipt Scanning</h2>
-    <p>RAVEN uses Claude AI by Anthropic to scan and parse receipt photos. By uploading a receipt, you grant us permission to process that image through Anthropic's API for the sole purpose of extracting bill data for your use.</p>
-    <ul>
-      <li>AI extraction may not be 100% accurate — always review the scanned items before sharing</li>
-      <li>You are responsible for verifying amounts before sending payment requests</li>
-      <li>Do not upload receipts containing sensitive personal data beyond standard restaurant/retail items</li>
-    </ul>
-    <p>Anthropic's <a href="https://www.anthropic.com/legal/usage-policy" target="_blank">usage policies</a> apply to all AI processing.</p>
-  </div>
-
-  <div class="sec" id="sms">
-    <div class="sec-label">08 — SMS Messaging</div>
-    <h2>Text Message Terms</h2>
-    <div class="callout callout-green">
-      <strong>Program:</strong> RavenSplit bill payment notifications<br>
-      <strong>Message frequency:</strong> Varies based on bill and payment activity — typically 1–5 messages per active bill.<br>
-      <strong>Msg &amp; data rates may apply.</strong><br><br>
-      To opt out: Reply <strong>STOP</strong> to any message. You will receive one confirmation and no further messages.<br>
-      For help: Reply <strong>HELP</strong> or contact <a href="mailto:support@ravensplit.com">support@ravensplit.com</a>.
-    </div>
-    <p>By providing your phone number to RAVEN, you consent to receive transactional SMS notifications including bill payment reminders, payment confirmations, and group expense summaries.</p>
-    <ul>
-      <li>Messages are sent only in connection with bills or trips you are actively part of</li>
-      <li>We do not send marketing or promotional SMS messages</li>
-      <li>Your phone number is shared with Twilio solely for message delivery and is never sold or shared with third parties for marketing</li>
-      <li>Opt-out is available at any time by replying <strong>STOP</strong></li>
-    </ul>
-    <p>For carrier-specific message and data rate information, contact your mobile carrier.</p>
-  </div>
-
-  <div class="sec" id="disclaimers">
-    <div class="sec-label">06 — Disclaimers</div>
-    <h2>Limitations &amp; Liability</h2>
-    <p>RAVEN is provided "as is" without warranty of any kind. We do not guarantee uninterrupted availability, complete accuracy of AI scanning, or error-free operation.</p>
-    <div class="callout">
-      <strong>Heads up:</strong> To the maximum extent permitted by applicable law, RAVEN shall not be liable for any indirect, incidental, or consequential damages arising from your use of the service — including payment disputes between bill participants or inaccurate AI scan results.
-    </div>
-    <p>RAVEN is a convenience tool. You are always responsible for confirming actual payment through your own means (Venmo, Zelle, Cash App, etc.).</p>
-  </div>
-
-  <div class="sec" id="ip">
-    <div class="sec-label">07 — Intellectual Property</div>
-    <h2>Ownership &amp; Protection</h2>
-    <p>All RAVEN branding, product design, code, workflows, and content are owned by RAVEN and protected by applicable intellectual property, trade secret, and unfair competition laws. You may not reproduce, redistribute, reverse-engineer, or create derivative works without our prior written consent.</p>
-    <div class="callout">
-      <strong>Business Model Protection:</strong> RAVEN's core concepts — including but not limited to AI-powered receipt scanning linked to shareable per-person bill breakdowns, group trip expense hubs, and the overall product flow — constitute proprietary trade secrets and intellectual property. Any individual or entity that copies, substantially imitates, or derives a competing product from RAVEN's model without authorization may be subject to legal action including injunctive relief, damages, and recovery of legal fees under applicable state and federal law.
-    </div>
-    <p>We take the protection of our product seriously. If you believe your own intellectual property has been infringed by RAVEN, or if you wish to inquire about licensing, contact us at <a href="/cdn-cgi/l/email-protection#3c54595050537c4e5d4a59524f4c505548125f5351"><span class="__cf_email__" data-cfemail="8ee6ebe2e2e1cefceff8ebe0fdfee2e7faa0ede1e3">[email&#160;protected]</span></a>.</p>
-    <p>You retain ownership of any content you create using RAVEN (your bills, trips, and data). By using the service, you grant us a limited, non-exclusive license to store and process that content solely to provide the service to you.</p>
-  </div>
-
-  <div class="sec">
-    <div class="sec-label">Updates & Law</div>
-    <h2>Changes &amp; Governing Law</h2>
-    <p>We may update these terms as the product evolves. We'll notify active users of material changes via email. Continued use after changes are posted constitutes acceptance.</p>
-    <p>These terms are governed by the laws of the State of New York. Any disputes shall be resolved in the courts of New York.</p>
-  </div>
-
-  <div class="sec" id="contact-terms">
-    <div class="sec-label">08 — Contact</div>
-    <h2>Questions?</h2>
-    <p>We're reachable and responsive. Don't hesitate to reach out:</p>
-    <ul>
-      <li>Email: <a href="/cdn-cgi/l/email-protection#5a323f3636351a283b2c3f34292a36332e74393537"><span class="__cf_email__" data-cfemail="0c64696060634c7e6d7a69627f7c606578226f6361">[email&#160;protected]</span></a></li>
-      <li>Phone / Text: <a href="tel:+15162347187">+1 (516) 234-7187</a></li>
-    </ul>
-  </div>
-
-</div>
-
-<footer>
-  <div>
-    <div class="f-logo">🪶 RAVEN</div>
-    <div class="f-tag">Scan receipts. Share links. Get paid.</div>
-  </div>
-  <div style="display:flex;flex-direction:column;gap:12px;align-items:flex-end">
-    <div class="f-links">
-      <a href="index.html">Home</a>
-      <a href="https://ravensplit.com/dashboard.html"
+</body>
+</html>
