@@ -2086,7 +2086,7 @@ async function openPayModal(participantId, billId, amount) {
 
   function addLinkRow(href, target, bg, iconBg, iconText, title, handle) {
     const a = document.createElement('a');
-    if (title === 'Apple Pay') handle = 'Opens Messages only - use Apple Pay there - do not send a text';
+    if (title === 'Apple Pay') handle = 'Opens Messages so you can send Apple Pay there';
     a.href = href; if (target) a.target = target;
     a.className = 'pay-method-row'; a.style.background = bg;
     a.innerHTML = `<div class="pay-method-icon" style="background:${iconBg};font-size:${iconText.length>1?'9px':'14px'}">${iconText}</div><div class="pay-method-info"><div class="pay-method-name">${title}</div><div class="pay-method-handle">${handle}</div></div><div class="pay-method-arrow">→</div>`;
