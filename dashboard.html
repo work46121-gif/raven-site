@@ -2597,8 +2597,8 @@ async function loadOverview() {
   }
   const active = bills.filter(b => b.status === 'active');
   const completed = bills.filter(b => b.status === 'completed');
-  // Only count active bills for owed/collected stats
-  let totalOwed = 0, totalCollected = 0;
+  // Only count active bills for owed/collectible stats
+  let totalOwed = 0, totalCollectible = 0;
   active.forEach(b => {
     const isCreator = b.creator_phone === currentUser.email;
     b.participants?.forEach(p => {
@@ -2606,10 +2606,10 @@ async function loadOverview() {
       if (!p.paid && p.phone === currentUser.email) {
         totalOwed += parseFloat(p.amount || 0);
       }
-      // COLLECTED: only bills you created, and only participants who paid you
+      // YOU'RE OWED: only bills you created, and only what other people still owe you
       // Exclude the payer/creator row itself (amount=0 when they paid the bill)
-      if (isCreator && p.paid && p.phone !== currentUser.email && parseFloat(p.amount || 0) > 0) {
-        totalCollected += parseFloat(p.amount || 0);
+      if (isCreator && !p.paid && p.phone !== currentUser.email && parseFloat(p.amount || 0) > 0) {
+        totalCollectible += parseFloat(p.amount || 0);
       }
     });
   });
@@ -2624,12 +2624,12 @@ async function loadOverview() {
     owedEl.textContent = '—'; owedEl.style.color = 'var(--muted)'; owedEl.style.display = '';
     if (owedSub) owedSub.style.display = 'none';
   }
-  // Show collected only if > 0
+  // Show collectible only if > 0
   const collEl = document.getElementById('stat-collected');
   const collSub = document.getElementById('stat-collected-sub');
   const collEmpty = document.getElementById('stat-collected-empty');
-  if (totalCollected > 0) {
-    if (collEl) { collEl.textContent = '$' + totalCollected.toFixed(2); collEl.style.display = ''; }
+  if (totalCollectible > 0) {
+    if (collEl) { collEl.textContent = '$' + totalCollectible.toFixed(2); collEl.style.display = ''; }
     if (collSub) collSub.style.display = '';
     if (collEmpty) collEmpty.style.display = 'none';
   } else {
@@ -2718,7 +2718,11 @@ async function loadHistory() {
 
 function renderBillCard(b) {
   const parts = dedupeBillPreviewParticipants(b.participants || []);
-  const paid = parts.filter(p => p.paid).length || 0;
+  const paidByKey = billPreviewParticipantKey(b.paid_by || '');
+  const paid = parts.filter(p => {
+    const isBillPayer = paidByKey && billPreviewParticipantKey(p.name) === paidByKey;
+    return p.paid || isBillPayer;
+  }).length || 0;
   // Use live_people_count as a floor — QR joiners may not be in participants yet
   const total = Math.max(parts.length || 0, b.live_people_count || 0);
   const pct = total > 0 ? Math.round((paid / total) * 100) : 0;
