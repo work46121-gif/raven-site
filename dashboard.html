@@ -5287,6 +5287,22 @@ async function loadTrips() {
       openTripAdmin(this.getAttribute('data-tripid'));
     });
   });
+  container.querySelectorAll('.btn-view').forEach(btn => {
+    btn.style.touchAction = 'manipulation';
+    btn.style.webkitTapHighlightColor = 'transparent';
+    btn.addEventListener('pointerdown', function() {
+      const href = this.getAttribute('href') || '';
+      const match = href.match(/\/trip\/([^?]+)/);
+      if (match) warmTrip(match[1]);
+    }, { passive: true });
+    btn.addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      const href = this.getAttribute('href') || '';
+      const match = href.match(/\/trip\/([^?]+)/);
+      if (match) openTrip(match[1]);
+    });
+  });
   container.querySelectorAll('.trip-open-hit, .btn-view').forEach(el => {
     ['mouseenter', 'focus', 'touchstart'].forEach(evt => {
       el.addEventListener(evt, function() {
@@ -5428,11 +5444,19 @@ function warmTrip(tripId) {
   if (!url || warmedTripUrls.has(url)) return;
   warmedTripUrls.add(url);
   try {
+    const origin = new URL(url, window.location.href).origin;
+    const preconnect = document.createElement('link');
+    preconnect.rel = 'preconnect';
+    preconnect.href = origin;
+    document.head.appendChild(preconnect);
     const prefetch = document.createElement('link');
     prefetch.rel = 'prefetch';
     prefetch.as = 'document';
     prefetch.href = url;
     document.head.appendChild(prefetch);
+  } catch(e) {}
+  try {
+    fetch(url, { method: 'GET', credentials: 'include', cache: 'force-cache' }).catch(() => {});
   } catch(e) {}
 }
 
