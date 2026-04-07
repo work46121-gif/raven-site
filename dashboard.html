@@ -5468,6 +5468,7 @@ function cbClearPhoto() {
   const taxEl = document.getElementById('cb-tax'); if (taxEl) taxEl.value = '';
   const tipEl = document.getElementById('cb-tip'); if (tipEl) tipEl.value = '';
   const svcEl = document.getElementById('cb-service'); if (svcEl) svcEl.value = '';
+  const miscEl = document.getElementById('cb-misc'); if (miscEl) miscEl.value = '';
   const nameEl = document.getElementById('cb-name'); if (nameEl) nameEl.value = '';
   const scannedBadge = document.getElementById('cb-scanned-badge'); if (scannedBadge) scannedBadge.style.display = 'none';
   cbSplitMode = 'even';
@@ -5570,10 +5571,15 @@ async function cbScanReceipt() {
         // Always reset tax/tip to new receipt values (clear if not present)
         const taxInput = document.getElementById('cb-tax'); if (taxInput) taxInput.value = data.tax > 0 ? parseFloat(data.tax).toFixed(2) : '';
         const tipInput = document.getElementById('cb-tip'); if (tipInput) tipInput.value = data.tip > 0 ? parseFloat(data.tip).toFixed(2) : '';
+        const serviceInput = document.getElementById('cb-service'); if (serviceInput) serviceInput.value = (data.service_fee || 0) > 0 ? parseFloat(data.service_fee).toFixed(2) : '';
+        const miscInput = document.getElementById('cb-misc'); if (miscInput) miscInput.value = (data.misc || 0) > 0 ? parseFloat(data.misc).toFixed(2) : '';
         document.getElementById('cb-scanning').style.display = 'none';
         const badge = document.getElementById('cb-scanned-badge');
         if (badge) badge.style.display = 'flex';
-        document.getElementById('cb-scan-summary').textContent = data.items.length + ' items found · Tax $' + (data.tax||0).toFixed(2);
+        const summaryBits = ['Tax $' + (data.tax || 0).toFixed(2)];
+        if ((data.service_fee || 0) > 0) summaryBits.push('Service $' + parseFloat(data.service_fee).toFixed(2));
+        if ((data.misc || 0) > 0) summaryBits.push('Fees $' + parseFloat(data.misc).toFixed(2));
+        document.getElementById('cb-scan-summary').textContent = data.items.length + ' items found · ' + summaryBits.join(' · ');
         document.getElementById('cb-scan-result').style.display = 'block';
         document.getElementById('cb-scan-result').innerHTML =
           '<div style="display:flex;align-items:center;gap:10px;padding:12px 16px;background:rgba(48,209,88,0.07);border:1px solid rgba(48,209,88,0.2);border-radius:10px">' +
@@ -5589,14 +5595,20 @@ async function cbScanReceipt() {
         clearInterval(iv);
         if (data.bill_name) document.getElementById('cb-name').value = data.bill_name;
         const _taxEl = document.getElementById('cb-tax'); if (_taxEl) _taxEl.value = data.tax > 0 ? parseFloat(data.tax).toFixed(2) : '';
+        const _tipEl = document.getElementById('cb-tip'); if (_tipEl) _tipEl.value = data.tip > 0 ? parseFloat(data.tip).toFixed(2) : '';
+        const _svcEl = document.getElementById('cb-service'); if (_svcEl) _svcEl.value = (data.service_fee || 0) > 0 ? parseFloat(data.service_fee).toFixed(2) : '';
+        const _miscEl = document.getElementById('cb-misc'); if (_miscEl) _miscEl.value = (data.misc || 0) > 0 ? parseFloat(data.misc).toFixed(2) : '';
         cbSplitMode = 'even';
-        document.getElementById('cb-even-total').value = parseFloat(data.total - (data.tax||0) - (data.tip||0)).toFixed(2);
+        const scannedSubtotal = parseFloat(data.subtotal) > 0
+          ? parseFloat(data.subtotal)
+          : Math.max(0, parseFloat(data.total || 0) - parseFloat(data.tax || 0) - parseFloat(data.tip || 0) - parseFloat(data.service_fee || 0) - parseFloat(data.misc || 0) + parseFloat(data.discount || 0));
+        document.getElementById('cb-even-total').value = scannedSubtotal.toFixed(2);
         document.getElementById('cb-scanning').style.display = 'none';
         document.getElementById('cb-scan-result').style.display = 'block';
         document.getElementById('cb-scan-result').innerHTML =
           '<div style="padding:12px 16px;background:rgba(255,152,0,0.07);border:1px solid rgba(255,152,0,0.25);border-radius:10px">' +
           '<div style="font-size:13px;color:#FFA726;font-weight:600;margin-bottom:4px">⚠️ Scanned total: $' + parseFloat(data.total).toFixed(2) + ' — line items unclear</div>' +
-          '<div style="font-size:12px;color:var(--muted)">Total has been filled in. You can split evenly or add items manually.</div></div>';
+          '<div style="font-size:12px;color:var(--muted)">' + (data.warning || 'Total has been filled in. You can split evenly or add items manually.') + '</div></div>';
         cbUpdateSummary();
         showToast('Scanned $' + parseFloat(data.total).toFixed(2) + ' — add items manually', 'success');
         setTimeout(() => cbGoToStep(2), 1200);
