@@ -3021,7 +3021,10 @@ async function openBillModal(billId) {
   // 1. Bill payer → purple "💳 Paid the bill" badge, no action
   // 2. Non-payer who settled (p.paid=true) → green "💳 Paid" badge, no action
   // 3. Non-payer who hasn't settled (p.paid=false) → orange owed amount + Pay button
+  const participantProfiles = await resolveActiveBillParticipantProfiles(parts.map(p => p.name));
   document.getElementById('modal-participants').innerHTML = parts.map(p => {
+    const participantProfile = participantProfiles[p.name] || null;
+    const participantAvatar = activeBillParticipantAvatar(p.name, participantProfile, 28);
     const isBillPayer = paidByName && billPreviewParticipantKey(p.name) === paidByName;
     let badge, action;
     if (isBillPayer) {
@@ -3044,9 +3047,9 @@ async function openBillModal(billId) {
       }
     }
     const removeBtn = '<button class="mark-paid-btn" style="background:rgba(255,68,68,0.08);border:1px solid rgba(255,68,68,0.2);color:#FF6B6B" onclick="removeParticipantFromBillPreview(\'' + billId + '\', \'' + String(p.name || '').replace(/'/g, "\\'") + '\')">Remove</button>';
-    return '<div class="participant-row"><div><div class="participant-name">@' + p.name + '</div>' +
+    return '<div class="participant-row"><div style="display:flex;align-items:center;gap:10px">' + participantAvatar + '<div><div class="participant-name">@' + p.name + '</div>' +
       (p.paid && !isBillPayer && p.payment_method ? '<div style="font-size:11px;color:var(--muted);margin-top:3px">via ' + p.payment_method + '</div>' : '') +
-      '</div><div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end">' + badge + action + removeBtn + '</div></div>';
+      '</div></div><div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end">' + badge + action + removeBtn + '</div></div>';
   }).join('');
 
   document.getElementById('modal-view-btn').onclick = () => viewBillPage(billId);
@@ -3766,12 +3769,78 @@ async function confirmDeleteTrip(tripId, tripName) {
 // ─── FRIENDS ──────────────────────────────────────────────────────────────────
 
 const avatarGradients = ['linear-gradient(135deg,#7C3AED,#A855F7)','linear-gradient(135deg,#E8633A,#FF6B35)','linear-gradient(135deg,#0EA5E9,#7C3AED)','linear-gradient(135deg,#30D158,#0EA5E9)','linear-gradient(135deg,#F59E0B,#EF4444)','linear-gradient(135deg,#EC4899,#8B5CF6)'];
+const activeBillParticipantProfileCache = {};
+
+function normalizeActiveBillPersonKey(name) {
+  return String(name || '').trim().replace(/^@/, '').toLowerCase();
+}
 
 function friendAvatar(name, url, size) {
   const s = size || 40;
   if (url) return '<div style="width:'+s+'px;height:'+s+'px;border-radius:50%;overflow:hidden;flex-shrink:0"><img src="'+url+'" style="width:100%;height:100%;object-fit:cover"></div>';
   const g = avatarGradients[(name||'A').charCodeAt(0) % avatarGradients.length];
   return '<div style="width:'+s+'px;height:'+s+'px;border-radius:50%;background:'+g+';display:flex;align-items:center;justify-content:center;font-size:'+(s*0.35)+'px;font-weight:700;color:#fff;flex-shrink:0">'+(name||'?')[0].toUpperCase()+'</div>';
+}
+
+async function resolveActiveBillParticipantProfiles(names) {
+  const uniqueNames = [...new Set((names || []).map(n => String(n || '').trim()).filter(Boolean))];
+  if (!uniqueNames.length) return {};
+  const missing = uniqueNames.filter(name => !activeBillParticipantProfileCache[normalizeActiveBillPersonKey(name)]);
+  if (missing.length && currentUser) {
+    try {
+      const firstNames = [...new Set(missing.map(name => name.split(' ')[0].trim()).filter(Boolean))];
+      const ravenIds = [...new Set(missing.map(name => String(name || '').trim().replace(/^@/, '')).filter(Boolean))];
+      const lookups = [];
+      if (firstNames.length) {
+        lookups.push(db.from('profiles').select('id,first_name,last_name,raven_id,avatar_url,email').in('first_name', firstNames));
+      }
+      if (ravenIds.length) {
+        lookups.push(db.from('profiles').select('id,first_name,last_name,raven_id,avatar_url,email').in('raven_id', ravenIds));
+      }
+      const results = await Promise.all(lookups);
+      results.forEach(result => {
+        (result.data || []).forEach(profile => {
+          const aliases = [profile.first_name, profile.raven_id, profile.email].map(v => normalizeActiveBillPersonKey(v)).filter(Boolean);
+          aliases.forEach(alias => {
+            if (!activeBillParticipantProfileCache[alias]) activeBillParticipantProfileCache[alias] = profile;
+          });
+        });
+      });
+      try {
+        const local = JSON.parse(localStorage.getItem('raven_profile') || '{}');
+        if (local.first_name || local.raven_id || local.email) {
+          const localProfile = {
+            first_name: local.first_name || '',
+            raven_id: local.raven_id || local.username || '',
+            avatar_url: local.avatar_url || '',
+            email: local.email || ''
+          };
+          [local.first_name, local.raven_id, local.username, local.email].forEach(alias => {
+            alias = normalizeActiveBillPersonKey(alias);
+            if (alias) activeBillParticipantProfileCache[alias] = localProfile;
+          });
+        }
+      } catch(e) {}
+    } catch(e) {}
+  }
+  const resolved = {};
+  uniqueNames.forEach(name => {
+    const key = normalizeActiveBillPersonKey(name);
+    resolved[name] = activeBillParticipantProfileCache[key] || null;
+  });
+  return resolved;
+}
+
+function activeBillParticipantAvatar(name, profile, size) {
+  const s = size || 28;
+  if (profile && profile.avatar_url) {
+    return '<div style="width:'+s+'px;height:'+s+'px;border-radius:50%;overflow:hidden;flex-shrink:0;background:#13131A"><img src="'+profile.avatar_url+'" style="width:100%;height:100%;object-fit:cover"></div>';
+  }
+  if (profile && profile.raven_id) {
+    const g = avatarGradients[(name||'A').charCodeAt(0) % avatarGradients.length];
+    return '<div style="width:'+s+'px;height:'+s+'px;border-radius:50%;background:'+g+';display:flex;align-items:center;justify-content:center;font-size:'+(s*0.35)+'px;font-weight:700;color:#fff;flex-shrink:0">'+(name||'?')[0].toUpperCase()+'</div>';
+  }
+  return '<div style="width:'+s+'px;height:'+s+'px;border-radius:50%;background:#13131A;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:'+(s*0.42)+'px;font-weight:700;color:var(--muted);flex-shrink:0">?</div>';
 }
 
 async function loadFriendsPage() {
