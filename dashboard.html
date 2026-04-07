@@ -2266,11 +2266,117 @@ async function handleAvatarUpload(event) {
   reader.readAsDataURL(file);
 }
 
+async function syncTripDisplayName(previousProfile, nextProfile) {
+  const newDisplayName = (nextProfile.first_name || nextProfile.raven_id || '').trim();
+  if (!currentUser?.email || !newDisplayName) return;
+  const roundMoney = (value) => Math.round(((parseFloat(value) || 0) + Number.EPSILON) * 100) / 100;
+
+  const aliasSet = new Set(
+    [
+      previousProfile?.first_name,
+      previousProfile?.raven_id,
+      previousProfile?.username,
+      nextProfile?.raven_id,
+      nextProfile?.username
+    ]
+      .flatMap(v => {
+        const raw = String(v || '').trim();
+        if (!raw) return [];
+        return [raw.toLowerCase(), raw.replace(/^@/, '').toLowerCase()];
+      })
+  );
+  if (!aliasSet.size) return;
+
+  const renameKey = (value) => {
+    const raw = String(value || '').trim();
+    const clean = raw.replace(/^@/, '').toLowerCase();
+    return aliasSet.has(clean) || aliasSet.has(raw.toLowerCase()) ? newDisplayName : raw;
+  };
+  const renameCredits = (rawCredits) => {
+    let parsed = rawCredits;
+    try { if (typeof parsed === 'string') parsed = JSON.parse(parsed); } catch(e) {}
+    try { if (typeof parsed === 'string') parsed = JSON.parse(parsed); } catch(e) {}
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return { changed: false, value: rawCredits };
+    let changed = false;
+    const nextCredits = {};
+    Object.entries(parsed).forEach(([key, amount]) => {
+      const parts = String(key).split('::receipt::');
+      const renamedBase = renameKey(parts[0]);
+      const nextKey = parts.length > 1 ? (renamedBase + '::receipt::' + parts.slice(1).join('::receipt::')) : renamedBase;
+      if (nextKey !== key) changed = true;
+      nextCredits[nextKey] = roundMoney((nextCredits[nextKey] || 0) + (parseFloat(amount) || 0));
+    });
+    return { changed, value: nextCredits };
+  };
+
+  const emailEscaped = currentUser.email.toLowerCase().replace(/[%_]/g, '\\$&');
+  const tripMap = new Map();
+  const { data: createdTrips } = await db.from('trips').select('*').eq('creator_email', currentUser.email);
+  (createdTrips || []).forEach(trip => tripMap.set(trip.id, trip));
+  const { data: memberTrips } = await db.from('trips').select('*').ilike('member_emails', '%' + emailEscaped + '%');
+  (memberTrips || []).forEach(trip => tripMap.set(trip.id, trip));
+
+  for (const trip of tripMap.values()) {
+    let people = [];
+    let coAdmins = [];
+    try { people = Array.isArray(trip.people) ? trip.people : JSON.parse(trip.people || '[]'); } catch(e) {}
+    try { coAdmins = Array.isArray(trip.co_admins) ? trip.co_admins : JSON.parse(trip.co_admins || '[]'); } catch(e) {}
+
+    let peopleChanged = false;
+    let adminsChanged = false;
+    const renamedPeople = people.map(name => {
+      const nextName = renameKey(name);
+      if (nextName !== name) peopleChanged = true;
+      return nextName;
+    });
+    const dedupedPeople = [...new Map(renamedPeople.map(name => [String(name).toLowerCase(), name])).values()];
+    if (dedupedPeople.length !== people.length) peopleChanged = true;
+
+    const renamedAdmins = coAdmins.map(name => {
+      const nextName = renameKey(name);
+      if (nextName !== name) adminsChanged = true;
+      return nextName;
+    });
+    const dedupedAdmins = [...new Map(renamedAdmins.map(name => [String(name).toLowerCase(), name])).values()];
+    if (dedupedAdmins.length !== coAdmins.length) adminsChanged = true;
+
+    const creditRename = renameCredits(trip.settled_people);
+    const tripUpdates = {};
+    if (peopleChanged) tripUpdates.people = JSON.stringify(dedupedPeople);
+    if (adminsChanged) tripUpdates.co_admins = JSON.stringify(dedupedAdmins);
+    if (creditRename.changed) tripUpdates.settled_people = creditRename.value;
+    if (Object.keys(tripUpdates).length > 0) await db.from('trips').update(tripUpdates).eq('id', trip.id);
+
+    const { data: receipts } = await db.from('trip_receipts').select('id,paid_by,splits').eq('trip_id', trip.id);
+    for (const receipt of (receipts || [])) {
+      const updates = {};
+      const nextPaidBy = renameKey(receipt.paid_by);
+      if (receipt.paid_by && nextPaidBy !== receipt.paid_by) updates.paid_by = nextPaidBy;
+
+      let splits = receipt.splits;
+      try { if (typeof splits === 'string') splits = JSON.parse(splits); } catch(e) {}
+      if (splits && typeof splits === 'object' && !Array.isArray(splits)) {
+        let splitsChanged = false;
+        const nextSplits = {};
+        Object.entries(splits).forEach(([name, amount]) => {
+          const nextName = renameKey(name);
+          if (nextName !== name) splitsChanged = true;
+          nextSplits[nextName] = roundMoney((nextSplits[nextName] || 0) + (parseFloat(amount) || 0));
+        });
+        if (splitsChanged) updates.splits = JSON.stringify(nextSplits);
+      }
+
+      if (Object.keys(updates).length > 0) await db.from('trip_receipts').update(updates).eq('id', receipt.id);
+    }
+  }
+}
+
 async function saveSettings() {
   const btn = document.getElementById('save-settings-btn');
   btn.textContent = 'Saving...'; btn.disabled = true;
   let ravenIdInput = document.getElementById('set-raven-id').value.trim().toLowerCase().replace(/[^a-z0-9_]/g,'');
   const data = { id: currentUser.id, email: currentUser.email, first_name: document.getElementById('set-first').value.trim(), last_name: document.getElementById('set-last').value.trim(), phone: document.getElementById('set-phone').value.trim(), venmo: document.getElementById('set-venmo').value.trim(), cashapp: document.getElementById('set-cashapp').value.trim(), zelle: document.getElementById('set-zelle').value.trim(), applepay: document.getElementById('set-applepay').value.trim(), onboarding_complete: true, updated_at: new Date().toISOString() };
+  const existing = JSON.parse(localStorage.getItem('raven_profile') || '{}');
 
   if (!ravenIdInput) {
     const base = data.first_name || 'raven';
@@ -2282,8 +2388,9 @@ async function saveSettings() {
   try {
     await db.from('profiles').upsert(data, { onConflict: 'id' });
     if (data.raven_id) await persistRavenHandle(currentUser.id, data.raven_id);
-    const existing = JSON.parse(localStorage.getItem('raven_profile') || '{}');
+    try { await syncTripDisplayName(existing, { ...existing, ...data, username: data.raven_id || existing.username || '' }); } catch(syncErr) { console.warn('Trip display name sync failed:', syncErr); }
     localStorage.setItem('raven_profile', JSON.stringify({ ...existing, ...data, username: data.raven_id || existing.username || '' }));
+    try { loadTrips(); } catch(e) {}
     document.getElementById('settings-saved').style.display = 'block';
     setTimeout(() => document.getElementById('settings-saved').style.display = 'none', 3000);
     if (data.first_name) { const greetEl = document.getElementById('greeting-name'); if (greetEl) greetEl.textContent = data.first_name.charAt(0).toUpperCase() + data.first_name.slice(1); }
@@ -5365,6 +5472,10 @@ function cbSetChargeSplit(charge, mode) {
 }
 
 function cbSetSplitMode(mode) {
+  if (mode === 'even' && cbItems.length > 0) {
+    const evenTotalEl = document.getElementById('cb-even-total');
+    if (evenTotalEl) evenTotalEl.value = cbItems.reduce((sum, item) => sum + (parseFloat(item.price) || 0), 0).toFixed(2);
+  }
   cbSplitMode = mode;
   const EB = document.getElementById('cb-split-even-btn'), IB = document.getElementById('cb-split-item-btn');
   const EW = document.getElementById('cb-even-total-wrap'), IW = document.getElementById('cb-itemized-wrap');
