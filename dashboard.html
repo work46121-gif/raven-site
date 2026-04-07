@@ -5244,7 +5244,7 @@ async function loadTrips() {
     const safeId = JSON.stringify(t.id);
     const adminBadge = isCreator ? ' <span style="font-size:10px;color:#30D158;background:rgba(48,209,88,0.08);border:1px solid rgba(48,209,88,0.2);padding:2px 7px;border-radius:8px">admin</span>' : isCoAdmin ? ' <span style="font-size:10px;color:#A855F7;background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.2);padding:2px 7px;border-radius:8px">co-admin</span>' : ' <span style="font-size:10px;color:#A855F7;background:rgba(124,58,237,0.1);border:1px solid rgba(124,58,237,0.2);padding:2px 7px;border-radius:8px">member</span>';
     return '<div class="bill-card">'
-      + '<div style="cursor:pointer" onclick="openTrip(' + safeId + ')"><div class="bill-name"><svg class="trip-title-icon"><use href="#icon-trip-hub"></use></svg>' + t.name.replace(/</g,'&lt;') + ' <span class="bill-id">' + t.id + '</span>' + adminBadge + '</div>'
+      + '<div class="trip-open-hit" style="cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent" onpointerdown="warmTrip(' + safeId + ')" onclick="openTrip(' + safeId + ')"><div class="bill-name"><svg class="trip-title-icon"><use href="#icon-trip-hub"></use></svg>' + t.name.replace(/</g,'&lt;') + ' <span class="bill-id">' + t.id + '</span>' + adminBadge + '</div>'
       + '<div class="bill-meta"><span>' + people.length + ' people</span><span>' + (t.receipt_count || 0) + ' receipts</span>' + (function() {
           // Use server-computed settled_count/debtor_count when available (accurate)
           // Fall back to settled_people parsing for trips not yet backfilled
@@ -5271,7 +5271,7 @@ async function loadTrips() {
           if (settledPeople >= totalPeople) return '';
           return '<span style="color:#FF9A3C;font-weight:600">' + settledPeople + '/' + totalPeople + ' settled</span>';
         })() + (parseFloat(t.total||0) <= 0 ? '<span style="color:var(--green)">All settled ✓</span>' : '') + '</div></div>'
-      + '<div class="bill-amount" style="cursor:pointer;color:' + (parseFloat(t.total||0)>0?'#FF9A3C':'var(--green)') + '" onclick="openTrip(' + safeId + ')">$' + parseFloat(t.total || 0).toFixed(2) + '</div>'
+      + '<div class="bill-amount trip-open-hit" style="cursor:pointer;color:' + (parseFloat(t.total||0)>0?'#FF9A3C':'var(--green)') + ';touch-action:manipulation;-webkit-tap-highlight-color:transparent" onpointerdown="warmTrip(' + safeId + ')" onclick="openTrip(' + safeId + ')">$' + parseFloat(t.total || 0).toFixed(2) + '</div>'
       + '<div class="bill-progress-wrap"><div class="bill-progress-label">Active</div><div class="bill-progress"><div class="bill-progress-fill" style="width:100%"></div></div></div>'
       + '<div class="bill-actions" onclick="event.stopPropagation()">'
       + '<a class="bill-action-btn btn-remind" href="' + tripUrlReceipt + '" style="display:inline-flex;align-items:center;text-decoration:none;background:rgba(48,209,88,0.1);color:var(--green);border:1px solid rgba(48,209,88,0.25)"><svg class="bill-action-icon"><use href="#icon-active-bills"></use></svg>Receipt</a>'
@@ -5285,6 +5285,27 @@ async function loadTrips() {
     btn.addEventListener('click', function(e) {
       e.stopPropagation();
       openTripAdmin(this.getAttribute('data-tripid'));
+    });
+  });
+  container.querySelectorAll('.trip-open-hit, .btn-view').forEach(el => {
+    ['mouseenter', 'focus', 'touchstart'].forEach(evt => {
+      el.addEventListener(evt, function() {
+        const href = this.getAttribute('href');
+        if (href && !warmedTripUrls.has(href)) {
+          warmedTripUrls.add(href);
+          try {
+            const prefetch = document.createElement('link');
+            prefetch.rel = 'prefetch';
+            prefetch.as = 'document';
+            prefetch.href = href;
+            document.head.appendChild(prefetch);
+          } catch(e) {}
+          return;
+        }
+        const match = (this.getAttribute('onclick') || '').match(/openTrip\((.+)\)/);
+        if (!match) return;
+        try { warmTrip(JSON.parse(match[1])); } catch(e) {}
+      }, { passive: true });
     });
   });
 }
@@ -5381,13 +5402,38 @@ async function createTrip() {
 }
 
 function openTrip(tripId) {
+  const url = getTripOpenUrl(tripId);
+  if (!url) return;
+  if (openTrip._pendingUrl === url) return;
+  openTrip._pendingUrl = url;
+  try { warmTrip(tripId); } catch(e) {}
+  window.location.assign(url);
+}
+
+function getTripOpenUrl(tripId) {
   const base = tripUrlMap[tripId];
-  if (!base) return;
+  if (!base) return '';
   try {
     const profile = JSON.parse(localStorage.getItem('raven_profile') || '{}');
     const name = (profile.first_name || '').trim();
-    window.location.href = name ? base + '&name=' + encodeURIComponent(name) : base;
-  } catch(e) { window.location.href = base; }
+    return name ? base + '&name=' + encodeURIComponent(name) : base;
+  } catch(e) {
+    return base;
+  }
+}
+
+const warmedTripUrls = new Set();
+function warmTrip(tripId) {
+  const url = getTripOpenUrl(tripId);
+  if (!url || warmedTripUrls.has(url)) return;
+  warmedTripUrls.add(url);
+  try {
+    const prefetch = document.createElement('link');
+    prefetch.rel = 'prefetch';
+    prefetch.as = 'document';
+    prefetch.href = url;
+    document.head.appendChild(prefetch);
+  } catch(e) {}
 }
 
 // ─── CREATE BILL WIZARD ───────────────────────────────────────────────────────
