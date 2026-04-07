@@ -2591,6 +2591,40 @@ async function showDashboard() {
   setTimeout(() => { try { startPresence(); } catch(e) {} }, 3000);
 
   // Handle ?add=ravenId deep link — auto-navigate to Friends and send request
+  const dmParams = new URLSearchParams(window.location.search);
+  const pendingDmFriendId = (dmParams.get('dm_friend') || '').trim();
+  const pendingDmName = (dmParams.get('dm_name') || '').trim();
+  const pendingDmRavenId = (dmParams.get('dm_raven_id') || '').trim();
+  if (pendingDmFriendId || pendingDmRavenId) {
+    setTimeout(async () => {
+      try {
+        showPage('friends');
+        setMobNav('mob-settings');
+        await loadFriendsPage();
+        let profile = null;
+        const { data: profileById } = await db.from('profiles').select('id,first_name,last_name,raven_id,avatar_url,venmo,cashapp,applepay').eq('id', pendingDmFriendId).maybeSingle();
+        profile = profileById || null;
+        if (!profile && pendingDmRavenId) {
+          const { data: profileByRid } = await db.from('profiles').select('id,first_name,last_name,raven_id,avatar_url,venmo,cashapp,applepay').eq('raven_id', pendingDmRavenId.toLowerCase()).maybeSingle();
+          profile = profileByRid || null;
+        }
+        const friendName = profile
+          ? ([profile.first_name, profile.last_name].filter(Boolean).join(' ') || profile.raven_id || pendingDmName || 'Message')
+          : (pendingDmName || pendingDmRavenId || 'Message');
+        const friendId = profile?.id || pendingDmFriendId;
+        if (friendId) openDirectMessage(friendId, friendName, profile || {});
+      } catch (e) {
+        console.log('auto-open dm error:', e);
+      } finally {
+        const clean = new URL(window.location.href);
+        clean.searchParams.delete('dm_friend');
+        clean.searchParams.delete('dm_name');
+        clean.searchParams.delete('dm_raven_id');
+        history.replaceState(null, '', clean.toString());
+      }
+    }, 700);
+  }
+
   const pendingAdd = sessionStorage.getItem('pending_add_friend');
   if (pendingAdd) {
     sessionStorage.removeItem('pending_add_friend');
