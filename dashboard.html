@@ -5775,6 +5775,177 @@ function closeHouseDetails() {
   if (modal) modal.classList.remove('open');
 }
 
+openHouseDetails = async function(houseId) {
+  const house = houseDataMap[houseId];
+  if (!house) return;
+  const model = buildHouseModel(house);
+  const content = document.getElementById('house-detail-content');
+  if (!content) return;
+  const modal = document.getElementById('house-detail-modal');
+  if (modal) modal.classList.add('open');
+  content.innerHTML = '<div class="loading"><div class="spinner"></div> Loading property details...</div>';
+
+  const tripUrl = 'https://ravensplit.com/trip/' + house.id + '?t=' + (house.share_token || '');
+  let receipts = [];
+  try {
+    const { data } = await db.from('trip_receipts').select('id,name,total,paid_by,splits').eq('trip_id', house.id);
+    receipts = data || [];
+  } catch (e) {}
+
+  const ops = computeHouseOps(model, receipts);
+  const dueState = getHouseDueSnapshot(model);
+  const utilityReceipts = receipts.filter(receipt => isUtilityExpenseName(receipt.name));
+
+  const tenantHtml = model.tenants.length
+    ? model.tenants.map((tenant, i) => {
+        const rentLabel = tenant.rent > 0 ? '$' + tenant.rent.toFixed(2) + '/mo' : 'Rent not set';
+        return `<div class="house-tenant-row">
+          <div class="house-tenant-main">
+            <div class="house-tenant-avatar" style="background:${houseAvatarGradients[i % houseAvatarGradients.length]}">${escapeHouseHtml((tenant.name || '?').charAt(0).toUpperCase())}</div>
+            <div>
+              <div class="house-tenant-name">${escapeHouseHtml(tenant.name)}</div>
+              <div class="house-tenant-meta">${escapeHouseHtml(tenant.unit || 'Unit TBD')} • ${rentLabel}</div>
+            </div>
+          </div>
+          <div class="house-tenant-status ${tenant.status === 'active' ? 'active' : (tenant.status === 'pending' ? 'pending' : 'vacant')}">${escapeHouseHtml(tenant.status || 'active')}</div>
+        </div>`;
+      }).join('')
+    : '<div class="house-detail-empty">No tenant roster yet. Add tenants when you create the house so managers can track occupancy and rent more clearly.</div>';
+
+  const ledgerRowsHtml = ops.rows.map(row => {
+    const statusClass = row.paymentStatus === 'paid'
+      ? 'clear'
+      : (row.paymentStatus === 'partial'
+        ? 'open'
+        : (row.paymentStatus === 'overdue' || (dueState.overdue && row.netExposure > 0.005)
+          ? 'overdue'
+          : (row.netExposure > 0.005 ? 'open' : 'clear')));
+    const statusText = row.paymentStatus === 'paid'
+      ? 'Paid'
+      : (row.paymentStatus === 'partial'
+        ? 'Partial'
+        : (row.paymentStatus === 'overdue' || (dueState.overdue && row.netExposure > 0.005)
+          ? 'Overdue'
+          : (row.netExposure > 0.005 ? 'Open' : 'Clear')));
+    const tenantKey = encodeURIComponent(String(row.name || ''));
+    return `<div class="house-ledger-row">
+      <div class="house-ledger-left">
+        <div class="house-ledger-name">${escapeHouseHtml(row.name)}</div>
+        <div class="house-ledger-meta">${escapeHouseHtml(row.unit || 'Unit TBD')} • Rent $${(row.rent || 0).toFixed(2)} • Utilities $${(row.utilities || 0).toFixed(2)} • Shared $${(row.shared || 0).toFixed(2)}</div>
+      </div>
+      <div class="house-ledger-right">
+        <div class="house-ledger-amount">$${(row.netExposure || 0).toFixed(2)}</div>
+        <div class="house-ledger-status ${statusClass}">${statusText}</div>
+        <div style="display:flex;gap:6px;justify-content:flex-end;margin-top:8px;flex-wrap:wrap">
+          <button class="house-btn" style="padding:6px 8px;font-size:10px;background:rgba(48,209,88,0.1);border-color:rgba(48,209,88,0.2);color:var(--green)" data-house-payment="1" data-house-id="${escapeHouseHtml(house.id)}" data-tenant="${tenantKey}" data-status="paid">Paid</button>
+          <button class="house-btn" style="padding:6px 8px;font-size:10px;background:rgba(255,176,74,0.1);border-color:rgba(255,176,74,0.2);color:#FFB04A" data-house-payment="1" data-house-id="${escapeHouseHtml(house.id)}" data-tenant="${tenantKey}" data-status="partial">Partial</button>
+          <button class="house-btn" style="padding:6px 8px;font-size:10px;background:rgba(255,107,107,0.08);border-color:rgba(255,107,107,0.18);color:#FF6B6B" data-house-payment="1" data-house-id="${escapeHouseHtml(house.id)}" data-tenant="${tenantKey}" data-status="overdue">Overdue</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  const ledgerHtml = ops.rows.length
+    ? `<div class="house-ledger-list">${ledgerRowsHtml}</div>`
+    : '<div class="house-detail-empty">No tenant ledger activity yet. Once receipts and tenant rent are mapped, Raven will show the open balance by person here.</div>';
+
+  const utilitySummaryHtml = utilityReceipts.length
+    ? `<div class="house-ledger-list">${utilityReceipts.slice(0, 6).map(receipt => `<div class="house-ledger-row"><div class="house-ledger-left"><div class="house-ledger-name">${escapeHouseHtml(receipt.name || 'Utility')}</div><div class="house-ledger-meta">${escapeHouseHtml(receipt.paid_by || 'Unknown payer')} covered this utility expense</div></div><div class="house-ledger-right"><div class="house-ledger-amount">$${(parseFloat(receipt.total || 0) || 0).toFixed(2)}</div></div></div>`).join('')}</div>`
+    : '<div class="house-detail-empty">No utility expenses logged yet. Add electric, wifi, water, or gas receipts and Raven will show the allocation flow here.</div>';
+
+  const paymentHistoryHtml = model.paymentHistory.length
+    ? `<div class="house-ledger-list">${model.paymentHistory.slice().reverse().slice(0, 8).map(event => `<div class="house-ledger-row"><div class="house-ledger-left"><div class="house-ledger-name">${escapeHouseHtml(event.name)}</div><div class="house-ledger-meta">${escapeHouseHtml(event.status)} • ${escapeHouseHtml(event.created_at ? new Date(event.created_at).toLocaleString() : '')}${event.note ? ' • ' + escapeHouseHtml(event.note) : ''}</div></div><div class="house-ledger-right"><div class="house-ledger-amount">$${(event.amount || 0).toFixed(2)}</div></div></div>`).join('')}</div>`
+    : '<div class="house-detail-empty">No payment history yet. Manager payment actions will start creating an audit trail here.</div>';
+
+  const markPaidHtml = ops.rows.length
+    ? `<div class="modal-actions" style="margin-top:12px">${ops.rows.slice(0, 3).map(row => `<button class="modal-btn modal-btn-remind" data-house-payment="1" data-house-id="${escapeHouseHtml(house.id)}" data-tenant="${encodeURIComponent(String(row.name || ''))}" data-status="paid">Mark ${escapeHouseHtml(row.name)} Paid</button>`).join('')}</div>`
+    : '';
+
+  const recurringHtml = model.recurringItems.length
+    ? `<div class="house-card-rhythm-list">${model.recurringItems.map(item => `<span class="house-card-rhythm-pill">${escapeHouseHtml(item.name || 'Recurring')} • $${(parseFloat(item.amount || 0) || 0).toFixed(0)}/mo</span>`).join('')}</div>`
+    : '<div class="house-detail-empty">No recurring costs mapped yet.</div>';
+
+  content.innerHTML = `
+    <div class="house-detail-hero">
+      <div class="house-detail-kicker">${model.meta.manager_mode ? 'Property Overview' : 'House Overview'}</div>
+      <div class="house-detail-title">${escapeHouseHtml(house.name || 'House')}</div>
+      <div class="house-detail-copy">${escapeHouseHtml(model.meta.address || 'No address added yet.')} ${model.rentDueDay ? 'Rent rhythm lands on day ' + model.rentDueDay + ' each month.' : 'Set a rent due day to keep the house rhythm clear.'}</div>
+    </div>
+    <div class="house-detail-grid">
+      <div class="house-detail-section">
+        <div class="house-detail-label">Overview</div>
+        <div class="house-metric-value">$${model.outstanding.toFixed(2)}</div>
+        <div class="house-metric-note">Current open balance</div>
+        <div class="house-metric-note" style="margin-top:12px">${model.people.length} housemates • ${model.receiptsCount} logged expenses • ${model.recurringItems.length} recurring items</div>
+      </div>
+      <div class="house-detail-section">
+        <div class="house-detail-label">Property Ops</div>
+        <div class="house-metric-note">${escapeHouseHtml((model.meta.property_type || 'house').replace(/^\w/, c => c.toUpperCase()))} • ${model.unitsTracked} unit${model.unitsTracked === 1 ? '' : 's'}</div>
+        <div class="house-metric-note" style="margin-top:8px">${model.occupiedUnits}/${model.unitsTracked} occupied • Utility split ${escapeHouseHtml(model.meta.utility_split || 'evenly')}</div>
+        <div class="house-metric-note" style="margin-top:8px">${model.rentDueDay ? 'Rent due day ' + model.rentDueDay : 'Rent due day not set yet'}</div>
+        <div style="margin-top:12px">
+          ${dueState.overdue
+            ? '<span class="house-inline-badge overdue">Rent cycle overdue</span>'
+            : dueState.dueSoon
+              ? '<span class="house-inline-badge warning">Rent due soon</span>'
+              : '<span class="house-inline-badge good">Cycle looks healthy</span>'}
+        </div>
+      </div>
+      <div class="house-detail-section full">
+        <div class="house-detail-label">Tenants</div>
+        ${tenantHtml}
+      </div>
+      <div class="house-detail-section full">
+        <div class="house-detail-label">Tenant Ledger</div>
+        <div class="house-metric-note" style="margin-bottom:12px">Rent roll $${ops.rentRoll.toFixed(2)} • Utility allocations $${ops.utilityTotal.toFixed(2)} • Current cycle snapshot</div>
+        ${ledgerHtml}
+        ${markPaidHtml}
+      </div>
+      <div class="house-detail-section full">
+        <div class="house-detail-label">Utility Allocation</div>
+        <div class="house-metric-note" style="margin-bottom:12px">Current rule: ${escapeHouseHtml(model.meta.utility_split || 'evenly')} • Raven is reading utility receipts already logged in the house ledger.</div>
+        ${utilitySummaryHtml}
+      </div>
+      <div class="house-detail-section full">
+        <div class="house-detail-label">Payment History</div>
+        ${paymentHistoryHtml}
+      </div>
+      <div class="house-detail-section full">
+        <div class="house-detail-label">Recurring House Costs</div>
+        ${recurringHtml}
+      </div>
+      <div class="house-detail-section full">
+        <div class="modal-actions">
+          <button class="modal-btn modal-btn-view" id="house-detail-open-ledger">Open House Ledger</button>
+          <button class="modal-btn modal-btn-remind" id="house-detail-send-reminder">Send Reminder</button>
+          <button class="modal-btn modal-btn-remind" id="house-detail-export-ledger">Export CSV</button>
+          <button class="modal-btn" id="house-detail-copy-link" style="background:rgba(0,140,255,0.1);color:#4DB8FF;border:1px solid rgba(0,140,255,0.2)">Copy Share Link</button>
+        </div>
+      </div>
+    </div>`;
+
+  content.querySelectorAll('[data-house-payment="1"]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const nextHouseId = btn.getAttribute('data-house-id') || house.id;
+      const tenantName = decodeURIComponent(btn.getAttribute('data-tenant') || '');
+      const status = btn.getAttribute('data-status') || 'open';
+      await saveHouseTenantPayment(nextHouseId, tenantName, status);
+    });
+  });
+  const openLedgerBtn = document.getElementById('house-detail-open-ledger');
+  if (openLedgerBtn) openLedgerBtn.addEventListener('click', () => openHouse(house.id));
+  const remindBtn = document.getElementById('house-detail-send-reminder');
+  if (remindBtn) remindBtn.addEventListener('click', () => sendHouseReminder(house.id));
+  const exportBtn = document.getElementById('house-detail-export-ledger');
+  if (exportBtn) exportBtn.addEventListener('click', () => exportHouseLedger(house.id));
+  const copyBtn = document.getElementById('house-detail-copy-link');
+  if (copyBtn) {
+    copyBtn.addEventListener('click', () => {
+      navigator.clipboard.writeText(tripUrl).then(() => showToast('Link copied!', 'success'));
+    });
+  }
+};
+
 function sendHouseReminder(houseId) {
   showToast('Reminders sent to housemates!', 'success');
 }
