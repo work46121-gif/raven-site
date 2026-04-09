@@ -1420,8 +1420,8 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
       </div>
 
       <div class="form-group">
-        <label class="form-label">Tenant roster <span style="color:var(--muted);font-weight:400;font-size:11px">one per line: Name | Unit | Rent | Status</span></label>
-        <textarea id="house-tenants-input" class="form-input" rows="5" placeholder="Andrew | Unit 2A | 1800 | active&#10;Maya | Unit 2B | 1750 | pending"></textarea>
+        <label class="form-label">Tenant roster <span style="color:var(--muted);font-weight:400;font-size:11px">one per line: Name | Unit | Rent | Status | Lease End | Deposit</span></label>
+        <textarea id="house-tenants-input" class="form-input" rows="5" placeholder="Andrew | Unit 2A | 1800 | active | 2026-12-31 | 1800&#10;Maya | Unit 2B | 1750 | pending | 2026-09-01 | 1750"></textarea>
       </div>
 
       <div class="form-group">
@@ -5015,15 +5015,33 @@ function parseHouseRecurringPayload(house) {
     name: String(entry.name || '').trim(),
     unit: String(entry.unit || '').trim(),
     rent: parseFloat(entry.rent || 0) || 0,
-    status: String(entry.status || 'active').toLowerCase()
+    status: String(entry.status || 'active').toLowerCase(),
+    lease_end: String(entry.lease_end || '').trim(),
+    deposit: parseFloat(entry.deposit || 0) || 0
   })).filter(entry => entry.name);
+  const paymentStates = {};
+  payload.filter(entry => entry && entry.__kind === 'tenant_payment').forEach(entry => {
+    paymentStates[String(entry.name || '').toLowerCase()] = {
+      status: String(entry.status || 'open').toLowerCase(),
+      paid_amount: parseFloat(entry.paid_amount || 0) || 0,
+      note: String(entry.note || '').trim(),
+      updated_at: String(entry.updated_at || '').trim()
+    };
+  });
+  const paymentHistory = payload.filter(entry => entry && entry.__kind === 'payment_event').map(entry => ({
+    name: String(entry.name || '').trim(),
+    status: String(entry.status || '').trim(),
+    amount: parseFloat(entry.amount || 0) || 0,
+    note: String(entry.note || '').trim(),
+    created_at: String(entry.created_at || '').trim()
+  }));
   const recurringItems = payload.filter(entry => !entry || !entry.__kind);
-  return { meta, tenants, recurringItems };
+  return { meta, tenants, recurringItems, paymentStates, paymentHistory, payload };
 }
 
 function buildHouseModel(house) {
   const people = Array.isArray(house.people) ? house.people : JSON.parse(house.people || '[]');
-  const { meta, tenants, recurringItems } = parseHouseRecurringPayload(house);
+  const { meta, tenants, recurringItems, paymentStates, paymentHistory, payload } = parseHouseRecurringPayload(house);
   let settledCount = 0;
   try {
     let sp = house.settled_people;
@@ -5047,7 +5065,7 @@ function buildHouseModel(house) {
   const settledPct = people.length > 0 ? Math.round((settledCount / people.length) * 100) : 100;
   const rentDueDay = parseInt(meta.rent_due_day || 0, 10) || null;
   const attentionLevel = outstanding > 0.005 ? 'attention' : 'clean';
-  return { house, people, meta, tenants, recurringItems, receiptsCount, outstanding, settledCount, settledPct, unitsTracked, occupiedUnits, rentDueDay, attentionLevel };
+  return { house, people, meta, tenants, recurringItems, paymentStates, paymentHistory, payload, receiptsCount, outstanding, settledCount, settledPct, unitsTracked, occupiedUnits, rentDueDay, attentionLevel };
 }
 
 function isUtilityExpenseName(name) {
@@ -5103,10 +5121,15 @@ function computeHouseOps(model, receipts) {
   const rows = Object.values(ledger).map(entry => {
     const totalDue = Math.max(0, (entry.rent || 0) + (entry.shared || 0));
     const netExposure = Math.max(0, totalDue - (entry.credits || 0));
+    const payment = model.paymentStates[String(entry.name || '').toLowerCase()] || null;
     return {
       ...entry,
       totalDue,
-      netExposure
+      netExposure,
+      paymentStatus: payment?.status || (netExposure <= 0.005 ? 'paid' : 'open'),
+      paidAmount: payment?.paid_amount || 0,
+      paymentNote: payment?.note || '',
+      paymentUpdatedAt: payment?.updated_at || ''
     };
   }).sort((a, b) => b.netExposure - a.netExposure);
 
@@ -5115,6 +5138,92 @@ function computeHouseOps(model, receipts) {
     utilityTotal: rows.reduce((sum, row) => sum + (row.utilities || 0), 0),
     rentRoll: rows.reduce((sum, row) => sum + (row.rent || 0), 0)
   };
+}
+
+async function updateHouseRecurringPayload(houseId, transform) {
+  const house = houseDataMap[houseId];
+  if (!house) throw new Error('House not found');
+  let payload = [];
+  try { payload = Array.isArray(house.recurring_expenses) ? house.recurring_expenses : JSON.parse(house.recurring_expenses || '[]'); } catch(e) { payload = []; }
+  const nextPayload = transform(Array.isArray(payload) ? payload.slice() : []);
+  const serialized = JSON.stringify(nextPayload);
+  const { error } = await db.from('trips').update({ recurring_expenses: serialized }).eq('id', houseId);
+  if (error) throw error;
+  house.recurring_expenses = serialized;
+  houseDataMap[houseId] = house;
+  return house;
+}
+
+async function saveHouseTenantPayment(houseId, tenantName, status) {
+  if (!tenantName) return;
+  const safeStatus = String(status || 'open').toLowerCase();
+  const house = houseDataMap[houseId];
+  if (!house) return;
+  const model = buildHouseModel(house);
+  let receipts = [];
+  try {
+    const { data } = await db.from('trip_receipts').select('id,name,total,paid_by,splits').eq('trip_id', houseId);
+    receipts = data || [];
+  } catch(e) {}
+  const ops = computeHouseOps(model, receipts);
+  const row = ops.rows.find(entry => String(entry.name || '').toLowerCase() === String(tenantName || '').toLowerCase());
+  const amount = row ? row.netExposure : 0;
+  await updateHouseRecurringPayload(houseId, payload => {
+    const next = payload.filter(entry => !(entry && entry.__kind === 'tenant_payment' && String(entry.name || '').toLowerCase() === String(tenantName || '').toLowerCase()));
+    next.push({
+      __kind: 'tenant_payment',
+      name: tenantName,
+      status: safeStatus,
+      paid_amount: safeStatus === 'paid' ? amount : safeStatus === 'partial' ? Math.round(amount * 50) / 100 : 0,
+      updated_at: new Date().toISOString()
+    });
+    next.push({
+      __kind: 'payment_event',
+      name: tenantName,
+      status: safeStatus,
+      amount,
+      created_at: new Date().toISOString(),
+      note: 'Updated from House Mode'
+    });
+    return next;
+  });
+  showToast('Tenant status updated', 'success');
+  await loadHouses();
+  await openHouseDetails(houseId);
+}
+
+function exportHouseLedger(houseId) {
+  const house = houseDataMap[houseId];
+  if (!house) return;
+  const model = buildHouseModel(house);
+  const rows = model.tenants.map(tenant => {
+    const payment = model.paymentStates[String(tenant.name || '').toLowerCase()] || {};
+    return [
+      tenant.name || '',
+      tenant.unit || '',
+      (tenant.rent || 0).toFixed(2),
+      tenant.status || '',
+      tenant.lease_end || '',
+      (tenant.deposit || 0).toFixed(2),
+      payment.status || '',
+      (payment.paid_amount || 0).toFixed(2),
+      payment.updated_at || ''
+    ];
+  });
+  const csv = [
+    ['Name','Unit','Rent','Tenant Status','Lease End','Deposit','Payment Status','Paid Amount','Updated At'],
+    ...rows
+  ].map(cols => cols.map(value => `"${String(value || '').replace(/"/g, '""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = (house.name || 'house-ledger').replace(/[^a-z0-9]+/gi, '-').toLowerCase() + '-ledger.csv';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+  showToast('House ledger exported', 'success');
 }
 
 function ensureRoommatesLayout() {
@@ -5574,8 +5683,8 @@ async function openHouseDetails(houseId) {
     : '<div class="house-detail-empty">No tenant roster yet. Add tenants when you create the house so managers can track occupancy and rent more clearly.</div>';
   const ledgerHtml = ops.rows.length
     ? `<div class="house-ledger-list">${ops.rows.map(row => {
-        const statusClass = dueState.overdue && row.netExposure > 0.005 ? 'overdue' : (row.netExposure > 0.005 ? 'open' : 'clear');
-        const statusText = dueState.overdue && row.netExposure > 0.005 ? 'Overdue' : (row.netExposure > 0.005 ? 'Open' : 'Clear');
+        const statusClass = row.paymentStatus === 'paid' ? 'clear' : (row.paymentStatus === 'partial' ? 'open' : (row.paymentStatus === 'overdue' || (dueState.overdue && row.netExposure > 0.005) ? 'overdue' : (row.netExposure > 0.005 ? 'open' : 'clear')));
+        const statusText = row.paymentStatus === 'paid' ? 'Paid' : (row.paymentStatus === 'partial' ? 'Partial' : (row.paymentStatus === 'overdue' || (dueState.overdue && row.netExposure > 0.005) ? 'Overdue' : (row.netExposure > 0.005 ? 'Open' : 'Clear')));
         return `<div class="house-ledger-row">
           <div class="house-ledger-left">
             <div class="house-ledger-name">${escapeHouseHtml(row.name)}</div>
@@ -5584,6 +5693,11 @@ async function openHouseDetails(houseId) {
           <div class="house-ledger-right">
             <div class="house-ledger-amount">$${(row.netExposure || 0).toFixed(2)}</div>
             <div class="house-ledger-status ${statusClass}">${statusText}</div>
+            <div style="display:flex;gap:6px;justify-content:flex-end;margin-top:8px;flex-wrap:wrap">
+              <button class="house-btn" style="padding:6px 8px;font-size:10px;background:rgba(48,209,88,0.1);border-color:rgba(48,209,88,0.2);color:var(--green)" onclick="saveHouseTenantPayment('${house.id}','${String(row.name || '').replace(/'/g, "\\'")}','paid')">Paid</button>
+              <button class="house-btn" style="padding:6px 8px;font-size:10px;background:rgba(255,176,74,0.1);border-color:rgba(255,176,74,0.2);color:#FFB04A" onclick="saveHouseTenantPayment('${house.id}','${String(row.name || '').replace(/'/g, "\\'")}','partial')">Partial</button>
+              <button class="house-btn" style="padding:6px 8px;font-size:10px;background:rgba(255,107,107,0.08);border-color:rgba(255,107,107,0.18);color:#FF6B6B" onclick="saveHouseTenantPayment('${house.id}','${String(row.name || '').replace(/'/g, "\\'")}','overdue')">Overdue</button>
+            </div>
           </div>
         </div>`;
       }).join('')}</div>`
@@ -5591,6 +5705,9 @@ async function openHouseDetails(houseId) {
   const utilitySummaryHtml = receipts.filter(receipt => isUtilityExpenseName(receipt.name)).length
     ? `<div class="house-ledger-list">${receipts.filter(receipt => isUtilityExpenseName(receipt.name)).slice(0, 6).map(receipt => `<div class="house-ledger-row"><div class="house-ledger-left"><div class="house-ledger-name">${escapeHouseHtml(receipt.name || 'Utility')}</div><div class="house-ledger-meta">${escapeHouseHtml(receipt.paid_by || 'Unknown payer')} covered this utility expense</div></div><div class="house-ledger-right"><div class="house-ledger-amount">$${(parseFloat(receipt.total || 0) || 0).toFixed(2)}</div></div></div>`).join('')}</div>`
     : '<div class="house-detail-empty">No utility expenses logged yet. Add electric, wifi, water, or gas receipts and Raven will show the allocation flow here.</div>';
+  const paymentHistoryHtml = model.paymentHistory.length
+    ? `<div class="house-ledger-list">${model.paymentHistory.slice().reverse().slice(0, 8).map(event => `<div class="house-ledger-row"><div class="house-ledger-left"><div class="house-ledger-name">${escapeHouseHtml(event.name)}</div><div class="house-ledger-meta">${escapeHouseHtml(event.status)} • ${escapeHouseHtml(event.created_at ? new Date(event.created_at).toLocaleString() : '')}${event.note ? ' • ' + escapeHouseHtml(event.note) : ''}</div></div><div class="house-ledger-right"><div class="house-ledger-amount">$${(event.amount || 0).toFixed(2)}</div></div></div>`).join('')}</div>`
+    : '<div class="house-detail-empty">No payment history yet. Manager payment actions will start creating an audit trail here.</div>';
   content.innerHTML = `
     <div class="house-detail-hero">
       <div class="house-detail-kicker">${model.meta.manager_mode ? 'Property Overview' : 'House Overview'}</div>
@@ -5625,11 +5742,16 @@ async function openHouseDetails(houseId) {
         <div class="house-detail-label">Tenant Ledger</div>
         <div class="house-metric-note" style="margin-bottom:12px">Rent roll $${ops.rentRoll.toFixed(2)} â€¢ Utility allocations $${ops.utilityTotal.toFixed(2)} â€¢ Current cycle snapshot</div>
         ${ledgerHtml}
+        ${ops.rows.length ? `<div class="modal-actions" style="margin-top:12px">${ops.rows.slice(0, 3).map(row => `<button class="modal-btn modal-btn-remind" onclick="saveHouseTenantPayment('${house.id}','${String(row.name || '').replace(/'/g, "\\'")}','paid')">Mark ${escapeHouseHtml(row.name)} Paid</button>`).join('')}</div>` : ''}
       </div>
       <div class="house-detail-section full">
         <div class="house-detail-label">Utility Allocation</div>
         <div class="house-metric-note" style="margin-bottom:12px">Current rule: ${escapeHouseHtml(model.meta.utility_split || 'evenly')} â€¢ Raven is reading utility receipts already logged in the house ledger.</div>
         ${utilitySummaryHtml}
+      </div>
+      <div class="house-detail-section full">
+        <div class="house-detail-label">Payment History</div>
+        ${paymentHistoryHtml}
       </div>
       <div class="house-detail-section full">
         <div class="house-detail-label">Recurring House Costs</div>
@@ -5641,6 +5763,7 @@ async function openHouseDetails(houseId) {
         <div class="modal-actions">
           <button class="modal-btn modal-btn-view" onclick="openHouse('${house.id}')">Open House Ledger</button>
           <button class="modal-btn modal-btn-remind" onclick="sendHouseReminder('${house.id}')">Send Reminder</button>
+          <button class="modal-btn modal-btn-remind" onclick="exportHouseLedger('${house.id}')">Export CSV</button>
           <button class="modal-btn" style="background:rgba(0,140,255,0.1);color:#4DB8FF;border:1px solid rgba(0,140,255,0.2)" onclick="navigator.clipboard.writeText('${tripUrl}').then(()=>showToast('Link copied!','success'))">Copy Share Link</button>
         </div>
       </div>
@@ -5729,7 +5852,9 @@ async function saveCreateHouse() {
           name: parts[0] || '',
           unit: parts[1] || '',
           rent: parseFloat(parts[2] || 0) || 0,
-          status: (parts[3] || 'active').toLowerCase()
+          status: (parts[3] || 'active').toLowerCase(),
+          lease_end: parts[4] || '',
+          deposit: parseFloat(parts[5] || 0) || 0
         };
       }).filter(entry => entry.name)
     : [];
