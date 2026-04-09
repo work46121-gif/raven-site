@@ -196,6 +196,37 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
 .house-btn.remind { background:rgba(124,58,237,0.12); border-color:rgba(124,58,237,0.26); color:var(--purple3); }
 .house-btn.share { background:rgba(0,140,255,0.1); border-color:rgba(0,140,255,0.2); color:#4DB8FF; }
 .house-btn.view { background:rgba(48,209,88,0.12); border-color:rgba(48,209,88,0.2); color:var(--green); }
+.roommates-toolbar { display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap; }
+.roommates-filter-row { display:flex; flex-wrap:wrap; gap:8px; }
+.roommates-filter-btn { padding:9px 14px; border-radius:999px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); color:var(--muted2); font-size:12px; font-weight:700; cursor:pointer; transition:all 0.18s; }
+.roommates-filter-btn.active { background:rgba(124,58,237,0.14); border-color:rgba(124,58,237,0.28); color:var(--purple3); }
+.roommates-filter-btn:hover { color:var(--white); border-color:rgba(255,255,255,0.16); }
+.house-card-subcopy { font-size:12px; color:var(--muted); line-height:1.6; margin:-4px 0 16px; }
+.house-card-grid { display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:10px; margin-bottom:16px; }
+.house-metric { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:14px; padding:12px; }
+.house-metric-label { font-size:10px; letter-spacing:0.12em; text-transform:uppercase; color:var(--muted); margin-bottom:6px; }
+.house-metric-value { font-size:15px; font-weight:800; color:var(--white); }
+.house-metric-note { font-size:11px; color:var(--muted2); margin-top:4px; line-height:1.5; }
+.house-card-tenants { display:flex; flex-direction:column; gap:8px; }
+.house-tenant-row { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:9px 10px; border-radius:12px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.05); }
+.house-tenant-main { display:flex; align-items:center; gap:10px; min-width:0; }
+.house-tenant-avatar { width:30px; height:30px; border-radius:50%; background:rgba(124,58,237,0.16); border:1px solid rgba(124,58,237,0.25); display:flex; align-items:center; justify-content:center; color:#fff; font-size:11px; font-weight:800; flex-shrink:0; overflow:hidden; }
+.house-tenant-name { font-size:13px; font-weight:700; color:var(--white); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.house-tenant-meta { font-size:11px; color:var(--muted); margin-top:2px; }
+.house-tenant-status { font-size:11px; font-weight:700; border-radius:999px; padding:5px 8px; white-space:nowrap; }
+.house-tenant-status.active { color:var(--green); background:rgba(48,209,88,0.08); border:1px solid rgba(48,209,88,0.18); }
+.house-tenant-status.pending { color:#FFB04A; background:rgba(255,176,74,0.08); border:1px solid rgba(255,176,74,0.18); }
+.house-tenant-status.vacant { color:var(--muted2); background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); }
+.house-detail-shell { display:flex; flex-direction:column; gap:18px; }
+.house-detail-hero { background:linear-gradient(135deg, rgba(124,58,237,0.14), rgba(48,209,88,0.08)); border:1px solid rgba(124,58,237,0.2); border-radius:18px; padding:18px; }
+.house-detail-kicker { font-size:10px; letter-spacing:0.12em; text-transform:uppercase; color:var(--purple3); margin-bottom:8px; }
+.house-detail-title { font-family:'Bebas Neue',sans-serif; font-size:34px; letter-spacing:0.04em; line-height:0.95; margin-bottom:8px; }
+.house-detail-copy { font-size:13px; color:var(--muted2); line-height:1.7; }
+.house-detail-grid { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:14px; }
+.house-detail-section { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:16px; padding:16px; }
+.house-detail-section.full { grid-column:1 / -1; }
+.house-detail-label { font-size:10px; letter-spacing:0.12em; text-transform:uppercase; color:var(--muted); margin-bottom:8px; }
+.house-detail-empty { font-size:12px; color:var(--muted); line-height:1.6; }
 .roommates-empty { text-align:center; padding:70px 24px; border:1px dashed rgba(124,58,237,0.18); border-radius:24px; background:linear-gradient(180deg, rgba(17,17,24,0.9), rgba(10,10,14,0.95)); }
 .roommates-empty-title { font-family:'Bebas Neue',sans-serif; font-size:34px; letter-spacing:0.04em; margin-bottom:8px; }
 .roommates-empty-sub { font-size:13px; color:var(--muted); max-width:480px; margin:0 auto; line-height:1.75; }
@@ -292,9 +323,11 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
   .roommates-hero-title { font-size:40px !important; }
   .roommates-stats { grid-template-columns:1fr 1fr !important; }
   .roommates-command-grid { grid-template-columns:1fr 1fr !important; }
+  .house-card-grid { grid-template-columns:1fr !important; }
   .house-card-panel { grid-template-columns:1fr !important; }
   .house-card-footer { flex-direction:column; align-items:flex-start !important; }
   .house-card-actions { width:100%; justify-content:stretch !important; }
+  .house-detail-grid { grid-template-columns:1fr !important; }
   .house-btn { flex:1; text-align:center; }
   .page-title { font-size: 26px !important; }
   .page-header { margin-bottom: 20px !important; }
@@ -1336,6 +1369,47 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
       </div>
 
       <div class="form-group">
+        <label class="form-label">Property address <span style="color:var(--muted);font-weight:400;font-size:11px">optional</span></label>
+        <input id="house-address-input" type="text" class="form-input" placeholder="e.g. 1473 Station Square, Forest Hills, NY">
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="form-group">
+          <label class="form-label">Property type</label>
+          <select id="house-property-type" class="form-input">
+            <option value="house">House</option>
+            <option value="apartment">Apartment</option>
+            <option value="duplex">Duplex</option>
+            <option value="portfolio">Portfolio Property</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Units tracked</label>
+          <input id="house-units-input" type="number" min="1" class="form-input" placeholder="1">
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="form-group">
+          <label class="form-label">Rent due day</label>
+          <input id="house-rent-due-day" type="number" min="1" max="31" class="form-input" placeholder="1">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Utility split</label>
+          <select id="house-utility-split" class="form-input">
+            <option value="evenly">Split evenly</option>
+            <option value="by-room">By room</option>
+            <option value="custom">Custom split</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Tenant roster <span style="color:var(--muted);font-weight:400;font-size:11px">one per line: Name | Unit | Rent | Status</span></label>
+        <textarea id="house-tenants-input" class="form-input" rows="5" placeholder="Andrew | Unit 2A | 1800 | active&#10;Maya | Unit 2B | 1750 | pending"></textarea>
+      </div>
+
+      <div class="form-group">
         <label class="form-label">Monthly recurring expenses <span style="color:var(--muted);font-weight:400;font-size:11px">optional</span></label>
         <div id="house-recurring-list" style="margin-bottom:10px"></div>
         <div style="display:flex;gap:8px">
@@ -1347,6 +1421,13 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
       </div>
 
       <button id="create-house-btn" onclick="saveCreateHouse()" style="width:100%;padding:14px;background:var(--green);border:none;border-radius:12px;color:#000;font-family:'Epilogue',sans-serif;font-size:15px;font-weight:800;cursor:pointer;margin-top:8px">Create House →</button>
+    </div>
+  </div>
+
+  <div class="modal-bg" id="house-detail-modal" onclick="if(event.target.id==='house-detail-modal')closeHouseDetails()">
+    <div class="modal" style="max-width:760px">
+      <button class="modal-close" onclick="closeHouseDetails()">×</button>
+      <div id="house-detail-content" class="house-detail-shell"></div>
     </div>
   </div>
 
@@ -4904,6 +4985,55 @@ const tripDataMap = {}; // stores full trip objects keyed by id — safe alterna
 // ── ROOMMATES (BETA) ──────────────────────────────────────────────────────────
 const houseDataMap = {};
 const houseAvatarGradients = ['linear-gradient(135deg,#7C3AED,#A855F7)','linear-gradient(135deg,#E8633A,#FF6B35)','linear-gradient(135deg,#0EA5E9,#22C1F1)','linear-gradient(135deg,#30D158,#0EA5E9)','linear-gradient(135deg,#F59E0B,#EF4444)','linear-gradient(135deg,#EC4899,#8B5CF6)'];
+let roommatesFilter = 'all';
+
+function escapeHouseHtml(str) {
+  return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function parseHouseRecurringPayload(house) {
+  let raw = [];
+  try { raw = Array.isArray(house.recurring_expenses) ? house.recurring_expenses : JSON.parse(house.recurring_expenses || '[]'); } catch(e) {}
+  const payload = Array.isArray(raw) ? raw : [];
+  const meta = payload.find(entry => entry && entry.__kind === 'property_meta') || {};
+  const tenants = payload.filter(entry => entry && entry.__kind === 'tenant').map(entry => ({
+    name: String(entry.name || '').trim(),
+    unit: String(entry.unit || '').trim(),
+    rent: parseFloat(entry.rent || 0) || 0,
+    status: String(entry.status || 'active').toLowerCase()
+  })).filter(entry => entry.name);
+  const recurringItems = payload.filter(entry => !entry || !entry.__kind);
+  return { meta, tenants, recurringItems };
+}
+
+function buildHouseModel(house) {
+  const people = Array.isArray(house.people) ? house.people : JSON.parse(house.people || '[]');
+  const { meta, tenants, recurringItems } = parseHouseRecurringPayload(house);
+  let settledCount = 0;
+  try {
+    let sp = house.settled_people;
+    if (typeof sp === 'string') sp = JSON.parse(sp);
+    if (sp && typeof sp === 'object' && !Array.isArray(sp)) {
+      const rcptCr = {};
+      Object.entries(sp).forEach(([k, v]) => {
+        if ((parseFloat(v) || 0) <= 0) return;
+        if (k.includes('::receipt::')) {
+          const key = k.split('::receipt::')[0].toLowerCase();
+          rcptCr[key] = (rcptCr[key] || 0) + (parseFloat(v) || 0);
+        }
+      });
+      settledCount = people.filter(p => rcptCr[String(p).toLowerCase()] > 0).length;
+    }
+  } catch(e) {}
+  const receiptsCount = parseInt(house.receipt_count || 0, 10) || 0;
+  const outstanding = parseFloat(house.total || 0) || 0;
+  const unitsTracked = Math.max(parseInt(meta.units || 0, 10) || 0, tenants.length, 1);
+  const occupiedUnits = tenants.filter(t => t.status !== 'vacant').length;
+  const settledPct = people.length > 0 ? Math.round((settledCount / people.length) * 100) : 100;
+  const rentDueDay = parseInt(meta.rent_due_day || 0, 10) || null;
+  const attentionLevel = outstanding > 0.005 ? 'attention' : 'clean';
+  return { house, people, meta, tenants, recurringItems, receiptsCount, outstanding, settledCount, settledPct, unitsTracked, occupiedUnits, rentDueDay, attentionLevel };
+}
 
 function ensureRoommatesLayout() {
   const page = document.getElementById('page-roommates');
@@ -4935,12 +5065,19 @@ function ensureRoommatesLayout() {
         </div>
       </div>
       <div id="roommates-stats" class="roommates-stats"></div>
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap">
+      <div class="roommates-toolbar">
         <div>
           <div class="page-title" style="font-size:34px">House <span>Ledgers</span></div>
-          <div style="font-size:13px;color:var(--muted);margin-top:4px">Each house gets its own operating view for recurring life, not just one-off receipts.</div>
+          <div style="font-size:13px;color:var(--muted);margin-top:4px">Keep the clean House Mode feel, but start managing homes like a portfolio.</div>
         </div>
-        <button class="bill-action-btn" style="padding:10px 20px;font-size:13px;background:rgba(48,209,88,0.1);border:1px solid rgba(48,209,88,0.25);color:var(--green)" onclick="openCreateHouse()"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" style="vertical-align:middle;margin-right:4px"><path d="M1 7.5L8 2l7 5.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><rect x="3" y="7" width="10" height="7" rx="1" stroke="currentColor" stroke-width="1.3"/></svg> New House</button>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <div class="roommates-filter-row">
+            <button id="rm-filter-all" class="roommates-filter-btn active" onclick="setRoommatesFilter('all')">All Homes</button>
+            <button id="rm-filter-attention" class="roommates-filter-btn" onclick="setRoommatesFilter('attention')">Needs Attention</button>
+            <button id="rm-filter-clean" class="roommates-filter-btn" onclick="setRoommatesFilter('clean')">Running Clean</button>
+          </div>
+          <button class="bill-action-btn" style="padding:10px 20px;font-size:13px;background:rgba(48,209,88,0.1);border:1px solid rgba(48,209,88,0.25);color:var(--green)" onclick="openCreateHouse()"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" style="vertical-align:middle;margin-right:4px"><path d="M1 7.5L8 2l7 5.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><rect x="3" y="7" width="10" height="7" rx="1" stroke="currentColor" stroke-width="1.3"/></svg> New House</button>
+        </div>
       </div>
       <div id="houses-list" class="roommates-houses-grid"><div class="loading"><div class="spinner"></div> Loading...</div></div>
     </div>`;
@@ -4955,31 +5092,18 @@ function renderRoommatesOverview(houses) {
   if (!statsEl) return;
 
   const totals = houses.reduce((acc, h) => {
-    const people = Array.isArray(h.people) ? h.people : JSON.parse(h.people || '[]');
-    let recurring = [];
-    try { recurring = Array.isArray(h.recurring_expenses) ? h.recurring_expenses : JSON.parse(h.recurring_expenses || '[]'); } catch(e) {}
-    let settledCount = 0;
-    try {
-      let sp = h.settled_people;
-      if (typeof sp === 'string') sp = JSON.parse(sp);
-      if (sp && typeof sp === 'object' && !Array.isArray(sp)) {
-        const rcptCr = {};
-        Object.entries(sp).forEach(([k, v]) => {
-          if ((parseFloat(v)||0) <= 0) return;
-          if (k.includes('::receipt::')) rcptCr[k.split('::receipt::')[0].toLowerCase()] = (rcptCr[k.split('::receipt::')[0].toLowerCase()]||0) + (parseFloat(v)||0);
-        });
-        settledCount = people.filter(p => rcptCr[String(p).toLowerCase()] > 0).length;
-      }
-    } catch(e) {}
+    const model = buildHouseModel(h);
     acc.houses += 1;
-    acc.people += people.length;
-    acc.outstanding += parseFloat(h.total || 0) || 0;
-    acc.expenses += parseInt(h.receipt_count || 0, 10) || 0;
-    acc.recurring += recurring.length;
-    acc.settled += settledCount;
-    acc.totalPeople += people.length;
+    acc.people += model.people.length;
+    acc.outstanding += model.outstanding;
+    acc.expenses += model.receiptsCount;
+    acc.recurring += model.recurringItems.length;
+    acc.settled += model.settledCount;
+    acc.totalPeople += model.people.length;
+    acc.units += model.unitsTracked;
+    acc.occupied += model.occupiedUnits;
     return acc;
-  }, { houses:0, people:0, outstanding:0, expenses:0, recurring:0, settled:0, totalPeople:0 });
+  }, { houses:0, people:0, outstanding:0, expenses:0, recurring:0, settled:0, totalPeople:0, units:0, occupied:0 });
 
   const health = totals.totalPeople > 0 ? Math.round((totals.settled / totals.totalPeople) * 100) : 100;
   if (activeEl) activeEl.textContent = String(totals.houses);
@@ -4989,9 +5113,9 @@ function renderRoommatesOverview(houses) {
 
   statsEl.innerHTML = `
     <div class="roommates-stat">
-      <div class="roommates-stat-label">Housemates Tracked</div>
+      <div class="roommates-stat-label">Tenants / Housemates</div>
       <div class="roommates-stat-value">${totals.people}</div>
-      <div class="roommates-stat-note">People currently flowing through your active house ledgers.</div>
+      <div class="roommates-stat-note">${totals.occupied}/${totals.units || totals.houses || 1} units currently occupied across your homes.</div>
     </div>
     <div class="roommates-stat">
       <div class="roommates-stat-label">Open House Balance</div>
@@ -5046,6 +5170,12 @@ ALTER TABLE trips ADD COLUMN IF NOT EXISTS recurring_expenses JSONB DEFAULT '[]'
   } catch(e) { console.warn('loadHouses error:', e); }
 
   houses.forEach(h => { houseDataMap[h.id] = h; });
+  const filteredHouses = houses.filter(h => {
+    const model = buildHouseModel(h);
+    if (roommatesFilter === 'attention') return model.attentionLevel === 'attention';
+    if (roommatesFilter === 'clean') return model.attentionLevel === 'clean';
+    return true;
+  });
 
   if (houses.length === 0) {
     renderRoommatesOverview([]);
@@ -5058,7 +5188,16 @@ ALTER TABLE trips ADD COLUMN IF NOT EXISTS recurring_expenses JSONB DEFAULT '[]'
     return;
   }
   renderRoommatesOverview(houses);
-  container.innerHTML = houses.map(h => renderHouseCard(h)).join('');
+  updateRoommatesFilterButtons();
+  if (filteredHouses.length === 0) {
+    container.innerHTML = `<div class="roommates-empty" style="grid-column:1/-1">
+      <span class="empty-icon">🏘️</span>
+      <div class="roommates-empty-title">No homes in this view</div>
+      <div class="roommates-empty-sub">Try another filter or create another house to expand your property portfolio.</div>
+    </div>`;
+    return;
+  }
+  container.innerHTML = filteredHouses.map(h => renderHousePortfolioCard(h)).join('');
 }
 
 function renderHouseCard(h) {
@@ -5196,15 +5335,205 @@ function renderHouseCard(h) {
   </div>`;
 }
 
+function renderHousePortfolioCard(h) {
+  const model = buildHouseModel(h);
+  const people = model.people;
+  const meta = model.meta;
+  const tenants = model.tenants;
+  const isCreator = h.creator_email === currentUser.email;
+  const outstanding = model.outstanding;
+  const safeId = JSON.stringify(h.id);
+  const tripUrl = 'https://ravensplit.com/trip/' + h.id + '?t=' + (h.share_token || '');
+  const rhythmHtml = model.recurringItems.length > 0
+    ? model.recurringItems.slice(0, 3).map(e => `<span class="house-card-rhythm-pill">${escapeHouseHtml(String(e.name || 'Recurring'))} • $${(parseFloat(e.amount || 0) || 0).toFixed(0)}/mo</span>`).join('')
+    : '<div class="house-card-rhythm-empty">No recurring costs mapped yet. Add rent, utilities, wifi, or groceries to make this feel like a true house ledger.</div>';
+  const avatarHtml = people.slice(0, 4).map((p, i) => `<div class="house-avatar" style="background:${houseAvatarGradients[i % houseAvatarGradients.length]}" title="${escapeHouseHtml(String(p))}">${escapeHouseHtml(String(p).charAt(0).toUpperCase())}</div>`).join('') + (people.length > 4 ? `<div class="house-avatar" style="background:#1F1F2A">+${people.length - 4}</div>` : '');
+  const subtitleBits = [];
+  if (meta.address) subtitleBits.push(escapeHouseHtml(meta.address));
+  subtitleBits.push(String(meta.property_type || 'house').replace(/^\w/, c => c.toUpperCase()));
+  subtitleBits.push(model.unitsTracked + ' unit' + (model.unitsTracked === 1 ? '' : 's'));
+  const visibleTenants = tenants.slice(0, 2).map((tenant, i) => {
+    const initial = escapeHouseHtml((tenant.name || '?').charAt(0).toUpperCase());
+    const rentLabel = tenant.rent > 0 ? '$' + tenant.rent.toFixed(0) + '/mo' : 'Rent not set';
+    return `<div class="house-tenant-row">
+      <div class="house-tenant-main">
+        <div class="house-tenant-avatar" style="background:${houseAvatarGradients[i % houseAvatarGradients.length]}">${initial}</div>
+        <div>
+          <div class="house-tenant-name">${escapeHouseHtml(tenant.name)}</div>
+          <div class="house-tenant-meta">${escapeHouseHtml(tenant.unit || 'Unit TBD')} • ${rentLabel}</div>
+        </div>
+      </div>
+      <div class="house-tenant-status ${tenant.status === 'active' ? 'active' : (tenant.status === 'pending' ? 'pending' : 'vacant')}">${escapeHouseHtml(tenant.status || 'active')}</div>
+    </div>`;
+  }).join('');
+
+  return `<div class="house-card" onclick="openHouseDetails(${safeId})">
+    <div class="house-card-top">
+      <div>
+        <div class="house-card-kicker">${meta.manager_mode ? 'Property Command' : 'House Ledger'}</div>
+        <div class="house-card-title">${escapeHouseHtml(String(h.name || 'House'))}</div>
+        <div class="house-card-id">${h.id}</div>
+      </div>
+      <div class="house-card-balance">
+        <div class="house-card-balance-label">Open Balance</div>
+        <div class="house-card-balance-value ${outstanding > 0 ? 'open' : 'settled'}">$${outstanding.toFixed(2)}</div>
+      </div>
+    </div>
+    <div class="house-card-subcopy">${subtitleBits.join(' • ')}</div>
+    <div class="house-card-meta">
+      <span class="house-card-chip">${people.length} housemate${people.length !== 1 ? 's' : ''}</span>
+      <span class="house-card-chip">${model.receiptsCount} logged expense${model.receiptsCount !== 1 ? 's' : ''}</span>
+      <span class="house-card-chip">${model.recurringItems.length} recurring item${model.recurringItems.length !== 1 ? 's' : ''}</span>
+      <span class="house-card-chip">${model.occupiedUnits}/${model.unitsTracked} occupied</span>
+      <span class="house-card-chip" style="color:${outstanding > 0 ? '#FFB04A' : 'var(--green)'}">${outstanding > 0 ? 'Needs settlement' : 'All settled'}</span>
+    </div>
+    <div class="house-card-grid">
+      <div class="house-metric">
+        <div class="house-metric-label">Rent Rhythm</div>
+        <div class="house-metric-value">${model.rentDueDay ? 'Day ' + model.rentDueDay : 'Not set'}</div>
+        <div class="house-metric-note">${meta.utility_split ? 'Utilities: ' + escapeHouseHtml(meta.utility_split) : 'Set the monthly cadence for managers and tenants.'}</div>
+      </div>
+      <div class="house-metric">
+        <div class="house-metric-label">Occupancy</div>
+        <div class="house-metric-value">${model.occupiedUnits}/${model.unitsTracked}</div>
+        <div class="house-metric-note">${tenants.length ? 'Tenant roster is mapped into this house.' : 'No tenant roster yet.'}</div>
+      </div>
+      <div class="house-metric">
+        <div class="house-metric-label">Expense Flow</div>
+        <div class="house-metric-value">${model.receiptsCount}</div>
+        <div class="house-metric-note">${model.receiptsCount > 0 ? 'Shared costs are already flowing through the ledger.' : 'No expenses logged yet.'}</div>
+      </div>
+    </div>
+    <div class="house-card-panel">
+      <div class="house-card-rhythm">
+        <div class="house-card-panel-label">Monthly Rhythm</div>
+        <div class="house-card-rhythm-list">${rhythmHtml}</div>
+      </div>
+      <div class="house-card-settlement">
+        <div class="house-card-panel-label">Settlement Health</div>
+        <div class="house-settle-row">
+          <div class="house-settle-value">${model.settledPct}%</div>
+          <div style="font-size:12px;color:var(--muted)">${model.settledCount}/${people.length || 0} settled</div>
+        </div>
+        <div class="house-progress-track"><div class="house-progress-fill" style="width:${model.settledPct}%"></div></div>
+        <div class="house-settle-copy" style="margin-top:10px">${outstanding > 0 ? 'There is still shared money moving around this house.' : 'The house is balanced right now.'}</div>
+      </div>
+    </div>
+    <div class="house-card-tenants">
+      <div class="house-card-panel-label">Tenants</div>
+      ${visibleTenants || '<div class="house-card-rhythm-empty">No tenant roster yet. Add tenants to turn House Mode into a cleaner property operations view.</div>'}
+    </div>
+    <div class="house-card-footer">
+      <div class="house-avatar-stack">${avatarHtml}</div>
+      <div class="house-card-actions" onclick="event.stopPropagation()">
+        ${isCreator ? `<button class="house-btn remind" onclick="sendHouseReminder(${safeId})">Remind</button>` : ''}
+        <button class="house-btn" style="background:rgba(124,58,237,0.12);border-color:rgba(124,58,237,0.22);color:var(--purple3)" onclick="openHouseDetails(${safeId})">Details</button>
+        <button class="house-btn share" onclick="navigator.clipboard.writeText('${tripUrl}').then(()=>showToast('Link copied!','success'))">Share</button>
+        <a class="house-btn view" href="${tripUrl}" style="display:inline-flex;align-items:center;text-decoration:none">Open House</a>
+      </div>
+    </div>
+  </div>`;
+}
+
+function setRoommatesFilter(nextFilter) {
+  roommatesFilter = nextFilter || 'all';
+  updateRoommatesFilterButtons();
+  loadHouses();
+}
+
+function updateRoommatesFilterButtons() {
+  ['all', 'attention', 'clean'].forEach(key => {
+    const btn = document.getElementById('rm-filter-' + key);
+    if (btn) btn.classList.toggle('active', roommatesFilter === key);
+  });
+}
+
+function openHouseDetails(houseId) {
+  const house = houseDataMap[houseId];
+  if (!house) return;
+  const model = buildHouseModel(house);
+  const content = document.getElementById('house-detail-content');
+  if (!content) return;
+  const tripUrl = 'https://ravensplit.com/trip/' + house.id + '?t=' + (house.share_token || '');
+  const tenantHtml = model.tenants.length
+    ? model.tenants.map((tenant, i) => {
+        const rentLabel = tenant.rent > 0 ? '$' + tenant.rent.toFixed(2) + '/mo' : 'Rent not set';
+        return `<div class="house-tenant-row">
+          <div class="house-tenant-main">
+            <div class="house-tenant-avatar" style="background:${houseAvatarGradients[i % houseAvatarGradients.length]}">${escapeHouseHtml((tenant.name || '?').charAt(0).toUpperCase())}</div>
+            <div>
+              <div class="house-tenant-name">${escapeHouseHtml(tenant.name)}</div>
+              <div class="house-tenant-meta">${escapeHouseHtml(tenant.unit || 'Unit TBD')} • ${rentLabel}</div>
+            </div>
+          </div>
+          <div class="house-tenant-status ${tenant.status === 'active' ? 'active' : (tenant.status === 'pending' ? 'pending' : 'vacant')}">${escapeHouseHtml(tenant.status || 'active')}</div>
+        </div>`;
+      }).join('')
+    : '<div class="house-detail-empty">No tenant roster yet. Add tenants when you create the house so managers can track occupancy and rent more clearly.</div>';
+  content.innerHTML = `
+    <div class="house-detail-hero">
+      <div class="house-detail-kicker">${model.meta.manager_mode ? 'Property Overview' : 'House Overview'}</div>
+      <div class="house-detail-title">${escapeHouseHtml(house.name || 'House')}</div>
+      <div class="house-detail-copy">${escapeHouseHtml(model.meta.address || 'No address added yet.')} ${model.rentDueDay ? 'Rent rhythm lands on day ' + model.rentDueDay + ' each month.' : 'Set a rent due day to keep the house rhythm clear.'}</div>
+    </div>
+    <div class="house-detail-grid">
+      <div class="house-detail-section">
+        <div class="house-detail-label">Overview</div>
+        <div class="house-metric-value">$${model.outstanding.toFixed(2)}</div>
+        <div class="house-metric-note">Current open balance</div>
+        <div class="house-metric-note" style="margin-top:12px">${model.people.length} housemates • ${model.receiptsCount} logged expenses • ${model.recurringItems.length} recurring items</div>
+      </div>
+      <div class="house-detail-section">
+        <div class="house-detail-label">Property Ops</div>
+        <div class="house-metric-note">${escapeHouseHtml((model.meta.property_type || 'house').replace(/^\w/, c => c.toUpperCase()))} • ${model.unitsTracked} unit${model.unitsTracked === 1 ? '' : 's'}</div>
+        <div class="house-metric-note" style="margin-top:8px">${model.occupiedUnits}/${model.unitsTracked} occupied • Utility split ${escapeHouseHtml(model.meta.utility_split || 'evenly')}</div>
+        <div class="house-metric-note" style="margin-top:8px">${model.rentDueDay ? 'Rent due day ' + model.rentDueDay : 'Rent due day not set yet'}</div>
+      </div>
+      <div class="house-detail-section full">
+        <div class="house-detail-label">Tenants</div>
+        ${tenantHtml}
+      </div>
+      <div class="house-detail-section full">
+        <div class="house-detail-label">Recurring House Costs</div>
+        ${model.recurringItems.length
+          ? `<div class="house-card-rhythm-list">${model.recurringItems.map(item => `<span class="house-card-rhythm-pill">${escapeHouseHtml(item.name || 'Recurring')} • $${(parseFloat(item.amount || 0) || 0).toFixed(0)}/mo</span>`).join('')}</div>`
+          : '<div class="house-detail-empty">No recurring costs mapped yet.</div>'}
+      </div>
+      <div class="house-detail-section full">
+        <div class="modal-actions">
+          <button class="modal-btn modal-btn-view" onclick="openHouse('${house.id}')">Open House Ledger</button>
+          <button class="modal-btn modal-btn-remind" onclick="sendHouseReminder('${house.id}')">Send Reminder</button>
+          <button class="modal-btn" style="background:rgba(0,140,255,0.1);color:#4DB8FF;border:1px solid rgba(0,140,255,0.2)" onclick="navigator.clipboard.writeText('${tripUrl}').then(()=>showToast('Link copied!','success'))">Copy Share Link</button>
+        </div>
+      </div>
+    </div>`;
+  document.getElementById('house-detail-modal').classList.add('open');
+}
+
+function closeHouseDetails() {
+  const modal = document.getElementById('house-detail-modal');
+  if (modal) modal.classList.remove('open');
+}
+
 function sendHouseReminder(houseId) {
   showToast('Reminders sent to housemates!', 'success');
 }
 
 function openCreateHouse() {
+  _houseRecurring = [];
   document.getElementById('create-house-modal').classList.add('open');
+  document.getElementById('create-house-btn').textContent = 'Create House â†’';
+  document.getElementById('create-house-btn').disabled = false;
   document.getElementById('house-name-input').value = '';
   document.getElementById('house-people-input').value = '';
+  document.getElementById('house-address-input').value = '';
+  document.getElementById('house-property-type').value = 'house';
+  document.getElementById('house-units-input').value = '';
+  document.getElementById('house-rent-due-day').value = '';
+  document.getElementById('house-utility-split').value = 'evenly';
+  document.getElementById('house-tenants-input').value = '';
   document.getElementById('house-recurring-list').innerHTML = '';
+  closeHouseDetails();
   renderRecurringExpenses([]);
 }
 
@@ -5245,10 +5574,33 @@ function renderRecurringExpenses(list) {
 async function saveCreateHouse() {
   const name = document.getElementById('house-name-input').value.trim();
   const peopleRaw = document.getElementById('house-people-input').value.trim();
+  const address = document.getElementById('house-address-input').value.trim();
+  const propertyType = document.getElementById('house-property-type').value || 'house';
+  const unitsTracked = parseInt(document.getElementById('house-units-input').value, 10) || 1;
+  const rentDueDay = parseInt(document.getElementById('house-rent-due-day').value, 10) || null;
+  const utilitySplit = document.getElementById('house-utility-split').value || 'evenly';
+  const tenantsRaw = document.getElementById('house-tenants-input').value.trim();
   if (!name) { showToast('Enter a house name', 'error'); return; }
   const people = peopleRaw ? peopleRaw.split(',').map(p => p.trim()).filter(Boolean) : [];
   const myName = JSON.parse(localStorage.getItem('raven_profile') || '{}').first_name || currentUser.email.split('@')[0];
   if (!people.includes(myName)) people.unshift(myName);
+  const tenantEntries = tenantsRaw
+    ? tenantsRaw.split(/\r?\n/).map(line => line.trim()).filter(Boolean).map(line => {
+        const parts = line.split('|').map(part => part.trim());
+        return {
+          __kind: 'tenant',
+          name: parts[0] || '',
+          unit: parts[1] || '',
+          rent: parseFloat(parts[2] || 0) || 0,
+          status: (parts[3] || 'active').toLowerCase()
+        };
+      }).filter(entry => entry.name)
+    : [];
+  tenantEntries.forEach(entry => {
+    if (!people.some(person => String(person).toLowerCase() === entry.name.toLowerCase())) {
+      people.push(entry.name);
+    }
+  });
 
   const btn = document.getElementById('create-house-btn');
   btn.textContent = 'Creating...'; btn.disabled = true;
@@ -5257,6 +5609,15 @@ async function saveCreateHouse() {
     const shareToken = Math.random().toString(36).substr(2, 10);
     const inviteToken = Math.random().toString(36).substr(2, 10);
     const houseId = Math.random().toString(36).substr(2, 6).toUpperCase();
+    const recurringPayload = [{
+      __kind: 'property_meta',
+      manager_mode: !!tenantEntries.length || unitsTracked > 1,
+      address,
+      property_type: propertyType,
+      units: unitsTracked,
+      rent_due_day: rentDueDay,
+      utility_split: utilitySplit
+    }].concat(tenantEntries).concat(_houseRecurring);
     const { data: house, error } = await db.from('trips').insert({
       id: houseId,
       name,
@@ -5267,7 +5628,7 @@ async function saveCreateHouse() {
       receipt_count: 0,
       share_token: shareToken,
       invite_token: inviteToken,
-      recurring_expenses: JSON.stringify(_houseRecurring),
+      recurring_expenses: JSON.stringify(recurringPayload),
       created_at: new Date().toISOString()
     }).select().single();
 
