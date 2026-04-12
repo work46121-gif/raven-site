@@ -5676,6 +5676,9 @@ function renderHousePortfolioCard(h) {
   const safeId = JSON.stringify(h.id);
   const tripUrl = 'https://ravensplit.com/trip/' + h.id + '?t=' + (h.share_token || '');
   const dueState = getHouseDueSnapshot(model);
+  const leaseBadge = model.leaseExpiringCount > 0 ? `<span class="house-card-chip" style="color:#FFB04A">${model.leaseExpiringCount} lease ending</span>` : '';
+  const maintenanceBadge = model.openMaintenanceCount > 0 ? `<span class="house-card-chip" style="color:#76C8FF">${model.openMaintenanceCount} maintenance</span>` : '';
+  const docsBadge = model.documents.length > 0 ? `<span class="house-card-chip" style="color:var(--green)">${model.documentReadyCount}/${model.documents.length} docs ready</span>` : '';
   const rhythmHtml = model.recurringItems.length > 0
     ? model.recurringItems.slice(0, 3).map(e => `<span class="house-card-rhythm-pill">${escapeHouseHtml(String(e.name || 'Recurring'))} • $${(parseFloat(e.amount || 0) || 0).toFixed(0)}/mo</span>`).join('')
     : '<div class="house-card-rhythm-empty">No recurring costs mapped yet. Add rent, utilities, wifi, or groceries to make this feel like a true house ledger.</div>';
