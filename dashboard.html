@@ -5794,7 +5794,7 @@ function updateRoommatesFilterButtons() {
   });
 }
 
-async function openHouseDetails(houseId) {
+async function openHouseDetailsLegacy(houseId) {
   const house = houseDataMap[houseId];
   if (!house) return;
   const model = buildHouseModel(house);
@@ -5940,7 +5940,7 @@ openHouseDetails = async function(houseId) {
   const dueState = getHouseDueSnapshot(model);
   const collections = getHouseCollectionsSnapshot(model, ops, dueState);
   const utilityReceipts = receipts.filter(receipt => isUtilityExpenseName(receipt.name));
-  const lifecycleRows = model.tenants.map(tenant => {
+  const ravenLifecycleRows = model.tenants.map(tenant => {
     const score = Math.round(tenant.raven_score || 100);
     const end = tenant.lease_end ? new Date(tenant.lease_end + 'T00:00:00') : null;
     const ended = end && !Number.isNaN(end.getTime()) && end.getTime() < Date.now();
@@ -5956,8 +5956,8 @@ openHouseDetails = async function(houseId) {
       </div>
     </div>`;
   }).join('');
-  const lifecycleHtml = model.tenants.length
-    ? `<div class="house-ledger-list">${lifecycleRows}</div>`
+  const ravenLifecycleHtml = model.tenants.length
+    ? `<div class="house-ledger-list">${ravenLifecycleRows}</div>`
     : '<div class="house-detail-empty">No tenants yet. Add tenants to activate Raven scores and lease-end reviews.</div>';
   const leaseWatchHtml = model.tenants.length
     ? `<div class="house-ledger-list">${model.tenants.map(tenant => {
@@ -6117,7 +6117,7 @@ openHouseDetails = async function(houseId) {
       <div class="house-detail-section full">
         <div class="house-detail-label">RAVEN Score & Reviews</div>
         <div class="house-metric-note" style="margin-bottom:12px">Tenants start at 100. At lease end, both landlord and tenant rate each other.</div>
-        ${lifecycleHtml}
+        ${ravenLifecycleHtml}
       </div>
       <div class="house-detail-section full">
         <div class="house-detail-label">Tenant Ledger</div>
