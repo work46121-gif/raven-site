@@ -5673,7 +5673,7 @@ function renderHousePortfolioCard(h) {
   const tenants = model.tenants;
   const isCreator = h.creator_email === currentUser.email;
   const outstanding = model.outstanding;
-  const safeId = JSON.stringify(h.id);
+  const safeId = String(h.id || '').replace(/'/g, "\\'");
   const tripUrl = 'https://ravensplit.com/trip/' + h.id + '?t=' + (h.share_token || '');
   const dueState = getHouseDueSnapshot(model);
   const leaseBadge = model.leaseExpiringCount > 0 ? `<span class="house-card-chip" style="color:#FFB04A">${model.leaseExpiringCount} lease ending</span>` : '';
@@ -5702,7 +5702,7 @@ function renderHousePortfolioCard(h) {
     </div>`;
   }).join('');
 
-  return `<div class="house-card" onclick="openHouseDetails(${safeId})">
+  return `<div class="house-card" onclick="openHouseDetails('${safeId}')">
     <div class="house-card-top">
       <div>
         <div class="house-card-kicker">${meta.manager_mode ? 'Property Command' : 'House Ledger'}</div>
@@ -5769,8 +5769,8 @@ function renderHousePortfolioCard(h) {
     <div class="house-card-footer">
       <div class="house-avatar-stack">${avatarHtml}</div>
       <div class="house-card-actions" onclick="event.stopPropagation()">
-        ${isCreator ? `<button class="house-btn remind" onclick="sendHouseReminder(${safeId})">Remind</button>` : ''}
-        <button class="house-btn" style="background:rgba(124,58,237,0.12);border-color:rgba(124,58,237,0.22);color:var(--purple3)" onclick="openHouseDetails(${safeId})">Details</button>
+        ${isCreator ? `<button class="house-btn remind" onclick="sendHouseReminder('${safeId}')">Remind</button>` : ''}
+        <button class="house-btn" style="background:rgba(124,58,237,0.12);border-color:rgba(124,58,237,0.22);color:var(--purple3)" onclick="openHouseDetails('${safeId}')">Details</button>
         <button class="house-btn share" onclick="navigator.clipboard.writeText('${tripUrl}').then(()=>showToast('Link copied!','success'))">Share</button>
         <a class="house-btn view" href="${tripUrl}" style="display:inline-flex;align-items:center;text-decoration:none">Open House</a>
       </div>
