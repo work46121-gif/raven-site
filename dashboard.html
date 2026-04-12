@@ -5708,7 +5708,7 @@ function renderHousePortfolioCard(h) {
     </div>`;
   }).join('');
   const emptyTenantsHtml = '<div class="house-card-rhythm-empty">No tenant roster yet. Add tenants to turn House Mode into a cleaner property operations view.</div>'
-    + (isCreator ? '<button class="house-btn" style="margin-top:8px;background:rgba(48,209,88,0.12);border-color:rgba(48,209,88,0.2);color:var(--green)" onclick="openEditHouse(\\'' + safeId + '\\');event.stopPropagation()">Add Tenants</button>' : '');
+    + (isCreator ? '<button class="house-btn" style="margin-top:8px;background:rgba(48,209,88,0.12);border-color:rgba(48,209,88,0.2);color:var(--green)" onclick="openEditHouse(&quot;' + safeId + '&quot;);event.stopPropagation()">Add Tenants</button>' : '');
 
   return `<div class="house-card" onclick="openHouseDetails('${safeId}')">
     <div class="house-card-top">
