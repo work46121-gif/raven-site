@@ -7785,6 +7785,7 @@ async function openTripChat(tripId) {
   const modal = document.getElementById('trip-chat-modal');
   modal.style.display = 'flex';
   setupTripChatScrollLock();
+  lockBodyForChat();
 
   // Set trip name
   const trip = tripDataMap[tripId];
@@ -7811,6 +7812,7 @@ async function openTripChat(tripId) {
 
 function closeTripChat() {
   document.getElementById('trip-chat-modal').style.display = 'none';
+  unlockBodyForChat();
   if (chatSubscription) { db.removeChannel(chatSubscription); chatSubscription = null; }
   currentChatTripId = null;
 }
@@ -7852,6 +7854,30 @@ function formatChatDateDivider(value) {
   return dt.toLocaleDateString([], { month: 'long', day: 'numeric', year: 'numeric' });
 }
 
+function lockBodyForChat() {
+  const body = document.body;
+  if (!body || body.dataset.chatLock === '1') return;
+  body.dataset.chatLock = '1';
+  body.dataset.chatOverflow = body.style.overflow || '';
+  body.dataset.chatTouchAction = body.style.touchAction || '';
+  body.dataset.chatOverscroll = body.style.overscrollBehavior || '';
+  body.style.overflow = 'hidden';
+  body.style.touchAction = 'none';
+  body.style.overscrollBehavior = 'none';
+}
+
+function unlockBodyForChat() {
+  const body = document.body;
+  if (!body || body.dataset.chatLock !== '1') return;
+  body.style.overflow = body.dataset.chatOverflow || '';
+  body.style.touchAction = body.dataset.chatTouchAction || '';
+  body.style.overscrollBehavior = body.dataset.chatOverscroll || '';
+  delete body.dataset.chatOverflow;
+  delete body.dataset.chatTouchAction;
+  delete body.dataset.chatOverscroll;
+  delete body.dataset.chatLock;
+}
+
 function setupTripChatScrollLock() {
   const container = document.getElementById('chat-messages');
   if (!container || container.dataset.scrollLockReady === '1') return;
@@ -7880,15 +7906,16 @@ function appendChatMessage(msg, scroll = true) {
   const container = document.getElementById('chat-messages');
   const local = JSON.parse(localStorage.getItem('raven_profile') || '{}');
   const isMe = msg.user_id === local.user_id;
-  const time = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  const dateKey = getChatDateKey(msg.created_at);
+  const dateSource = msg?.created_at || msg?.sent_at || msg?.inserted_at || msg?.timestamp || msg?.createdAt;
+  const time = dateSource ? new Date(dateSource).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+  const dateKey = getChatDateKey(dateSource);
   const lastDateKey = container?.dataset?.lastDateKey || '';
 
   if (container && dateKey && dateKey !== lastDateKey) {
     const divider = document.createElement('div');
     divider.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:10px;margin:8px 0 4px;color:#6E6B80;font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase';
     divider.innerHTML = '<span style="flex:1;height:1px;background:rgba(255,255,255,0.08)"></span>'
-      + '<span>' + escapeHtml(formatChatDateDivider(msg.created_at)) + '</span>'
+      + '<span>' + escapeHtml(formatChatDateDivider(dateSource)) + '</span>'
       + '<span style="flex:1;height:1px;background:rgba(255,255,255,0.08)"></span>';
     container.appendChild(divider);
     container.dataset.lastDateKey = dateKey;
