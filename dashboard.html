@@ -259,7 +259,9 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
 .form-input:focus { border-color: var(--purple); }
 .people-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 .person-tag { display: flex; align-items: center; gap: 6px; background: rgba(124,58,237,0.12); border: 1px solid rgba(124,58,237,0.25); border-radius: 20px; padding: 5px 12px; font-size: 13px; color: var(--purple3); }
-.person-tag button { background: none; border: none; color: var(--purple3); cursor: pointer; font-size: 14px; padding: 0; line-height: 1; opacity: 0.6; transition: opacity 0.15s; }
+.person-tag.person-tag-raven { background: rgba(48,209,88,0.12); border-color: rgba(48,209,88,0.28); color: var(--green); box-shadow: 0 0 0 1px rgba(48,209,88,0.08) inset; }
+.person-tag.person-tag-guest { background: rgba(124,58,237,0.08); border-color: rgba(255,255,255,0.12); color: var(--muted2); }
+.person-tag button { background: none; border: none; color: inherit; cursor: pointer; font-size: 14px; padding: 0; line-height: 1; opacity: 0.6; transition: opacity 0.15s; }
 .person-tag button:hover { opacity: 1; }
 .add-person-input { flex: 1; padding: 10px 14px; background: var(--dark2); border: 1px solid var(--border); border-radius: 8px; color: var(--white); font-family: 'Epilogue', sans-serif; font-size: 13px; outline: none; }
 .add-person-input:focus { border-color: var(--purple); }
@@ -2140,19 +2142,34 @@ async function openPayModal(participantId, billId, amount) {
 
   let profile = null;
 
-  // Priority: look up the paid_by person's profile by first_name
+  // Priority: look up the paid_by participant directly for this bill
   if (paidByName) {
     try {
-      const { data } = await db.from('profiles')
-        .select('first_name,phone,email,venmo,cashapp,zelle,applepay,updated_at')
-        .ilike('first_name', paidByName)
-        .limit(8);
-      profile = chooseBestPaymentProfile(data, paidByName);
+      const { data: payerParticipant } = await db.from('participants')
+        .select('name,phone')
+        .eq('bill_id', billId)
+        .ilike('name', paidByName)
+        .maybeSingle();
+      const payerPhone = payerParticipant?.phone || '';
+      if (payerPhone && !String(payerPhone).startsWith('unknown_')) {
+        const { data: directProfile } = await db.from('profiles')
+          .select('first_name,phone,email,venmo,cashapp,zelle,applepay,updated_at')
+          .or('email.eq.' + payerPhone + ',phone.eq.' + payerPhone)
+          .maybeSingle();
+        if (directProfile) profile = directProfile;
+      }
+      if (!profile) {
+        const { data } = await db.from('profiles')
+          .select('first_name,phone,email,venmo,cashapp,zelle,applepay,updated_at')
+          .ilike('first_name', paidByName)
+          .limit(8);
+        profile = chooseBestPaymentProfile(data, paidByName);
+      }
     } catch(e) {}
   }
 
-  // Fallback: creator's profile
-  if (!profile && bill?.creator_phone) {
+  // Fallback: creator's profile only when there is no explicit payer on the bill
+  if (!profile && !paidByName && bill?.creator_phone) {
     try {
       const { data: emailMatch } = await db.from('profiles').select('first_name,phone,email,venmo,cashapp,zelle,applepay,updated_at').eq('email', bill.creator_phone).maybeSingle();
       if (emailMatch) profile = emailMatch;
@@ -2165,7 +2182,7 @@ async function openPayModal(participantId, billId, amount) {
 
   // If current user IS the creator/payer, pull from localStorage
   if (!profile || (!profile.venmo && !profile.cashapp && !profile.zelle && !profile.applepay)) {
-    if (bill?.creator_phone === currentUser?.email) {
+    if (!paidByName && bill?.creator_phone === currentUser?.email) {
       try {
         const local = JSON.parse(localStorage.getItem('raven_profile') || '{}');
         if (local.venmo || local.cashapp || local.zelle || local.applepay) profile = { ...profile, ...local };
@@ -2224,7 +2241,10 @@ async function openPayModal(participantId, billId, amount) {
   }
 
   if (mc.children.length === 0) {
-    mc.innerHTML = '<div style="text-align:center;padding:12px;color:var(--muted);font-size:12px;margin-bottom:4px">' + displayName + ' hasn\'t set up payment methods yet.</div>';
+    const askText = paidByName
+      ? 'Ask ' + displayName + ' how they would like to be paid.'
+      : displayName + ' hasn\'t set up payment methods yet.';
+    mc.innerHTML = '<div style="text-align:center;padding:12px;color:var(--muted);font-size:12px;margin-bottom:4px">' + askText + '</div>';
     // Auto-show the method submenu when no payment links are available
     ['Cash','Bank Transfer','Venmo','Cash App','Zelle','Apple Pay','Other'].forEach(function(m) {
       const b = document.createElement('button');
@@ -3610,7 +3630,7 @@ function renderContactsList(contacts) {
       if (contactsPickerTarget === 'bill') {
         if (cbPeople.includes(c.name)) cbPeople = cbPeople.filter(p => p !== c.name);
         else cbPeople.push(c.name);
-        cbRenderPeople(); cbRenderItems(); cbUpdateSummary();
+        cbRefreshKnownPeopleProfiles().then(() => { cbRenderPeople(); cbRenderItems(); cbUpdateSummary(); });
       } else {
         if (tripPeople.includes(c.name)) tripPeople = tripPeople.filter(p => p !== c.name);
         else tripPeople.push(c.name);
@@ -6382,6 +6402,7 @@ function warmTrip(tripId) {
 // ─── CREATE BILL WIZARD ───────────────────────────────────────────────────────
 
 let cbItems = [], cbPeople = [], cbImageBase64 = null, cbImageMediaType = 'image/jpeg', cbCurrentStep = 1, cbAssignModalItemId = null;
+let cbKnownProfilesByName = {};
 
 // ── LIVE MODE TOGGLE ──
 let cbLiveMode = false;
@@ -6760,21 +6781,58 @@ async function cbScanReceipt() {
   }
 }
 
-function cbAddPerson() { const input = document.getElementById('cb-person-input'); const name = input.value.trim(); if (!name || cbPeople.includes(name)) return; cbPeople.push(name); input.value = ''; cbRenderPeople(); cbRenderItems(); cbUpdateSummary(); }
-function cbRemovePerson(name) { cbPeople = cbPeople.filter(p => p !== name); cbItems.forEach(item => { item.assignees = item.assignees.filter(a => a !== name); }); cbRenderPeople(); cbRenderItems(); cbUpdateSummary(); }
+async function cbRefreshKnownPeopleProfiles() {
+  const names = Array.from(new Set(cbPeople.map(p => String(p || '').trim()).filter(Boolean)));
+  cbKnownProfilesByName = {};
+  if (!names.length) return;
+  try {
+    const { data: profiles } = await db.from('profiles').select('first_name,raven_id,email').in('first_name', names);
+    (profiles || []).forEach(profile => {
+      const key = String(profile.first_name || '').trim().toLowerCase();
+      if (key) cbKnownProfilesByName[key] = profile;
+    });
+  } catch (e) {}
+}
+
+function cbIsKnownRavenUser(name) {
+  return !!cbKnownProfilesByName[String(name || '').trim().toLowerCase()];
+}
+
+async function cbAddPerson() {
+  const input = document.getElementById('cb-person-input');
+  const name = input.value.trim();
+  if (!name || cbPeople.includes(name)) return;
+  cbPeople.push(name);
+  input.value = '';
+  await cbRefreshKnownPeopleProfiles();
+  cbRenderPeople();
+  cbRenderItems();
+  cbUpdateSummary();
+}
+
+async function cbRemovePerson(name) {
+  cbPeople = cbPeople.filter(p => p !== name);
+  cbItems.forEach(item => { item.assignees = item.assignees.filter(a => a !== name); });
+  await cbRefreshKnownPeopleProfiles();
+  cbRenderPeople();
+  cbRenderItems();
+  cbUpdateSummary();
+}
+
 function cbRenderPeople() {
   // Build chips with DOM — no innerHTML onclick to avoid name escaping issues
   const container = document.getElementById('cb-people-chips');
   container.innerHTML = '';
   cbPeople.forEach(p => {
     const chip = document.createElement('div');
-    chip.className = 'person-tag';
+    chip.className = 'person-tag ' + (cbIsKnownRavenUser(p) ? 'person-tag-raven' : 'person-tag-guest');
     const label = document.createElement('span');
     label.textContent = '@' + p;
+    if (cbIsKnownRavenUser(p)) label.title = p + ' is on RAVEN';
     const btn = document.createElement('button');
     btn.textContent = '×';
     btn.title = 'Remove ' + p;
-    btn.addEventListener('click', () => cbRemovePerson(p));
+    btn.addEventListener('click', () => { cbRemovePerson(p); });
     chip.appendChild(label);
     chip.appendChild(btn);
     container.appendChild(chip);
@@ -7130,7 +7188,7 @@ async function cbCreateFinalBill() {
   celebrateBillCreated();
   // Track bill creation in PostHog
   try { if (typeof posthog !== 'undefined') posthog.capture('bill_created', { bill_id: billId, split_mode: cbSplitMode, people_count: cbPeople.length, total, has_receipt: !!cbImageBase64, has_payer: !!paidBy }); } catch(e) {}
-  cbItems = []; cbPeople = []; cbImageBase64 = null; cbSplitMode = 'even'; cbLiveMode = false; cbLivePeopleCount = 2; const lt=document.getElementById('cb-live-toggle'); const lk=document.getElementById('cb-live-knob'); const lpw=document.getElementById('cb-live-people-wrap'); if(lt){lt.style.background='rgba(255,255,255,0.1)';lt.style.borderColor='rgba(255,255,255,0.15)';} if(lk){lk.style.background='#9896A8';lk.style.transform='translateX(0)';} if(lpw)lpw.style.display='none';
+  cbItems = []; cbPeople = []; cbKnownProfilesByName = {}; cbImageBase64 = null; cbSplitMode = 'even'; cbLiveMode = false; cbLivePeopleCount = 2; const lt=document.getElementById('cb-live-toggle'); const lk=document.getElementById('cb-live-knob'); const lpw=document.getElementById('cb-live-people-wrap'); if(lt){lt.style.background='rgba(255,255,255,0.1)';lt.style.borderColor='rgba(255,255,255,0.15)';} if(lk){lk.style.background='#9896A8';lk.style.transform='translateX(0)';} if(lpw)lpw.style.display='none';
   Object.keys(cbChargeSplits).forEach(k => { cbChargeSplits[k] = 'proportional'; });
   document.getElementById('cb-name').value = '';
   if (document.getElementById('cb-tax')) document.getElementById('cb-tax').value = '';
