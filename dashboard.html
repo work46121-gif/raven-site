@@ -1438,8 +1438,8 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
       </div>
 
       <div class="form-group">
-        <label class="form-label">Tenant roster <span style="color:var(--muted);font-weight:400;font-size:11px">one per line: Name | Unit | Rent | Status | Lease Start | Lease End | Deposit | Move In | Notice</span></label>
-        <textarea id="house-tenants-input" class="form-input" rows="5" placeholder="Andrew | Unit 2A | 1800 | active | 2026-01-01 | 2026-12-31 | 1800 | 2026-01-01 | &#10;Maya | Unit 2B | 1750 | pending | 2026-03-01 | 2027-02-28 | 1750 | 2026-03-01 | 2027-01-15"></textarea>
+        <label class="form-label">Tenant roster <span style="color:var(--muted);font-weight:400;font-size:11px">one per line: Name | Unit | Rent | Status | Lease Start | Lease End | Deposit | Move In | Notice | Score | Landlord Rating | Tenant Rating</span></label>
+        <textarea id="house-tenants-input" class="form-input" rows="5" placeholder="Andrew | Unit 2A | 1800 | active | 2026-01-01 | 2026-12-31 | 1800 | 2026-01-01 | | 100 | | &#10;Maya | Unit 2B | 1750 | pending | 2026-03-01 | 2027-02-28 | 1750 | 2026-03-01 | 2027-01-15 | 100 | 4.8 | 4.9"></textarea>
       </div>
 
       <div class="form-group">
@@ -5071,7 +5071,10 @@ function parseHouseRecurringPayload(house) {
     lease_end: String(entry.lease_end || '').trim(),
     deposit: parseFloat(entry.deposit || 0) || 0,
     move_in: String(entry.move_in || '').trim(),
-    notice_date: String(entry.notice_date || '').trim()
+    notice_date: String(entry.notice_date || '').trim(),
+    raven_score: Math.max(0, Math.min(100, parseFloat(entry.raven_score || 100) || 100)),
+    landlord_rating: parseFloat(entry.landlord_rating || 0) || 0,
+    tenant_rating: parseFloat(entry.tenant_rating || 0) || 0
   })).filter(entry => entry.name);
   const paymentStates = {};
   payload.filter(entry => entry && entry.__kind === 'tenant_payment').forEach(entry => {
@@ -5937,6 +5940,25 @@ openHouseDetails = async function(houseId) {
   const dueState = getHouseDueSnapshot(model);
   const collections = getHouseCollectionsSnapshot(model, ops, dueState);
   const utilityReceipts = receipts.filter(receipt => isUtilityExpenseName(receipt.name));
+  const lifecycleRows = model.tenants.map(tenant => {
+    const score = Math.round(tenant.raven_score || 100);
+    const end = tenant.lease_end ? new Date(tenant.lease_end + 'T00:00:00') : null;
+    const ended = end && !Number.isNaN(end.getTime()) && end.getTime() < Date.now();
+    const landlord = tenant.landlord_rating > 0 ? tenant.landlord_rating.toFixed(1) : (ended ? 'Pending' : '—');
+    const tenantScore = tenant.tenant_rating > 0 ? tenant.tenant_rating.toFixed(1) : (ended ? 'Pending' : '—');
+    return `<div class="house-ledger-row">
+      <div class="house-ledger-left">
+        <div class="house-ledger-name">${escapeHouseHtml(tenant.name)}</div>
+        <div class="house-ledger-meta">Score ${score} • Landlord ${escapeHouseHtml(String(landlord))} • Tenant ${escapeHouseHtml(String(tenantScore))}</div>
+      </div>
+      <div class="house-ledger-right">
+        <div class="house-ledger-status ${ended ? 'warning' : 'good'}">${ended ? 'Lease ended' : 'Active'}</div>
+      </div>
+    </div>`;
+  }).join('');
+  const lifecycleHtml = model.tenants.length
+    ? `<div class="house-ledger-list">${lifecycleRows}</div>`
+    : '<div class="house-detail-empty">No tenants yet. Add tenants to activate Raven scores and lease-end reviews.</div>';
   const leaseWatchHtml = model.tenants.length
     ? `<div class="house-ledger-list">${model.tenants.map(tenant => {
         const parts = [];
@@ -5972,12 +5994,22 @@ openHouseDetails = async function(houseId) {
         if (tenant.lease_start) leaseBits.push('Lease ' + tenant.lease_start);
         if (tenant.lease_end) leaseBits.push('to ' + tenant.lease_end);
         if (tenant.move_in) leaseBits.push('Move-in ' + tenant.move_in);
+        const ratingBits = [];
+        const scoreLabel = 'Score ' + Math.round(tenant.raven_score || 100);
+        ratingBits.push(scoreLabel);
+        if (tenant.lease_end) {
+          const leaseEndDate = new Date(tenant.lease_end + 'T00:00:00');
+          if (!Number.isNaN(leaseEndDate.getTime()) && leaseEndDate.getTime() < Date.now()) {
+            ratingBits.push(tenant.landlord_rating > 0 ? 'Landlord rated' : 'Landlord rating pending');
+            ratingBits.push(tenant.tenant_rating > 0 ? 'Tenant rated' : 'Tenant rating pending');
+          }
+        }
         return `<div class="house-tenant-row">
           <div class="house-tenant-main">
             <div class="house-tenant-avatar" style="background:${houseAvatarGradients[i % houseAvatarGradients.length]}">${escapeHouseHtml((tenant.name || '?').charAt(0).toUpperCase())}</div>
             <div>
               <div class="house-tenant-name">${escapeHouseHtml(tenant.name)}</div>
-              <div class="house-tenant-meta">${escapeHouseHtml(tenant.unit || 'Unit TBD')} • ${rentLabel}${leaseBits.length ? ' • ' + escapeHouseHtml(leaseBits.join(' ')) : ''}</div>
+              <div class="house-tenant-meta">${escapeHouseHtml(tenant.unit || 'Unit TBD')} • ${rentLabel}${leaseBits.length ? ' • ' + escapeHouseHtml(leaseBits.join(' ')) : ''}${ratingBits.length ? ' • ' + escapeHouseHtml(ratingBits.join(' • ')) : ''}</div>
             </div>
           </div>
           <div class="house-tenant-status ${tenant.status === 'active' ? 'active' : (tenant.status === 'pending' ? 'pending' : 'vacant')}">${escapeHouseHtml(tenant.status || 'active')}</div>
@@ -6025,6 +6057,26 @@ openHouseDetails = async function(houseId) {
   const utilitySummaryHtml = utilityReceipts.length
     ? `<div class="house-ledger-list">${utilityReceipts.slice(0, 6).map(receipt => `<div class="house-ledger-row"><div class="house-ledger-left"><div class="house-ledger-name">${escapeHouseHtml(receipt.name || 'Utility')}</div><div class="house-ledger-meta">${escapeHouseHtml(receipt.paid_by || 'Unknown payer')} covered this utility expense</div></div><div class="house-ledger-right"><div class="house-ledger-amount">$${(parseFloat(receipt.total || 0) || 0).toFixed(2)}</div></div></div>`).join('')}</div>`
     : '<div class="house-detail-empty">No utility expenses logged yet. Add electric, wifi, water, or gas receipts and Raven will show the allocation flow here.</div>';
+
+  const lifecycleRows = model.tenants.map(tenant => {
+    const score = Math.round(tenant.raven_score || 100);
+    const end = tenant.lease_end ? new Date(tenant.lease_end + 'T00:00:00') : null;
+    const ended = end && !Number.isNaN(end.getTime()) && end.getTime() < Date.now();
+    const landlord = tenant.landlord_rating > 0 ? tenant.landlord_rating.toFixed(1) : (ended ? 'Pending' : '—');
+    const tenantScore = tenant.tenant_rating > 0 ? tenant.tenant_rating.toFixed(1) : (ended ? 'Pending' : '—');
+    return `<div class="house-ledger-row">
+      <div class="house-ledger-left">
+        <div class="house-ledger-name">${escapeHouseHtml(tenant.name)}</div>
+        <div class="house-ledger-meta">Score ${score} • Landlord ${escapeHouseHtml(String(landlord))} • Tenant ${escapeHouseHtml(String(tenantScore))}</div>
+      </div>
+      <div class="house-ledger-right">
+        <div class="house-ledger-status ${ended ? 'warning' : 'good'}">${ended ? 'Lease ended' : 'Active'}</div>
+      </div>
+    </div>`;
+  }).join('');
+  const lifecycleHtml = model.tenants.length
+    ? `<div class="house-ledger-list">${lifecycleRows}</div>`
+    : '<div class="house-detail-empty">No tenants yet. Add tenants to activate Raven scores and lease-end reviews.</div>';
 
   const paymentHistoryHtml = model.paymentHistory.length
     ? `<div class="house-ledger-list">${model.paymentHistory.slice().reverse().slice(0, 8).map(event => `<div class="house-ledger-row"><div class="house-ledger-left"><div class="house-ledger-name">${escapeHouseHtml(event.name)}</div><div class="house-ledger-meta">${escapeHouseHtml(event.status)} • ${escapeHouseHtml(event.created_at ? new Date(event.created_at).toLocaleString() : '')}${event.note ? ' • ' + escapeHouseHtml(event.note) : ''}</div></div><div class="house-ledger-right"><div class="house-ledger-amount">$${(event.amount || 0).toFixed(2)}</div></div></div>`).join('')}</div>`
@@ -6079,6 +6131,11 @@ openHouseDetails = async function(houseId) {
           <span class="house-inline-badge ${model.graceDays ? 'good' : 'warning'}">${model.graceDays ? model.graceDays + ' grace days' : 'Grace period missing'}</span>
         </div>
         ${leaseWatchHtml}
+      </div>
+      <div class="house-detail-section full">
+        <div class="house-detail-label">RAVEN Score & Reviews</div>
+        <div class="house-metric-note" style="margin-bottom:12px">Tenants start at 100. At lease end, both landlord and tenant rate each other.</div>
+        ${lifecycleHtml}
       </div>
       <div class="house-detail-section full">
         <div class="house-detail-label">Tenant Ledger</div>
@@ -6238,7 +6295,10 @@ async function saveCreateHouse() {
           lease_end: parts[5] || '',
           deposit: parseFloat(parts[6] || 0) || 0,
           move_in: parts[7] || '',
-          notice_date: parts[8] || ''
+          notice_date: parts[8] || '',
+          raven_score: Math.max(0, Math.min(100, parseFloat(parts[9] || 100) || 100)),
+          landlord_rating: parseFloat(parts[10] || 0) || 0,
+          tenant_rating: parseFloat(parts[11] || 0) || 0
         };
       }).filter(entry => entry.name)
     : [];
