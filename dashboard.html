@@ -1360,7 +1360,8 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
         <div id="pm-name" style="font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:0.04em;margin-bottom:2px"></div>
         <div style="font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:4px">RAVEN ID</div>
         <div id="pm-raven-id" style="font-size:13px;color:var(--purple3);font-weight:600;margin-bottom:6px"></div>
-        <div id="pm-email" style="font-size:12px;color:var(--muted);margin-bottom:18px"></div>
+        <div id="pm-email" style="font-size:12px;color:var(--muted);margin-bottom:10px"></div>
+        <div id="pm-raven-score" style="font-size:12px;color:var(--green);font-weight:700;margin-bottom:18px">RAVEN Score ★100★</div>
         <div id="pm-payment-methods" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px"></div>
         <div id="pm-action-btn"></div>
         <div id="pm-inline-picker" style="display:none;margin-top:12px;padding:14px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:14px"></div>
@@ -4510,6 +4511,7 @@ function openProfileModal(p) {
   const el = id => document.getElementById(id);
   if (el('pm-name')) el('pm-name').textContent = name;
   if (el('pm-raven-id')) el('pm-raven-id').textContent = p.raven_id ? '@' + p.raven_id : '';
+  if (el('pm-raven-score')) el('pm-raven-score').textContent = 'RAVEN Score ★100★';
   if (el('pm-email')) el('pm-email').style.display = 'none';
   // Payment methods
   const pm = el('pm-payment-methods');
@@ -4611,6 +4613,7 @@ function openProfileModal(p) {
   const el = id => document.getElementById(id);
   if (el('pm-name')) el('pm-name').textContent = name;
   if (el('pm-raven-id')) el('pm-raven-id').textContent = p.raven_id ? '@' + p.raven_id : '';
+  if (el('pm-raven-score')) el('pm-raven-score').textContent = 'RAVEN Score ★100★';
   if (el('pm-email')) el('pm-email').style.display = 'none';
   hideProfileInlinePicker();
   const pm = el('pm-payment-methods');
@@ -5072,7 +5075,7 @@ function parseHouseRecurringPayload(house) {
     deposit: parseFloat(entry.deposit || 0) || 0,
     move_in: String(entry.move_in || '').trim(),
     notice_date: String(entry.notice_date || '').trim(),
-    raven_score: Math.max(0, Math.min(100, parseFloat(entry.raven_score || 100) || 100)),
+    raven_score: Math.max(85, Math.min(100, parseFloat(entry.raven_score || 100) || 100)),
     landlord_rating: parseFloat(entry.landlord_rating || 0) || 0,
     tenant_rating: parseFloat(entry.tenant_rating || 0) || 0
   })).filter(entry => entry.name);
@@ -5698,7 +5701,7 @@ function renderHousePortfolioCard(h) {
         <div class="house-tenant-avatar" style="background:${houseAvatarGradients[i % houseAvatarGradients.length]}">${initial}</div>
         <div>
           <div class="house-tenant-name">${escapeHouseHtml(tenant.name)}</div>
-          <div class="house-tenant-meta">${escapeHouseHtml(tenant.unit || 'Unit TBD')} • ${rentLabel}</div>
+          <div class="house-tenant-meta">${escapeHouseHtml(tenant.unit || 'Unit TBD')} • ${rentLabel} • RAVEN Roommate Score ★${Math.round(tenant.raven_score || 100)}★</div>
         </div>
       </div>
       <div class="house-tenant-status ${tenant.status === 'active' ? 'active' : (tenant.status === 'pending' ? 'pending' : 'vacant')}">${escapeHouseHtml(tenant.status || 'active')}</div>
@@ -5767,7 +5770,7 @@ function renderHousePortfolioCard(h) {
     </div>
     <div class="house-card-tenants">
       <div class="house-card-panel-label">Tenants</div>
-      ${visibleTenants || '<div class="house-card-rhythm-empty">No tenant roster yet. Add tenants to turn House Mode into a cleaner property operations view.</div>'}
+      ${visibleTenants || `<div class="house-card-rhythm-empty">No tenant roster yet. Add tenants to turn House Mode into a cleaner property operations view.</div>${isCreator ? '<button class="house-btn" style="margin-top:8px;background:rgba(48,209,88,0.12);border-color:rgba(48,209,88,0.2);color:var(--green)" onclick="openEditHouse(\\'' + safeId + '\\');event.stopPropagation()">Add Tenants</button>' : ''}`}
     </div>
     <div class="house-card-footer">
       <div class="house-avatar-stack">${avatarHtml}</div>
@@ -5878,9 +5881,10 @@ async function openHouseDetailsLegacy(houseId) {
               : '<span class="house-inline-badge good">Cycle looks healthy</span>'}
         </div>
       </div>
-      <div class="house-detail-section full">
+    <div class="house-detail-section full">
         <div class="house-detail-label">Tenants</div>
         ${tenantHtml}
+        ${isCreator ? `<div class="modal-actions" style="margin-top:12px"><button class="modal-btn modal-btn-remind" onclick="openEditHouse('${escapeHouseHtml(house.id)}')">Edit Tenants</button></div>` : ''}
       </div>
       <div class="house-detail-section full">
         <div class="house-detail-label">Tenant Ledger</div>
@@ -5949,7 +5953,7 @@ openHouseDetails = async function(houseId) {
     return `<div class="house-ledger-row">
       <div class="house-ledger-left">
         <div class="house-ledger-name">${escapeHouseHtml(tenant.name)}</div>
-        <div class="house-ledger-meta">RAVEN Roommate Score ${score} • Landlord ${escapeHouseHtml(String(landlord))} • Tenant ${escapeHouseHtml(String(tenantScore))}</div>
+        <div class="house-ledger-meta">RAVEN Roommate Score ★${score}★ • Landlord ${escapeHouseHtml(String(landlord))} • Tenant ${escapeHouseHtml(String(tenantScore))}</div>
       </div>
       <div class="house-ledger-right">
         <div class="house-ledger-status ${ended ? 'warning' : 'good'}">${ended ? 'Lease ended' : 'Active'}</div>
@@ -5995,7 +5999,7 @@ openHouseDetails = async function(houseId) {
         if (tenant.lease_end) leaseBits.push('to ' + tenant.lease_end);
         if (tenant.move_in) leaseBits.push('Move-in ' + tenant.move_in);
         const ratingBits = [];
-        const scoreLabel = 'RAVEN Roommate Score ' + Math.round(tenant.raven_score || 100);
+        const scoreLabel = 'RAVEN Roommate Score ★' + Math.round(tenant.raven_score || 100) + '★';
         ratingBits.push(scoreLabel);
         if (tenant.lease_end) {
           const leaseEndDate = new Date(tenant.lease_end + 'T00:00:00');
@@ -6189,7 +6193,10 @@ function sendHouseReminder(houseId) {
   showToast('Reminders sent to housemates!', 'success');
 }
 
+let _editingHouseId = null;
+
 function openCreateHouse() {
+  _editingHouseId = null;
   _houseRecurring = [];
   document.getElementById('create-house-modal').classList.add('open');
   document.getElementById('create-house-btn').textContent = 'Create House ->';
@@ -6210,6 +6217,57 @@ function openCreateHouse() {
   document.getElementById('house-recurring-list').innerHTML = '';
   closeHouseDetails();
   renderRecurringExpenses([]);
+}
+
+function openEditHouse(houseId) {
+  const house = houseDataMap[houseId];
+  if (!house) return;
+  const model = buildHouseModel(house);
+  _editingHouseId = houseId;
+  _houseRecurring = (model.recurringItems || []).map(item => ({ ...item }));
+  document.getElementById('create-house-modal').classList.add('open');
+  document.getElementById('create-house-btn').textContent = 'Save House ->';
+  document.getElementById('create-house-btn').disabled = false;
+  document.getElementById('house-name-input').value = house.name || '';
+  document.getElementById('house-people-input').value = (model.people || []).join(', ');
+  document.getElementById('house-address-input').value = model.meta.address || '';
+  document.getElementById('house-property-type').value = model.meta.property_type || 'house';
+  document.getElementById('house-units-input').value = model.meta.units || '';
+  document.getElementById('house-rent-due-day').value = model.meta.rent_due_day || '';
+  document.getElementById('house-utility-split').value = model.meta.utility_split || 'evenly';
+  document.getElementById('house-grace-days').value = model.meta.grace_days || '';
+  document.getElementById('house-late-fee').value = model.meta.late_fee || '';
+  document.getElementById('house-manager-notes').value = model.meta.manager_notes || '';
+  document.getElementById('house-documents-input').value = (model.documents || []).map(doc => [
+    doc.title || '',
+    doc.type || '',
+    doc.status || '',
+    doc.note || ''
+  ].join(' | ')).join('\n');
+  document.getElementById('house-maintenance-input').value = (model.maintenance || []).map(item => [
+    item.title || '',
+    item.status || '',
+    item.priority || '',
+    item.cost || 0,
+    item.note || ''
+  ].join(' | ')).join('\n');
+  document.getElementById('house-tenants-input').value = (model.tenants || []).map(tenant => [
+    tenant.name || '',
+    tenant.unit || '',
+    tenant.rent || '',
+    tenant.status || 'active',
+    tenant.lease_start || '',
+    tenant.lease_end || '',
+    tenant.deposit || '',
+    tenant.move_in || '',
+    tenant.notice_date || '',
+    tenant.raven_score || 100,
+    tenant.landlord_rating || '',
+    tenant.tenant_rating || ''
+  ].join(' | ')).join('\n');
+  document.getElementById('house-recurring-list').innerHTML = '';
+  closeHouseDetails();
+  renderRecurringExpenses(_houseRecurring);
 }
 
 function closeCreateHouse() {
@@ -6278,7 +6336,7 @@ async function saveCreateHouse() {
           deposit: parseFloat(parts[6] || 0) || 0,
           move_in: parts[7] || '',
           notice_date: parts[8] || '',
-          raven_score: Math.max(0, Math.min(100, parseFloat(parts[9] || 100) || 100)),
+          raven_score: Math.max(85, Math.min(100, parseFloat(parts[9] || 100) || 100)),
           landlord_rating: parseFloat(parts[10] || 0) || 0,
           tenant_rating: parseFloat(parts[11] || 0) || 0
         };
@@ -6322,7 +6380,7 @@ async function saveCreateHouse() {
   try {
     const shareToken = Math.random().toString(36).substr(2, 10);
     const inviteToken = Math.random().toString(36).substr(2, 10);
-    const houseId = Math.random().toString(36).substr(2, 6).toUpperCase();
+    const houseId = _editingHouseId || Math.random().toString(36).substr(2, 6).toUpperCase();
     const recurringPayload = [{
       __kind: 'property_meta',
       manager_mode: !!tenantEntries.length || unitsTracked > 1,
@@ -6335,24 +6393,39 @@ async function saveCreateHouse() {
       late_fee: lateFee,
       manager_notes: managerNotes
     }].concat(tenantEntries).concat(documentEntries).concat(maintenanceEntries).concat(_houseRecurring);
-    const { data: house, error } = await db.from('trips').insert({
-      id: houseId,
-      name,
-      type: 'roommates',
-      creator_email: currentUser.email,
-      people: JSON.stringify(people),
-      total: 0,
-      receipt_count: 0,
-      share_token: shareToken,
-      invite_token: inviteToken,
-      recurring_expenses: JSON.stringify(recurringPayload),
-      created_at: new Date().toISOString()
-    }).select().single();
-
-    if (error) throw error;
-    showToast('🏠 ' + name + ' created!', 'success');
+    let house = null;
+    if (_editingHouseId) {
+      const updates = {
+        name,
+        people: JSON.stringify(people),
+        recurring_expenses: JSON.stringify(recurringPayload),
+        updated_at: new Date().toISOString()
+      };
+      const { data: updated, error } = await db.from('trips').update(updates).eq('id', houseId).select().single();
+      if (error) throw error;
+      house = updated;
+      showToast('House updated!', 'success');
+    } else {
+      const { data: created, error } = await db.from('trips').insert({
+        id: houseId,
+        name,
+        type: 'roommates',
+        creator_email: currentUser.email,
+        people: JSON.stringify(people),
+        total: 0,
+        receipt_count: 0,
+        share_token: shareToken,
+        invite_token: inviteToken,
+        recurring_expenses: JSON.stringify(recurringPayload),
+        created_at: new Date().toISOString()
+      }).select().single();
+      if (error) throw error;
+      house = created;
+      showToast('🏠 ' + name + ' created!', 'success');
+    }
     closeCreateHouse();
     _houseRecurring = [];
+    _editingHouseId = null;
     loadHouses();
   } catch(e) {
     console.error('createHouse error:', e);
