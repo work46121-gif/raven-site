@@ -5949,7 +5949,7 @@ openHouseDetails = async function(houseId) {
     return `<div class="house-ledger-row">
       <div class="house-ledger-left">
         <div class="house-ledger-name">${escapeHouseHtml(tenant.name)}</div>
-        <div class="house-ledger-meta">Score ${score} • Landlord ${escapeHouseHtml(String(landlord))} • Tenant ${escapeHouseHtml(String(tenantScore))}</div>
+        <div class="house-ledger-meta">RAVEN Roommate Score ${score} • Landlord ${escapeHouseHtml(String(landlord))} • Tenant ${escapeHouseHtml(String(tenantScore))}</div>
       </div>
       <div class="house-ledger-right">
         <div class="house-ledger-status ${ended ? 'warning' : 'good'}">${ended ? 'Lease ended' : 'Active'}</div>
@@ -5995,7 +5995,7 @@ openHouseDetails = async function(houseId) {
         if (tenant.lease_end) leaseBits.push('to ' + tenant.lease_end);
         if (tenant.move_in) leaseBits.push('Move-in ' + tenant.move_in);
         const ratingBits = [];
-        const scoreLabel = 'Score ' + Math.round(tenant.raven_score || 100);
+        const scoreLabel = 'RAVEN Roommate Score ' + Math.round(tenant.raven_score || 100);
         ratingBits.push(scoreLabel);
         if (tenant.lease_end) {
           const leaseEndDate = new Date(tenant.lease_end + 'T00:00:00');
