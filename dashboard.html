@@ -238,10 +238,15 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
 .house-ledger-status.clear { color:var(--green); background:rgba(48,209,88,0.08); border:1px solid rgba(48,209,88,0.18); }
 .house-ledger-status.open { color:#FFB04A; background:rgba(255,176,74,0.08); border:1px solid rgba(255,176,74,0.18); }
 .house-ledger-status.overdue { color:#FF6B6B; background:rgba(255,107,107,0.08); border:1px solid rgba(255,107,107,0.18); }
+.house-ledger-status.pending { color:#76C8FF; background:rgba(0,140,255,0.08); border:1px solid rgba(0,140,255,0.18); }
 .house-inline-badge { display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:999px; font-size:11px; font-weight:700; margin-right:8px; }
 .house-inline-badge.overdue { color:#FF6B6B; background:rgba(255,107,107,0.08); border:1px solid rgba(255,107,107,0.18); }
 .house-inline-badge.warning { color:#FFB04A; background:rgba(255,176,74,0.08); border:1px solid rgba(255,176,74,0.18); }
 .house-inline-badge.good { color:var(--green); background:rgba(48,209,88,0.08); border:1px solid rgba(48,209,88,0.18); }
+.house-doc-list, .house-maintenance-list { display:flex; flex-direction:column; gap:10px; }
+.house-doc-card, .house-maintenance-card { padding:12px; border-radius:14px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); }
+.house-doc-title, .house-maintenance-title { font-size:13px; font-weight:800; color:var(--white); }
+.house-doc-meta, .house-maintenance-meta { font-size:11px; color:var(--muted); line-height:1.6; margin-top:4px; }
 .roommates-empty { text-align:center; padding:70px 24px; border:1px dashed rgba(124,58,237,0.18); border-radius:24px; background:linear-gradient(180deg, rgba(17,17,24,0.9), rgba(10,10,14,0.95)); }
 .roommates-empty-title { font-family:'Bebas Neue',sans-serif; font-size:34px; letter-spacing:0.04em; margin-bottom:8px; }
 .roommates-empty-sub { font-size:13px; color:var(--muted); max-width:480px; margin:0 auto; line-height:1.75; }
@@ -1421,9 +1426,35 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
         </div>
       </div>
 
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="form-group">
+          <label class="form-label">Grace period <span style="color:var(--muted);font-weight:400;font-size:11px">days</span></label>
+          <input id="house-grace-days" type="number" min="0" max="31" class="form-input" placeholder="5">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Late fee <span style="color:var(--muted);font-weight:400;font-size:11px">flat amount</span></label>
+          <input id="house-late-fee" type="number" min="0" class="form-input" placeholder="75">
+        </div>
+      </div>
+
       <div class="form-group">
-        <label class="form-label">Tenant roster <span style="color:var(--muted);font-weight:400;font-size:11px">one per line: Name | Unit | Rent | Status | Lease End | Deposit</span></label>
-        <textarea id="house-tenants-input" class="form-input" rows="5" placeholder="Andrew | Unit 2A | 1800 | active | 2026-12-31 | 1800&#10;Maya | Unit 2B | 1750 | pending | 2026-09-01 | 1750"></textarea>
+        <label class="form-label">Tenant roster <span style="color:var(--muted);font-weight:400;font-size:11px">one per line: Name | Unit | Rent | Status | Lease Start | Lease End | Deposit | Move In | Notice</span></label>
+        <textarea id="house-tenants-input" class="form-input" rows="5" placeholder="Andrew | Unit 2A | 1800 | active | 2026-01-01 | 2026-12-31 | 1800 | 2026-01-01 | &#10;Maya | Unit 2B | 1750 | pending | 2026-03-01 | 2027-02-28 | 1750 | 2026-03-01 | 2027-01-15"></textarea>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Documents <span style="color:var(--muted);font-weight:400;font-size:11px">one per line: Title | Type | Status | Note</span></label>
+        <textarea id="house-documents-input" class="form-input" rows="3" placeholder="Lease Packet | lease | uploaded | Signed by Andrew&#10;Move-in Checklist | checklist | pending | Waiting on Unit 2B"></textarea>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Maintenance queue <span style="color:var(--muted);font-weight:400;font-size:11px">one per line: Issue | Status | Priority | Cost | Note</span></label>
+        <textarea id="house-maintenance-input" class="form-input" rows="3" placeholder="Kitchen sink leak | open | high | 180 | Plumber quote requested&#10;Hallway paint | in_progress | low | 0 | Scheduled for next week"></textarea>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Manager notes <span style="color:var(--muted);font-weight:400;font-size:11px">optional</span></label>
+        <textarea id="house-manager-notes" class="form-input" rows="3" placeholder="Anything the property manager should keep in view for this house."></textarea>
       </div>
 
       <div class="form-group">
@@ -5036,8 +5067,11 @@ function parseHouseRecurringPayload(house) {
     unit: String(entry.unit || '').trim(),
     rent: parseFloat(entry.rent || 0) || 0,
     status: String(entry.status || 'active').toLowerCase(),
+    lease_start: String(entry.lease_start || '').trim(),
     lease_end: String(entry.lease_end || '').trim(),
-    deposit: parseFloat(entry.deposit || 0) || 0
+    deposit: parseFloat(entry.deposit || 0) || 0,
+    move_in: String(entry.move_in || '').trim(),
+    notice_date: String(entry.notice_date || '').trim()
   })).filter(entry => entry.name);
   const paymentStates = {};
   payload.filter(entry => entry && entry.__kind === 'tenant_payment').forEach(entry => {
@@ -5055,13 +5089,27 @@ function parseHouseRecurringPayload(house) {
     note: String(entry.note || '').trim(),
     created_at: String(entry.created_at || '').trim()
   }));
+  const documents = payload.filter(entry => entry && entry.__kind === 'document').map(entry => ({
+    title: String(entry.title || '').trim(),
+    type: String(entry.type || 'document').trim().toLowerCase(),
+    status: String(entry.status || 'pending').trim().toLowerCase(),
+    note: String(entry.note || '').trim()
+  })).filter(entry => entry.title);
+  const maintenance = payload.filter(entry => entry && entry.__kind === 'maintenance').map(entry => ({
+    title: String(entry.title || '').trim(),
+    status: String(entry.status || 'open').trim().toLowerCase(),
+    priority: String(entry.priority || 'normal').trim().toLowerCase(),
+    cost: parseFloat(entry.cost || 0) || 0,
+    note: String(entry.note || '').trim(),
+    created_at: String(entry.created_at || '').trim()
+  })).filter(entry => entry.title);
   const recurringItems = payload.filter(entry => !entry || !entry.__kind);
-  return { meta, tenants, recurringItems, paymentStates, paymentHistory, payload };
+  return { meta, tenants, recurringItems, paymentStates, paymentHistory, documents, maintenance, payload };
 }
 
 function buildHouseModel(house) {
   const people = Array.isArray(house.people) ? house.people : JSON.parse(house.people || '[]');
-  const { meta, tenants, recurringItems, paymentStates, paymentHistory, payload } = parseHouseRecurringPayload(house);
+  const { meta, tenants, recurringItems, paymentStates, paymentHistory, documents, maintenance, payload } = parseHouseRecurringPayload(house);
   let settledCount = 0;
   try {
     let sp = house.settled_people;
@@ -5084,8 +5132,20 @@ function buildHouseModel(house) {
   const occupiedUnits = tenants.filter(t => t.status !== 'vacant').length;
   const settledPct = people.length > 0 ? Math.round((settledCount / people.length) * 100) : 100;
   const rentDueDay = parseInt(meta.rent_due_day || 0, 10) || null;
-  const attentionLevel = outstanding > 0.005 ? 'attention' : 'clean';
-  return { house, people, meta, tenants, recurringItems, paymentStates, paymentHistory, payload, receiptsCount, outstanding, settledCount, settledPct, unitsTracked, occupiedUnits, rentDueDay, attentionLevel };
+  const graceDays = parseInt(meta.grace_days || 0, 10) || 0;
+  const lateFee = parseFloat(meta.late_fee || 0) || 0;
+  const now = new Date();
+  const leaseExpiringCount = tenants.filter(t => {
+    if (!t.lease_end) return false;
+    const end = new Date(t.lease_end + 'T00:00:00');
+    if (Number.isNaN(end.getTime())) return false;
+    const diff = Math.ceil((end.getTime() - now.getTime()) / 86400000);
+    return diff >= 0 && diff <= 45;
+  }).length;
+  const openMaintenanceCount = maintenance.filter(item => item.status !== 'completed').length;
+  const documentReadyCount = documents.filter(item => item.status === 'uploaded' || item.status === 'signed' || item.status === 'complete').length;
+  const attentionLevel = (outstanding > 0.005 || leaseExpiringCount > 0 || openMaintenanceCount > 0) ? 'attention' : 'clean';
+  return { house, people, meta, tenants, recurringItems, paymentStates, paymentHistory, documents, maintenance, payload, receiptsCount, outstanding, settledCount, settledPct, unitsTracked, occupiedUnits, rentDueDay, graceDays, lateFee, leaseExpiringCount, openMaintenanceCount, documentReadyCount, attentionLevel };
 }
 
 function isUtilityExpenseName(name) {
@@ -5097,9 +5157,19 @@ function getHouseDueSnapshot(model) {
   const now = new Date();
   const dueDay = model.rentDueDay || 0;
   const today = now.getDate();
-  const overdue = dueDay > 0 && today > dueDay && model.outstanding > 0.005;
+  const graceBoundary = dueDay > 0 ? dueDay + (model.graceDays || 0) : 0;
+  const overdue = dueDay > 0 && today > graceBoundary && model.outstanding > 0.005;
   const dueSoon = dueDay > 0 && today >= Math.max(1, dueDay - 2) && today <= dueDay && model.outstanding > 0.005;
-  return { dueDay, today, overdue, dueSoon };
+  return { dueDay, today, overdue, dueSoon, graceBoundary };
+}
+
+function getHouseCollectionsSnapshot(model, ops, dueState) {
+  const rows = ops.rows || [];
+  const overdueCount = rows.filter(row => row.netExposure > 0.005 && (row.paymentStatus === 'overdue' || dueState.overdue)).length;
+  const partialCount = rows.filter(row => row.paymentStatus === 'partial').length;
+  const paidCount = rows.filter(row => row.paymentStatus === 'paid' || row.netExposure <= 0.005).length;
+  const dueCount = rows.filter(row => row.netExposure > 0.005 && row.paymentStatus !== 'overdue' && row.paymentStatus !== 'partial').length;
+  return { overdueCount, partialCount, paidCount, dueCount, openBalance: rows.reduce((sum, row) => sum + (row.netExposure || 0), 0) };
 }
 
 function computeHouseOps(model, receipts) {
@@ -5244,6 +5314,43 @@ function exportHouseLedger(houseId) {
   a.remove();
   URL.revokeObjectURL(url);
   showToast('House ledger exported', 'success');
+}
+
+function exportHouseCollectionsCsv(houseId) {
+  const house = houseDataMap[houseId];
+  if (!house) return;
+  const model = buildHouseModel(house);
+  const rows = model.tenants.map(tenant => {
+    const payment = model.paymentStates[String(tenant.name || '').toLowerCase()] || {};
+    return [
+      tenant.name || '',
+      tenant.unit || '',
+      tenant.lease_start || '',
+      tenant.lease_end || '',
+      tenant.move_in || '',
+      tenant.notice_date || '',
+      (tenant.rent || 0).toFixed(2),
+      (tenant.deposit || 0).toFixed(2),
+      payment.status || '',
+      (payment.paid_amount || 0).toFixed(2),
+      model.lateFee.toFixed(2),
+      model.graceDays
+    ];
+  });
+  const csv = [
+    ['Tenant','Unit','Lease Start','Lease End','Move In','Notice','Rent','Deposit','Collection Status','Paid Amount','Late Fee','Grace Days'],
+    ...rows
+  ].map(cols => cols.map(value => `"${String(value || '').replace(/"/g, '""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = (house.name || 'house-collections').replace(/[^a-z0-9]+/gi, '-').toLowerCase() + '-collections.csv';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+  showToast('Collections report exported', 'success');
 }
 
 function ensureRoommatesLayout() {
@@ -5414,6 +5521,9 @@ ALTER TABLE trips ADD COLUMN IF NOT EXISTS recurring_expenses JSONB DEFAULT '[]'
 function renderHouseCard(h) {
   const model = buildHouseModel(h);
   const dueState = getHouseDueSnapshot(model);
+  const leaseBadge = model.leaseExpiringCount > 0 ? `<span class="house-card-chip" style="color:#FFB04A">${model.leaseExpiringCount} lease ending</span>` : '';
+  const maintenanceBadge = model.openMaintenanceCount > 0 ? `<span class="house-card-chip" style="color:#76C8FF">${model.openMaintenanceCount} maintenance</span>` : '';
+  const docsBadge = model.documents.length > 0 ? `<span class="house-card-chip" style="color:var(--green)">${model.documentReadyCount}/${model.documents.length} docs ready</span>` : '';
   const people = Array.isArray(h.people) ? h.people : JSON.parse(h.people || '[]');
   const isCreator = h.creator_email === currentUser.email;
   const outstanding = parseFloat(h.total || 0);
@@ -5608,6 +5718,9 @@ function renderHousePortfolioCard(h) {
       <span class="house-card-chip">${model.recurringItems.length} recurring item${model.recurringItems.length !== 1 ? 's' : ''}</span>
       <span class="house-card-chip">${model.occupiedUnits}/${model.unitsTracked} occupied</span>
       <span class="house-card-chip" style="color:${outstanding > 0 ? '#FFB04A' : 'var(--green)'}">${outstanding > 0 ? 'Needs settlement' : 'All settled'}</span>
+      ${leaseBadge}
+      ${maintenanceBadge}
+      ${docsBadge}
     </div>
     <div class="house-card-grid">
       <div class="house-metric">
@@ -5624,6 +5737,11 @@ function renderHousePortfolioCard(h) {
         <div class="house-metric-label">Expense Flow</div>
         <div class="house-metric-value">${model.receiptsCount}</div>
         <div class="house-metric-note">${model.receiptsCount > 0 ? 'Shared costs are already flowing through the ledger.' : 'No expenses logged yet.'}</div>
+      </div>
+      <div class="house-metric">
+        <div class="house-metric-label">Lease + Ops</div>
+        <div class="house-metric-value">${model.leaseExpiringCount > 0 ? model.leaseExpiringCount : model.openMaintenanceCount}</div>
+        <div class="house-metric-note">${model.leaseExpiringCount > 0 ? 'Leases ending in the next 45 days.' : (model.openMaintenanceCount > 0 ? 'Open maintenance requests need attention.' : 'Lease and maintenance queue is quiet.')}</div>
       </div>
     </div>
     <div class="house-card-panel">
@@ -5814,17 +5932,49 @@ openHouseDetails = async function(houseId) {
 
   const ops = computeHouseOps(model, receipts);
   const dueState = getHouseDueSnapshot(model);
+  const collections = getHouseCollectionsSnapshot(model, ops, dueState);
   const utilityReceipts = receipts.filter(receipt => isUtilityExpenseName(receipt.name));
+  const leaseWatchHtml = model.tenants.length
+    ? `<div class="house-ledger-list">${model.tenants.map(tenant => {
+        const parts = [];
+        if (tenant.lease_start) parts.push('Start ' + tenant.lease_start);
+        if (tenant.lease_end) parts.push('Ends ' + tenant.lease_end);
+        if (tenant.notice_date) parts.push('Notice ' + tenant.notice_date);
+        if (tenant.move_in) parts.push('Move-in ' + tenant.move_in);
+        if (tenant.deposit) parts.push('Deposit $' + tenant.deposit.toFixed(2));
+        const statusClass = tenant.notice_date ? 'warning' : (tenant.lease_end ? 'good' : 'open');
+        const leaseLabel = tenant.notice_date ? 'Notice on file' : (tenant.lease_end ? 'Lease active' : 'Lease date missing');
+        return `<div class="house-ledger-row">
+          <div class="house-ledger-left">
+            <div class="house-ledger-name">${escapeHouseHtml(tenant.name)}</div>
+            <div class="house-ledger-meta">${parts.length ? escapeHouseHtml(parts.join(' • ')) : 'No lease fields mapped yet.'}</div>
+          </div>
+          <div class="house-ledger-right">
+            <div class="house-ledger-status ${statusClass}">${leaseLabel}</div>
+          </div>
+        </div>`;
+      }).join('')}</div>`
+    : '<div class="house-detail-empty">No lease records mapped yet. Add lease start/end, deposits, and notices in House Mode to power collections and turnover workflows.</div>';
+  const documentsHtml = model.documents.length
+    ? `<div class="house-doc-list">${model.documents.map(doc => `<div class="house-doc-card"><div class="house-doc-title">${escapeHouseHtml(doc.title)}</div><div class="house-doc-meta">${escapeHouseHtml(doc.type)} • ${escapeHouseHtml(doc.status)}${doc.note ? ' • ' + escapeHouseHtml(doc.note) : ''}</div></div>`).join('')}</div>`
+    : '<div class="house-detail-empty">No property documents tracked yet. Add leases, checklists, IDs, or receipt packets to create a lightweight document vault.</div>';
+  const maintenanceHtml = model.maintenance.length
+    ? `<div class="house-maintenance-list">${model.maintenance.map(item => `<div class="house-maintenance-card"><div class="house-maintenance-title">${escapeHouseHtml(item.title)}</div><div class="house-maintenance-meta">${escapeHouseHtml(item.status)} • ${escapeHouseHtml(item.priority)} priority • $${item.cost.toFixed(2)}${item.note ? ' • ' + escapeHouseHtml(item.note) : ''}</div></div>`).join('')}</div>`
+    : '<div class="house-detail-empty">No maintenance issues tracked yet. Add open repairs, vendor notes, and completion status to keep the house operating cleanly.</div>';
 
   const tenantHtml = model.tenants.length
     ? model.tenants.map((tenant, i) => {
         const rentLabel = tenant.rent > 0 ? '$' + tenant.rent.toFixed(2) + '/mo' : 'Rent not set';
+        const leaseBits = [];
+        if (tenant.lease_start) leaseBits.push('Lease ' + tenant.lease_start);
+        if (tenant.lease_end) leaseBits.push('to ' + tenant.lease_end);
+        if (tenant.move_in) leaseBits.push('Move-in ' + tenant.move_in);
         return `<div class="house-tenant-row">
           <div class="house-tenant-main">
             <div class="house-tenant-avatar" style="background:${houseAvatarGradients[i % houseAvatarGradients.length]}">${escapeHouseHtml((tenant.name || '?').charAt(0).toUpperCase())}</div>
             <div>
               <div class="house-tenant-name">${escapeHouseHtml(tenant.name)}</div>
-              <div class="house-tenant-meta">${escapeHouseHtml(tenant.unit || 'Unit TBD')} • ${rentLabel}</div>
+              <div class="house-tenant-meta">${escapeHouseHtml(tenant.unit || 'Unit TBD')} • ${rentLabel}${leaseBits.length ? ' • ' + escapeHouseHtml(leaseBits.join(' ')) : ''}</div>
             </div>
           </div>
           <div class="house-tenant-status ${tenant.status === 'active' ? 'active' : (tenant.status === 'pending' ? 'pending' : 'vacant')}">${escapeHouseHtml(tenant.status || 'active')}</div>
@@ -5902,18 +6052,30 @@ openHouseDetails = async function(houseId) {
         <div class="house-detail-label">Property Ops</div>
         <div class="house-metric-note">${escapeHouseHtml((model.meta.property_type || 'house').replace(/^\w/, c => c.toUpperCase()))} • ${model.unitsTracked} unit${model.unitsTracked === 1 ? '' : 's'}</div>
         <div class="house-metric-note" style="margin-top:8px">${model.occupiedUnits}/${model.unitsTracked} occupied • Utility split ${escapeHouseHtml(model.meta.utility_split || 'evenly')}</div>
-        <div class="house-metric-note" style="margin-top:8px">${model.rentDueDay ? 'Rent due day ' + model.rentDueDay : 'Rent due day not set yet'}</div>
+        <div class="house-metric-note" style="margin-top:8px">${model.rentDueDay ? 'Rent due day ' + model.rentDueDay : 'Rent due day not set yet'}${model.graceDays ? ' • ' + model.graceDays + ' grace day' + (model.graceDays === 1 ? '' : 's') : ''}${model.lateFee ? ' • $' + model.lateFee.toFixed(0) + ' late fee' : ''}</div>
         <div style="margin-top:12px">
           ${dueState.overdue
             ? '<span class="house-inline-badge overdue">Rent cycle overdue</span>'
             : dueState.dueSoon
               ? '<span class="house-inline-badge warning">Rent due soon</span>'
               : '<span class="house-inline-badge good">Cycle looks healthy</span>'}
+          ${model.leaseExpiringCount ? '<span class="house-inline-badge warning">' + model.leaseExpiringCount + ' lease ending</span>' : ''}
+          ${model.openMaintenanceCount ? '<span class="house-inline-badge warning">' + model.openMaintenanceCount + ' repair open</span>' : ''}
         </div>
       </div>
       <div class="house-detail-section full">
         <div class="house-detail-label">Tenants</div>
         ${tenantHtml}
+      </div>
+      <div class="house-detail-section full">
+        <div class="house-detail-label">Collections</div>
+        <div class="house-metric-note" style="margin-bottom:12px">Due ${collections.dueCount} • Partial ${collections.partialCount} • Overdue ${collections.overdueCount} • Paid ${collections.paidCount}</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+          <span class="house-inline-badge ${collections.overdueCount ? 'overdue' : 'good'}">$${collections.openBalance.toFixed(2)} open</span>
+          <span class="house-inline-badge ${model.lateFee ? 'warning' : 'good'}">${model.lateFee ? '$' + model.lateFee.toFixed(0) + ' late fee ready' : 'No late fee set'}</span>
+          <span class="house-inline-badge ${model.graceDays ? 'good' : 'warning'}">${model.graceDays ? model.graceDays + ' grace days' : 'Grace period missing'}</span>
+        </div>
+        ${leaseWatchHtml}
       </div>
       <div class="house-detail-section full">
         <div class="house-detail-label">Tenant Ledger</div>
@@ -5931,6 +6093,18 @@ openHouseDetails = async function(houseId) {
         ${paymentHistoryHtml}
       </div>
       <div class="house-detail-section full">
+        <div class="house-detail-label">Documents</div>
+        ${documentsHtml}
+      </div>
+      <div class="house-detail-section full">
+        <div class="house-detail-label">Maintenance</div>
+        ${maintenanceHtml}
+      </div>
+      <div class="house-detail-section full">
+        <div class="house-detail-label">Manager Notes</div>
+        ${model.meta.manager_notes ? `<div class="house-detail-empty" style="color:var(--white)">${escapeHouseHtml(model.meta.manager_notes)}</div>` : '<div class="house-detail-empty">No manager notes yet.</div>'}
+      </div>
+      <div class="house-detail-section full">
         <div class="house-detail-label">Recurring House Costs</div>
         ${recurringHtml}
       </div>
@@ -5939,6 +6113,7 @@ openHouseDetails = async function(houseId) {
           <button class="modal-btn modal-btn-view" id="house-detail-open-ledger">Open House Ledger</button>
           <button class="modal-btn modal-btn-remind" id="house-detail-send-reminder">Send Reminder</button>
           <button class="modal-btn modal-btn-remind" id="house-detail-export-ledger">Export CSV</button>
+          <button class="modal-btn modal-btn-remind" id="house-detail-export-collections">Collections CSV</button>
           <button class="modal-btn" id="house-detail-copy-link" style="background:rgba(0,140,255,0.1);color:#4DB8FF;border:1px solid rgba(0,140,255,0.2)">Copy Share Link</button>
         </div>
       </div>
@@ -5958,6 +6133,8 @@ openHouseDetails = async function(houseId) {
   if (remindBtn) remindBtn.addEventListener('click', () => sendHouseReminder(house.id));
   const exportBtn = document.getElementById('house-detail-export-ledger');
   if (exportBtn) exportBtn.addEventListener('click', () => exportHouseLedger(house.id));
+  const exportCollectionsBtn = document.getElementById('house-detail-export-collections');
+  if (exportCollectionsBtn) exportCollectionsBtn.addEventListener('click', () => exportHouseCollectionsCsv(house.id));
   const copyBtn = document.getElementById('house-detail-copy-link');
   if (copyBtn) {
     copyBtn.addEventListener('click', () => {
@@ -5982,7 +6159,12 @@ function openCreateHouse() {
   document.getElementById('house-units-input').value = '';
   document.getElementById('house-rent-due-day').value = '';
   document.getElementById('house-utility-split').value = 'evenly';
+  document.getElementById('house-grace-days').value = '';
+  document.getElementById('house-late-fee').value = '';
   document.getElementById('house-tenants-input').value = '';
+  document.getElementById('house-documents-input').value = '';
+  document.getElementById('house-maintenance-input').value = '';
+  document.getElementById('house-manager-notes').value = '';
   document.getElementById('house-recurring-list').innerHTML = '';
   closeHouseDetails();
   renderRecurringExpenses([]);
@@ -6030,7 +6212,12 @@ async function saveCreateHouse() {
   const unitsTracked = parseInt(document.getElementById('house-units-input').value, 10) || 1;
   const rentDueDay = parseInt(document.getElementById('house-rent-due-day').value, 10) || null;
   const utilitySplit = document.getElementById('house-utility-split').value || 'evenly';
+  const graceDays = parseInt(document.getElementById('house-grace-days').value, 10) || 0;
+  const lateFee = parseFloat(document.getElementById('house-late-fee').value) || 0;
   const tenantsRaw = document.getElementById('house-tenants-input').value.trim();
+  const documentsRaw = document.getElementById('house-documents-input').value.trim();
+  const maintenanceRaw = document.getElementById('house-maintenance-input').value.trim();
+  const managerNotes = document.getElementById('house-manager-notes').value.trim();
   if (!name) { showToast('Enter a house name', 'error'); return; }
   const people = peopleRaw ? peopleRaw.split(',').map(p => p.trim()).filter(Boolean) : [];
   const myName = JSON.parse(localStorage.getItem('raven_profile') || '{}').first_name || currentUser.email.split('@')[0];
@@ -6044,10 +6231,39 @@ async function saveCreateHouse() {
           unit: parts[1] || '',
           rent: parseFloat(parts[2] || 0) || 0,
           status: (parts[3] || 'active').toLowerCase(),
-          lease_end: parts[4] || '',
-          deposit: parseFloat(parts[5] || 0) || 0
+          lease_start: parts[4] || '',
+          lease_end: parts[5] || '',
+          deposit: parseFloat(parts[6] || 0) || 0,
+          move_in: parts[7] || '',
+          notice_date: parts[8] || ''
         };
       }).filter(entry => entry.name)
+    : [];
+  const documentEntries = documentsRaw
+    ? documentsRaw.split(/\r?\n/).map(line => line.trim()).filter(Boolean).map(line => {
+        const parts = line.split('|').map(part => part.trim());
+        return {
+          __kind: 'document',
+          title: parts[0] || '',
+          type: (parts[1] || 'document').toLowerCase(),
+          status: (parts[2] || 'pending').toLowerCase(),
+          note: parts[3] || ''
+        };
+      }).filter(entry => entry.title)
+    : [];
+  const maintenanceEntries = maintenanceRaw
+    ? maintenanceRaw.split(/\r?\n/).map(line => line.trim()).filter(Boolean).map(line => {
+        const parts = line.split('|').map(part => part.trim());
+        return {
+          __kind: 'maintenance',
+          title: parts[0] || '',
+          status: (parts[1] || 'open').toLowerCase(),
+          priority: (parts[2] || 'normal').toLowerCase(),
+          cost: parseFloat(parts[3] || 0) || 0,
+          note: parts[4] || '',
+          created_at: new Date().toISOString()
+        };
+      }).filter(entry => entry.title)
     : [];
   tenantEntries.forEach(entry => {
     if (!people.some(person => String(person).toLowerCase() === entry.name.toLowerCase())) {
@@ -6069,8 +6285,11 @@ async function saveCreateHouse() {
       property_type: propertyType,
       units: unitsTracked,
       rent_due_day: rentDueDay,
-      utility_split: utilitySplit
-    }].concat(tenantEntries).concat(_houseRecurring);
+      utility_split: utilitySplit,
+      grace_days: graceDays,
+      late_fee: lateFee,
+      manager_notes: managerNotes
+    }].concat(tenantEntries).concat(documentEntries).concat(maintenanceEntries).concat(_houseRecurring);
     const { data: house, error } = await db.from('trips').insert({
       id: houseId,
       name,
