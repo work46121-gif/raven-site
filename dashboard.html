@@ -6058,25 +6058,7 @@ openHouseDetails = async function(houseId) {
     ? `<div class="house-ledger-list">${utilityReceipts.slice(0, 6).map(receipt => `<div class="house-ledger-row"><div class="house-ledger-left"><div class="house-ledger-name">${escapeHouseHtml(receipt.name || 'Utility')}</div><div class="house-ledger-meta">${escapeHouseHtml(receipt.paid_by || 'Unknown payer')} covered this utility expense</div></div><div class="house-ledger-right"><div class="house-ledger-amount">$${(parseFloat(receipt.total || 0) || 0).toFixed(2)}</div></div></div>`).join('')}</div>`
     : '<div class="house-detail-empty">No utility expenses logged yet. Add electric, wifi, water, or gas receipts and Raven will show the allocation flow here.</div>';
 
-  const lifecycleRows = model.tenants.map(tenant => {
-    const score = Math.round(tenant.raven_score || 100);
-    const end = tenant.lease_end ? new Date(tenant.lease_end + 'T00:00:00') : null;
-    const ended = end && !Number.isNaN(end.getTime()) && end.getTime() < Date.now();
-    const landlord = tenant.landlord_rating > 0 ? tenant.landlord_rating.toFixed(1) : (ended ? 'Pending' : '—');
-    const tenantScore = tenant.tenant_rating > 0 ? tenant.tenant_rating.toFixed(1) : (ended ? 'Pending' : '—');
-    return `<div class="house-ledger-row">
-      <div class="house-ledger-left">
-        <div class="house-ledger-name">${escapeHouseHtml(tenant.name)}</div>
-        <div class="house-ledger-meta">Score ${score} • Landlord ${escapeHouseHtml(String(landlord))} • Tenant ${escapeHouseHtml(String(tenantScore))}</div>
-      </div>
-      <div class="house-ledger-right">
-        <div class="house-ledger-status ${ended ? 'warning' : 'good'}">${ended ? 'Lease ended' : 'Active'}</div>
-      </div>
-    </div>`;
-  }).join('');
-  const lifecycleHtml = model.tenants.length
-    ? `<div class="house-ledger-list">${lifecycleRows}</div>`
-    : '<div class="house-detail-empty">No tenants yet. Add tenants to activate Raven scores and lease-end reviews.</div>';
+  
 
   const paymentHistoryHtml = model.paymentHistory.length
     ? `<div class="house-ledger-list">${model.paymentHistory.slice().reverse().slice(0, 8).map(event => `<div class="house-ledger-row"><div class="house-ledger-left"><div class="house-ledger-name">${escapeHouseHtml(event.name)}</div><div class="house-ledger-meta">${escapeHouseHtml(event.status)} • ${escapeHouseHtml(event.created_at ? new Date(event.created_at).toLocaleString() : '')}${event.note ? ' • ' + escapeHouseHtml(event.note) : ''}</div></div><div class="house-ledger-right"><div class="house-ledger-amount">$${(event.amount || 0).toFixed(2)}</div></div></div>`).join('')}</div>`
@@ -8051,3 +8033,5 @@ async function sendChatMessage() {
 
 </body>
 </html>
+
+
