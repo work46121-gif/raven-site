@@ -7784,6 +7784,7 @@ async function openTripChat(tripId) {
   currentChatTripId = tripId;
   const modal = document.getElementById('trip-chat-modal');
   modal.style.display = 'flex';
+  setupTripChatScrollLock();
 
   // Set trip name
   const trip = tripDataMap[tripId];
@@ -7816,6 +7817,7 @@ function closeTripChat() {
 
 async function loadChatMessages(tripId) {
   const container = document.getElementById('chat-messages');
+  if (container) container.dataset.lastDateKey = '';
   container.innerHTML = '<div style="text-align:center;color:#6E6B80;font-size:12px;padding:20px 0">Loading...</div>';
 
   try {
@@ -7826,6 +7828,7 @@ async function loadChatMessages(tripId) {
       .limit(100);
 
     container.innerHTML = '';
+    if (container) container.dataset.lastDateKey = '';
     if (error || !data || data.length === 0) {
       container.innerHTML = '<div style="text-align:center;color:#6E6B80;font-size:12px;padding:20px 0" id="chat-empty">No messages yet. Say hi! 👋</div>';
       return;
@@ -7837,6 +7840,39 @@ async function loadChatMessages(tripId) {
   }
 }
 
+function getChatDateKey(value) {
+  const dt = new Date(value);
+  if (isNaN(dt.getTime())) return '';
+  return dt.getFullYear() + '-' + String(dt.getMonth() + 1).padStart(2, '0') + '-' + String(dt.getDate()).padStart(2, '0');
+}
+
+function formatChatDateDivider(value) {
+  const dt = new Date(value);
+  if (isNaN(dt.getTime())) return '';
+  return dt.toLocaleDateString([], { month: 'long', day: 'numeric', year: 'numeric' });
+}
+
+function setupTripChatScrollLock() {
+  const container = document.getElementById('chat-messages');
+  if (!container || container.dataset.scrollLockReady === '1') return;
+  let startY = 0;
+  container.addEventListener('touchstart', function(event) {
+    startY = event.touches && event.touches.length ? event.touches[0].clientY : 0;
+  }, { passive: true });
+  container.addEventListener('touchmove', function(event) {
+    const currentY = event.touches && event.touches.length ? event.touches[0].clientY : startY;
+    const pullingDown = currentY > startY;
+    const pullingUp = currentY < startY;
+    const atTop = container.scrollTop <= 0;
+    const atBottom = Math.ceil(container.scrollTop + container.clientHeight) >= container.scrollHeight;
+    const cantScroll = container.scrollHeight <= container.clientHeight + 1;
+    if (cantScroll || (atTop && pullingDown) || (atBottom && pullingUp)) {
+      event.preventDefault();
+    }
+  }, { passive: false });
+  container.dataset.scrollLockReady = '1';
+}
+
 function appendChatMessage(msg, scroll = true) {
   const empty = document.getElementById('chat-empty');
   if (empty) empty.remove();
@@ -7845,6 +7881,18 @@ function appendChatMessage(msg, scroll = true) {
   const local = JSON.parse(localStorage.getItem('raven_profile') || '{}');
   const isMe = msg.user_id === local.user_id;
   const time = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const dateKey = getChatDateKey(msg.created_at);
+  const lastDateKey = container?.dataset?.lastDateKey || '';
+
+  if (container && dateKey && dateKey !== lastDateKey) {
+    const divider = document.createElement('div');
+    divider.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:10px;margin:8px 0 4px;color:#6E6B80;font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase';
+    divider.innerHTML = '<span style="flex:1;height:1px;background:rgba(255,255,255,0.08)"></span>'
+      + '<span>' + escapeHtml(formatChatDateDivider(msg.created_at)) + '</span>'
+      + '<span style="flex:1;height:1px;background:rgba(255,255,255,0.08)"></span>';
+    container.appendChild(divider);
+    container.dataset.lastDateKey = dateKey;
+  }
 
   const el = document.createElement('div');
   el.style.cssText = 'display:flex;flex-direction:column;align-items:' + (isMe ? 'flex-end' : 'flex-start') + ';gap:3px';
@@ -7905,7 +7953,7 @@ async function sendChatMessage() {
     </div>
     <button onclick="closeTripChat()" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:50%;width:28px;height:28px;color:#9896A8;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center">×</button>
   </div>
-  <div id="chat-messages" style="flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;min-height:0">
+  <div id="chat-messages" style="flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;min-height:0;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y">
     <div style="text-align:center;color:#6E6B80;font-size:12px;padding:20px 0" id="chat-empty">No messages yet. Say hi! 👋</div>
   </div>
   <div style="padding:12px;border-top:1px solid rgba(255,255,255,0.07);flex-shrink:0;display:flex;gap:8px;align-items:flex-end">
