@@ -293,6 +293,9 @@ body::after {
 .agreement-text { font-size: 12px; color: var(--muted); line-height: 1.6; }
 .agreement-text a { color: var(--purple3); text-decoration: none; }
 .agreement-text a:hover { text-decoration: underline; }
+.sms-consent-card { margin-top: 14px; border-color: rgba(48,209,88,0.18); background: linear-gradient(180deg, rgba(48,209,88,0.08), rgba(19,19,26,0.96)); }
+.sms-consent-title { display: block; margin-bottom: 6px; font-size: 10px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--green); }
+.sms-consent-copy { display: block; color: var(--white); line-height: 1.7; }
 
 /* Buttons */
 .btn-next {
@@ -607,6 +610,13 @@ body::after {
             <div id="phone-preview" class="phone-preview">No number added yet</div>
           </div>
           <div class="input-hint">US numbers only. This helps RAVEN tag you cleanly when friends text in receipts or shared splits.</div>
+          <div class="agreement sms-consent-card">
+            <input type="checkbox" id="sms-consent">
+            <div class="agreement-text">
+              <span class="sms-consent-title">SMS Consent</span>
+              <span class="sms-consent-copy">I agree to receive transactional SMS from RAVEN about bills, payment reminders, and account activity. Msg &amp; data rates may apply. Message frequency varies. Reply STOP to opt out, HELP for help. Consent is not required to purchase.</span>
+            </div>
+          </div>
         </div>
         <div id="error-2" class="error-msg"></div>
         <button class="btn-next" onclick="submitStep2()">Continue →</button>
@@ -637,7 +647,7 @@ body::after {
         <div class="agreement">
           <input type="checkbox" id="terms-agree">
           <div class="agreement-text">
-            By checking this box, I agree to RAVEN's <a href="terms.html" target="_blank">Terms of Service</a> and <a href="privacy.html" target="_blank">Privacy Policy</a>, and I consent to receive transactional SMS messages about bills, trips, payment reminders, and payment confirmations if I provide my phone number. Message frequency varies. Msg &amp; data rates may apply. Reply STOP to opt out and HELP for help.
+            By checking this box, I agree to RAVEN's <a href="terms.html" target="_blank">Terms of Service</a> and <a href="privacy.html" target="_blank">Privacy Policy</a>.
           </div>
         </div>
         <div id="error-3" class="error-msg"></div>
@@ -884,6 +894,7 @@ async function submitStep1() {
 async function submitStep2() {
   const raw = document.getElementById('phone-number').value.replace(/\D/g, '');
   if (raw.length < 10) { showError('error-2', 'Please enter a valid 10-digit US phone number.'); return; }
+  if (!document.getElementById('sms-consent').checked) { showError('error-2', 'Please check the SMS consent box to continue with text notifications.'); return; }
 
   const phone = `+1${raw.slice(-10)}`;
   hideError('error-2');
