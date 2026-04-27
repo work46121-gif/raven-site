@@ -11,7 +11,7 @@ workflows:
       vars:
         APP_ID: com.ravensplit.app
         APP_NAME: RAVEN
-        XCODE_PROJECT: App/App.xcodeproj
+        XCODE_PROJECT: ios/App/App.xcodeproj
         XCODE_SCHEME: App
       node: 22.11.0
       xcode: latest
@@ -19,12 +19,20 @@ workflows:
     scripts:
       - name: Install Node & npm dependencies
         script: |
-          npm install -g @capacitor/cli @capacitor/core @capacitor/ios
+          if [ ! -f package.json ]; then
+            npm init -y
+          fi
+          npm install @capacitor/cli @capacitor/core @capacitor/ios
+        working_directory: codemagic
 
       - name: Initialize Capacitor iOS
         script: |
+          if [ ! -f package.json ]; then
+            npm init -y
+          fi
           npx cap add ios || true
           npx cap sync ios
+        working_directory: codemagic
 
       - name: Set app version
         script: |
@@ -33,16 +41,17 @@ workflows:
           echo "Build number: $BUILD_NUMBER"
           agvtool new-version -all $BUILD_NUMBER
           agvtool new-marketing-version 1.0.$BUILD_NUMBER
-        working_directory: ios/App
+        working_directory: codemagic/ios/App
 
       - name: Build iOS IPA
         script: |
           xcode-project build-ipa \
             --project "$XCODE_PROJECT" \
             --scheme "$XCODE_SCHEME"
+        working_directory: codemagic
 
     artifacts:
-      - build/ios/ipa/*.ipa
+      - codemagic/build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
       - $HOME/Library/Developer/Xcode/DerivedData/**/Build/**/*.dSYM
 
