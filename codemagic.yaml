@@ -19,14 +19,26 @@ workflows:
     scripts:
       - name: Install Node & npm dependencies
         script: |
+          set -e
+          echo "PWD: $(pwd)"
+          ls -la
+          node -v
+          npm -v
           if [ ! -f package.json ]; then
             npm init -y
           fi
-          npm install @capacitor/cli @capacitor/core @capacitor/ios
+          cat package.json
+          npm install @capacitor/core @capacitor/ios
+          npm install @capacitor/cli --save-dev
         working_directory: codemagic
 
       - name: Initialize Capacitor iOS
         script: |
+          set -e
+          echo "PWD: $(pwd)"
+          ls -la
+          node -v
+          npm -v
           if [ ! -f package.json ]; then
             npm init -y
           fi
