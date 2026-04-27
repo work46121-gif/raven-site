@@ -5,8 +5,6 @@ workflows:
     instance_type: mac_mini_m1
 
     environment:
-      groups:
-        - raven-ios
       ios_signing:
         distribution_type: app_store
         bundle_identifier: com.ravensplit.app
