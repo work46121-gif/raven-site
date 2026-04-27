@@ -13,7 +13,7 @@ workflows:
         APP_NAME: RAVEN
         XCODE_PROJECT: App/App.xcodeproj
         XCODE_SCHEME: App
-      node: 18.17.0
+      node: 22.11.0
       xcode: latest
 
     scripts:
