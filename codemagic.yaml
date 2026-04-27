@@ -1,0 +1,56 @@
+workflows:
+  raven-ios:
+    name: RAVEN iOS App Store Build
+    max_build_duration: 60
+    instance_type: mac_mini_m1
+
+    environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.ravensplit.app
+      vars:
+        APP_ID: com.ravensplit.app
+        APP_NAME: RAVEN
+        XCODE_PROJECT: App/App.xcodeproj
+        XCODE_SCHEME: App
+      node: 18.17.0
+      xcode: latest
+
+    scripts:
+      - name: Install Node & npm dependencies
+        script: |
+          npm install -g @capacitor/cli @capacitor/core @capacitor/ios
+
+      - name: Initialize Capacitor iOS
+        script: |
+          npx cap add ios || true
+          npx cap sync ios
+
+      - name: Set app version
+        script: |
+          LATEST_BUILD=$(app-store-connect get-latest-build-number "$APP_ID" 2>/dev/null || echo "0")
+          BUILD_NUMBER=$((LATEST_BUILD + 1))
+          echo "Build number: $BUILD_NUMBER"
+          agvtool new-version -all $BUILD_NUMBER
+          agvtool new-marketing-version 1.0.$BUILD_NUMBER
+        working_directory: ios/App
+
+      - name: Build iOS IPA
+        script: |
+          xcode-project build-ipa \
+            --project "$XCODE_PROJECT" \
+            --scheme "$XCODE_SCHEME"
+
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+      - $HOME/Library/Developer/Xcode/DerivedData/**/Build/**/*.dSYM
+
+    publishing:
+      app_store_connect:
+        api_key: $APP_STORE_CONNECT_PRIVATE_KEY
+        key_id: $APP_STORE_CONNECT_KEY_IDENTIFIER
+        issuer_id: $APP_STORE_CONNECT_ISSUER_ID
+        submit_to_testflight: true
+        beta_groups:
+          - Internal Testers
