@@ -8069,7 +8069,14 @@ async function sendChatMessage() {
   input.style.height = 'auto';
 
   const local = JSON.parse(localStorage.getItem('raven_profile') || '{}');
-  const senderName = local.first_name || currentUser.email?.split('@')[0] || 'Someone';
+  let senderName = local.first_name || currentUser.email?.split('@')[0] || 'Someone';
+  try {
+    const { data: liveProfile } = await db.from('profiles').select('first_name,raven_id,email').eq('id', currentUser.id).maybeSingle();
+    senderName = liveProfile?.first_name || senderName;
+    if (liveProfile?.first_name) {
+      localStorage.setItem('raven_profile', JSON.stringify({ ...local, ...liveProfile, user_id: currentUser.id }));
+    }
+  } catch(e) {}
 
   try {
     const { error } = await db.from('trip_messages').insert({
