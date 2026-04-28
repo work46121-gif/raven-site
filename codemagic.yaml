@@ -12,6 +12,7 @@ workflows:
         APP_ID: com.ravensplit.app
         APP_NAME: RAVEN
         XCODE_PROJECT: ios/App/App.xcodeproj
+        XCODE_WORKSPACE: ios/App/App.xcworkspace
         XCODE_SCHEME: App
       node: 22.11.0
       xcode: latest
@@ -57,12 +58,19 @@ workflows:
           npx cap sync ios
         working_directory: .
 
+      - name: Install CocoaPods dependencies
+        script: |
+          set -e
+          pod install
+          ls -la
+        working_directory: ios/App
+
       - name: Set up code signing settings on Xcode project
         script: |
           set -e
-          xcode-project use-profiles
+          xcode-project use-profiles --project "$XCODE_PROJECT"
           ls -la /Users/builder
-        working_directory: ios/App
+        working_directory: .
 
       - name: Set app version
         script: |
@@ -76,7 +84,7 @@ workflows:
       - name: Build iOS IPA
         script: |
           xcode-project build-ipa \
-            --project "$XCODE_PROJECT" \
+            --workspace "$XCODE_WORKSPACE" \
             --scheme "$XCODE_SCHEME" \
             --export-options-plist /Users/builder/export_options.plist
         working_directory: .
