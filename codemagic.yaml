@@ -24,13 +24,9 @@ workflows:
           ls -la
           node -v
           npm -v
-          if [ ! -f package.json ]; then
-            npm init -y
-          fi
           cat package.json
-          npm install @capacitor/core @capacitor/ios
-          npm install @capacitor/cli --save-dev
-        working_directory: codemagic
+          npm install
+        working_directory: .
 
       - name: Initialize Capacitor iOS
         script: |
@@ -39,12 +35,9 @@ workflows:
           ls -la
           node -v
           npm -v
-          if [ ! -f package.json ]; then
-            npm init -y
-          fi
           npx cap add ios || true
           npx cap sync ios
-        working_directory: codemagic
+        working_directory: .
 
       - name: Set app version
         script: |
@@ -53,17 +46,17 @@ workflows:
           echo "Build number: $BUILD_NUMBER"
           agvtool new-version -all $BUILD_NUMBER
           agvtool new-marketing-version 1.0.$BUILD_NUMBER
-        working_directory: codemagic/ios/App
+        working_directory: ios/App
 
       - name: Build iOS IPA
         script: |
           xcode-project build-ipa \
             --project "$XCODE_PROJECT" \
             --scheme "$XCODE_SCHEME"
-        working_directory: codemagic
+        working_directory: .
 
     artifacts:
-      - codemagic/build/ios/ipa/*.ipa
+      - build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
       - $HOME/Library/Developer/Xcode/DerivedData/**/Build/**/*.dSYM
 
