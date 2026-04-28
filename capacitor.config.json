@@ -1,7 +1,7 @@
 {
   "appId": "com.ravensplit.app",
   "appName": "RAVEN",
-  "webDir": ".",
+  "webDir": "dist",
   "server": {
     "url": "https://ravensplit.com",
     "cleartext": false
