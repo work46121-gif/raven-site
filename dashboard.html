@@ -3924,6 +3924,7 @@ async function loadAdminComments() {
   const container = document.getElementById('admin-comments-list');
   container.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px 0">Loading...</div>';
   try {
+    const tripPeople = getAdminPeople();
     const { data: comments, error } = await db.from('trip_comments').select('*').eq('trip_id', adminTripId).order('created_at', { ascending: false });
     if (error || !comments) { container.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px 0">No comments yet.</div>'; return; }
     if (comments.length === 0) { container.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px 0">No comments yet.</div>'; return; }
@@ -3938,6 +3939,41 @@ async function loadAdminComments() {
         + (c.body ? '<div style="font-size:13px;color:var(--muted2);word-break:break-word">' + c.body.replace(/</g,'&lt;') + '</div>' : '')
         + (c.gif_url ? '<img src="' + c.gif_url + '" style="height:60px;border-radius:6px;margin-top:4px;display:block">' : '')
         + '</div>';
+      if (tripPeople.length > 0) {
+        const fixWrap = document.createElement('div');
+        fixWrap.style.cssText = 'display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:8px';
+        const fixSelect = document.createElement('select');
+        fixSelect.style.cssText = 'padding:6px 8px;background:var(--dark3);border:1px solid var(--border);border-radius:8px;color:var(--white);font-family:inherit;font-size:12px';
+        fixSelect.innerHTML = tripPeople.map(name => '<option value="' + String(name).replace(/"/g, '&quot;') + '"' + (String(name).toLowerCase() === String(c.author_name || '').toLowerCase() ? ' selected' : '') + '>' + String(name).replace(/</g, '&lt;') + '</option>').join('');
+        const fixBtn = document.createElement('button');
+        fixBtn.textContent = 'Fix author';
+        fixBtn.style.cssText = 'padding:6px 10px;background:rgba(48,209,88,0.1);border:1px solid rgba(48,209,88,0.25);border-radius:8px;color:var(--green);cursor:pointer;font-size:12px;font-weight:700';
+        fixBtn.addEventListener('click', async () => {
+          const nextAuthor = fixSelect.value.trim();
+          if (!nextAuthor) return;
+          fixBtn.disabled = true;
+          fixBtn.textContent = 'Saving...';
+          let matchedUserId = null;
+          try {
+            const { data: prof } = await db.from('profiles').select('id,first_name,raven_id').or('first_name.ilike.' + nextAuthor + ',raven_id.eq.' + nextAuthor.replace(/^@/, '').toLowerCase()).limit(1).maybeSingle();
+            matchedUserId = prof?.id || null;
+          } catch(e) {}
+          const updates = { author_name: nextAuthor };
+          if (matchedUserId) updates.user_id = matchedUserId;
+          const { error: updateErr } = await db.from('trip_comments').update(updates).eq('id', c.id);
+          if (updateErr) {
+            showToast('Error updating comment author', 'error');
+            fixBtn.disabled = false;
+            fixBtn.textContent = 'Fix author';
+            return;
+          }
+          showToast('Comment author updated', 'success');
+          loadAdminComments();
+        });
+        fixWrap.appendChild(fixSelect);
+        fixWrap.appendChild(fixBtn);
+        row.querySelector('div[style*="flex:1;min-width:0"]').appendChild(fixWrap);
+      }
       const delBtn = document.createElement('button');
       delBtn.textContent = '🗑';
       delBtn.title = 'Delete this comment';
