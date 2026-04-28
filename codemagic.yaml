@@ -28,6 +28,24 @@ workflows:
           npm install
         working_directory: .
 
+      - name: Stage web assets for Capacitor
+        script: |
+          set -e
+          rm -rf dist
+          mkdir -p dist
+          rsync -a ./ dist/ \
+            --exclude dist \
+            --exclude ios \
+            --exclude node_modules \
+            --exclude .git \
+            --exclude codemagic \
+            --exclude "package*.json" \
+            --exclude "proxy*.js" \
+            --exclude "server*.js" \
+            --exclude README.md
+          ls -la dist
+        working_directory: .
+
       - name: Initialize Capacitor iOS
         script: |
           set -e
