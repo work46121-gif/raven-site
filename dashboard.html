@@ -130,6 +130,20 @@ body.app-mode #mobile-nav {
   background: rgba(6,6,10,.88);
   backdrop-filter: blur(22px);
 }
+body.app-mode #mobile-header { display: none !important; }
+body.app-mode .form-input,
+body.app-mode .add-person-input,
+body.app-mode input,
+body.app-mode select,
+body.app-mode textarea {
+  font-size: 16px !important;
+}
+body.app-mode #cb-photo-card { order: 1; }
+body.app-mode #cb-details-card { order: 2; }
+body.app-mode #mob-settings .mi-ring {
+  background: rgba(255,255,255,.04) !important;
+  border-color: rgba(255,255,255,.14) !important;
+}
 body.app-mode .auth-footer { display: none !important; }
 
 #auth-screen {
@@ -629,10 +643,9 @@ body.app-mode .auth-footer { display: none !important; }
     <circle cx="17.8" cy="16.7" r="1.7" fill="currentColor"></circle>
   </symbol>
   <symbol id="mob-icon-more" viewBox="0 0 24 24">
-    <path d="M6 7H18M6 12H18M6 17H18" stroke="currentColor" stroke-width="2.15" stroke-linecap="round"></path>
-    <circle cx="18" cy="7" r="1.4" fill="currentColor"></circle>
-    <circle cx="6" cy="12" r="1.4" fill="currentColor"></circle>
-    <circle cx="18" cy="17" r="1.4" fill="currentColor"></circle>
+    <circle cx="12" cy="6" r="1.8" fill="currentColor"></circle>
+    <circle cx="12" cy="12" r="1.8" fill="currentColor"></circle>
+    <circle cx="12" cy="18" r="1.8" fill="currentColor"></circle>
   </symbol>
 </svg>
 
@@ -784,7 +797,7 @@ body.app-mode .auth-footer { display: none !important; }
       <div style="display:flex;gap:0;margin-bottom:36px;background:var(--dark);border:1px solid var(--border);border-radius:14px;overflow:hidden;max-width:100%">
         <div id="cbs-1" onclick="cbGoToStep(1)" style="flex:1;display:flex;align-items:center;gap:12px;padding:16px 24px;cursor:pointer;border-right:1px solid var(--border);background:rgba(48,209,88,0.06);transition:background 0.2s">
           <div style="width:32px;height:32px;border-radius:50%;background:var(--green);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:16px;color:#000;flex-shrink:0">1</div>
-          <div><div style="font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--green);font-weight:700">Step 1</div><div style="font-size:14px;color:var(--white);font-weight:600;margin-top:1px">Snap Receipt</div></div>
+          <div><div style="font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--green);font-weight:700">Step 1</div><div style="font-size:14px;color:var(--white);font-weight:600;margin-top:1px">Scan Receipt</div></div>
         </div>
         <div id="cbs-2" onclick="if(cbItems.length>0)cbGoToStep(2)" style="flex:1;display:flex;align-items:center;gap:12px;padding:16px 24px;cursor:pointer;border-right:1px solid var(--border);transition:background 0.2s">
           <div id="cbs-2-num" style="width:32px;height:32px;border-radius:50%;background:var(--dark3);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:16px;color:var(--muted);flex-shrink:0">2</div>
@@ -802,7 +815,7 @@ body.app-mode .auth-footer { display: none !important; }
 
           <!-- LEFT: Bill name + receipt drop -->
           <div style="display:flex;flex-direction:column;gap:20px">
-            <div style="background:var(--dark);border:1px solid var(--border);border-radius:16px;padding:28px">
+            <div id="cb-details-card" style="background:var(--dark);border:1px solid var(--border);border-radius:16px;padding:28px">
               <div style="font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted2);margin-bottom:12px">Bill Name</div>
               <input id="cb-name" type="text" class="form-input" placeholder="e.g. Saturday Night Out" style="font-size:17px;font-weight:700;padding:14px 18px;margin-bottom:20px">
 
@@ -838,14 +851,14 @@ body.app-mode .auth-footer { display: none !important; }
               </div>
             </div>
 
-            <div style="background:var(--dark);border:1px solid var(--border);border-radius:16px;padding:28px">
-              <div style="font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted2);margin-bottom:16px">Receipt Photo</div>
+            <div id="cb-photo-card" style="background:var(--dark);border:1px solid var(--border);border-radius:16px;padding:28px">
+              <div style="font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted2);margin-bottom:16px">Scan Receipt</div>
               <div id="cb-dropzone" style="border:2px dashed rgba(48,209,88,0.3);border-radius:14px;background:rgba(48,209,88,0.02);cursor:pointer;overflow:hidden;transition:all 0.25s;min-height:220px;display:flex;align-items:center;justify-content:center" onclick="document.getElementById('cb-file-input').click()" ondragover="event.preventDefault();this.style.borderColor='var(--green)';this.style.background='rgba(48,209,88,0.05)'" ondragleave="this.style.borderColor='rgba(48,209,88,0.3)';this.style.background='rgba(48,209,88,0.02)'" ondrop="cbHandleDrop(event)">
                 <div id="cb-empty-state" style="padding:40px 24px;text-align:center">
                   <div style="font-size:52px;margin-bottom:14px">📸</div>
-                  <div style="font-size:17px;font-weight:700;margin-bottom:6px">Drop your receipt here</div>
-                  <div style="font-size:13px;color:var(--muted);margin-bottom:18px">or click to choose a photo — RAVEN will extract all items</div>
-                  <div style="display:inline-flex;align-items:center;gap:8px;padding:11px 22px;background:rgba(48,209,88,0.1);border:1px solid rgba(48,209,88,0.3);border-radius:10px;font-size:14px;font-weight:700;color:var(--green)">📁 Choose Photo</div>
+                  <div style="font-size:17px;font-weight:700;margin-bottom:6px">Add picture</div>
+                  <div style="font-size:13px;color:var(--muted);margin-bottom:18px">Tap to add a receipt photo, then scan it.</div>
+                  <div style="display:inline-flex;align-items:center;gap:8px;padding:11px 22px;background:rgba(48,209,88,0.1);border:1px solid rgba(48,209,88,0.3);border-radius:10px;font-size:14px;font-weight:700;color:var(--green)">📁 Add Picture</div>
                 </div>
                 <div id="cb-preview-state" style="display:none;position:relative;width:100%">
                   <img id="cb-preview-img" style="width:100%;display:block;max-height:380px;object-fit:contain">
@@ -863,7 +876,7 @@ body.app-mode .auth-footer { display: none !important; }
           <div style="display:flex;flex-direction:column;gap:20px">
             <!-- Scan button / status -->
             <div id="cb-scan-wrap" style="display:none">
-              <button onclick="cbScanReceipt()" id="cb-scan-btn" style="width:100%;padding:18px;background:linear-gradient(135deg,var(--purple),var(--green));color:#fff;border:none;border-radius:14px;font-family:'Epilogue',sans-serif;font-size:16px;font-weight:800;cursor:pointer;box-shadow:0 4px 24px rgba(124,58,237,0.4);letter-spacing:0.02em"><svg width="18" height="18" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0"><text x="2" y="22" font-family="Bebas Neue, sans-serif" font-size="24" fill="white">R</text><circle cx="11" cy="24" r="3" fill="#30D158"/></svg> RAVEN Scan — Extract All Items</button>
+              <button onclick="cbScanReceipt()" id="cb-scan-btn" style="width:100%;padding:18px;background:linear-gradient(135deg,var(--purple),var(--green));color:#fff;border:none;border-radius:14px;font-family:'Epilogue',sans-serif;font-size:16px;font-weight:800;cursor:pointer;box-shadow:0 4px 24px rgba(124,58,237,0.4);letter-spacing:0.02em"><svg width="18" height="18" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0"><text x="2" y="22" font-family="Bebas Neue, sans-serif" font-size="24" fill="white">R</text><circle cx="11" cy="24" r="3" fill="#30D158"/></svg> Scan Receipt</button>
             </div>
             <div id="cb-scanning" style="display:none;padding:24px;background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.2);border-radius:14px;text-align:center">
               <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:10px"><div style="width:22px;height:22px;border:2px solid rgba(124,58,237,0.3);border-top-color:var(--purple2);border-radius:50%;animation:spin 0.8s linear infinite"></div><span style="font-weight:700;color:var(--purple3);font-size:15px">RAVEN is scanning your receipt…</span></div>
@@ -1773,7 +1786,7 @@ body.app-mode .auth-footer { display: none !important; }
   <button class="mob-nav-btn" id="mob-bills" onclick="showPage('active-bills');setMobNav('mob-bills')"><span class="mi"><span class="mi-ring"><svg class="raven-icon"><use href="#mob-icon-bills"></use></svg></span></span>Bills</button>
   <button class="mob-nav-btn create-btn" id="mob-create" onclick="showPage('create-bill');setMobNav('mob-create')"><span class="mi"><span class="mi-ring"><svg class="raven-icon"><use href="#mob-icon-create"></use></svg></span></span><span class="mob-nav-label">Scan</span></button>
   <button class="mob-nav-btn" id="mob-trip" onclick="showPage('trip-hub');setMobNav('mob-trip')"><span class="mi"><span class="mi-ring"><svg class="raven-icon"><use href="#mob-icon-trips"></use></svg></span></span>Trips</button>
-  <button class="mob-nav-btn" id="mob-settings" onclick="showPage('settings');setMobNav('mob-settings')" style="position:relative"><span class="mi"><span class="mi-ring"><svg class="raven-icon"><use href="#mob-icon-more"></use></svg></span></span>More<span id="mob-friend-req-badge" style="display:none;position:absolute;top:6px;right:10px;width:8px;height:8px;background:#A855F7;border-radius:50%"></span></button>
+  <button class="mob-nav-btn" id="mob-settings" onclick="showPage('settings');setMobNav('mob-settings')" style="position:relative"><span class="mi"><span class="mi-ring"><svg class="raven-icon"><use href="#mob-icon-more"></use></svg></span></span>Menu<span id="mob-friend-req-badge" style="display:none;position:absolute;top:6px;right:10px;width:8px;height:8px;background:#A855F7;border-radius:50%"></span></button>
 </div>
 
 <div class="toast" id="toast"></div>
