@@ -60,6 +60,74 @@ workflows:
           npx cap sync ios
         working_directory: .
 
+      - name: Generate iOS app icons
+        script: |
+          set -e
+
+          ICON_SOURCE="$CM_BUILD_DIR/icon-1024.png"
+          ICON_SET="$CM_BUILD_DIR/ios/App/App/Assets.xcassets/AppIcon.appiconset"
+
+          if [ ! -f "$ICON_SOURCE" ]; then
+            echo "Missing app icon source: $ICON_SOURCE"
+            exit 1
+          fi
+
+          mkdir -p "$ICON_SET"
+
+          create_icon() {
+            local size="$1"
+            local filename="$2"
+            sips -z "$size" "$size" "$ICON_SOURCE" --out "$ICON_SET/$filename"
+          }
+
+          create_icon 20 AppIcon-20.png
+          create_icon 40 AppIcon-20@2x.png
+          create_icon 60 AppIcon-20@3x.png
+          create_icon 29 AppIcon-29.png
+          create_icon 58 AppIcon-29@2x.png
+          create_icon 87 AppIcon-29@3x.png
+          create_icon 40 AppIcon-40.png
+          create_icon 80 AppIcon-40@2x.png
+          create_icon 120 AppIcon-40@3x.png
+          create_icon 120 AppIcon-60@2x.png
+          create_icon 180 AppIcon-60@3x.png
+          create_icon 76 AppIcon-76.png
+          create_icon 152 AppIcon-76@2x.png
+          create_icon 167 AppIcon-83.5@2x.png
+          create_icon 1024 AppIcon-1024.png
+
+          cat > "$ICON_SET/Contents.json" <<'JSON'
+          {
+            "images": [
+              { "size": "20x20", "idiom": "iphone", "filename": "AppIcon-20@2x.png", "scale": "2x" },
+              { "size": "20x20", "idiom": "iphone", "filename": "AppIcon-20@3x.png", "scale": "3x" },
+              { "size": "29x29", "idiom": "iphone", "filename": "AppIcon-29@2x.png", "scale": "2x" },
+              { "size": "29x29", "idiom": "iphone", "filename": "AppIcon-29@3x.png", "scale": "3x" },
+              { "size": "40x40", "idiom": "iphone", "filename": "AppIcon-40@2x.png", "scale": "2x" },
+              { "size": "40x40", "idiom": "iphone", "filename": "AppIcon-40@3x.png", "scale": "3x" },
+              { "size": "60x60", "idiom": "iphone", "filename": "AppIcon-60@2x.png", "scale": "2x" },
+              { "size": "60x60", "idiom": "iphone", "filename": "AppIcon-60@3x.png", "scale": "3x" },
+              { "size": "20x20", "idiom": "ipad", "filename": "AppIcon-20.png", "scale": "1x" },
+              { "size": "20x20", "idiom": "ipad", "filename": "AppIcon-20@2x.png", "scale": "2x" },
+              { "size": "29x29", "idiom": "ipad", "filename": "AppIcon-29.png", "scale": "1x" },
+              { "size": "29x29", "idiom": "ipad", "filename": "AppIcon-29@2x.png", "scale": "2x" },
+              { "size": "40x40", "idiom": "ipad", "filename": "AppIcon-40.png", "scale": "1x" },
+              { "size": "40x40", "idiom": "ipad", "filename": "AppIcon-40@2x.png", "scale": "2x" },
+              { "size": "76x76", "idiom": "ipad", "filename": "AppIcon-76.png", "scale": "1x" },
+              { "size": "76x76", "idiom": "ipad", "filename": "AppIcon-76@2x.png", "scale": "2x" },
+              { "size": "83.5x83.5", "idiom": "ipad", "filename": "AppIcon-83.5@2x.png", "scale": "2x" },
+              { "size": "1024x1024", "idiom": "ios-marketing", "filename": "AppIcon-1024.png", "scale": "1x" }
+            ],
+            "info": {
+              "version": 1,
+              "author": "xcode"
+            }
+          }
+          JSON
+
+          ls -la "$ICON_SET"
+        working_directory: .
+
       - name: Install CocoaPods dependencies
         script: |
           set -e
