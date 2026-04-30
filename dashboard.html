@@ -50,6 +50,21 @@
   --orange: #FF6B35;
 }
 html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(--black); color: var(--white); overflow-x: hidden; }
+body { opacity: 0; transform: translateY(6px); transition: opacity .22s ease, transform .22s ease; }
+body.ready { opacity: 1; transform: none; }
+body.leaving { opacity: 0; transform: translateY(6px); }
+
+@keyframes pageIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+/* App mode polish (when opened from app.html / ?app=1) */
+body.app-mode .sidebar { display: none !important; }
+body.app-mode .main { margin-left: 0 !important; padding: 16px 16px 120px !important; max-width: 520px; margin-left: auto !important; margin-right: auto !important; }
+body.app-mode #mobile-nav { display: flex !important; }
+body.app-mode .page-header { margin-bottom: 18px !important; }
+body.app-mode .page-title { font-size: 28px !important; letter-spacing: .04em; }
+body.app-mode .bill-card { border-radius: 18px; }
+body.app-mode .bill-actions .bill-action-btn { border-radius: 12px; }
+body.app-mode .auth-footer { display: none !important; }
 
 #auth-screen {
   display: none;
@@ -115,7 +130,7 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
 @media(min-width: 1400px) { .main { padding: 36px 64px; } }
 @media(min-width: 1600px) { .main-inner { max-width: 1280px; } }
 .page { display: none; }
-.page.active { display: block; }
+.page.active { display: block; animation: pageIn .18s ease both; }
 .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 32px; flex-wrap: wrap; gap: 16px; }
 .page-title { font-family: 'Bebas Neue', sans-serif; font-size: 38px; letter-spacing: 0.05em; line-height: 1; }
 .page-title span { color: var(--green); }
@@ -1732,6 +1747,26 @@ try {
 const BACKEND = 'https://raven-backend-production-fb1f.up.railway.app';
 const FRONTEND = 'https://ravensplit.com';
 const RAVEN_APP_MODE = new URLSearchParams(window.location.search).get('app') === '1' || localStorage.getItem('raven_native_app') === '1';
+const APP_PENDING_TRIP_KEY = 'raven_app_pending_trip_open';
+
+function setAppPendingTripOpen(payload) {
+  try { sessionStorage.setItem(APP_PENDING_TRIP_KEY, JSON.stringify(payload || {})); } catch(e) {}
+}
+function consumeAppPendingTripOpen() {
+  try {
+    const raw = sessionStorage.getItem(APP_PENDING_TRIP_KEY);
+    if (!raw) return null;
+    sessionStorage.removeItem(APP_PENDING_TRIP_KEY);
+    return JSON.parse(raw);
+  } catch(e) { return null; }
+}
+
+function navigateWithFade(url) {
+  try {
+    document.body.classList.add('leaving');
+  } catch(e) {}
+  setTimeout(() => { window.location.href = url; }, 160);
+}
 
 let currentUser = null;
 let currentBillId = null;
@@ -1878,7 +1913,12 @@ async function handlePendingJoinIfAny(userId, userEmail, knownDisplayName) {
           await db.from('profiles').update({ joined_trips: JSON.stringify([pending.tripId]) }).eq('id', userId);
         }
       } catch(e) { /* joined_trips column not yet added — localStorage fallback is sufficient */ }
-      // Redirect straight to the trip
+      // In-app: stay inside dashboard, then open Trip Hub
+      if (RAVEN_APP_MODE) {
+        setAppPendingTripOpen({ tripId: pending.tripId, shareToken: d.share_token || '', name: displayName || '' });
+        return false;
+      }
+      // Website: redirect straight to the trip
       window.location.href = FRONTEND + '/trip/' + pending.tripId + '?t=' + d.share_token + '&name=' + encodeURIComponent(displayName);
       return true;
     } else {
@@ -2675,6 +2715,11 @@ async function triggerPwaInstall() {
 const billUrlMap = {};
 
 async function viewBillPage(billId) {
+  if (RAVEN_APP_MODE) {
+    showPage('active-bills');
+    setTimeout(() => { try { openBillModal(billId); } catch(e) {} }, 120);
+    return;
+  }
   if (billUrlMap[billId]) { window.location.href = billUrlMap[billId]; return; }
   const { data: bill } = await db.from('bills').select('share_token').eq('id', billId).single();
   const token = bill?.share_token ? '?t=' + bill.share_token : '';
@@ -2692,7 +2737,12 @@ async function showDashboard() {
   document.getElementById('dashboard-screen').style.display = 'block';
   if (RAVEN_APP_MODE) {
     localStorage.setItem('raven_native_app','1');
+    try { document.body.classList.add('app-mode'); } catch(e) {}
     document.querySelectorAll('a[href="index.html"]').forEach(a => a.setAttribute('href', 'app.html'));
+    // Keep policy links in-app (do not change share/open-trip links)
+    document.querySelectorAll('a[href="https://ravensplit.com/privacy"]').forEach(a => a.setAttribute('href', 'privacy.html'));
+    document.querySelectorAll('a[href="https://ravensplit.com/terms"]').forEach(a => a.setAttribute('href', 'terms.html'));
+    document.querySelectorAll('a[href="https://ravensplit.com/dashboard.html"]').forEach(a => a.setAttribute('href', 'dashboard.html?app=1'));
     const mobileHeader = document.getElementById('mobile-header');
     if (mobileHeader) mobileHeader.style.display = 'none';
     const mobCreateLabel = document.querySelector('#mob-create .mob-nav-label');
@@ -2758,6 +2808,26 @@ async function showDashboard() {
   if (RAVEN_APP_MODE) {
     const appPage = new URLSearchParams(window.location.search).get('page');
     if (appPage) setTimeout(() => showPage(appPage), 250);
+  }
+  if (RAVEN_APP_MODE) {
+    // If we were opened with a specific trip target, open it inside Trip Hub.
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const tripId = (params.get('trip') || '').trim();
+      if (tripId) {
+        setTimeout(() => { try { openTrip(tripId); } catch(e) {} }, 420);
+      }
+    } catch(e) {}
+  }
+  if (RAVEN_APP_MODE) {
+    const pendingTrip = consumeAppPendingTripOpen();
+    if (pendingTrip?.tripId) {
+      setTimeout(() => {
+        showPage('trip-hub');
+        setMobNav('mob-trip');
+        try { openTrip(pendingTrip.tripId); } catch(e) {}
+      }, 350);
+    }
   }
   // Check pending friend requests for notification badges
   setTimeout(() => { try { loadFriendRequests(); } catch(e) {} }, 1500);
@@ -3068,6 +3138,9 @@ function renderBillCard(b) {
   let billUrl = FRONTEND + '/bill/' + b.id + (b.share_token ? '?t=' + b.share_token : '');
   try { const profile = JSON.parse(localStorage.getItem('raven_profile') || '{}'); if (profile.first_name) billUrl += (b.share_token ? '&' : '?') + 'name=' + encodeURIComponent(profile.first_name); } catch(e) {}
   billUrlMap[b.id] = billUrl;
+  const viewCta = RAVEN_APP_MODE
+    ? '<button class="bill-action-btn btn-view" onclick="openBillModal(\\'' + b.id + '\\')" style="display:inline-flex;align-items:center;text-decoration:none">View →</button>'
+    : '<a class="bill-action-btn btn-view" href="' + billUrl + '" style="display:inline-flex;align-items:center;text-decoration:none">View →</a>';
   const owedDisplay = isFullyPaid
     ? '<span style="color:var(--green);font-weight:700">✓ All paid</span>'
     : '<span style="color:var(--orange)">$' + owed.toFixed(2) + ' owed</span>';
@@ -3079,7 +3152,7 @@ function renderBillCard(b) {
     '<div class="bill-actions" onclick="event.stopPropagation()">' +
     (isCreator ? '<button class="bill-action-btn btn-remind" onclick="sendReminder(\'' + b.id + '\')">🔔 Remind</button>' : '') +
     '<button class="bill-action-btn" onclick="shareBillLink(\'' + b.id + '\',\'' + (b.name||'').replace(/'/g,"\\'") + '\',\'' + (b.share_token||'') + '\')" style="background:rgba(0,140,255,0.1);border:1px solid rgba(0,140,255,0.2);color:#4DB8FF">📤 Share</button>' +
-    '<a class="bill-action-btn btn-view" href="' + billUrl + '" style="display:inline-flex;align-items:center;text-decoration:none">View →</a>' +
+    viewCta +
     '</div></div>';
 }
 
@@ -5632,6 +5705,12 @@ function openHouse(houseId) {
   const h = houseDataMap[houseId];
   if (!h) return;
   const shareToken = h.share_token || '';
+  if (RAVEN_APP_MODE) {
+    showPage('roommates');
+    setMobNav('mob-settings');
+    setTimeout(() => { try { openHouseDetails(String(houseId)); } catch(e) {} }, 120);
+    return;
+  }
   window.location.href = 'https://ravensplit.com/trip/' + houseId + '?t=' + shareToken;
 }
 
@@ -5716,7 +5795,9 @@ function renderHouseCard(h) {
       <div class="house-card-actions" onclick="event.stopPropagation()">
         ${isCreator ? `<button class="house-btn remind" onclick="sendHouseReminder(${safeId})">Remind</button>` : ''}
         <button class="house-btn share" onclick="navigator.clipboard.writeText('${tripUrl}').then(()=>showToast('Link copied!','success'))">Share</button>
-        <a class="house-btn view" href="${tripUrl}" style="display:inline-flex;align-items:center;text-decoration:none">Open House</a>
+        ${RAVEN_APP_MODE
+          ? `<button class="house-btn view" onclick="openHouse(${safeId})" style="display:inline-flex;align-items:center;text-decoration:none">Open House</button>`
+          : `<a class="house-btn view" href="${tripUrl}" style="display:inline-flex;align-items:center;text-decoration:none">Open House</a>`}
       </div>
     </div>
   </div>`;
@@ -5830,7 +5911,9 @@ function renderHousePortfolioCard(h) {
         ${isCreator ? `<button class="house-btn remind" onclick="sendHouseReminder('${safeId}')">Remind</button>` : ''}
         <button class="house-btn" style="background:rgba(124,58,237,0.12);border-color:rgba(124,58,237,0.22);color:var(--purple3)" onclick="openHouseDetails('${safeId}')">Details</button>
         <button class="house-btn share" onclick="navigator.clipboard.writeText('${tripUrl}').then(()=>showToast('Link copied!','success'))">Share</button>
-        <a class="house-btn view" href="${tripUrl}" style="display:inline-flex;align-items:center;text-decoration:none">Open House</a>
+        ${RAVEN_APP_MODE
+          ? `<button class="house-btn view" onclick="openHouse('${safeId}')" style="display:inline-flex;align-items:center;text-decoration:none">Open House</button>`
+          : `<a class="house-btn view" href="${tripUrl}" style="display:inline-flex;align-items:center;text-decoration:none">Open House</a>`}
       </div>
     </div>
   </div>`;
@@ -6657,6 +6740,18 @@ async function loadTrips() {
       }, { passive: true });
     });
   });
+
+  // If app mode requested opening a trip before data loaded, fulfill it now.
+  if (RAVEN_APP_MODE) {
+    let pending = '';
+    try { pending = String(sessionStorage.getItem('raven_pending_trip_admin') || ''); } catch(e) {}
+    if (pending && tripDataMap[pending]) {
+      try { sessionStorage.removeItem('raven_pending_trip_admin'); } catch(e) {}
+      setTimeout(() => {
+        try { openTripAdmin(pending); switchAdminTab('receipts'); } catch(e) {}
+      }, 120);
+    }
+  }
 }
 
 function openCreateTrip() {
@@ -6754,11 +6849,18 @@ async function createTrip() {
 
 function openTrip(tripId) {
   if (RAVEN_APP_MODE) {
+    // In-app: Trips should stay in Trip Hub (not jump to chat / website)
+    showPage('trip-hub');
+    setMobNav('mob-trip');
     if (tripDataMap[tripId]) {
-      openTripChat(tripId);
+      // Use the Trip Hub admin modal as the in-app trip view (members + receipts)
+      openTripAdmin(tripId);
+      try { switchAdminTab('receipts'); } catch(e) {}
       return;
     }
-    showPage('trip-hub');
+    // If trip data isn't loaded yet, remember it and retry after trips load.
+    try { sessionStorage.setItem('raven_pending_trip_admin', String(tripId)); } catch(e) {}
+    try { loadTrips(); } catch(e) {}
     return;
   }
   const url = getTripOpenUrl(tripId);
@@ -7937,7 +8039,10 @@ function celebrateBillCreated() {
   loop();
 }
 
-window.addEventListener('load', function() { init(); });
+window.addEventListener('load', function() {
+  try { requestAnimationFrame(() => document.body.classList.add('ready')); } catch(e) {}
+  init();
+});
 
 // Refresh trips when returning to tab
 document.addEventListener('visibilitychange', function() {
