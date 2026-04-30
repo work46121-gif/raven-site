@@ -3142,7 +3142,7 @@ function renderBillCard(b) {
   try { const profile = JSON.parse(localStorage.getItem('raven_profile') || '{}'); if (profile.first_name) billUrl += (b.share_token ? '&' : '?') + 'name=' + encodeURIComponent(profile.first_name); } catch(e) {}
   billUrlMap[b.id] = billUrl;
   const viewCta = RAVEN_APP_MODE
-    ? '<button class="bill-action-btn btn-view" onclick="openBillModal(\\'' + b.id + '\\')" style="display:inline-flex;align-items:center;text-decoration:none">View →</button>'
+    ? '<button class="bill-action-btn btn-view" onclick="openBillModal(\'' + b.id + '\')" style="display:inline-flex;align-items:center;text-decoration:none">View →</button>'
     : '<a class="bill-action-btn btn-view" href="' + billUrl + '" style="display:inline-flex;align-items:center;text-decoration:none">View →</a>';
   const owedDisplay = isFullyPaid
     ? '<span style="color:var(--green);font-weight:700">✓ All paid</span>'
