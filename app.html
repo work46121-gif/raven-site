@@ -181,6 +181,7 @@ button,input{font:inherit}
         <button class="link-btn" type="button" onclick="showTab('reset')">Forgot?</button>
       </div>
       <button class="primary-btn" id="login-button" type="submit">Sign in to RAVEN</button>
+      <button class="secondary-btn" id="resend-confirm-button" type="button" style="display:none" onclick="resendConfirmationEmail()">Resend confirmation email</button>
     </form>
 
     <form class="form" id="signup-form" onsubmit="handleSignup(event)">
@@ -245,6 +246,7 @@ button,input{font:inherit}
 const SUPABASE_URL = 'https://ffjpzkpdumdcwnakpaje.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZmanB6a3BkdW1kY3duYWtwYWplIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5ODc4OTcsImV4cCI6MjA4ODU2Mzg5N30.JtDLVu4K1TJ8emcN_mvSHBu6e0y8-jPQv-ypoc9p0RU';
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+let pendingConfirmEmail = '';
 
 function el(id){return document.getElementById(id)}
 function showLoading(show){el('loading').classList.toggle('show', !!show)}
@@ -256,8 +258,14 @@ function showMessage(type, text){
   box.style.display = 'block';
 }
 function clearMessage(){el('message-error').style.display='none';el('message-success').style.display='none'}
+function toggleResendConfirm(show){
+  const btn = el('resend-confirm-button');
+  if (!btn) return;
+  btn.style.display = show ? 'block' : 'none';
+}
 function showTab(tab){
   clearMessage();
+  toggleResendConfirm(false);
   ['login','signup','reset'].forEach(name => {
     const form = el(name + '-form');
     if (form) form.classList.toggle('active', name === tab);
@@ -326,6 +334,7 @@ function openAppPage(page){
 async function handleLogin(event){
   event.preventDefault();
   clearMessage();
+  toggleResendConfirm(false);
   const email = el('login-email').value.trim();
   const password = el('login-password').value;
   const btn = el('login-button');
@@ -334,10 +343,32 @@ async function handleLogin(event){
   const { data, error } = await db.auth.signInWithPassword({ email, password });
   btn.disabled = false;
   btn.textContent = 'Sign in to RAVEN';
-  if (error) return showMessage('error', error.message);
+  if (error) {
+    const isUnconfirmed = (error.message || '').toLowerCase().includes('confirm');
+    if (isUnconfirmed) {
+      pendingConfirmEmail = email;
+      showMessage('error', 'Please confirm your email first.');
+      toggleResendConfirm(true);
+      return;
+    }
+    return showMessage('error', error.message);
+  }
   if (el('remember-email').checked) localStorage.setItem('raven_remembered_email', email);
   else localStorage.removeItem('raven_remembered_email');
   if (data?.user) routeAfterAuth(data.user);
+}
+async function resendConfirmationEmail(){
+  clearMessage();
+  const email = (pendingConfirmEmail || el('login-email').value || '').trim();
+  if (!email) return showMessage('error', 'Enter your email first.');
+  const btn = el('resend-confirm-button');
+  btn.disabled = true;
+  btn.textContent = 'Sending confirmation...';
+  const { error } = await db.auth.resend({ type: 'signup', email });
+  btn.disabled = false;
+  btn.textContent = 'Resend confirmation email';
+  if (error) return showMessage('error', error.message);
+  showMessage('success', 'Confirmation email sent. Check your inbox and spam folder.');
 }
 async function handleSignup(event){
   event.preventDefault();
