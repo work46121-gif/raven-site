@@ -5,5 +5,11 @@
   "ios": {
     "contentInset": "automatic",
     "backgroundColor": "#06060A"
+  },
+  "server": {
+    "allowNavigation": [
+      "ravensplit.com",
+      "www.ravensplit.com"
+    ]
   }
 }
