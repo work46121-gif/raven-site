@@ -63,7 +63,7 @@ body.app-mode.leaving { opacity: 0; transform: translateY(6px); }
 body.app-mode .sidebar { display: none !important; }
 body.app-mode .main {
   margin-left: 0 !important;
-  padding: 14px 14px calc(128px + env(safe-area-inset-bottom)) !important;
+  padding: 14px 14px calc(92px + env(safe-area-inset-bottom)) !important;
   max-width: 560px;
   margin-left: auto !important;
   margin-right: auto !important;
@@ -129,7 +129,8 @@ body.app-mode #mobile-nav {
   border-top: 1px solid rgba(255,255,255,.12);
   background: linear-gradient(180deg, rgba(8,8,13,.94), #06060A 72%);
   backdrop-filter: blur(22px);
-  padding-bottom: calc(18px + env(safe-area-inset-bottom)) !important;
+  padding-top: 8px !important;
+  padding-bottom: calc(7px + env(safe-area-inset-bottom)) !important;
 }
 body.app-mode::after {
   content: "";
@@ -137,7 +138,7 @@ body.app-mode::after {
   left: 0;
   right: 0;
   bottom: 0;
-  height: calc(26px + env(safe-area-inset-bottom));
+  height: calc(9px + env(safe-area-inset-bottom));
   background: #06060A;
   z-index: 199;
   pointer-events: none;
@@ -485,8 +486,8 @@ body.app-mode .cb-raven-add-icon { width:18px;height:18px;display:block; }
   backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
   border-top: 1px solid rgba(255,255,255,0.08);
   z-index: 200;
-  padding: 12px 0 10px;
-  padding-bottom: calc(10px + env(safe-area-inset-bottom));
+  padding: 9px 0 7px;
+  padding-bottom: calc(7px + env(safe-area-inset-bottom));
 }
 .mob-nav-btn {
   flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px;
@@ -496,8 +497,8 @@ body.app-mode .cb-raven-add-icon { width:18px;height:18px;display:block; }
   -webkit-tap-highlight-color: transparent; transition: color 0.15s;
   letter-spacing: 0.03em; text-transform: uppercase;
 }
-.mob-nav-btn .mi { width: 26px; height: 26px; display:flex; align-items:center; justify-content:center; line-height: 1; margin-bottom: 1px; }
-.mob-nav-btn .mi svg { width: 22px; height: 22px; display:block; }
+.mob-nav-btn .mi { width: 23px; height: 23px; display:flex; align-items:center; justify-content:center; line-height: 1; margin-bottom: 0; }
+.mob-nav-btn .mi svg { width: 20px; height: 20px; display:block; }
 .mob-nav-btn .mi svg * { vector-effect: non-scaling-stroke; }
 .mob-nav-btn:not(.create-btn) .mi svg { color: #a98af6; }
 .mob-nav-btn.active { color: var(--green); }
@@ -505,13 +506,13 @@ body.app-mode .cb-raven-add-icon { width:18px;height:18px;display:block; }
 .mob-nav-btn.active .mi-ring { background: rgba(48,209,88,0.1); border-color: rgba(48,209,88,0.24); }
 .mob-nav-btn .mi-ring { box-shadow: inset 0 1px 0 rgba(255,255,255,0.03); }
 .mob-nav-btn:not(.create-btn):not(.active) .mi-ring { background: rgba(168,85,247,0.08); border-color: rgba(168,85,247,0.16); }
-.mob-nav-btn.create-btn { transform: translateY(-3px); }
-.mob-nav-btn.create-btn .mi { width: 44px; height: 44px; margin-bottom: 0; }
-.mob-nav-btn.create-btn .mi-ring { width: 44px; height: 44px; border-radius: 999px; background: var(--green); border: 1px solid rgba(48,209,88,0.32); color:#000; box-shadow: 0 12px 24px rgba(48,209,88,0.2); }
-.mob-nav-btn.create-btn .mi svg { width: 20px; height: 20px; }
+.mob-nav-btn.create-btn { transform: translateY(-2px); }
+.mob-nav-btn.create-btn .mi { width: 38px; height: 38px; margin-bottom: 0; }
+.mob-nav-btn.create-btn .mi-ring { width: 38px; height: 38px; border-radius: 999px; background: var(--green); border: 1px solid rgba(48,209,88,0.32); color:#000; box-shadow: 0 9px 20px rgba(48,209,88,0.18); }
+.mob-nav-btn.create-btn .mi svg { width: 18px; height: 18px; }
 .mob-nav-label { display:block; line-height:1; }
-.mob-nav-btn.create-btn .mob-nav-label { margin-top: 8px; }
-.mi-ring { display:flex; align-items:center; justify-content:center; width: 36px; height: 36px; border-radius: 14px; border: 1px solid transparent; transition: all 0.15s; }
+.mob-nav-btn.create-btn .mob-nav-label { margin-top: 5px; }
+.mi-ring { display:flex; align-items:center; justify-content:center; width: 31px; height: 31px; border-radius: 12px; border: 1px solid transparent; transition: all 0.15s; }
 #mobile-header {
   display: none; position: sticky; top: 0;
   background: rgba(12,12,18,0.98);
