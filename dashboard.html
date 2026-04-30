@@ -2886,7 +2886,24 @@ async function showDashboard() {
   loadAllData();
   if (RAVEN_APP_MODE) {
     const appPage = new URLSearchParams(window.location.search).get('page');
-    if (appPage) setTimeout(() => showPage(appPage), 250);
+    if (appPage) {
+      setTimeout(() => {
+        showPage(appPage);
+        const quickscan = new URLSearchParams(window.location.search).get('quickscan') === '1';
+        if (appPage === 'create-bill' && quickscan) {
+          try { cbGoToStep(1); } catch(e) {}
+          setTimeout(() => {
+            const fileInput = document.getElementById('cb-file-input');
+            if (fileInput) fileInput.click();
+          }, 280);
+          try {
+            const clean = new URL(window.location.href);
+            clean.searchParams.delete('quickscan');
+            history.replaceState(null, '', clean.toString());
+          } catch(e) {}
+        }
+      }, 250);
+    }
   }
   if (RAVEN_APP_MODE) {
     // If we were opened with a specific trip target, open it inside Trip Hub.
@@ -6711,7 +6728,7 @@ async function loadTrips() {
 
   container.innerHTML = trips.map(t => {
     const people = Array.isArray(t.people) ? t.people : JSON.parse(t.people || '[]');
-    const tripUrl = RAVEN_APP_MODE ? ('dashboard.html?app=1&page=trip-hub&trip=' + encodeURIComponent(t.id)) : (FRONTEND + '/trip/' + t.id + '?t=' + t.share_token);
+    const tripUrl = FRONTEND + '/trip/' + t.id + '?t=' + t.share_token;
     const tripUrlReceipt = RAVEN_APP_MODE ? 'dashboard.html?app=1&page=create-bill' : (tripUrl + '&action=receipt');
     tripUrlMap[t.id] = tripUrl;
     // Store full trip data safely — never pass user content through onclick attributes
@@ -6820,20 +6837,6 @@ async function loadTrips() {
     });
   });
 
-  // If app mode requested opening a trip before data loaded, fulfill it now.
-  if (RAVEN_APP_MODE) {
-    let pending = '';
-    try { pending = String(sessionStorage.getItem('raven_pending_trip_admin') || '').trim(); } catch(e) {}
-    if (pending) {
-      const key = Object.keys(tripDataMap).find(k => String(k) === String(pending));
-      if (key) {
-        try { sessionStorage.removeItem('raven_pending_trip_admin'); } catch(e) {}
-        setTimeout(() => {
-          try { openTripAdmin(key); switchAdminTab('receipts'); } catch(e) {}
-        }, 120);
-      }
-    }
-  }
 }
 
 function openCreateTrip() {
@@ -6930,24 +6933,6 @@ async function createTrip() {
 }
 
 function openTrip(tripId) {
-  if (RAVEN_APP_MODE) {
-    // In-app: Trips should stay in Trip Hub (not jump to chat / website)
-    const targetTripId = String(tripId || '').trim();
-    if (!targetTripId) return;
-    showPage('trip-hub');
-    setMobNav('mob-trip');
-    const key = Object.keys(tripDataMap).find(k => String(k) === targetTripId);
-    if (key) {
-      // Use the Trip Hub admin modal as the in-app trip view (members + receipts)
-      openTripAdmin(key);
-      try { switchAdminTab('receipts'); } catch(e) {}
-      return;
-    }
-    // If trip data isn't loaded yet, remember it and retry after trips load.
-    try { sessionStorage.setItem('raven_pending_trip_admin', targetTripId); } catch(e) {}
-    try { loadTrips(); } catch(e) {}
-    return;
-  }
   const url = getTripOpenUrl(tripId);
   if (!url) return;
   if (openTrip._pendingUrl === url) return;
