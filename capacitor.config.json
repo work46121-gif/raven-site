@@ -2,13 +2,8 @@
   "appId": "com.ravensplit.app",
   "appName": "RAVEN",
   "webDir": "dist",
-  "server": {
-    "url": "https://ravensplit.com",
-    "cleartext": false
-  },
   "ios": {
     "contentInset": "automatic",
-    "backgroundColor": "#06060A",
-    "limitsNavigationsToAppBoundDomains": true
+    "backgroundColor": "#06060A"
   }
 }
