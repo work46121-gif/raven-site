@@ -46,6 +46,7 @@ workflows:
             --exclude "proxy*.js" \
             --exclude "server*.js" \
             --exclude README.md
+          cp app.html dist/index.html
           ls -la dist
         working_directory: .
 
