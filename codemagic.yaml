@@ -76,11 +76,31 @@ workflows:
 
       - name: Set app version
         script: |
-          LATEST_BUILD=$(app-store-connect get-latest-build-number "$APP_ID" 2>/dev/null || echo "0")
-          BUILD_NUMBER=$((LATEST_BUILD + 1))
-          echo "Build number: $BUILD_NUMBER"
-          agvtool new-version -all $BUILD_NUMBER
-          agvtool new-marketing-version 1.0.$BUILD_NUMBER
+          set -e
+
+          ASC_LATEST_BUILD=$(app-store-connect get-latest-build-number "$APP_ID" 2>/dev/null || true)
+          if ! [[ "$ASC_LATEST_BUILD" =~ ^[0-9]+$ ]]; then
+            ASC_LATEST_BUILD=0
+          fi
+
+          CI_BUILD_NUMBER="${BUILD_NUMBER:-1}"
+          if ! [[ "$CI_BUILD_NUMBER" =~ ^[0-9]+$ ]]; then
+            CI_BUILD_NUMBER=1
+          fi
+
+          APP_BUILD_NUMBER=$((ASC_LATEST_BUILD + 1))
+          if [ "$CI_BUILD_NUMBER" -gt "$APP_BUILD_NUMBER" ]; then
+            APP_BUILD_NUMBER="$CI_BUILD_NUMBER"
+          fi
+
+          echo "App Store latest build number: $ASC_LATEST_BUILD"
+          echo "Codemagic build number: $CI_BUILD_NUMBER"
+          echo "Using iOS build number: $APP_BUILD_NUMBER"
+
+          agvtool new-version -all "$APP_BUILD_NUMBER"
+          agvtool new-marketing-version 1.0.0
+          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $APP_BUILD_NUMBER" App/Info.plist
+          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString 1.0.0" App/Info.plist
         working_directory: ios/App
 
       - name: Build iOS IPA
