@@ -14,37 +14,41 @@
 html,body{min-height:100%;font-family:Epilogue,system-ui,sans-serif;background:var(--black);color:var(--white);overflow-x:hidden}
 body{min-height:100vh;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom);background:radial-gradient(circle at 20% -10%,rgba(168,85,247,.25),transparent 34%),radial-gradient(circle at 100% 10%,rgba(48,209,88,.14),transparent 30%),linear-gradient(180deg,#06060A 0%,#0A0A12 100%)}
 button,input{font:inherit}
-.app-shell{min-height:100vh;display:flex;flex-direction:column;padding:18px 18px 24px;position:relative;isolation:isolate}
+.intro-splash{position:fixed;inset:0;z-index:50;display:grid;place-items:center;background:radial-gradient(circle at 50% 42%,rgba(168,85,247,.28),transparent 34%),#06060A;animation:splashOut .9s .9s ease forwards}
+.intro-r{width:min(58vw,260px);aspect-ratio:1;border-radius:34%;display:grid;place-items:center;position:relative;background:linear-gradient(145deg,#151522,#07070D);border:1px solid rgba(255,255,255,.14);box-shadow:0 0 90px rgba(168,85,247,.34);animation:rPop .82s cubic-bezier(.2,1.25,.32,1) both}
+.intro-r::before{content:"R";font-family:"Bebas Neue";font-size:min(44vw,210px);line-height:.8;background:linear-gradient(180deg,#F1DCFF 4%,#B276FF 92%);-webkit-background-clip:text;color:transparent}
+.intro-r::after{content:"";position:absolute;width:23%;aspect-ratio:1;border-radius:50%;bottom:9%;background:var(--green);box-shadow:0 0 34px rgba(48,209,88,.75)}
+.app-shell{min-height:100vh;display:flex;flex-direction:column;padding:8px 18px 18px;position:relative;isolation:isolate}
 .app-shell::before{content:"";position:fixed;inset:0;background-image:linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);background-size:42px 42px;mask-image:linear-gradient(#000 0%,transparent 72%);pointer-events:none;z-index:-2}
-.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.topbar{display:flex;align-items:center;justify-content:center;margin-bottom:0;min-height:24px}
 .brand{display:flex;align-items:center;gap:10px}
-.mini-mark{width:34px;height:34px;border-radius:11px;background:linear-gradient(145deg,#161621,#07070D);border:1px solid var(--line2);display:grid;place-items:center;box-shadow:0 12px 30px rgba(0,0,0,.28)}
+.mini-mark{display:none}
 .mini-mark span{font-family:"Bebas Neue";font-size:27px;line-height:1;background:linear-gradient(180deg,#F3E8FF,#B878FF);-webkit-background-clip:text;color:transparent}
-.brand-name{font-family:"Bebas Neue";font-size:25px;letter-spacing:.16em;line-height:1}
-.brand-status{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+.brand-name{font-family:"Bebas Neue";font-size:22px;letter-spacing:.16em;line-height:1;color:rgba(245,241,255,.82)}
+.brand-status{display:none}
 .status-dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 16px rgba(48,209,88,.8)}
-.hero{display:grid;place-items:center;text-align:center;padding:12px 0 18px}
-.raven-stage{position:relative;width:min(58vw,260px);aspect-ratio:1;margin:4px auto 4px;display:grid;place-items:center;filter:drop-shadow(0 28px 48px rgba(0,0,0,.35))}
+.hero{display:grid;place-items:center;text-align:center;padding:0 0 10px}
+.raven-stage{position:relative;width:min(34vw,158px);aspect-ratio:1;margin:-4px auto 2px;display:grid;place-items:center;filter:drop-shadow(0 22px 40px rgba(0,0,0,.35))}
 .raven-glow{position:absolute;inset:12%;border-radius:50%;background:radial-gradient(circle,rgba(168,85,247,.28),rgba(48,209,88,.12) 45%,transparent 70%);animation:breathe 3.5s ease-in-out infinite}
 .raven-wing{position:absolute;width:45%;height:30%;top:32%;background:linear-gradient(135deg,rgba(192,132,252,.95),rgba(137,92,246,.78));clip-path:polygon(0 45%,58% 0,100% 18%,68% 45%,100% 77%,58% 100%);opacity:.8}
 .raven-wing.left{left:0;transform-origin:100% 50%;animation:wingLeft 2.25s ease-in-out infinite}
 .raven-wing.right{right:0;transform:scaleX(-1);transform-origin:0 50%;animation:wingRight 2.25s ease-in-out infinite}
 .raven-core{position:relative;width:58%;height:58%;border-radius:31%;background:linear-gradient(145deg,#14141F,#07070D);border:1px solid rgba(255,255,255,.12);display:grid;place-items:center;box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 20px 70px rgba(124,58,237,.24)}
 .raven-core::after{content:"";position:absolute;width:22%;aspect-ratio:1;border-radius:50%;bottom:9%;background:var(--green);box-shadow:0 0 24px rgba(48,209,88,.56)}
-.raven-r{font-family:"Bebas Neue";font-size:clamp(82px,24vw,138px);line-height:.8;background:linear-gradient(180deg,#F0D8FF 5%,#B276FF 92%);-webkit-background-clip:text;color:transparent;margin-top:-4px}
+.raven-r{font-family:"Bebas Neue";font-size:clamp(56px,15vw,92px);line-height:.8;background:linear-gradient(180deg,#F0D8FF 5%,#B276FF 92%);-webkit-background-clip:text;color:transparent;margin-top:-4px}
 .spark{position:absolute;width:8px;height:8px;border-radius:50%;background:var(--green);opacity:.72;animation:floatSpark 4s ease-in-out infinite}
 .spark.s1{left:18%;top:18%}.spark.s2{right:20%;top:22%;background:var(--blue);animation-delay:.55s}.spark.s3{left:28%;bottom:14%;background:var(--violet);animation-delay:1s}
-.hero h1{font-family:"Bebas Neue";font-size:clamp(52px,17vw,86px);letter-spacing:.04em;line-height:.9;margin-top:2px}
-.hero p{max-width:330px;margin:10px auto 0;color:var(--muted);font-size:14px;line-height:1.55}
-.quick-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:8px 0 16px}
-.quick-card{min-height:82px;border:1px solid var(--line);border-radius:18px;background:linear-gradient(180deg,rgba(255,255,255,.065),rgba(255,255,255,.025));padding:12px 10px;display:flex;flex-direction:column;justify-content:space-between;box-shadow:0 16px 36px rgba(0,0,0,.18);animation:popIn .55s ease both}
+.hero h1{font-family:"Bebas Neue";font-size:clamp(42px,13vw,68px);letter-spacing:.04em;line-height:.88;margin-top:0}
+.hero p{max-width:320px;margin:7px auto 0;color:var(--muted);font-size:13px;line-height:1.45}
+.quick-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:4px 0 12px}
+.quick-card{min-height:72px;border:1px solid var(--line);border-radius:18px;background:linear-gradient(180deg,rgba(255,255,255,.065),rgba(255,255,255,.025));padding:10px;display:flex;flex-direction:column;justify-content:space-between;box-shadow:0 16px 36px rgba(0,0,0,.18);animation:popIn .55s ease both}
 .quick-card:nth-child(2){animation-delay:.08s}.quick-card:nth-child(3){animation-delay:.16s}
 .icon-bubble{width:34px;height:34px;border-radius:13px;display:grid;place-items:center;background:rgba(48,209,88,.12);border:1px solid rgba(48,209,88,.25);color:var(--green)}
 .quick-card:nth-child(2) .icon-bubble{background:rgba(168,85,247,.14);border-color:rgba(168,85,247,.28);color:var(--violet)}
 .quick-card:nth-child(3) .icon-bubble{background:rgba(88,199,255,.12);border-color:rgba(88,199,255,.26);color:var(--blue)}
 .icon-bubble svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
 .quick-label{font-size:11px;font-weight:800;line-height:1.25;color:var(--white)}
-.auth-card{background:rgba(16,16,24,.88);border:1px solid var(--line2);border-radius:24px;padding:18px;box-shadow:0 26px 70px rgba(0,0,0,.35);backdrop-filter:blur(18px)}
+.auth-card{background:rgba(16,16,24,.88);border:1px solid var(--line2);border-radius:24px;padding:16px;box-shadow:0 26px 70px rgba(0,0,0,.35);backdrop-filter:blur(18px)}
 .tabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;background:rgba(255,255,255,.05);padding:5px;border-radius:16px;margin-bottom:16px}
 .tab{border:0;border-radius:12px;background:transparent;color:var(--muted);font-size:13px;font-weight:800;padding:11px;cursor:pointer}
 .tab.active{background:var(--white);color:#090910;box-shadow:0 8px 20px rgba(0,0,0,.22)}
@@ -72,18 +76,20 @@ button,input{font:inherit}
 @keyframes floatSpark{0%,100%{transform:translateY(0) scale(.8);opacity:.45}50%{transform:translateY(-18px) scale(1.15);opacity:1}}
 @keyframes popIn{from{transform:translateY(12px) scale(.96);opacity:0}to{transform:none;opacity:1}}
 @keyframes loaderPulse{0%,100%{transform:scale(1);box-shadow:0 0 0 rgba(168,85,247,0)}50%{transform:scale(1.04);box-shadow:0 0 42px rgba(168,85,247,.32)}}
-@media(max-height:760px){.raven-stage{width:min(44vw,190px)}.hero h1{font-size:48px}.hero p{display:none}.quick-row{margin-top:2px}.quick-card{min-height:70px}.auth-card{padding:16px}}
+@keyframes rPop{0%{transform:scale(.36) rotate(-8deg);opacity:0}64%{transform:scale(1.12) rotate(2deg);opacity:1}100%{transform:scale(1) rotate(0)}}
+@keyframes splashOut{to{opacity:0;visibility:hidden;pointer-events:none}}
+@media(max-height:760px){.app-shell{padding-top:4px}.topbar{display:none}.raven-stage{width:min(30vw,130px)}.hero h1{font-size:40px}.hero p{display:none}.quick-row{margin-top:0}.quick-card{min-height:64px}.auth-card{padding:14px}.form{gap:10px}.input{padding:12px 14px}.primary-btn{padding:13px 14px}}
 @media(min-width:760px){.app-shell{max-width:460px;margin:0 auto}.raven-stage{width:240px}}
 </style>
 </head>
 <body>
+<div class="intro-splash" id="intro-splash" aria-hidden="true"><div class="intro-r"></div></div>
 <div class="app-shell">
   <header class="topbar">
     <div class="brand">
       <div class="mini-mark"><span>R</span></div>
       <div>
         <div class="brand-name">RAVEN</div>
-        <div class="brand-status"><span class="status-dot"></span>App Mode</div>
       </div>
     </div>
   </header>
@@ -144,7 +150,7 @@ button,input{font:inherit}
     <form class="form" id="signup-form" onsubmit="handleSignup(event)">
       <label class="field">
         <span class="label">First name</span>
-        <input class="input" id="signup-first" type="text" autocomplete="given-name" placeholder="Melad" required>
+        <input class="input" id="signup-first" type="text" autocomplete="given-name" placeholder="First name" required>
       </label>
       <label class="field">
         <span class="label">Email</span>
@@ -173,7 +179,7 @@ button,input{font:inherit}
 
 <script>
 const SUPABASE_URL = 'https://ffjpzkpdumdcwnakpaje.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJIUzI1NiIsInJlZiI6ImZmanB6a3BkdW1kY3duYWtwYWplIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5ODc4OTcsImV4cCI6MjA4ODU2Mzg5N30.JtDLVu4K1TJ8emcN_mvSHBu6e0y8-jPQv-ypoc9p0RU';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZmanB6a3BkdW1kY3duYWtwYWplIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5ODc4OTcsImV4cCI6MjA4ODU2Mzg5N30.JtDLVu4K1TJ8emcN_mvSHBu6e0y8-jPQv-ypoc9p0RU';
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 function el(id){return document.getElementById(id)}
