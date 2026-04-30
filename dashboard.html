@@ -732,7 +732,6 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
                     <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
                       <span style="font-size:15px">⚡</span>
                       <span style="font-size:14px;font-weight:700;color:#F0EEF8">Live Mode</span>
-                      <span style="font-size:10px;background:rgba(48,209,88,0.12);border:1px solid rgba(48,209,88,0.3);color:#30D158;padding:2px 7px;border-radius:10px;font-weight:700">NEW</span>
                     </div>
                     <div style="font-size:12px;color:var(--muted);line-height:1.5">Share a QR code at the table — everyone picks their own items live. Totals update instantly.</div>
                   </div>
@@ -1691,7 +1690,7 @@ html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(
 <div id="mobile-nav">
   <button class="mob-nav-btn active" id="mob-overview" onclick="showPage('overview');setMobNav('mob-overview')"><span class="mi"><span class="mi-ring"><svg class="raven-icon"><use href="#mob-icon-overview"></use></svg></span></span>Overview</button>
   <button class="mob-nav-btn" id="mob-bills" onclick="showPage('active-bills');setMobNav('mob-bills')"><span class="mi"><span class="mi-ring"><svg class="raven-icon"><use href="#mob-icon-bills"></use></svg></span></span>Bills</button>
-  <button class="mob-nav-btn create-btn" id="mob-create" onclick="showPage('create-bill');setMobNav('mob-create')"><span class="mi"><span class="mi-ring"><svg class="raven-icon"><use href="#mob-icon-create"></use></svg></span></span><span class="mob-nav-label">New</span></button>
+  <button class="mob-nav-btn create-btn" id="mob-create" onclick="showPage('create-bill');setMobNav('mob-create')"><span class="mi"><span class="mi-ring"><svg class="raven-icon"><use href="#mob-icon-create"></use></svg></span></span><span class="mob-nav-label">Scan</span></button>
   <button class="mob-nav-btn" id="mob-trip" onclick="showPage('trip-hub');setMobNav('mob-trip')"><span class="mi"><span class="mi-ring"><svg class="raven-icon"><use href="#mob-icon-trips"></use></svg></span></span>Trips</button>
   <button class="mob-nav-btn" id="mob-settings" onclick="showPage('settings');setMobNav('mob-settings')" style="position:relative"><span class="mi"><span class="mi-ring"><svg class="raven-icon"><use href="#mob-icon-more"></use></svg></span></span>More<span id="mob-friend-req-badge" style="display:none;position:absolute;top:6px;right:10px;width:8px;height:8px;background:#A855F7;border-radius:50%"></span></button>
 </div>
@@ -1732,6 +1731,7 @@ try {
 
 const BACKEND = 'https://raven-backend-production-fb1f.up.railway.app';
 const FRONTEND = 'https://ravensplit.com';
+const RAVEN_APP_MODE = new URLSearchParams(window.location.search).get('app') === '1' || localStorage.getItem('raven_native_app') === '1';
 
 let currentUser = null;
 let currentBillId = null;
@@ -2683,13 +2683,21 @@ async function viewBillPage(billId) {
   window.location.href = url;
 }
 
-async function handleLogout() { localStorage.removeItem('raven_profile'); await db.auth.signOut(); window.location.href = 'index.html'; }
+async function handleLogout() { localStorage.removeItem('raven_profile'); await db.auth.signOut(); window.location.href = RAVEN_APP_MODE ? 'app.html' : 'index.html'; }
 
 function showAuth() { document.getElementById('auth-screen').style.display = 'flex'; document.getElementById('dashboard-screen').style.display = 'none'; }
 
 async function showDashboard() {
   document.getElementById('auth-screen').style.display = 'none';
   document.getElementById('dashboard-screen').style.display = 'block';
+  if (RAVEN_APP_MODE) {
+    localStorage.setItem('raven_native_app','1');
+    document.querySelectorAll('a[href="index.html"]').forEach(a => a.setAttribute('href', 'app.html'));
+    const mobileHeader = document.getElementById('mobile-header');
+    if (mobileHeader) mobileHeader.style.display = 'none';
+    const mobCreateLabel = document.querySelector('#mob-create .mob-nav-label');
+    if (mobCreateLabel) mobCreateLabel.textContent = 'Scan';
+  }
   window.scrollTo(0,0);
   document.getElementById('sidebar-avatar').textContent = currentUser.email[0].toUpperCase();
   const mobAvatar = document.getElementById('mob-user-avatar');
@@ -2747,6 +2755,10 @@ async function showDashboard() {
     if (greetingEl) greetingEl.closest('h1').innerHTML = 'Welcome Back <span style="color:var(--green)" class="raven-r-mark"></span>';
   }
   loadAllData();
+  if (RAVEN_APP_MODE) {
+    const appPage = new URLSearchParams(window.location.search).get('page');
+    if (appPage) setTimeout(() => showPage(appPage), 250);
+  }
   // Check pending friend requests for notification badges
   setTimeout(() => { try { loadFriendRequests(); } catch(e) {} }, 1500);
   setTimeout(() => { try { refreshNotifBadge(); } catch(e) {} }, 2500);
@@ -6537,8 +6549,8 @@ async function loadTrips() {
 
   container.innerHTML = trips.map(t => {
     const people = Array.isArray(t.people) ? t.people : JSON.parse(t.people || '[]');
-    const tripUrl = FRONTEND + '/trip/' + t.id + '?t=' + t.share_token;
-    const tripUrlReceipt = tripUrl + '&action=receipt';
+    const tripUrl = RAVEN_APP_MODE ? ('dashboard.html?app=1&page=trip-hub&trip=' + encodeURIComponent(t.id)) : (FRONTEND + '/trip/' + t.id + '?t=' + t.share_token);
+    const tripUrlReceipt = RAVEN_APP_MODE ? 'dashboard.html?app=1&page=create-bill' : (tripUrl + '&action=receipt');
     tripUrlMap[t.id] = tripUrl;
     // Store full trip data safely — never pass user content through onclick attributes
     tripDataMap[t.id] = t;
@@ -6590,9 +6602,9 @@ async function loadTrips() {
       + '<div class="bill-amount trip-open-hit" style="cursor:pointer;color:' + (parseFloat(t.total||0)>0?'#FF9A3C':'var(--green)') + ';touch-action:manipulation;-webkit-tap-highlight-color:transparent" onpointerdown="warmTrip(\'' + safeId + '\')" onclick="openTrip(\'' + safeId + '\')">$' + parseFloat(t.total || 0).toFixed(2) + '</div>'
       + '<div class="bill-progress-wrap"><div class="bill-progress-label">' + tripStatusLabel + '</div><div class="bill-progress"><div class="bill-progress-fill" style="width:100%"></div></div></div>'
       + '<div class="bill-actions" onclick="event.stopPropagation()">'
-      + '<a class="bill-action-btn btn-remind" href="' + tripUrlReceipt + '" style="display:inline-flex;align-items:center;text-decoration:none;background:rgba(48,209,88,0.1);color:var(--green);border:1px solid rgba(48,209,88,0.25)"><svg class="bill-action-icon"><use href="#icon-active-bills"></use></svg>Receipt</a>'
+      + '<a class="bill-action-btn btn-remind" href="' + tripUrlReceipt + '" onclick="' + (RAVEN_APP_MODE ? "event.preventDefault();showPage('create-bill');setMobNav('mob-create')" : '') + '" style="display:inline-flex;align-items:center;text-decoration:none;background:rgba(48,209,88,0.1);color:var(--green);border:1px solid rgba(48,209,88,0.25)"><svg class="bill-action-icon"><use href="#icon-active-bills"></use></svg>Receipt</a>'
       + (isAdmin ? '<button class="bill-action-btn admin-btn" data-tripid="' + t.id + '" style="background:rgba(124,58,237,0.1);color:var(--purple3);border:1px solid rgba(124,58,237,0.2)"><svg class="bill-action-icon"><use href="#icon-roommates"></use></svg>Admin</button>' : '')
-      + '<a class="bill-action-btn btn-view" href="' + tripUrl + '" style="display:inline-flex;align-items:center;text-decoration:none">Open Trip →</a>'
+      + '<a class="bill-action-btn btn-view" data-tripid="' + safeId + '" href="' + tripUrl + '" style="display:inline-flex;align-items:center;text-decoration:none">Open Trip →</a>'
       + '</div></div>';
   }).join('');
 
@@ -6614,6 +6626,11 @@ async function loadTrips() {
     btn.addEventListener('click', function(e) {
       e.preventDefault();
       e.stopPropagation();
+      if (RAVEN_APP_MODE) {
+        const appTripId = this.getAttribute('data-tripid');
+        if (appTripId) openTrip(appTripId);
+        return;
+      }
       const href = this.getAttribute('href') || '';
       const match = href.match(/\/trip\/([^?]+)/);
       if (match) openTrip(match[1]);
@@ -6736,6 +6753,14 @@ async function createTrip() {
 }
 
 function openTrip(tripId) {
+  if (RAVEN_APP_MODE) {
+    if (tripDataMap[tripId]) {
+      openTripChat(tripId);
+      return;
+    }
+    showPage('trip-hub');
+    return;
+  }
   const url = getTripOpenUrl(tripId);
   if (!url) return;
   if (openTrip._pendingUrl === url) return;
