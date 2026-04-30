@@ -62,6 +62,8 @@ button,input{font:inherit}
 .primary-btn{width:100%;border:0;border-radius:15px;background:var(--green);color:#06100A;padding:15px 16px;font-weight:900;cursor:pointer;box-shadow:0 14px 28px rgba(48,209,88,.24)}
 .primary-btn:disabled{opacity:.62;cursor:wait}
 .secondary-btn{width:100%;border:1px solid var(--line);border-radius:15px;background:rgba(255,255,255,.045);color:var(--white);padding:13px 16px;font-weight:800;cursor:pointer}
+.google-btn{width:100%;border:1px solid rgba(255,255,255,.2);border-radius:15px;background:#fff;color:#111;padding:13px 16px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px}
+.google-btn svg{width:18px;height:18px;display:block}
 .row{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .tiny{font-size:12px;color:var(--muted);line-height:1.5}
 .link-btn{border:0;background:transparent;color:var(--soft);font-size:12px;font-weight:800;cursor:pointer}
@@ -76,8 +78,8 @@ button,input{font:inherit}
 .home-logo::before{content:"R";font-family:"Bebas Neue";font-size:34px;line-height:.8;background:linear-gradient(180deg,#F1DCFF,#B276FF);-webkit-background-clip:text;color:transparent}
 .home-logo::after{content:"";position:absolute;width:8px;height:8px;border-radius:50%;background:var(--green);bottom:7px;right:10px;box-shadow:0 0 14px rgba(48,209,88,.7)}
 .home-title{font-family:"Bebas Neue";font-size:30px;letter-spacing:.14em;line-height:1}
-.home-sub{font-size:11px;color:var(--muted);font-weight:800;letter-spacing:.1em;text-transform:uppercase;margin-top:2px}
-.home-profile{width:38px;height:38px;border-radius:50%;border:1px solid rgba(255,255,255,.12);background:linear-gradient(135deg,var(--purple),var(--green));display:grid;place-items:center;color:#fff;font-weight:900}
+.home-sub{display:none}
+.home-profile{display:none}
 .scan-hero{flex:1;min-height:0;display:flex;align-items:stretch}
 .scan-card{width:100%;min-height:68vh;border:1px solid rgba(255,255,255,.14);border-radius:34px;background:radial-gradient(circle at 50% 12%,rgba(168,85,247,.26),transparent 35%),radial-gradient(circle at 50% 84%,rgba(48,209,88,.17),transparent 36%),linear-gradient(180deg,rgba(255,255,255,.075),rgba(255,255,255,.026));box-shadow:0 28px 80px rgba(0,0,0,.34),inset 0 1px 0 rgba(255,255,255,.08);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:30px 24px;position:relative;overflow:hidden}
 .scan-card::before{content:"";position:absolute;inset:20px;border:1px solid rgba(255,255,255,.055);border-radius:26px;pointer-events:none}
@@ -176,6 +178,10 @@ button,input{font:inherit}
         <span class="label">Password</span>
         <input class="input" id="login-password" type="password" autocomplete="current-password" placeholder="Password" required>
       </label>
+      <button class="google-btn" type="button" onclick="handleGoogleAuth()">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#EA4335" d="M12 10.2v3.9h5.5c-.2 1.3-1.5 3.9-5.5 3.9-3.3 0-6-2.7-6-6s2.7-6 6-6c1.9 0 3.1.8 3.8 1.5l2.6-2.5C16.8 3.5 14.6 2.6 12 2.6 6.9 2.6 2.8 6.7 2.8 11.8s4.1 9.2 9.2 9.2c5.3 0 8.8-3.7 8.8-8.9 0-.6-.1-1.1-.2-1.9H12z"/></svg>
+        Continue with Google
+      </button>
       <div class="row">
         <label class="tiny"><input id="remember-email" type="checkbox" style="accent-color:var(--green);vertical-align:-2px"> Remember email</label>
         <button class="link-btn" type="button" onclick="showTab('reset')">Forgot?</button>
@@ -218,10 +224,8 @@ button,input{font:inherit}
       <div class="home-logo" aria-hidden="true"></div>
       <div>
         <div class="home-title">RAVEN</div>
-        <div class="home-sub">Live split sync</div>
       </div>
     </div>
-    <button class="home-profile" id="home-profile" type="button" onclick="openAppPage('settings')">?</button>
   </div>
   <div class="scan-hero">
     <div class="scan-card">
@@ -320,7 +324,8 @@ function showAppHome(profile){
   el('home-tabs').classList.add('active');
   const local = JSON.parse(localStorage.getItem('raven_profile') || '{}');
   const name = profile?.first_name || local.first_name || local.email || '';
-  el('home-profile').textContent = (name || '?').charAt(0).toUpperCase();
+  const profileBtn = el('home-profile');
+  if (profileBtn) profileBtn.textContent = (name || '?').charAt(0).toUpperCase();
 }
 function navigateWithFade(url){
   try { document.body.classList.add('leaving'); } catch(e) {}
@@ -330,6 +335,16 @@ function navigateWithFade(url){
 function openAppPage(page){
   localStorage.setItem('raven_native_app','1');
   navigateWithFade('dashboard.html?app=1&page=' + encodeURIComponent(page));
+}
+async function handleGoogleAuth(){
+  clearMessage();
+  try {
+    const redirectTo = window.location.origin + window.location.pathname + '?app=1';
+    const { error } = await db.auth.signInWithOAuth({ provider: 'google', options: { redirectTo } });
+    if (error) showMessage('error', error.message);
+  } catch(e) {
+    showMessage('error', 'Google sign-in failed. Please try email/password.');
+  }
 }
 async function handleLogin(event){
   event.preventDefault();
