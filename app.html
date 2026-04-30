@@ -66,6 +66,33 @@ button,input{font:inherit}
 .error,.success{display:none;border-radius:14px;padding:11px 12px;font-size:13px;line-height:1.45;margin-bottom:12px}
 .error{background:rgba(255,107,107,.1);border:1px solid rgba(255,107,107,.25);color:#FFB3B3}
 .success{background:rgba(48,209,88,.1);border:1px solid rgba(48,209,88,.24);color:#A7F3B7}
+.app-home{display:none;min-height:100vh;padding:12px 18px 88px}
+.app-home.active{display:flex;flex-direction:column}
+.home-top{display:flex;align-items:center;justify-content:space-between;margin:2px 0 18px}
+.home-brand{display:flex;align-items:center;gap:10px}
+.home-logo{width:42px;height:42px;border-radius:15px;background:linear-gradient(145deg,#151522,#07070D);border:1px solid var(--line2);display:grid;place-items:center;position:relative;box-shadow:0 12px 32px rgba(0,0,0,.28)}
+.home-logo::before{content:"R";font-family:"Bebas Neue";font-size:34px;line-height:.8;background:linear-gradient(180deg,#F1DCFF,#B276FF);-webkit-background-clip:text;color:transparent}
+.home-logo::after{content:"";position:absolute;width:8px;height:8px;border-radius:50%;background:var(--green);bottom:7px;right:10px;box-shadow:0 0 14px rgba(48,209,88,.7)}
+.home-title{font-family:"Bebas Neue";font-size:30px;letter-spacing:.14em;line-height:1}
+.home-sub{font-size:11px;color:var(--muted);font-weight:800;letter-spacing:.1em;text-transform:uppercase;margin-top:2px}
+.home-profile{width:38px;height:38px;border-radius:50%;border:1px solid rgba(255,255,255,.12);background:linear-gradient(135deg,var(--purple),var(--green));display:grid;place-items:center;color:#fff;font-weight:900}
+.scan-hero{flex:1;min-height:0;display:flex;align-items:stretch}
+.scan-card{width:100%;min-height:68vh;border:1px solid rgba(255,255,255,.14);border-radius:34px;background:radial-gradient(circle at 50% 12%,rgba(168,85,247,.26),transparent 35%),radial-gradient(circle at 50% 84%,rgba(48,209,88,.17),transparent 36%),linear-gradient(180deg,rgba(255,255,255,.075),rgba(255,255,255,.026));box-shadow:0 28px 80px rgba(0,0,0,.34),inset 0 1px 0 rgba(255,255,255,.08);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:30px 24px;position:relative;overflow:hidden}
+.scan-card::before{content:"";position:absolute;inset:20px;border:1px solid rgba(255,255,255,.055);border-radius:26px;pointer-events:none}
+.scan-orbit{position:relative;width:min(54vw,250px);aspect-ratio:1;border-radius:50%;display:grid;place-items:center;margin-bottom:24px}
+.scan-orbit::before{content:"";position:absolute;inset:0;border-radius:50%;border:1px dashed rgba(192,132,252,.34);animation:spin 16s linear infinite}
+.scan-orbit::after{content:"";position:absolute;width:18px;height:18px;border-radius:50%;background:var(--green);right:18%;top:9%;box-shadow:0 0 24px rgba(48,209,88,.75)}
+.scan-mark{width:58%;aspect-ratio:1;border-radius:30%;background:linear-gradient(145deg,#151522,#08080F);border:1px solid rgba(255,255,255,.14);display:grid;place-items:center;position:relative;box-shadow:0 22px 60px rgba(168,85,247,.26)}
+.scan-mark::before{content:"";position:absolute;inset:-25%;border-radius:50%;background:radial-gradient(circle,rgba(48,209,88,.14),transparent 65%);z-index:-1}
+.scan-mark span{font-family:"Bebas Neue";font-size:min(28vw,130px);line-height:.8;background:linear-gradient(180deg,#F1DCFF,#B276FF);-webkit-background-clip:text;color:transparent}
+.scan-title{font-family:"Bebas Neue";font-size:clamp(48px,15vw,78px);letter-spacing:.035em;line-height:.88;margin-bottom:10px}
+.scan-copy{max-width:280px;color:var(--muted);font-size:14px;line-height:1.55;margin-bottom:24px}
+.scan-button{border:0;border-radius:22px;background:var(--green);color:#06100A;font-weight:950;font-size:17px;padding:18px 24px;width:100%;max-width:310px;box-shadow:0 18px 36px rgba(48,209,88,.25);cursor:pointer}
+.home-tabs{position:fixed;left:0;right:0;bottom:0;z-index:10;padding:10px 14px calc(10px + env(safe-area-inset-bottom));background:rgba(6,6,10,.86);backdrop-filter:blur(22px);border-top:1px solid rgba(255,255,255,.1);display:none;grid-template-columns:repeat(4,1fr);gap:6px}
+.home-tabs.active{display:grid}
+.home-tab{border:0;background:transparent;color:var(--muted);display:grid;place-items:center;gap:5px;font-size:11px;font-weight:800;cursor:pointer;padding:7px 4px;border-radius:14px}
+.home-tab svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2.1;stroke-linecap:round;stroke-linejoin:round}
+.home-tab.active{color:var(--green);background:rgba(48,209,88,.08)}
 .loading{position:fixed;inset:0;background:rgba(6,6,10,.84);display:none;place-items:center;z-index:20;backdrop-filter:blur(14px)}
 .loading.show{display:grid}
 .loader-mark{width:82px;height:82px;border-radius:28px;background:linear-gradient(145deg,#151522,#08080E);border:1px solid var(--line2);display:grid;place-items:center;animation:loaderPulse 1.2s ease-in-out infinite}
@@ -75,6 +102,7 @@ button,input{font:inherit}
 @keyframes wingRight{0%,100%{transform:scaleX(-1) rotate(-7deg) translateY(0)}50%{transform:scaleX(-1) rotate(13deg) translateY(-8px)}}
 @keyframes floatSpark{0%,100%{transform:translateY(0) scale(.8);opacity:.45}50%{transform:translateY(-18px) scale(1.15);opacity:1}}
 @keyframes popIn{from{transform:translateY(12px) scale(.96);opacity:0}to{transform:none;opacity:1}}
+@keyframes spin{to{transform:rotate(360deg)}}
 @keyframes loaderPulse{0%,100%{transform:scale(1);box-shadow:0 0 0 rgba(168,85,247,0)}50%{transform:scale(1.04);box-shadow:0 0 42px rgba(168,85,247,.32)}}
 @keyframes rPop{0%{transform:scale(.36) rotate(-8deg);opacity:0}64%{transform:scale(1.12) rotate(2deg);opacity:1}100%{transform:scale(1) rotate(0)}}
 @keyframes splashOut{to{opacity:0;visibility:hidden;pointer-events:none}}
@@ -175,6 +203,34 @@ button,input{font:inherit}
   </main>
 </div>
 
+<section class="app-home" id="app-home" aria-label="RAVEN home">
+  <div class="home-top">
+    <div class="home-brand">
+      <div class="home-logo" aria-hidden="true"></div>
+      <div>
+        <div class="home-title">RAVEN</div>
+        <div class="home-sub">Live split sync</div>
+      </div>
+    </div>
+    <button class="home-profile" id="home-profile" type="button" onclick="openAppPage('settings')">?</button>
+  </div>
+  <div class="scan-hero">
+    <div class="scan-card">
+      <div class="scan-orbit" aria-hidden="true"><div class="scan-mark"><span>R</span></div></div>
+      <h1 class="scan-title">Scan Receipt</h1>
+      <p class="scan-copy">Start with a photo. RAVEN reads the receipt, splits the bill, and syncs it everywhere.</p>
+      <button class="scan-button" type="button" onclick="openAppPage('create-bill')">Open Scanner</button>
+    </div>
+  </div>
+</section>
+
+<nav class="home-tabs" id="home-tabs" aria-label="App navigation">
+  <button class="home-tab active" type="button" onclick="showAppHome()"><svg viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10.5V20h14v-9.5"/></svg>Home</button>
+  <button class="home-tab" type="button" onclick="openAppPage('active-bills')"><svg viewBox="0 0 24 24"><path d="M7 3h10l2 4v14H5V7l2-4Z"/><path d="M8 11h8M8 15h6"/></svg>Bills</button>
+  <button class="home-tab" type="button" onclick="openAppPage('trip-hub')"><svg viewBox="0 0 24 24"><path d="M4 18 9 5l4 8 7-3-5 9-4-7-7 6Z"/></svg>Trips</button>
+  <button class="home-tab" type="button" onclick="openAppPage('settings')"><svg viewBox="0 0 24 24"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/><path d="M19.4 15a8 8 0 0 0 .1-6l2-1.5-2-3.4-2.4 1a8 8 0 0 0-5.1-3l-.4-2.6H7.6L7.2 2.1a8 8 0 0 0-5.1 3l-2.4-1-2 3.4 2 1.5a8 8 0 0 0 .1 6l-2 1.5 2 3.4 2.4-1a8 8 0 0 0 5 3l.5 2.6h4l.5-2.6a8 8 0 0 0 5-3l2.4 1 2-3.4-2.2-1.5Z"/></svg>More</button>
+</nav>
+
 <div class="loading" id="loading"><div class="loader-mark"><span>R</span></div></div>
 
 <script>
@@ -232,13 +288,27 @@ async function routeAfterAuth(user){
         username: profile.username || profile.raven_id || '',
         onboarding_complete: true
       }));
-      window.location.href = 'dashboard.html';
+      showLoading(false);
+      showAppHome(profile);
       return;
     }
     window.location.href = 'onboarding.html';
   } catch(e) {
-    window.location.href = 'dashboard.html';
+    showLoading(false);
+    showAppHome();
   }
+}
+function showAppHome(profile){
+  document.querySelector('.app-shell').style.display = 'none';
+  el('app-home').classList.add('active');
+  el('home-tabs').classList.add('active');
+  const local = JSON.parse(localStorage.getItem('raven_profile') || '{}');
+  const name = profile?.first_name || local.first_name || local.email || '';
+  el('home-profile').textContent = (name || '?').charAt(0).toUpperCase();
+}
+function openAppPage(page){
+  localStorage.setItem('raven_native_app','1');
+  window.location.href = 'dashboard.html?app=1&page=' + encodeURIComponent(page);
 }
 async function handleLogin(event){
   event.preventDefault();
