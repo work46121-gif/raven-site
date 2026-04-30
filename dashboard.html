@@ -63,7 +63,7 @@ body.app-mode.leaving { opacity: 0; transform: translateY(6px); }
 body.app-mode .sidebar { display: none !important; }
 body.app-mode .main {
   margin-left: 0 !important;
-  padding: 14px 14px 118px !important;
+  padding: 14px 14px calc(128px + env(safe-area-inset-bottom)) !important;
   max-width: 560px;
   margin-left: auto !important;
   margin-right: auto !important;
@@ -127,8 +127,20 @@ body.app-mode .bills-list {
 }
 body.app-mode #mobile-nav {
   border-top: 1px solid rgba(255,255,255,.12);
-  background: rgba(6,6,10,.88);
+  background: linear-gradient(180deg, rgba(8,8,13,.94), #06060A 72%);
   backdrop-filter: blur(22px);
+  padding-bottom: calc(18px + env(safe-area-inset-bottom)) !important;
+}
+body.app-mode::after {
+  content: "";
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: calc(26px + env(safe-area-inset-bottom));
+  background: #06060A;
+  z-index: 199;
+  pointer-events: none;
 }
 body.app-mode #mobile-header { display: none !important; }
 body.app-mode .form-input,
@@ -145,6 +157,8 @@ body.app-mode #mob-settings .mi-ring {
   border-color: rgba(255,255,255,.14) !important;
 }
 body.app-mode .auth-footer { display: none !important; }
+body.app-mode .cb-raven-scan-art { width:86px;height:86px;margin:0 auto 16px;display:block;filter:drop-shadow(0 0 24px rgba(48,209,88,.22)); }
+body.app-mode .cb-raven-add-icon { width:18px;height:18px;display:block; }
 
 #auth-screen {
   display: none;
@@ -636,7 +650,10 @@ body.app-mode .auth-footer { display: none !important; }
     <path d="M17.3 7.2L20 8.5L17.3 10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
   </symbol>
   <symbol id="mob-icon-create" viewBox="0 0 24 24">
-    <path d="M12 6.2V17.8M6.2 12H17.8" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"></path>
+    <rect x="6.2" y="4.6" width="8.2" height="12.8" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.8"></rect>
+    <path d="M8.2 8.2H12.4M8.2 11.1H12.9M8.2 14H11.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+    <path d="M15 7.2C17.8 8 19.6 9.9 20.2 12.4M15 15.2C17.8 14.4 19.6 12.6 20.2 10.1" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path>
+    <circle cx="18.8" cy="12.3" r="1.6" fill="currentColor"></circle>
   </symbol>
   <symbol id="mob-icon-trips" viewBox="0 0 24 24">
     <path d="M3.7 13.8L12.1 11.3L20 5.2L15.8 11.9L18.8 13.4L14.4 14.1L11.5 18.5L10 14L3.7 13.8Z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"></path>
@@ -855,10 +872,28 @@ body.app-mode .auth-footer { display: none !important; }
               <div style="font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted2);margin-bottom:16px">Scan Receipt</div>
               <div id="cb-dropzone" style="border:2px dashed rgba(48,209,88,0.3);border-radius:14px;background:rgba(48,209,88,0.02);cursor:pointer;overflow:hidden;transition:all 0.25s;min-height:220px;display:flex;align-items:center;justify-content:center" onclick="document.getElementById('cb-file-input').click()" ondragover="event.preventDefault();this.style.borderColor='var(--green)';this.style.background='rgba(48,209,88,0.05)'" ondragleave="this.style.borderColor='rgba(48,209,88,0.3)';this.style.background='rgba(48,209,88,0.02)'" ondrop="cbHandleDrop(event)">
                 <div id="cb-empty-state" style="padding:40px 24px;text-align:center">
-                  <div style="font-size:52px;margin-bottom:14px">📸</div>
+                  <svg class="cb-raven-scan-art" viewBox="0 0 96 96" aria-hidden="true">
+                    <defs>
+                      <linearGradient id="cb-raven-grad" x1="0" y1="0" x2="1" y2="1">
+                        <stop offset="0" stop-color="#F0D8FF"></stop>
+                        <stop offset="1" stop-color="#A855F7"></stop>
+                      </linearGradient>
+                      <radialGradient id="cb-scan-glow" cx="50%" cy="54%" r="52%">
+                        <stop offset="0" stop-color="#30D158" stop-opacity=".34"></stop>
+                        <stop offset="1" stop-color="#30D158" stop-opacity="0"></stop>
+                      </radialGradient>
+                    </defs>
+                    <circle cx="48" cy="51" r="36" fill="url(#cb-scan-glow)"></circle>
+                    <rect x="24" y="18" width="34" height="48" rx="5" fill="#101018" stroke="rgba(255,255,255,.18)" stroke-width="2"></rect>
+                    <path d="M31 31H50M31 40H51M31 49H45" stroke="#F0EEF8" stroke-opacity=".68" stroke-width="3" stroke-linecap="round"></path>
+                    <path d="M58 32C70 35 78 43 82 54M58 64C70 61 78 53 82 42" stroke="#30D158" stroke-width="4" stroke-linecap="round"></path>
+                    <path d="M63 48L82 38L73 51L80 55L69 56L63 67L60 56L48 54Z" fill="none" stroke="#6EF1A6" stroke-width="3" stroke-linejoin="round"></path>
+                    <text x="35" y="77" font-family="Bebas Neue, sans-serif" font-size="28" fill="url(#cb-raven-grad)">R</text>
+                    <circle cx="43" cy="79" r="4" fill="#30D158"></circle>
+                  </svg>
                   <div style="font-size:17px;font-weight:700;margin-bottom:6px">Add picture</div>
                   <div style="font-size:13px;color:var(--muted);margin-bottom:18px">Tap to add a receipt photo, then scan it.</div>
-                  <div style="display:inline-flex;align-items:center;gap:8px;padding:11px 22px;background:rgba(48,209,88,0.1);border:1px solid rgba(48,209,88,0.3);border-radius:10px;font-size:14px;font-weight:700;color:var(--green)">📁 Add Picture</div>
+                  <div style="display:inline-flex;align-items:center;gap:8px;padding:11px 22px;background:rgba(48,209,88,0.1);border:1px solid rgba(48,209,88,0.3);border-radius:10px;font-size:14px;font-weight:700;color:var(--green)"><svg class="cb-raven-add-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5h8.3c1.3 0 2.3 1 2.3 2.3v12.7l-2-1.4-1.8 1.4-1.8-1.4-1.8 1.4-1.8-1.4-1.4 1V4.5Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"></path><path d="M9.4 9h5M9.4 12h5M9.4 15h3.2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path></svg> Add Picture</div>
                 </div>
                 <div id="cb-preview-state" style="display:none;position:relative;width:100%">
                   <img id="cb-preview-img" style="width:100%;display:block;max-height:380px;object-fit:contain">
@@ -889,7 +924,7 @@ body.app-mode .auth-footer { display: none !important; }
               <div style="font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted2);margin-bottom:18px">How It Works</div>
               <div style="display:flex;flex-direction:column;gap:16px">
                 <div style="display:flex;gap:14px;align-items:flex-start">
-                  <div style="width:36px;height:36px;border-radius:10px;background:rgba(48,209,88,0.1);border:1px solid rgba(48,209,88,0.2);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">📸</div>
+                  <div style="width:36px;height:36px;border-radius:10px;background:rgba(48,209,88,0.1);border:1px solid rgba(48,209,88,0.2);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><rect x="5.5" y="4.5" width="8" height="13" rx="1.2" fill="none" stroke="#30D158" stroke-width="1.7"/><path d="M7.8 8.1H12M7.8 11H12.3M7.8 13.9H10.5" stroke="#30D158" stroke-width="1.5" stroke-linecap="round"/><path d="M14.6 8C17 8.8 18.5 10.1 19.4 12M14.6 16C17 15.2 18.5 13.9 19.4 12" stroke="#C084FC" stroke-width="1.6" stroke-linecap="round"/><circle cx="19.4" cy="12" r="1.5" fill="#30D158"/></svg></div>
                   <div><div style="font-size:14px;font-weight:600;margin-bottom:3px">Upload your receipt</div><div style="font-size:12px;color:var(--muted);line-height:1.6">Any restaurant, bar, or store receipt — even blurry ones</div></div>
                 </div>
                 <div style="display:flex;gap:14px;align-items:flex-start">
@@ -2817,7 +2852,15 @@ async function showDashboard() {
   if (RAVEN_APP_MODE) {
     localStorage.setItem('raven_native_app','1');
     try { document.body.classList.add('app-mode'); } catch(e) {}
-    document.querySelectorAll('a[href="index.html"]').forEach(a => a.setAttribute('href', 'app.html'));
+    document.querySelectorAll('a[href="index.html"], a[href="app.html"]').forEach(a => {
+      a.setAttribute('href', 'dashboard.html?app=1');
+      a.addEventListener('click', function(e) {
+        e.preventDefault();
+        showPage('overview');
+        setMobNav('mob-overview');
+        window.scrollTo(0, 0);
+      });
+    });
     // Keep policy links in-app (do not change share/open-trip links)
     document.querySelectorAll('a[href="https://ravensplit.com/privacy"]').forEach(a => a.setAttribute('href', 'privacy.html'));
     document.querySelectorAll('a[href="https://ravensplit.com/terms"]').forEach(a => a.setAttribute('href', 'terms.html'));
@@ -3757,6 +3800,13 @@ function setupDashboardRavenHomeGuard() {
   if (!link || link.dataset.guardReady === '1') return;
   link.dataset.guardReady = '1';
   link.addEventListener('click', function(e) {
+    if (RAVEN_APP_MODE) {
+      e.preventDefault();
+      showPage('overview');
+      setMobNav('mob-overview');
+      window.scrollTo(0, 0);
+      return;
+    }
     const now = Date.now();
     if (now <= dashboardRavenHomeArmedUntil) {
       dashboardRavenHomeArmedUntil = 0;
@@ -6742,6 +6792,7 @@ async function loadTrips() {
     const isCoAdmin = coAdminsList.some(a => { const al = a.toLowerCase(); return al === userEmail || al === userDisplayName || userEmail.startsWith(al + '@') || al === userEmail.split('@')[0]; });
     const isAdmin = isCreator || isCoAdmin;
     const safeId = String(t.id || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+    const safeAttrId = String(t.id || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
     const isCompletedTrip = (() => {
       const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
       if (t.end_date) return String(t.end_date) <= today;
@@ -6783,7 +6834,9 @@ async function loadTrips() {
       + '<div class="bill-actions" onclick="event.stopPropagation()">'
       + '<a class="bill-action-btn btn-remind" href="' + tripUrlReceipt + '" onclick="' + (RAVEN_APP_MODE ? "event.preventDefault();showPage('create-bill');setMobNav('mob-create')" : '') + '" style="display:inline-flex;align-items:center;text-decoration:none;background:rgba(48,209,88,0.1);color:var(--green);border:1px solid rgba(48,209,88,0.25)"><svg class="bill-action-icon"><use href="#icon-active-bills"></use></svg>Receipt</a>'
       + (isAdmin ? '<button class="bill-action-btn admin-btn" data-tripid="' + t.id + '" style="background:rgba(124,58,237,0.1);color:var(--purple3);border:1px solid rgba(124,58,237,0.2)"><svg class="bill-action-icon"><use href="#icon-roommates"></use></svg>Admin</button>' : '')
-      + '<a class="bill-action-btn btn-view" data-tripid="' + safeId + '" href="' + tripUrl + '" style="display:inline-flex;align-items:center;text-decoration:none">Open Trip →</a>'
+      + (RAVEN_APP_MODE
+        ? '<button class="bill-action-btn btn-view" type="button" data-tripid="' + safeAttrId + '" style="display:inline-flex;align-items:center;text-decoration:none">Open Trip →</button>'
+        : '<a class="bill-action-btn btn-view" data-tripid="' + safeAttrId + '" href="' + tripUrl + '" style="display:inline-flex;align-items:center;text-decoration:none">Open Trip →</a>')
       + '</div></div>';
   }).join('');
 
@@ -6934,11 +6987,20 @@ async function createTrip() {
 
 function openTrip(tripId) {
   const url = getTripOpenUrl(tripId);
-  if (!url) return;
+  if (!url) {
+    if (RAVEN_APP_MODE) {
+      try { showToast('Trip is still loading. Try again in a moment.', 'error'); } catch(e) {}
+      try { loadTrips(); } catch(e) {}
+    }
+    return;
+  }
   if (openTrip._pendingUrl === url) return;
   openTrip._pendingUrl = url;
+  setTimeout(() => {
+    if (openTrip._pendingUrl === url) openTrip._pendingUrl = '';
+  }, 1500);
   try { warmTrip(tripId); } catch(e) {}
-  window.location.assign(url);
+  window.location.href = url;
 }
 
 function getTripOpenUrl(tripId) {
@@ -8380,5 +8442,3 @@ async function sendChatMessage() {
 
 </body>
 </html>
-
-
