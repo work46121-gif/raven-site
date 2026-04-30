@@ -12,7 +12,9 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{--black:#06060A;--panel:#101018;--panel2:#171724;--line:rgba(255,255,255,.1);--line2:rgba(255,255,255,.16);--white:#F5F1FF;--muted:#9B97AA;--soft:#D9C4FF;--purple:#A855F7;--violet:#C084FC;--green:#30D158;--blue:#58C7FF;--orange:#FFB86B;--red:#FF6B6B}
 html,body{min-height:100%;font-family:Epilogue,system-ui,sans-serif;background:var(--black);color:var(--white);overflow-x:hidden}
-body{min-height:100vh;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom);background:radial-gradient(circle at 20% -10%,rgba(168,85,247,.25),transparent 34%),radial-gradient(circle at 100% 10%,rgba(48,209,88,.14),transparent 30%),linear-gradient(180deg,#06060A 0%,#0A0A12 100%)}
+body{min-height:100vh;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom);background:radial-gradient(circle at 20% -10%,rgba(168,85,247,.25),transparent 34%),radial-gradient(circle at 100% 10%,rgba(48,209,88,.14),transparent 30%),linear-gradient(180deg,#06060A 0%,#0A0A12 100%);opacity:0;transform:translateY(6px);transition:opacity .22s ease,transform .22s ease}
+body.ready{opacity:1;transform:none}
+body.leaving{opacity:0;transform:translateY(6px)}
 button,input{font:inherit}
 .intro-splash{position:fixed;inset:0;z-index:50;display:grid;place-items:center;background:radial-gradient(circle at 50% 42%,rgba(168,85,247,.28),transparent 34%),#06060A;animation:splashOut .9s .9s ease forwards}
 .intro-r{width:min(58vw,260px);aspect-ratio:1;border-radius:34%;display:grid;place-items:center;position:relative;background:linear-gradient(145deg,#151522,#07070D);border:1px solid rgba(255,255,255,.14);box-shadow:0 0 90px rgba(168,85,247,.34);animation:rPop .82s cubic-bezier(.2,1.25,.32,1) both}
@@ -79,15 +81,20 @@ button,input{font:inherit}
 .scan-hero{flex:1;min-height:0;display:flex;align-items:stretch}
 .scan-card{width:100%;min-height:68vh;border:1px solid rgba(255,255,255,.14);border-radius:34px;background:radial-gradient(circle at 50% 12%,rgba(168,85,247,.26),transparent 35%),radial-gradient(circle at 50% 84%,rgba(48,209,88,.17),transparent 36%),linear-gradient(180deg,rgba(255,255,255,.075),rgba(255,255,255,.026));box-shadow:0 28px 80px rgba(0,0,0,.34),inset 0 1px 0 rgba(255,255,255,.08);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:30px 24px;position:relative;overflow:hidden}
 .scan-card::before{content:"";position:absolute;inset:20px;border:1px solid rgba(255,255,255,.055);border-radius:26px;pointer-events:none}
+.scan-card::after{content:"";position:absolute;inset:-40%;background:radial-gradient(circle at 40% 35%,rgba(48,209,88,.10),transparent 45%),radial-gradient(circle at 70% 60%,rgba(168,85,247,.14),transparent 50%);filter:blur(18px);opacity:.9;pointer-events:none;transform:translateY(0);animation:scanGlow 6s ease-in-out infinite}
+.scan-card{transform:translateZ(0)}
 .scan-orbit{position:relative;width:min(54vw,250px);aspect-ratio:1;border-radius:50%;display:grid;place-items:center;margin-bottom:24px}
 .scan-orbit::before{content:"";position:absolute;inset:0;border-radius:50%;border:1px dashed rgba(192,132,252,.34);animation:spin 16s linear infinite}
 .scan-orbit::after{content:"";position:absolute;width:18px;height:18px;border-radius:50%;background:var(--green);right:18%;top:9%;box-shadow:0 0 24px rgba(48,209,88,.75)}
 .scan-mark{width:58%;aspect-ratio:1;border-radius:30%;background:linear-gradient(145deg,#151522,#08080F);border:1px solid rgba(255,255,255,.14);display:grid;place-items:center;position:relative;box-shadow:0 22px 60px rgba(168,85,247,.26)}
 .scan-mark::before{content:"";position:absolute;inset:-25%;border-radius:50%;background:radial-gradient(circle,rgba(48,209,88,.14),transparent 65%);z-index:-1}
 .scan-mark span{font-family:"Bebas Neue";font-size:min(28vw,130px);line-height:.8;background:linear-gradient(180deg,#F1DCFF,#B276FF);-webkit-background-clip:text;color:transparent}
-.scan-title{font-family:"Bebas Neue";font-size:clamp(48px,15vw,78px);letter-spacing:.035em;line-height:.88;margin-bottom:10px}
-.scan-copy{max-width:280px;color:var(--muted);font-size:14px;line-height:1.55;margin-bottom:24px}
-.scan-button{border:0;border-radius:22px;background:var(--green);color:#06100A;font-weight:950;font-size:17px;padding:18px 24px;width:100%;max-width:310px;box-shadow:0 18px 36px rgba(48,209,88,.25);cursor:pointer}
+.scan-title{font-family:"Bebas Neue";font-size:clamp(50px,15vw,82px);letter-spacing:.04em;line-height:.86;margin-bottom:10px;text-shadow:0 16px 40px rgba(0,0,0,.35)}
+.scan-copy{max-width:300px;color:rgba(245,241,255,.72);font-size:14px;line-height:1.6;margin-bottom:22px}
+.scan-button{border:0;border-radius:22px;background:linear-gradient(180deg,#46F08C 0%,#30D158 55%,#27B94B 100%);color:#06100A;font-weight:950;font-size:17px;padding:18px 24px;width:100%;max-width:320px;box-shadow:0 18px 36px rgba(48,209,88,.22),0 0 0 1px rgba(0,0,0,.25) inset;cursor:pointer;transition:transform .12s ease,filter .12s ease,box-shadow .12s ease;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.scan-button:hover{filter:saturate(1.06)}
+.scan-button:active{transform:translateY(1px) scale(.99);box-shadow:0 14px 28px rgba(48,209,88,.20),0 0 0 1px rgba(0,0,0,.25) inset}
+.scan-button:focus-visible{outline:none;box-shadow:0 18px 36px rgba(48,209,88,.22),0 0 0 4px rgba(48,209,88,.18),0 0 0 1px rgba(0,0,0,.25) inset}
 .home-tabs{position:fixed;left:0;right:0;bottom:0;z-index:10;padding:10px 14px calc(10px + env(safe-area-inset-bottom));background:rgba(6,6,10,.86);backdrop-filter:blur(22px);border-top:1px solid rgba(255,255,255,.1);display:none;grid-template-columns:repeat(4,1fr);gap:6px}
 .home-tabs.active{display:grid}
 .home-tab{border:0;background:transparent;color:var(--muted);display:grid;place-items:center;gap:5px;font-size:11px;font-weight:800;cursor:pointer;padding:7px 4px;border-radius:14px}
@@ -104,6 +111,7 @@ button,input{font:inherit}
 @keyframes popIn{from{transform:translateY(12px) scale(.96);opacity:0}to{transform:none;opacity:1}}
 @keyframes spin{to{transform:rotate(360deg)}}
 @keyframes loaderPulse{0%,100%{transform:scale(1);box-shadow:0 0 0 rgba(168,85,247,0)}50%{transform:scale(1.04);box-shadow:0 0 42px rgba(168,85,247,.32)}}
+@keyframes scanGlow{0%,100%{transform:translateY(0);opacity:.75}50%{transform:translateY(-12px);opacity:1}}
 @keyframes rPop{0%{transform:scale(.36) rotate(-8deg);opacity:0}64%{transform:scale(1.12) rotate(2deg);opacity:1}100%{transform:scale(1) rotate(0)}}
 @keyframes splashOut{to{opacity:0;visibility:hidden;pointer-events:none}}
 @media(max-height:760px){.app-shell{padding-top:4px}.topbar{display:none}.raven-stage{width:min(30vw,130px)}.hero h1{font-size:40px}.hero p{display:none}.quick-row{margin-top:0}.quick-card{min-height:64px}.auth-card{padding:14px}.form{gap:10px}.input{padding:12px 14px}.primary-btn{padding:13px 14px}}
@@ -306,9 +314,14 @@ function showAppHome(profile){
   const name = profile?.first_name || local.first_name || local.email || '';
   el('home-profile').textContent = (name || '?').charAt(0).toUpperCase();
 }
+function navigateWithFade(url){
+  try { document.body.classList.add('leaving'); } catch(e) {}
+  // Small delay so the transition is visible
+  setTimeout(() => { window.location.href = url; }, 160);
+}
 function openAppPage(page){
   localStorage.setItem('raven_native_app','1');
-  window.location.href = 'dashboard.html?app=1&page=' + encodeURIComponent(page);
+  navigateWithFade('dashboard.html?app=1&page=' + encodeURIComponent(page));
 }
 async function handleLogin(event){
   event.preventDefault();
@@ -387,6 +400,8 @@ async function handleReset(event){
 }
 (async function init(){
   localStorage.setItem('raven_native_app','1');
+  // Fade-in on initial render
+  requestAnimationFrame(() => document.body.classList.add('ready'));
   const remembered = localStorage.getItem('raven_remembered_email') || '';
   if (remembered) {
     el('login-email').value = remembered;
