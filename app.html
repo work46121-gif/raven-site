@@ -70,9 +70,9 @@ button,input{font:inherit}
 .error,.success{display:none;border-radius:14px;padding:11px 12px;font-size:13px;line-height:1.45;margin-bottom:12px}
 .error{background:rgba(255,107,107,.1);border:1px solid rgba(255,107,107,.25);color:#FFB3B3}
 .success{background:rgba(48,209,88,.1);border:1px solid rgba(48,209,88,.24);color:#A7F3B7}
-.app-home{display:none;height:100vh;height:100dvh;min-height:100vh;min-height:100dvh;padding:calc(8px + env(safe-area-inset-top)) 14px calc(12px + env(safe-area-inset-bottom));overflow:hidden}
-.app-home.active{display:flex;flex-direction:column}
-.home-top{display:flex;align-items:center;justify-content:flex-start;margin:0 0 10px;flex:0 0 auto}
+.app-home{display:none;height:100vh;height:100dvh;min-height:100vh;min-height:100dvh;overflow:hidden;background:radial-gradient(circle at 50% 12%,rgba(168,85,247,.28),transparent 36%),radial-gradient(circle at 58% 88%,rgba(48,209,88,.18),transparent 34%),linear-gradient(180deg,#06060A 0%,#101018 100%)}
+.app-home.active{position:fixed;inset:0;z-index:10;display:flex;flex-direction:column}
+.home-top{display:flex;align-items:stretch;justify-content:stretch;margin:0;flex:0 0 auto;padding-top:env(safe-area-inset-top);background:var(--green);box-shadow:0 12px 28px rgba(48,209,88,.18)}
 .home-brand{display:flex;align-items:center;gap:10px}
 .home-logo{width:42px;height:42px;border-radius:15px;background:linear-gradient(145deg,#151522,#07070D);border:1px solid var(--line2);display:grid;place-items:center;position:relative;box-shadow:0 12px 32px rgba(0,0,0,.28)}
 .home-logo::before{content:"R";font-family:"Bebas Neue";font-size:34px;line-height:.8;background:linear-gradient(180deg,#F1DCFF,#B276FF);-webkit-background-clip:text;color:transparent}
@@ -80,20 +80,25 @@ button,input{font:inherit}
 .home-title{font-family:"Bebas Neue";font-size:30px;letter-spacing:.14em;line-height:1}
 .home-sub{display:none}
 .home-profile{display:none}
-.dashboard-pill{display:inline-flex;align-items:center;gap:8px;padding:7px 12px;border:1px solid rgba(255,255,255,.12);border-radius:999px;background:rgba(15,15,24,.86);font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:rgba(245,241,255,.76)}
+.dashboard-pill{display:flex;align-items:center;justify-content:center;width:100%;min-height:46px;padding:12px 18px;background:var(--green);font-size:13px;font-weight:950;letter-spacing:.06em;text-transform:none;color:#06100A}
 .scan-hero{flex:1;min-height:0;display:flex;align-items:stretch}
-.scan-card{width:100%;height:100%;border:1px solid rgba(255,255,255,.14);border-radius:34px;background:radial-gradient(circle at 50% 12%,rgba(168,85,247,.26),transparent 35%),radial-gradient(circle at 50% 84%,rgba(48,209,88,.17),transparent 36%),linear-gradient(180deg,rgba(255,255,255,.075),rgba(255,255,255,.026));box-shadow:0 28px 80px rgba(0,0,0,.34),inset 0 1px 0 rgba(255,255,255,.08);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:clamp(14px,2.2vh,24px) clamp(16px,4vw,24px);position:relative;overflow:hidden}
-.scan-card::before{content:"";position:absolute;inset:20px;border:1px solid rgba(255,255,255,.055);border-radius:26px;pointer-events:none}
+.scan-card{width:100%;height:100%;border:0;border-radius:0;background:transparent;box-shadow:none;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:clamp(20px,5vh,46px) clamp(18px,6vw,32px) calc(24px + env(safe-area-inset-bottom));position:relative;overflow:hidden}
+.scan-card::before{content:"";position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.022) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.022) 1px,transparent 1px);background-size:42px 42px;mask-image:linear-gradient(#000 0%,transparent 78%);pointer-events:none}
 .scan-card::after{content:"";position:absolute;inset:-40%;background:radial-gradient(circle at 40% 35%,rgba(48,209,88,.10),transparent 45%),radial-gradient(circle at 70% 60%,rgba(168,85,247,.14),transparent 50%);filter:blur(18px);opacity:.9;pointer-events:none;transform:translateY(0);animation:scanGlow 6s ease-in-out infinite}
 .scan-card{transform:translateZ(0)}
-.scan-orbit{position:relative;width:min(50vw,220px);aspect-ratio:1;border-radius:50%;display:grid;place-items:center;margin-bottom:clamp(10px,2vh,22px)}
+.scan-orbit{position:relative;width:min(54vw,240px);aspect-ratio:1;border-radius:50%;display:grid;place-items:center;margin-bottom:clamp(18px,3.5vh,34px)}
 .scan-orbit::before{content:"";position:absolute;inset:0;border-radius:50%;border:1px dashed rgba(192,132,252,.34);animation:spin 16s linear infinite}
-.scan-orbit::after{content:"";position:absolute;width:18px;height:18px;border-radius:50%;background:var(--green);right:18%;top:9%;box-shadow:0 0 24px rgba(48,209,88,.75)}
-.scan-mark{width:58%;aspect-ratio:1;border-radius:30%;background:linear-gradient(145deg,#151522,#08080F);border:1px solid rgba(255,255,255,.14);display:grid;place-items:center;position:relative;box-shadow:0 22px 60px rgba(168,85,247,.26)}
+.scan-logo-button{width:58%;aspect-ratio:1;border:0;border-radius:30%;background:transparent;display:grid;place-items:center;padding:0;position:relative;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.scan-mark{width:100%;height:100%;border-radius:30%;background:linear-gradient(145deg,#151522,#08080F);border:1px solid rgba(255,255,255,.14);display:grid;place-items:center;position:relative;box-shadow:0 22px 60px rgba(168,85,247,.26);transition:transform .12s ease,box-shadow .12s ease}
 .scan-mark::before{content:"";position:absolute;inset:-25%;border-radius:50%;background:radial-gradient(circle,rgba(48,209,88,.14),transparent 65%);z-index:-1}
+.scan-mark::after{content:"";position:absolute;width:18px;height:18px;border-radius:50%;background:var(--green);left:50%;bottom:9%;transform:translateX(-50%);box-shadow:0 0 24px rgba(48,209,88,.75)}
 .scan-mark span{font-family:"Bebas Neue";font-size:min(28vw,130px);line-height:.8;background:linear-gradient(180deg,#F1DCFF,#B276FF);-webkit-background-clip:text;color:transparent}
-.scan-title{font-family:"Bebas Neue";font-size:clamp(40px,10.5vh,70px);letter-spacing:.04em;line-height:.86;margin-bottom:8px;text-shadow:0 16px 40px rgba(0,0,0,.35)}
-.scan-copy{max-width:300px;color:rgba(245,241,255,.72);font-size:clamp(12px,1.9vh,14px);line-height:1.5;margin-bottom:clamp(12px,2vh,20px)}
+.scan-logo-button:active .scan-mark{transform:scale(.98);box-shadow:0 16px 48px rgba(168,85,247,.22)}
+.scan-logo-button:focus-visible{outline:none}
+.scan-logo-button:focus-visible .scan-mark{box-shadow:0 22px 60px rgba(168,85,247,.26),0 0 0 4px rgba(48,209,88,.2)}
+.scan-orbit,.scan-title,.scan-copy{position:relative;z-index:1}
+.scan-title{font-family:"Bebas Neue";font-size:clamp(50px,11.5vh,86px);letter-spacing:.04em;line-height:.86;margin-bottom:clamp(12px,2vh,18px);text-shadow:0 16px 40px rgba(0,0,0,.35)}
+.scan-copy{max-width:330px;color:rgba(245,241,255,.72);font-size:clamp(13px,2vh,15px);line-height:1.5;margin-bottom:0}
 .scan-button{border:0;border-radius:22px;background:linear-gradient(180deg,#46F08C 0%,#30D158 55%,#27B94B 100%);color:#06100A;font-weight:950;font-size:clamp(16px,2.4vh,19px);padding:clamp(14px,2vh,18px) 24px;width:100%;max-width:320px;box-shadow:0 18px 36px rgba(48,209,88,.22),0 0 0 1px rgba(0,0,0,.25) inset;cursor:pointer;transition:transform .12s ease,filter .12s ease,box-shadow .12s ease;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 .scan-button:hover{filter:saturate(1.06)}
 .scan-button:active{transform:translateY(1px) scale(.99);box-shadow:0 14px 28px rgba(48,209,88,.20),0 0 0 1px rgba(0,0,0,.25) inset}
@@ -118,7 +123,7 @@ button,input{font:inherit}
 @keyframes rPop{0%{transform:scale(.36) rotate(-8deg);opacity:0}64%{transform:scale(1.12) rotate(2deg);opacity:1}100%{transform:scale(1) rotate(0)}}
 @keyframes splashOut{to{opacity:0;visibility:hidden;pointer-events:none}}
 @media(max-height:760px){.app-shell{padding-top:4px}.topbar{display:none}.raven-stage{width:min(30vw,130px)}.hero h1{font-size:40px}.hero p{display:none}.quick-row{margin-top:0}.quick-card{min-height:64px}.auth-card{padding:14px}.form{gap:10px}.input{padding:12px 14px}.primary-btn{padding:13px 14px}}
-@media(max-height:700px){.dashboard-pill{padding:6px 10px;font-size:10px}.scan-card{border-radius:26px}.scan-card::before{inset:12px;border-radius:20px}.scan-orbit{width:min(44vw,170px)}.scan-copy{max-width:270px}}
+@media(max-height:700px){.dashboard-pill{min-height:40px;padding:9px 14px;font-size:12px}.scan-card{padding-top:16px;padding-bottom:calc(18px + env(safe-area-inset-bottom))}.scan-card::before{inset:0;border-radius:0}.scan-orbit{width:min(45vw,176px);margin-bottom:14px}.scan-copy{max-width:270px}}
 @media(min-height:860px){.scan-orbit{width:min(52vw,250px)}.scan-title{font-size:clamp(48px,10vh,78px)}}
 @media(min-width:760px){.app-shell{max-width:460px;margin:0 auto}.raven-stage{width:240px}}
 </style>
@@ -227,10 +232,13 @@ button,input{font:inherit}
   </div>
   <div class="scan-hero">
     <div class="scan-card">
-      <div class="scan-orbit" aria-hidden="true"><div class="scan-mark"><span>R</span></div></div>
+      <div class="scan-orbit">
+        <button class="scan-logo-button" type="button" aria-label="Scan receipt" onclick="openAppPage('create-bill',{ quickscan: true })">
+          <span class="scan-mark" aria-hidden="true"><span>R</span></span>
+        </button>
+      </div>
       <h1 class="scan-title">Scan Receipt</h1>
       <p class="scan-copy">Start with a photo. RAVEN reads the receipt, splits the bill, and syncs it everywhere.</p>
-      <button class="scan-button" type="button" onclick="openAppPage('create-bill',{ quickscan: true })">Open Scanner</button>
     </div>
   </div>
 </section>
