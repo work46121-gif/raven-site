@@ -259,6 +259,14 @@ const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 let pendingConfirmEmail = '';
 
 function el(id){return document.getElementById(id)}
+function getAppAuthRedirectTo(){
+  const fallback = 'https://ravensplit.com/app.html?app=1';
+  try {
+    const origin = window.location.origin || '';
+    if (/^https?:\/\//i.test(origin)) return origin + window.location.pathname + '?app=1';
+  } catch(e) {}
+  return fallback;
+}
 function showLoading(show){el('loading').classList.toggle('show', !!show)}
 function showMessage(type, text){
   el('message-error').style.display = 'none';
@@ -349,7 +357,7 @@ function openAppPage(page, options){
 async function handleGoogleAuth(){
   clearMessage();
   try {
-    const redirectTo = window.location.origin + window.location.pathname + '?app=1';
+    const redirectTo = getAppAuthRedirectTo();
     const { error } = await db.auth.signInWithOAuth({ provider: 'google', options: { redirectTo } });
     if (error) showMessage('error', error.message);
   } catch(e) {
@@ -389,7 +397,11 @@ async function resendConfirmationEmail(){
   const btn = el('resend-confirm-button');
   btn.disabled = true;
   btn.textContent = 'Sending confirmation...';
-  const { error } = await db.auth.resend({ type: 'signup', email });
+  const { error } = await db.auth.resend({
+    type: 'signup',
+    email,
+    options: { emailRedirectTo: getAppAuthRedirectTo() }
+  });
   btn.disabled = false;
   btn.textContent = 'Resend confirmation email';
   if (error) return showMessage('error', error.message);
@@ -410,11 +422,19 @@ async function handleSignup(event){
   const { data, error } = await db.auth.signUp({
     email,
     password,
-    options: { data: { first_name: first, raven_id: ravenId, username: ravenId } }
+    options: {
+      emailRedirectTo: getAppAuthRedirectTo(),
+      data: { first_name: first, raven_id: ravenId, username: ravenId }
+    }
   });
   if (error) {
     btn.disabled = false;
     btn.textContent = 'Create account';
+    if ((error.message || '').toLowerCase().includes('registered')) {
+      pendingConfirmEmail = email;
+      el('login-email').value = email;
+      toggleResendConfirm(true);
+    }
     return showMessage('error', error.message);
   }
   if (data?.user) {
@@ -436,8 +456,17 @@ async function handleSignup(event){
     routeAfterAuth(data.session.user);
     return;
   }
+  pendingConfirmEmail = email;
+  try {
+    await db.auth.resend({
+      type: 'signup',
+      email,
+      options: { emailRedirectTo: getAppAuthRedirectTo() }
+    });
+  } catch(e) {}
   showTab('login');
   el('login-email').value = email;
+  toggleResendConfirm(true);
   showMessage('success','Account created. Check your email to confirm, then sign in here.');
 }
 async function handleReset(event){
@@ -447,7 +476,7 @@ async function handleReset(event){
   const btn = el('reset-button');
   btn.disabled = true;
   btn.textContent = 'Sending...';
-  const redirectTo = window.location.origin + window.location.pathname;
+  const redirectTo = getAppAuthRedirectTo();
   const { error } = await db.auth.resetPasswordForEmail(email, { redirectTo });
   btn.disabled = false;
   btn.textContent = 'Send reset link';
