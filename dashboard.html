@@ -812,8 +812,7 @@ body.app-mode .cb-raven-add-icon { width:18px;height:18px;display:block; }
     <!-- CREATE BILL -->
     <div id="page-create-bill" class="page">
       <div class="page-header"><h1 class="page-title">Create <span>Bill</span></h1></div>
-
-      <!-- Trip context banner — shown when opened from Trip Hub -->
+      <!-- Trip context banner — shown when Receipt tapped from Trip Hub -->
       <div id="cb-trip-context-banner" style="display:none;align-items:center;gap:10px;padding:10px 14px;background:rgba(48,209,88,0.07);border:1px solid rgba(48,209,88,0.2);border-radius:12px;margin-bottom:16px;font-size:13px;font-weight:600;color:var(--green)"></div>
 
       <!-- STEP PROGRESS BAR — full width, pill style -->
@@ -2949,26 +2948,23 @@ async function showDashboard() {
               if (storedImg) {
                 sessionStorage.removeItem('raven_scan_image');
                 sessionStorage.removeItem('raven_scan_type');
-                // Use cbLoadPhoto directly with base64 data — avoids DataTransfer crash on iOS
-                if (typeof cbLoadPhoto === 'function') {
-                  try {
-                    // Convert data URL back to file safely
-                    const arr = storedImg.split(',');
-                    const bstr = atob(arr[1]);
-                    const u8 = new Uint8Array(bstr.length);
-                    for (let i = 0; i < bstr.length; i++) u8[i] = bstr.charCodeAt(i);
-                    const blob = new Blob([u8], { type: storedType });
-                    const file = new File([blob], 'receipt.jpg', { type: storedType });
-                    cbLoadPhoto(file);
-                  } catch(convErr) {
-                    const fileInput = document.getElementById('cb-file-input');
-                    if (fileInput) fileInput.click();
+                // Safe base64->Blob conversion — avoids DataTransfer crash on iOS WKWebView
+                try {
+                  const arr = storedImg.split(',');
+                  const bstr = atob(arr[1]);
+                  const u8 = new Uint8Array(bstr.length);
+                  for (let i = 0; i < bstr.length; i++) u8[i] = bstr.charCodeAt(i);
+                  const blob = new Blob([u8], { type: storedType });
+                  const file = new File([blob], 'receipt.jpg', { type: storedType });
+                  if (typeof cbLoadPhoto === 'function') { cbLoadPhoto(file); }
+                  else {
+                    const fi = document.getElementById('cb-file-input');
+                    if (fi) { fi.dispatchEvent(new Event('change')); }
                   }
-                  return;
+                } catch(convErr) {
+                  const fileInput = document.getElementById('cb-file-input');
+                  if (fileInput) fileInput.click();
                 }
-                // fallback — open picker
-                const fileInput = document.getElementById('cb-file-input');
-                if (fileInput) fileInput.click();
                 return;
               }
             } catch(e) {}
@@ -6817,7 +6813,9 @@ async function loadTrips() {
     const people = Array.isArray(t.people) ? t.people : JSON.parse(t.people || '[]');
     const tripUrl = FRONTEND + '/trip/' + t.id + '?t=' + t.share_token;
     const tripUrlReceipt = RAVEN_APP_MODE ? 'dashboard.html?app=1&page=create-bill' : (tripUrl + '&action=receipt');
-    const tripReceiptOnclick = RAVEN_APP_MODE ? ("event.preventDefault();showPage('create-bill');setMobNav('mob-create');setTimeout(()=>{try{cbSetActiveTrip(" + JSON.stringify(t.id) + ")}catch(e){}},300)") : '';
+    const tripReceiptOnclick = RAVEN_APP_MODE
+      ? ("event.preventDefault();showPage('create-bill');setMobNav('mob-create');setTimeout(function(){try{cbSetActiveTrip('" + t.id.replace(/'/g,'') + "')}catch(e){}},350)")
+      : '';
     tripUrlMap[t.id] = tripUrl;
     // Store full trip data safely — never pass user content through onclick attributes
     tripDataMap[t.id] = t;
@@ -7048,12 +7046,9 @@ function getTripOpenUrl(tripId) {
   try {
     const profile = JSON.parse(localStorage.getItem('raven_profile') || '{}');
     const name = (profile.first_name || '').trim();
-    let url = name ? base + '&name=' + encodeURIComponent(name) : base;
-    // In app mode, pass app=1 so the trip page back button returns to dashboard
-    if (RAVEN_APP_MODE) url += '&app=1';
-    return url;
+    return name ? base + '&name=' + encodeURIComponent(name) : base;
   } catch(e) {
-    return RAVEN_APP_MODE ? base + '&app=1' : base;
+    return base;
   }
 }
 
@@ -7083,19 +7078,22 @@ function warmTrip(tripId) {
 
 let cbItems = [], cbPeople = [], cbImageBase64 = null, cbImageMediaType = 'image/jpeg', cbCurrentStep = 1, cbAssignModalItemId = null;
 let cbKnownProfilesByName = {};
-let cbActiveTripId = null; // set when opening create-bill from a trip hub
+let cbActiveTripId = null; // set when opening create-bill from a trip hub Receipt button
 
 function cbSetActiveTrip(tripId) {
   cbActiveTripId = tripId || null;
-  const tripData = tripId ? tripDataMap[tripId] : null;
+  const tripData = tripId ? (tripDataMap[tripId] || null) : null;
   const banner = document.getElementById('cb-trip-context-banner');
   if (!banner) return;
   if (tripData) {
     banner.style.display = 'flex';
-    banner.innerHTML = '<svg style="width:14px;height:14px;flex-shrink:0;margin-top:1px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18 9 5l4 8 7-3-5 9-4-7-7 6Z"/></svg><span>Adding receipt to <strong>' + (tripData.name || tripId).replace(/</g,'&lt;') + '</strong></span><button onclick="cbSetActiveTrip(null)" style="margin-left:auto;background:none;border:none;color:inherit;cursor:pointer;font-size:16px;line-height:1;padding:0 2px" aria-label="Remove trip context">×</button>';
+    banner.innerHTML = '<svg style="width:14px;height:14px;flex-shrink:0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18 9 5l4 8 7-3-5 9-4-7-7 6Z"/></svg>'
+      + '<span>Adding receipt to <strong>' + (tripData.name || tripId).replace(/</g, '&lt;') + '</strong></span>'
+      + '<button onclick="cbSetActiveTrip(null)" style="margin-left:auto;background:none;border:none;color:inherit;cursor:pointer;font-size:18px;line-height:1;padding:0 2px" aria-label="Remove trip context">&times;</button>';
   } else {
     cbActiveTripId = null;
     banner.style.display = 'none';
+    banner.innerHTML = '';
   }
 }
 
@@ -7881,31 +7879,27 @@ async function cbCreateFinalBill() {
   btn.textContent = 'Create Bill'; btn.disabled = false;
   showToast('✅ "' + name + '" created! ID: ' + billId, 'success');
   celebrateBillCreated();
-  // Try to link bill to the active trip if one was set from Trip Hub
+  // Link bill to active trip if set from Trip Hub Receipt button
   if (cbActiveTripId) {
     try {
-      const tripData = tripDataMap[cbActiveTripId];
-      const payerName = document.getElementById('cb-paidby')?.value || currentUser?.email || '';
+      const _tid = cbActiveTripId;
+      cbActiveTripId = null;
+      const banner = document.getElementById('cb-trip-context-banner');
+      if (banner) { banner.style.display = 'none'; banner.innerHTML = ''; }
+      const personAmountsTrip = cbComputePersonAmounts();
       const splitsObj = {};
-      const personAmounts2 = cbComputePersonAmounts();
-      cbPeople.forEach(p => { splitsObj[p] = personAmounts2[p] || 0; });
+      cbPeople.forEach(p => { splitsObj[p] = personAmountsTrip[p] || 0; });
+      const paidByTrip = document.getElementById('cb-paidby')?.value || '';
       await db.from('trip_receipts').insert({
-        trip_id: cbActiveTripId,
-        bill_id: billId,
-        name,
-        total,
-        paid_by: payerName,
+        trip_id: _tid, bill_id: billId, name, total,
+        paid_by: paidByTrip || currentUser.email,
         splits: splitsObj
       });
-      // Update trip total
-      const { data: remaining } = await db.from('trip_receipts').select('total').eq('trip_id', cbActiveTripId);
+      const { data: remaining } = await db.from('trip_receipts').select('total').eq('trip_id', _tid);
       const newTotal = (remaining || []).reduce((s, r) => s + (parseFloat(r.total) || 0), 0);
-      await db.from('trips').update({ total: newTotal, receipt_count: (remaining || []).length }).eq('id', cbActiveTripId);
+      await db.from('trips').update({ total: newTotal, receipt_count: (remaining || []).length }).eq('id', _tid);
       showToast('📎 Added to trip!', 'success');
-    } catch(e) { console.warn('Trip link failed:', e.message); }
-    cbActiveTripId = null;
-    const banner = document.getElementById('cb-trip-context-banner');
-    if (banner) banner.style.display = 'none';
+    } catch(tripErr) { console.warn('Trip link failed:', tripErr.message); }
   }
   // Track bill creation in PostHog
   try { if (typeof posthog !== 'undefined') posthog.capture('bill_created', { bill_id: billId, split_mode: cbSplitMode, people_count: cbPeople.length, total, has_receipt: !!cbImageBase64, has_payer: !!paidBy }); } catch(e) {}
