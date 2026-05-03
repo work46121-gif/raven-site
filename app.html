@@ -554,7 +554,7 @@ function showAppHome(profile){
   if (profileBtn) profileBtn.textContent = initial;
   const profileBtn2 = el('home-profile-btn');
   if (profileBtn2) profileBtn2.textContent = initial;
-  // Status pill hidden — clean UI
+  // Status pill hidden — removed per UX update
   const pill = el('scan-status-pill');
   if (pill) pill.style.display = 'none';
 }
@@ -614,7 +614,7 @@ function scanLogoAction(){
     showMessage('success','Sign in or create an account, then tap the logo to scan.');
     return;
   }
-  // Navigate directly to scan page — more reliable than in-page camera trigger
+  // Navigate directly to scan — avoids iOS WKWebView camera crash
   openAppPage('create-bill', { quickscan: true });
 }
 function handleCameraCapture(event){
