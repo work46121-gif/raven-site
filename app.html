@@ -10,159 +10,309 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{--black:#06060A;--panel:#101018;--panel2:#171724;--line:rgba(255,255,255,.1);--line2:rgba(255,255,255,.16);--white:#F5F1FF;--muted:#9B97AA;--soft:#D9C4FF;--purple:#A855F7;--violet:#C084FC;--green:#30D158;--blue:#58C7FF;--orange:#FFB86B;--red:#FF6B6B}
+:root{
+  --black:#06060A;--panel:#101018;--panel2:#171724;
+  --line:rgba(255,255,255,.08);--line2:rgba(255,255,255,.14);
+  --white:#F5F1FF;--muted:#8A86A0;--soft:#D9C4FF;
+  --purple:#A855F7;--violet:#C084FC;--green:#30D158;--blue:#58C7FF;--orange:#FFB86B;--red:#FF6B6B;
+  --card-bg:linear-gradient(160deg,rgba(22,22,36,.95),rgba(10,10,18,.98));
+}
 html,body{height:100%;min-height:100%;font-family:Epilogue,system-ui,sans-serif;background:var(--black);color:var(--white);overflow:hidden}
-body{min-height:100vh;padding:0;background:radial-gradient(circle at 20% -10%,rgba(168,85,247,.25),transparent 34%),radial-gradient(circle at 100% 10%,rgba(48,209,88,.14),transparent 30%),linear-gradient(180deg,#06060A 0%,#0A0A12 100%);opacity:0;transform:translateY(6px);transition:opacity .22s ease,transform .22s ease}
+body{min-height:100vh;padding:0;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -10%,rgba(168,85,247,.22),transparent),
+    radial-gradient(ellipse 60% 40% at 100% 60%,rgba(48,209,88,.10),transparent),
+    #06060A;
+  opacity:0;transform:translateY(8px);transition:opacity .25s ease,transform .25s ease}
 body.ready{opacity:1;transform:none}
-body.leaving{opacity:0;transform:translateY(6px)}
-button,input{font:inherit}
-.intro-splash{position:fixed;inset:0;z-index:50;display:grid;place-items:center;background:radial-gradient(circle at 50% 42%,rgba(168,85,247,.28),transparent 34%),#06060A;animation:splashOut .9s .9s ease forwards}
-.intro-r{width:min(58vw,260px);aspect-ratio:1;border-radius:34%;display:grid;place-items:center;position:relative;background:linear-gradient(145deg,#151522,#07070D);border:1px solid rgba(255,255,255,.14);box-shadow:0 0 90px rgba(168,85,247,.34);animation:rPop .82s cubic-bezier(.2,1.25,.32,1) both}
-.intro-r::before{content:"R";font-family:"Bebas Neue";font-size:min(44vw,210px);line-height:.8;background:linear-gradient(180deg,#F1DCFF 4%,#B276FF 92%);-webkit-background-clip:text;color:transparent}
-.intro-r::after{content:"";position:absolute;width:23%;aspect-ratio:1;border-radius:50%;bottom:9%;background:var(--green);box-shadow:0 0 34px rgba(48,209,88,.75)}
-.app-shell{min-height:100vh;display:flex;flex-direction:column;padding:8px 18px 18px;position:relative;isolation:isolate}
-.app-shell::before{content:"";position:fixed;inset:0;background-image:linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);background-size:42px 42px;mask-image:linear-gradient(#000 0%,transparent 72%);pointer-events:none;z-index:-2}
-.topbar{display:flex;align-items:center;justify-content:center;margin-bottom:0;min-height:24px}
+body.leaving{opacity:0;transform:translateY(8px)}
+button,input,textarea{font:inherit}
+
+/* ── SPLASH ── */
+.intro-splash{position:fixed;inset:0;z-index:50;display:grid;place-items:center;
+  background:radial-gradient(ellipse 80% 60% at 50% 40%,rgba(168,85,247,.22),transparent 60%),#06060A;
+  animation:splashOut .8s 1s ease forwards}
+.intro-r{width:min(52vw,240px);aspect-ratio:1;border-radius:32%;display:grid;place-items:center;position:relative;
+  background:linear-gradient(145deg,#18182A,#08080E);
+  border:1px solid rgba(255,255,255,.12);
+  box-shadow:0 0 80px rgba(168,85,247,.3),0 0 0 1px rgba(168,85,247,.08) inset;
+  animation:rPop .75s cubic-bezier(.2,1.2,.32,1) both}
+.intro-r::before{content:"R";font-family:"Bebas Neue";font-size:min(40vw,190px);line-height:.82;
+  background:linear-gradient(175deg,#F8EEFF 10%,#C276FF 88%);-webkit-background-clip:text;color:transparent}
+.intro-r::after{content:"";position:absolute;width:20%;aspect-ratio:1;border-radius:50%;bottom:10%;
+  background:var(--green);box-shadow:0 0 28px rgba(48,209,88,.8)}
+
+/* ── LOGIN SHELL ── */
+.app-shell{min-height:100vh;display:flex;flex-direction:column;padding:env(safe-area-inset-top,0px) 0 0;position:relative;isolation:isolate;overflow:hidden auto}
+.app-shell-inner{padding:16px 20px 24px;display:flex;flex-direction:column;flex:1;gap:0}
+.app-shell::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;
+  background-image:linear-gradient(rgba(255,255,255,.018) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.018) 1px,transparent 1px);
+  background-size:48px 48px;mask-image:linear-gradient(#000 0%,transparent 65%)}
+
+.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
 .brand{display:flex;align-items:center;gap:10px}
-.mini-mark{display:none}
-.mini-mark span{font-family:"Bebas Neue";font-size:27px;line-height:1;background:linear-gradient(180deg,#F3E8FF,#B878FF);-webkit-background-clip:text;color:transparent}
-.brand-name{font-family:"Bebas Neue";font-size:22px;letter-spacing:.16em;line-height:1;color:rgba(245,241,255,.82)}
-.brand-status{display:none}
-.status-dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 16px rgba(48,209,88,.8)}
-.hero{display:grid;place-items:center;text-align:center;padding:0 0 10px}
-.raven-stage{position:relative;width:min(34vw,158px);aspect-ratio:1;margin:-4px auto 2px;display:grid;place-items:center;filter:drop-shadow(0 22px 40px rgba(0,0,0,.35))}
-.raven-glow{position:absolute;inset:12%;border-radius:50%;background:radial-gradient(circle,rgba(168,85,247,.28),rgba(48,209,88,.12) 45%,transparent 70%);animation:breathe 3.5s ease-in-out infinite}
-.raven-wing{position:absolute;width:45%;height:30%;top:32%;background:linear-gradient(135deg,rgba(192,132,252,.95),rgba(137,92,246,.78));clip-path:polygon(0 45%,58% 0,100% 18%,68% 45%,100% 77%,58% 100%);opacity:.8}
-.raven-wing.left{left:0;transform-origin:100% 50%;animation:wingLeft 2.25s ease-in-out infinite}
-.raven-wing.right{right:0;transform:scaleX(-1);transform-origin:0 50%;animation:wingRight 2.25s ease-in-out infinite}
-.raven-core{position:relative;width:58%;height:58%;border-radius:31%;background:linear-gradient(145deg,#14141F,#07070D);border:1px solid rgba(255,255,255,.12);display:grid;place-items:center;box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 20px 70px rgba(124,58,237,.24)}
-.raven-core::after{content:"";position:absolute;width:22%;aspect-ratio:1;border-radius:50%;bottom:9%;background:var(--green);box-shadow:0 0 24px rgba(48,209,88,.56)}
-.raven-r{font-family:"Bebas Neue";font-size:clamp(56px,15vw,92px);line-height:.8;background:linear-gradient(180deg,#F0D8FF 5%,#B276FF 92%);-webkit-background-clip:text;color:transparent;margin-top:-4px}
-.spark{position:absolute;width:8px;height:8px;border-radius:50%;background:var(--green);opacity:.72;animation:floatSpark 4s ease-in-out infinite}
-.spark.s1{left:18%;top:18%}.spark.s2{right:20%;top:22%;background:var(--blue);animation-delay:.55s}.spark.s3{left:28%;bottom:14%;background:var(--violet);animation-delay:1s}
-.hero h1{font-family:"Bebas Neue";font-size:clamp(42px,13vw,68px);letter-spacing:.04em;line-height:.88;margin-top:0}
-.hero p{max-width:320px;margin:7px auto 0;color:var(--muted);font-size:13px;line-height:1.45}
-.quick-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:4px 0 12px}
-.quick-card{min-height:72px;border:1px solid var(--line);border-radius:18px;background:linear-gradient(180deg,rgba(255,255,255,.065),rgba(255,255,255,.025));padding:10px;display:flex;flex-direction:column;justify-content:space-between;box-shadow:0 16px 36px rgba(0,0,0,.18);animation:popIn .55s ease both}
-.quick-card:nth-child(2){animation-delay:.08s}.quick-card:nth-child(3){animation-delay:.16s}
-.icon-bubble{width:34px;height:34px;border-radius:13px;display:grid;place-items:center;background:rgba(48,209,88,.12);border:1px solid rgba(48,209,88,.25);color:var(--green)}
-.quick-card:nth-child(2) .icon-bubble{background:rgba(168,85,247,.14);border-color:rgba(168,85,247,.28);color:var(--violet)}
-.quick-card:nth-child(3) .icon-bubble{background:rgba(88,199,255,.12);border-color:rgba(88,199,255,.26);color:var(--blue)}
-.icon-bubble svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
-.quick-label{font-size:11px;font-weight:800;line-height:1.25;color:var(--white)}
-.auth-card{background:rgba(16,16,24,.88);border:1px solid var(--line2);border-radius:24px;padding:16px;box-shadow:0 26px 70px rgba(0,0,0,.35);backdrop-filter:blur(18px)}
-.tabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;background:rgba(255,255,255,.05);padding:5px;border-radius:16px;margin-bottom:16px}
-.tab{border:0;border-radius:12px;background:transparent;color:var(--muted);font-size:13px;font-weight:800;padding:11px;cursor:pointer}
-.tab.active{background:var(--white);color:#090910;box-shadow:0 8px 20px rgba(0,0,0,.22)}
-.form{display:none;gap:12px}.form.active{display:grid}
-.field{display:grid;gap:6px}
-.label{font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
-.input{width:100%;border:1px solid var(--line);border-radius:14px;background:#0B0B12;color:var(--white);padding:14px 15px;outline:none}
-.input:focus{border-color:rgba(192,132,252,.75);box-shadow:0 0 0 4px rgba(168,85,247,.14)}
-.primary-btn{width:100%;border:0;border-radius:15px;background:var(--green);color:#06100A;padding:15px 16px;font-weight:900;cursor:pointer;box-shadow:0 14px 28px rgba(48,209,88,.24)}
-.primary-btn:disabled{opacity:.62;cursor:wait}
-.secondary-btn{width:100%;border:1px solid var(--line);border-radius:15px;background:rgba(255,255,255,.045);color:var(--white);padding:13px 16px;font-weight:800;cursor:pointer}
-.google-btn{width:100%;border:1px solid rgba(255,255,255,.2);border-radius:15px;background:#fff;color:#111;padding:13px 16px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px}
+.brand-logo-mark{width:36px;height:36px;border-radius:12px;
+  background:linear-gradient(145deg,#1C1C2E,#0A0A12);
+  border:1px solid rgba(255,255,255,.12);display:grid;place-items:center;position:relative;
+  box-shadow:0 8px 24px rgba(0,0,0,.3)}
+.brand-logo-mark::before{content:"R";font-family:"Bebas Neue";font-size:28px;line-height:.8;
+  background:linear-gradient(180deg,#F1DCFF,#B276FF);-webkit-background-clip:text;color:transparent}
+.brand-logo-mark::after{content:"";position:absolute;width:7px;height:7px;border-radius:50%;
+  background:var(--green);bottom:6px;right:9px;box-shadow:0 0 10px rgba(48,209,88,.8)}
+.brand-name{font-family:"Bebas Neue";font-size:20px;letter-spacing:.18em;color:rgba(245,241,255,.9)}
+.brand-tagline{font-size:10px;color:var(--muted);font-weight:600;letter-spacing:.08em}
+
+/* ── HERO ── */
+.hero{text-align:center;padding:8px 0 16px;display:flex;flex-direction:column;align-items:center}
+.raven-stage{position:relative;width:min(38vw,168px);aspect-ratio:1;margin:0 auto 12px;display:grid;place-items:center}
+.raven-glow{position:absolute;inset:0%;border-radius:50%;
+  background:radial-gradient(circle,rgba(168,85,247,.2) 0%,rgba(48,209,88,.08) 55%,transparent 75%);
+  animation:breathe 4s ease-in-out infinite}
+.raven-ring{position:absolute;inset:-8%;border-radius:50%;
+  border:1px dashed rgba(192,132,252,.22);animation:spin 20s linear infinite}
+.raven-ring2{position:absolute;inset:-18%;border-radius:50%;
+  border:1px solid rgba(48,209,88,.08);animation:spin 32s linear infinite reverse}
+.raven-wing{position:absolute;width:42%;height:28%;top:34%;
+  background:linear-gradient(135deg,rgba(192,132,252,.9),rgba(137,92,246,.7));
+  clip-path:polygon(0 45%,58% 0,100% 18%,68% 45%,100% 77%,58% 100%);opacity:.75}
+.raven-wing.left{left:0;transform-origin:100% 50%;animation:wingLeft 2.6s ease-in-out infinite}
+.raven-wing.right{right:0;transform:scaleX(-1);transform-origin:0 50%;animation:wingRight 2.6s ease-in-out infinite}
+.raven-core{position:relative;width:56%;height:56%;border-radius:28%;
+  background:linear-gradient(145deg,#1A1A2C,#08080E);
+  border:1px solid rgba(255,255,255,.10);display:grid;place-items:center;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 20px 60px rgba(124,58,237,.2)}
+.raven-core::after{content:"";position:absolute;width:20%;aspect-ratio:1;border-radius:50%;
+  bottom:9%;background:var(--green);box-shadow:0 0 20px rgba(48,209,88,.6)}
+.raven-r{font-family:"Bebas Neue";font-size:clamp(52px,14vw,86px);line-height:.82;
+  background:linear-gradient(175deg,#F0D8FF 5%,#B276FF 90%);-webkit-background-clip:text;color:transparent;margin-top:-2px}
+.spark{position:absolute;width:6px;height:6px;border-radius:50%;background:var(--green);opacity:.6;animation:floatSpark 4.5s ease-in-out infinite}
+.spark.s1{left:14%;top:16%}.spark.s2{right:16%;top:20%;background:var(--blue);animation-delay:.6s}.spark.s3{left:22%;bottom:16%;background:var(--violet);animation-delay:1.1s}
+.hero-eyebrow{font-size:10px;font-weight:800;letter-spacing:.2em;text-transform:uppercase;color:var(--green);margin-bottom:6px;opacity:.8}
+.hero h1{font-family:"Bebas Neue";font-size:clamp(44px,14vw,72px);letter-spacing:.03em;line-height:.86;margin:0}
+.hero p{max-width:280px;margin:8px auto 0;color:var(--muted);font-size:12.5px;line-height:1.5}
+
+/* ── FEATURE CHIPS ── */
+.feature-chips{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:10px 0 16px}
+.chip{display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:100px;
+  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);
+  font-size:11px;font-weight:700;color:var(--muted);white-space:nowrap}
+.chip svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.chip.g{color:var(--green);background:rgba(48,209,88,.07);border-color:rgba(48,209,88,.18)}
+.chip.v{color:var(--violet);background:rgba(168,85,247,.08);border-color:rgba(168,85,247,.18)}
+.chip.b{color:var(--blue);background:rgba(88,199,255,.07);border-color:rgba(88,199,255,.18)}
+
+/* ── AUTH CARD ── */
+.auth-card{background:rgba(14,14,22,.9);border:1px solid rgba(255,255,255,.1);border-radius:26px;padding:18px;
+  box-shadow:0 30px 80px rgba(0,0,0,.4),0 0 0 1px rgba(168,85,247,.06) inset;backdrop-filter:blur(20px)}
+.tabs{display:grid;grid-template-columns:1fr 1fr;gap:5px;background:rgba(255,255,255,.04);padding:4px;border-radius:16px;margin-bottom:16px}
+.tab{border:0;border-radius:12px;background:transparent;color:var(--muted);font-size:13px;font-weight:800;padding:11px;cursor:pointer;transition:all .15s ease}
+.tab.active{background:rgba(255,255,255,.92);color:#090910;box-shadow:0 6px 18px rgba(0,0,0,.24)}
+.form{display:none;gap:11px}.form.active{display:grid}
+.field{display:grid;gap:5px}
+.label{font-size:10px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.input{width:100%;border:1px solid rgba(255,255,255,.09);border-radius:13px;
+  background:rgba(8,8,14,.9);color:var(--white);padding:13px 14px;outline:none;
+  transition:border-color .15s,box-shadow .15s}
+.input:focus{border-color:rgba(192,132,252,.65);box-shadow:0 0 0 3px rgba(168,85,247,.12)}
+.primary-btn{width:100%;border:0;border-radius:14px;
+  background:linear-gradient(180deg,#46F08C 0%,#30D158 60%,#25AE49 100%);
+  color:#041208;padding:15px 16px;font-weight:900;font-size:14px;cursor:pointer;
+  box-shadow:0 12px 28px rgba(48,209,88,.26),0 0 0 1px rgba(0,0,0,.15) inset;
+  transition:transform .12s,filter .12s}
+.primary-btn:hover{filter:brightness(1.06)}
+.primary-btn:active{transform:scale(.99)}
+.primary-btn:disabled{opacity:.6;cursor:wait}
+.secondary-btn{width:100%;border:1px solid rgba(255,255,255,.09);border-radius:14px;
+  background:rgba(255,255,255,.04);color:var(--white);padding:13px 16px;font-weight:800;cursor:pointer;
+  transition:background .15s}
+.secondary-btn:hover{background:rgba(255,255,255,.07)}
+.google-btn{width:100%;border:1px solid rgba(255,255,255,.18);border-radius:14px;
+  background:rgba(255,255,255,.96);color:#111;padding:13px 16px;font-weight:800;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:10px;transition:opacity .15s}
+.google-btn:hover{opacity:.92}
 .google-btn svg{width:18px;height:18px;display:block}
 .row{display:flex;align-items:center;justify-content:space-between;gap:12px}
-.tiny{font-size:12px;color:var(--muted);line-height:1.5}
+.tiny{font-size:11.5px;color:var(--muted);line-height:1.5}
 .link-btn{border:0;background:transparent;color:var(--soft);font-size:12px;font-weight:800;cursor:pointer}
-.error,.success{display:none;border-radius:14px;padding:11px 12px;font-size:13px;line-height:1.45;margin-bottom:12px}
-.error{background:rgba(255,107,107,.1);border:1px solid rgba(255,107,107,.25);color:#FFB3B3}
-.success{background:rgba(48,209,88,.1);border:1px solid rgba(48,209,88,.24);color:#A7F3B7}
-.app-home{display:none;height:100vh;height:100dvh;min-height:100vh;min-height:100dvh;overflow:hidden;background:radial-gradient(circle at 50% 12%,rgba(168,85,247,.28),transparent 36%),radial-gradient(circle at 58% 88%,rgba(48,209,88,.18),transparent 34%),linear-gradient(180deg,#06060A 0%,#101018 100%);overscroll-behavior:none;touch-action:manipulation}
+.error,.success{display:none;border-radius:13px;padding:11px 13px;font-size:12.5px;line-height:1.45;margin-bottom:10px}
+.error{background:rgba(255,107,107,.08);border:1px solid rgba(255,107,107,.22);color:#FFB3B3}
+.success{background:rgba(48,209,88,.08);border:1px solid rgba(48,209,88,.22);color:#A7F3B7}
+
+/* ── APP HOME (signed-in scan screen) ── */
+.app-home{display:none;height:100vh;height:100dvh;min-height:100vh;min-height:100dvh;overflow:hidden;
+  background:
+    radial-gradient(ellipse 90% 50% at 50% 0%,rgba(168,85,247,.22),transparent 55%),
+    radial-gradient(ellipse 60% 40% at 20% 100%,rgba(48,209,88,.12),transparent 50%),
+    linear-gradient(180deg,#07070D 0%,#0C0C16 100%);
+  overscroll-behavior:none;touch-action:manipulation}
 .app-home.active{position:fixed;inset:0;z-index:10;display:flex;flex-direction:column}
+
+/* top bar */
 .home-top{display:none}
 .home-brand{display:flex;align-items:center;gap:10px}
-.home-logo{width:42px;height:42px;border-radius:15px;background:linear-gradient(145deg,#151522,#07070D);border:1px solid var(--line2);display:grid;place-items:center;position:relative;box-shadow:0 12px 32px rgba(0,0,0,.28)}
-.home-logo::before{content:"R";font-family:"Bebas Neue";font-size:34px;line-height:.8;background:linear-gradient(180deg,#F1DCFF,#B276FF);-webkit-background-clip:text;color:transparent}
-.home-logo::after{content:"";position:absolute;width:8px;height:8px;border-radius:50%;background:var(--green);bottom:7px;right:10px;box-shadow:0 0 14px rgba(48,209,88,.7)}
-.home-title{font-family:"Bebas Neue";font-size:30px;letter-spacing:.14em;line-height:1}
+.home-logo{width:40px;height:40px;border-radius:14px;
+  background:linear-gradient(145deg,#1C1C2E,#08080E);
+  border:1px solid rgba(255,255,255,.12);display:grid;place-items:center;position:relative;
+  box-shadow:0 10px 28px rgba(0,0,0,.3)}
+.home-logo::before{content:"R";font-family:"Bebas Neue";font-size:32px;line-height:.82;
+  background:linear-gradient(180deg,#F1DCFF,#B276FF);-webkit-background-clip:text;color:transparent}
+.home-logo::after{content:"";position:absolute;width:7px;height:7px;border-radius:50%;
+  background:var(--green);bottom:6px;right:9px;box-shadow:0 0 12px rgba(48,209,88,.8)}
+.home-title{font-family:"Bebas Neue";font-size:28px;letter-spacing:.15em}
 .home-sub{display:none}
 .home-profile{display:none}
-.dashboard-pill{display:flex;align-items:center;justify-content:center;width:100%;min-height:48px;padding:13px 18px;border:0;border-radius:0;background:linear-gradient(180deg,#46F08C 0%,#30D158 62%,#27B94B 100%);font-size:15px;font-weight:950;letter-spacing:.01em;text-transform:none;color:#06100A;box-shadow:0 -18px 38px rgba(48,209,88,.13);cursor:pointer}
-.auth-actions{display:none;width:100%;grid-template-columns:1fr 1fr;gap:10px}
+
+/* signed-out bottom bar */
+.auth-actions{display:none;width:100%;gap:10px}
 .app-home.signed-out .dashboard-pill{display:none}
-.app-home.signed-out .auth-actions{display:grid}
-.app-cta-bottom{position:relative;z-index:3;flex:0 0 auto;width:100%;padding:8px 14px calc(8px + env(safe-area-inset-bottom));background:rgba(6,6,10,.96);box-shadow:0 -12px 30px rgba(0,0,0,.25)}
-.auth-action{min-height:44px;border:0;background:var(--green);color:#06100A;font-size:12px;font-weight:950;cursor:pointer;box-shadow:0 -12px 26px rgba(48,209,88,.1)}
-.auth-action.secondary{background:rgba(255,255,255,.08);color:var(--white);border:1px solid rgba(255,255,255,.16);box-shadow:none}
+.app-home.signed-out .auth-actions{display:flex}
+
+/* scan section */
 .scan-hero{flex:1;min-height:0;display:flex;align-items:stretch}
-.scan-card{width:100%;height:100%;min-height:0;border:0;border-radius:0;background:transparent;box-shadow:none;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:clamp(14px,3vh,30px) clamp(18px,6vw,32px) 16px;position:relative;overflow:hidden}
-.scan-card::before{content:"";position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.022) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.022) 1px,transparent 1px);background-size:42px 42px;mask-image:linear-gradient(#000 0%,transparent 78%);pointer-events:none}
-.scan-card::after{content:"";position:absolute;inset:-40%;background:radial-gradient(circle at 40% 35%,rgba(48,209,88,.10),transparent 45%),radial-gradient(circle at 70% 60%,rgba(168,85,247,.14),transparent 50%);filter:blur(18px);opacity:.9;pointer-events:none;transform:translateY(0);animation:scanGlow 6s ease-in-out infinite}
+.scan-card{width:100%;height:100%;min-height:0;border:0;border-radius:0;background:transparent;box-shadow:none;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;
+  padding:clamp(10px,2.5vh,26px) clamp(18px,6vw,32px) 10px;position:relative;overflow:hidden}
+.scan-card::before{content:"";position:absolute;inset:0;
+  background-image:linear-gradient(rgba(255,255,255,.018) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.018) 1px,transparent 1px);
+  background-size:44px 44px;mask-image:linear-gradient(#000 0%,transparent 75%);pointer-events:none}
+.scan-card::after{content:"";position:absolute;inset:-40%;
+  background:radial-gradient(circle at 42% 32%,rgba(48,209,88,.09),transparent 42%),radial-gradient(circle at 68% 62%,rgba(168,85,247,.12),transparent 46%);
+  filter:blur(20px);opacity:.9;pointer-events:none;animation:scanGlow 7s ease-in-out infinite}
 .scan-card{transform:translateZ(0)}
-.scan-orbit{position:relative;width:clamp(150px,25vh,230px);aspect-ratio:1;border-radius:50%;display:grid;place-items:center;margin-bottom:clamp(14px,2.8vh,28px);flex:0 0 auto}
-.scan-orbit::before{content:"";position:absolute;inset:0;border-radius:50%;border:1px dashed rgba(192,132,252,.34);animation:spin 16s linear infinite}
-.scan-logo-button{width:58%;aspect-ratio:1;border:0;border-radius:30%;background:transparent;display:grid;place-items:center;padding:0;position:relative;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
-.scan-mark{width:100%;height:100%;border-radius:30%;background:linear-gradient(145deg,#151522,#08080F);border:1px solid rgba(255,255,255,.14);display:grid;place-items:center;position:relative;box-shadow:0 22px 60px rgba(168,85,247,.26);transition:transform .12s ease,box-shadow .12s ease}
-.scan-mark::before{content:"";position:absolute;inset:-25%;border-radius:50%;background:radial-gradient(circle,rgba(48,209,88,.14),transparent 65%);z-index:-1}
-.scan-mark::after{content:"";position:absolute;width:18px;height:18px;border-radius:50%;background:var(--green);left:50%;bottom:9%;transform:translateX(-50%);box-shadow:0 0 24px rgba(48,209,88,.75)}
-.scan-mark span{font-family:"Bebas Neue";font-size:min(28vw,130px);line-height:.8;background:linear-gradient(180deg,#F1DCFF,#B276FF);-webkit-background-clip:text;color:transparent}
-.scan-logo-button:active .scan-mark{transform:scale(.98);box-shadow:0 16px 48px rgba(168,85,247,.22)}
+
+.scan-orbit{position:relative;width:clamp(148px,24vh,220px);aspect-ratio:1;border-radius:50%;display:grid;place-items:center;margin-bottom:clamp(12px,2.5vh,24px);flex:0 0 auto}
+.scan-orbit::before{content:"";position:absolute;inset:0;border-radius:50%;border:1px dashed rgba(192,132,252,.28);animation:spin 18s linear infinite}
+.scan-orbit::after{content:"";position:absolute;inset:-14%;border-radius:50%;border:1px solid rgba(48,209,88,.07);animation:spin 28s linear infinite reverse}
+.scan-logo-button{width:58%;aspect-ratio:1;border:0;border-radius:28%;background:transparent;
+  display:grid;place-items:center;padding:0;position:relative;cursor:pointer;
+  touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.scan-mark{width:100%;height:100%;border-radius:28%;
+  background:linear-gradient(148deg,#1C1C2E,#08080E);
+  border:1px solid rgba(255,255,255,.12);display:grid;place-items:center;position:relative;
+  box-shadow:0 20px 56px rgba(168,85,247,.24),0 0 0 1px rgba(168,85,247,.06) inset;
+  transition:transform .14s ease,box-shadow .14s ease}
+.scan-mark::before{content:"";position:absolute;inset:-28%;border-radius:50%;background:radial-gradient(circle,rgba(48,209,88,.12),transparent 62%);z-index:-1}
+.scan-mark::after{content:"";position:absolute;width:16px;height:16px;border-radius:50%;background:var(--green);left:50%;bottom:10%;transform:translateX(-50%);box-shadow:0 0 22px rgba(48,209,88,.8)}
+.scan-mark span{font-family:"Bebas Neue";font-size:min(27vw,124px);line-height:.82;background:linear-gradient(175deg,#F1DCFF,#B276FF);-webkit-background-clip:text;color:transparent}
+.scan-logo-button:active .scan-mark{transform:scale(.97);box-shadow:0 14px 44px rgba(168,85,247,.2)}
 .scan-logo-button:focus-visible{outline:none}
-.scan-logo-button:focus-visible .scan-mark{box-shadow:0 22px 60px rgba(168,85,247,.26),0 0 0 4px rgba(48,209,88,.2)}
+.scan-logo-button:focus-visible .scan-mark{box-shadow:0 20px 56px rgba(168,85,247,.26),0 0 0 4px rgba(48,209,88,.2)}
 .scan-orbit,.scan-title,.scan-copy{position:relative;z-index:1}
-.scan-title{font-family:"Bebas Neue";font-size:clamp(48px,10vh,80px);letter-spacing:.04em;line-height:.86;margin-bottom:clamp(10px,1.6vh,16px);text-shadow:0 16px 40px rgba(0,0,0,.35);flex:0 0 auto}
+
+/* scan title + instruction */
+.scan-title{font-family:"Bebas Neue";font-size:clamp(46px,9.5vh,76px);letter-spacing:.03em;line-height:.88;margin-bottom:clamp(8px,1.4vh,14px);text-shadow:0 12px 36px rgba(0,0,0,.3);flex:0 0 auto}
 .scan-copy{display:none}
-.scan-instruction{position:relative;z-index:1;max-width:330px;margin-top:4px;color:rgba(245,241,255,.58);font-size:12px;line-height:1.45;letter-spacing:.01em;flex:0 0 auto}
-.app-auth-dock{position:relative;z-index:2;width:100%;max-width:360px;margin-top:12px;display:none;flex:0 1 auto;min-height:0}
+.scan-instruction{position:relative;z-index:1;max-width:300px;margin-top:4px;color:rgba(245,241,255,.5);font-size:12px;line-height:1.5;flex:0 0 auto}
+.scan-status-pill{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:100px;
+  background:rgba(48,209,88,.08);border:1px solid rgba(48,209,88,.18);
+  font-size:11px;font-weight:700;color:var(--green);margin-top:12px;flex:0 0 auto;position:relative;z-index:1}
+.scan-status-dot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 8px rgba(48,209,88,.8);animation:breathe 2s ease-in-out infinite}
+
+/* auth dock */
+.app-auth-dock{position:relative;z-index:2;width:100%;max-width:360px;margin-top:10px;display:none;flex:0 1 auto;min-height:0}
 .app-home.auth-visible .app-auth-dock{display:block}
-.app-home.auth-visible .scan-orbit{width:clamp(112px,17vh,155px);margin-bottom:10px}
-.app-home.auth-visible .scan-title{font-size:clamp(32px,6vh,48px);margin-bottom:8px}
-.app-home.auth-visible .scan-copy,.app-home.auth-visible .scan-instruction{display:none}
-.app-home .auth-card{width:100%;max-height:none;overflow:visible;padding:12px;border-radius:18px}
+.app-home.auth-visible .scan-orbit{width:clamp(108px,16vh,148px);margin-bottom:8px}
+.app-home.auth-visible .scan-title{font-size:clamp(30px,5.5vh,44px);margin-bottom:6px}
+.app-home.auth-visible .scan-copy,.app-home.auth-visible .scan-instruction,.app-home.auth-visible .scan-status-pill{display:none}
+.app-home .auth-card{width:100%;max-height:none;overflow:visible;padding:12px;border-radius:20px}
 .app-home .tabs{margin-bottom:10px}
 .app-home .form{gap:9px}
 .app-home .input{padding:11px 12px}
 .app-home .primary-btn,.app-home .secondary-btn,.app-home .google-btn{padding:11px 12px}
 .app-home .tiny{font-size:11px}
+
+/* raven flight animation */
 .raven-flight{position:fixed;inset:0;z-index:80;pointer-events:none;overflow:hidden}
 .flight-raven{position:absolute;left:-64px;top:var(--fly-y);width:46px;height:26px;filter:drop-shadow(0 8px 14px rgba(0,0,0,.35));animation:ravenFly .62s cubic-bezier(.2,.74,.28,1) forwards}
 .flight-raven::before,.flight-raven::after{content:"";position:absolute;top:6px;width:26px;height:16px;background:linear-gradient(135deg,#151522,#08080F);clip-path:polygon(0 55%,65% 0,100% 26%,72% 55%,100% 86%,65% 100%);animation:flyWing .18s ease-in-out infinite}
 .flight-raven::before{left:0;transform-origin:100% 50%}
 .flight-raven::after{right:0;transform:scaleX(-1);transform-origin:0 50%;animation-name:flyWingRight}
 .flight-raven span{position:absolute;left:17px;top:5px;width:13px;height:13px;border-radius:50%;background:var(--green);box-shadow:0 0 16px rgba(48,209,88,.8)}
-.scan-button{border:0;border-radius:22px;background:linear-gradient(180deg,#46F08C 0%,#30D158 55%,#27B94B 100%);color:#06100A;font-weight:950;font-size:clamp(16px,2.4vh,19px);padding:clamp(14px,2vh,18px) 24px;width:100%;max-width:320px;box-shadow:0 18px 36px rgba(48,209,88,.22),0 0 0 1px rgba(0,0,0,.25) inset;cursor:pointer;transition:transform .12s ease,filter .12s ease,box-shadow .12s ease;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
-.scan-button:hover{filter:saturate(1.06)}
-.scan-button:active{transform:translateY(1px) scale(.99);box-shadow:0 14px 28px rgba(48,209,88,.20),0 0 0 1px rgba(0,0,0,.25) inset}
-.scan-button:focus-visible{outline:none;box-shadow:0 18px 36px rgba(48,209,88,.22),0 0 0 4px rgba(48,209,88,.18),0 0 0 1px rgba(0,0,0,.25) inset}
+
+/* bottom CTA */
+.app-cta-bottom{position:relative;z-index:3;flex:0 0 auto;width:100%;
+  padding:10px 14px calc(10px + env(safe-area-inset-bottom));
+  background:linear-gradient(180deg,rgba(7,7,13,.0),rgba(7,7,13,.98) 30%);
+  box-shadow:none}
+.dashboard-pill{display:flex;align-items:center;justify-content:center;width:100%;min-height:52px;
+  padding:14px 18px;border:0;border-radius:18px;
+  background:linear-gradient(180deg,#46F08C 0%,#30D158 60%,#25AE49 100%);
+  font-size:15px;font-weight:900;color:#041208;
+  box-shadow:0 12px 32px rgba(48,209,88,.28),0 0 0 1px rgba(0,0,0,.15) inset;
+  cursor:pointer;transition:filter .12s,transform .12s;letter-spacing:.01em}
+.dashboard-pill:hover{filter:brightness(1.06)}
+.dashboard-pill:active{transform:scale(.99)}
+.auth-action{min-height:48px;border:0;border-radius:15px;background:var(--green);color:#041208;
+  font-size:13px;font-weight:900;cursor:pointer;flex:1;
+  box-shadow:0 10px 24px rgba(48,209,88,.2);transition:filter .12s}
+.auth-action.secondary{background:rgba(255,255,255,.07);color:var(--white);
+  border:1px solid rgba(255,255,255,.12);box-shadow:none}
+
+/* nav tabs */
 .home-tabs{display:none !important}
-.home-tabs.active{display:grid}
-.home-tab{border:0;background:transparent;color:var(--muted);display:grid;place-items:center;gap:5px;font-size:11px;font-weight:800;cursor:pointer;padding:7px 4px;border-radius:14px}
+.home-tabs.active{display:grid !important;grid-template-columns:repeat(4,1fr)}
+.home-tab{border:0;background:transparent;color:var(--muted);display:grid;place-items:center;gap:4px;
+  font-size:10.5px;font-weight:700;cursor:pointer;padding:8px 4px;border-radius:14px;
+  transition:color .15s,background .15s}
 .home-tab svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2.1;stroke-linecap:round;stroke-linejoin:round}
-.home-tab.active{color:var(--green);background:rgba(48,209,88,.08)}
-.loading{position:fixed;inset:0;background:rgba(6,6,10,.84);display:none;place-items:center;z-index:20;backdrop-filter:blur(14px)}
+.home-tab.active{color:var(--green)}
+.home-tab.active svg{filter:drop-shadow(0 0 6px rgba(48,209,88,.4))}
+
+/* loading */
+.loading{position:fixed;inset:0;background:rgba(6,6,10,.88);display:none;place-items:center;z-index:20;backdrop-filter:blur(16px)}
 .loading.show{display:grid}
-.loader-mark{width:82px;height:82px;border-radius:28px;background:linear-gradient(145deg,#151522,#08080E);border:1px solid var(--line2);display:grid;place-items:center;animation:loaderPulse 1.2s ease-in-out infinite}
-.loader-mark span{font-family:"Bebas Neue";font-size:60px;background:linear-gradient(#F0D8FF,#B276FF);-webkit-background-clip:text;color:transparent}
-@keyframes breathe{0%,100%{transform:scale(.94);opacity:.7}50%{transform:scale(1.08);opacity:1}}
-@keyframes wingLeft{0%,100%{transform:rotate(-7deg) translateY(0)}50%{transform:rotate(13deg) translateY(-8px)}}
-@keyframes wingRight{0%,100%{transform:scaleX(-1) rotate(-7deg) translateY(0)}50%{transform:scaleX(-1) rotate(13deg) translateY(-8px)}}
-@keyframes floatSpark{0%,100%{transform:translateY(0) scale(.8);opacity:.45}50%{transform:translateY(-18px) scale(1.15);opacity:1}}
-@keyframes popIn{from{transform:translateY(12px) scale(.96);opacity:0}to{transform:none;opacity:1}}
+.loader-mark{width:80px;height:80px;border-radius:26px;background:linear-gradient(145deg,#1C1C2E,#08080E);
+  border:1px solid rgba(255,255,255,.1);display:grid;place-items:center;
+  animation:loaderPulse 1.3s ease-in-out infinite}
+.loader-mark span{font-family:"Bebas Neue";font-size:58px;background:linear-gradient(#F0D8FF,#B276FF);-webkit-background-clip:text;color:transparent}
+
+/* nav bar container */
+#home-tabs-wrap{flex:0 0 auto;padding:6px 12px calc(6px + env(safe-area-inset-bottom));
+  background:rgba(8,8,14,.94);border-top:1px solid rgba(255,255,255,.07);
+  backdrop-filter:blur(20px)}
+
+@keyframes breathe{0%,100%{transform:scale(.93);opacity:.65}50%{transform:scale(1.10);opacity:1}}
+@keyframes wingLeft{0%,100%{transform:rotate(-8deg) translateY(0)}50%{transform:rotate(14deg) translateY(-9px)}}
+@keyframes wingRight{0%,100%{transform:scaleX(-1) rotate(-8deg) translateY(0)}50%{transform:scaleX(-1) rotate(14deg) translateY(-9px)}}
+@keyframes floatSpark{0%,100%{transform:translateY(0) scale(.8);opacity:.35}50%{transform:translateY(-16px) scale(1.2);opacity:.9}}
+@keyframes popIn{from{transform:translateY(14px) scale(.95);opacity:0}to{transform:none;opacity:1}}
 @keyframes spin{to{transform:rotate(360deg)}}
-@keyframes loaderPulse{0%,100%{transform:scale(1);box-shadow:0 0 0 rgba(168,85,247,0)}50%{transform:scale(1.04);box-shadow:0 0 42px rgba(168,85,247,.32)}}
-@keyframes scanGlow{0%,100%{transform:translateY(0);opacity:.75}50%{transform:translateY(-12px);opacity:1}}
+@keyframes loaderPulse{0%,100%{transform:scale(1);box-shadow:0 0 0 rgba(168,85,247,0)}50%{transform:scale(1.05);box-shadow:0 0 40px rgba(168,85,247,.3)}}
+@keyframes scanGlow{0%,100%{transform:translateY(0);opacity:.7}50%{transform:translateY(-14px);opacity:1}}
 @keyframes ravenFly{0%{transform:translateX(0) translateY(18px) scale(.85);opacity:0}12%{opacity:1}100%{transform:translateX(calc(100vw + 110px)) translateY(-22px) scale(1.08);opacity:0}}
 @keyframes flyWing{0%,100%{transform:rotate(-18deg)}50%{transform:rotate(20deg)}}
 @keyframes flyWingRight{0%,100%{transform:scaleX(-1) rotate(-18deg)}50%{transform:scaleX(-1) rotate(20deg)}}
-@keyframes rPop{0%{transform:scale(.36) rotate(-8deg);opacity:0}64%{transform:scale(1.12) rotate(2deg);opacity:1}100%{transform:scale(1) rotate(0)}}
+@keyframes rPop{0%{transform:scale(.3) rotate(-10deg);opacity:0}65%{transform:scale(1.08) rotate(2deg);opacity:1}100%{transform:scale(1) rotate(0)}}
 @keyframes splashOut{to{opacity:0;visibility:hidden;pointer-events:none}}
-@media(max-height:760px){.app-shell{padding-top:4px}.topbar{display:none}.raven-stage{width:min(30vw,130px)}.hero h1{font-size:40px}.hero p{display:none}.quick-row{margin-top:0}.quick-card{min-height:64px}.auth-card{padding:14px}.form{gap:10px}.input{padding:12px 14px}.primary-btn{padding:13px 14px}}
-@media(max-height:700px){.dashboard-pill,.auth-action{min-height:42px;padding:10px 12px;font-size:12px}.scan-card{padding-top:10px;padding-bottom:10px}.scan-card::before{inset:0;border-radius:0}.scan-orbit{width:clamp(126px,22vh,160px);margin-bottom:10px}.scan-title{font-size:clamp(42px,9vh,62px)}.scan-instruction{margin-top:3px}.app-cta-bottom{padding-top:6px;padding-bottom:calc(6px + env(safe-area-inset-bottom))}}
-@media(min-height:860px){.scan-orbit{width:clamp(170px,25vh,240px)}.scan-title{font-size:clamp(54px,10vh,82px)}}
-@media(min-width:760px){.app-shell{max-width:460px;margin:0 auto}.raven-stage{width:240px}}
+@media(max-height:700px){
+  .raven-stage{width:min(28vw,120px)}
+  .hero h1{font-size:36px}
+  .hero p,.feature-chips{display:none}
+  .auth-card{padding:13px}
+  .form{gap:8px}
+  .input{padding:11px 12px}
+  .primary-btn{padding:12px}
+  .scan-orbit{width:clamp(118px,20vh,150px);margin-bottom:8px}
+  .scan-title{font-size:clamp(38px,8vh,56px)}
+  .dashboard-pill{min-height:46px}
+}
+@media(max-height:600px){.hero .raven-stage,.spark{display:none}.hero h1{font-size:32px}}
+@media(min-height:900px){.scan-orbit{width:clamp(180px,26vh,250px)}.scan-title{font-size:clamp(56px,11vh,88px)}}
+@media(min-width:760px){.app-shell{max-width:460px;margin:0 auto}.raven-stage{width:220px}}
 </style>
 </head>
 <body>
 <div class="intro-splash" id="intro-splash" aria-hidden="true"><div class="intro-r"></div></div>
+
+<!-- ── LOGIN SHELL ── -->
 <div class="app-shell">
+  <div class="app-shell-inner">
   <header class="topbar">
     <div class="brand">
-      <div class="mini-mark"><span>R</span></div>
+      <div class="brand-logo-mark"></div>
       <div>
         <div class="brand-name">RAVEN</div>
+        <div class="brand-tagline">AI Bill Splitter</div>
       </div>
     </div>
   </header>
@@ -170,6 +320,8 @@ button,input{font:inherit}
   <section class="hero" aria-label="RAVEN app welcome">
     <div class="raven-stage" aria-hidden="true">
       <div class="raven-glow"></div>
+      <div class="raven-ring"></div>
+      <div class="raven-ring2"></div>
       <div class="spark s1"></div>
       <div class="spark s2"></div>
       <div class="spark s3"></div>
@@ -178,22 +330,13 @@ button,input{font:inherit}
       <div class="raven-core"><div class="raven-r">R</div></div>
     </div>
     <h1>Split Smarter</h1>
-    <p>Open RAVEN, scan the receipt, and keep the group moving.</p>
+    <p>Scan any receipt. Split instantly. Get paid faster.</p>
   </section>
 
-  <div class="quick-row" aria-label="Quick actions">
-    <div class="quick-card">
-      <div class="icon-bubble"><svg viewBox="0 0 24 24"><path d="M7 3h10l2 4v14H5V7l2-4Z"/><path d="M8 11h8M8 15h5"/></svg></div>
-      <div class="quick-label">Scan receipts</div>
-    </div>
-    <div class="quick-card">
-      <div class="icon-bubble"><svg viewBox="0 0 24 24"><path d="M16 11a4 4 0 1 0-8 0"/><path d="M3 21a7 7 0 0 1 18 0"/><path d="M18 8h3M19.5 6.5v3"/></svg></div>
-      <div class="quick-label">Add friends</div>
-    </div>
-    <div class="quick-card">
-      <div class="icon-bubble"><svg viewBox="0 0 24 24"><path d="M4 17h16"/><path d="M7 17V7M12 17V4M17 17v-6"/></svg></div>
-      <div class="quick-label">Track paid</div>
-    </div>
+  <div class="feature-chips">
+    <div class="chip g"><svg viewBox="0 0 24 24"><path d="M3 7h18M8 7V5a2 2 0 0 1 4 0v2"/><rect x="5" y="7" width="14" height="14" rx="2"/></svg>AI Scan</div>
+    <div class="chip v"><svg viewBox="0 0 24 24"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/><path d="M21 21v-2a4 4 0 0 0-3-3.87"/></svg>Group Trips</div>
+    <div class="chip b"><svg viewBox="0 0 24 24"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4"/></svg>Instant Pay</div>
   </div>
 
   <main class="auth-card">
@@ -251,17 +394,23 @@ button,input{font:inherit}
       <button class="secondary-btn" type="button" onclick="showTab('login')">Back to sign in</button>
     </form>
   </main>
+  </div><!-- end app-shell-inner -->
 </div>
 
 <section class="app-home" id="app-home" aria-label="RAVEN home">
-  <!-- Top bar: logo (double-tap = settings) + profile avatar -->
-  <div class="home-top" id="home-top" style="display:none;align-items:center;justify-content:space-between;padding:calc(env(safe-area-inset-top,0px) + 10px) 18px 6px;flex:0 0 auto;position:relative;z-index:4">
+  <!-- Top bar -->
+  <div class="home-top" id="home-top" style="display:none;align-items:center;justify-content:space-between;padding:calc(env(safe-area-inset-top,0px) + 12px) 18px 8px;flex:0 0 auto;position:relative;z-index:4">
     <div class="home-brand">
       <button class="home-logo" id="home-logo-btn" type="button" aria-label="RAVEN — double-tap for settings" style="border:0;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent;background:transparent;display:grid;place-items:center;position:relative"></button>
-      <div class="home-title">RAVEN</div>
+      <div>
+        <div class="home-title">RAVEN</div>
+        <div style="font-size:10px;color:var(--muted);font-weight:600;letter-spacing:.08em">AI Bill Splitter</div>
+      </div>
     </div>
-    <button id="home-profile-btn" type="button" aria-label="Profile & settings" onclick="openAppPage('settings')" style="width:34px;height:34px;border-radius:50%;border:1px solid rgba(255,255,255,.18);background:rgba(168,85,247,.18);color:var(--white);font-size:14px;font-weight:800;cursor:pointer;-webkit-tap-highlight-color:transparent;display:grid;place-items:center;font-family:Epilogue,sans-serif">?</button>
+    <button id="home-profile-btn" type="button" aria-label="Profile & settings" onclick="openAppPage('settings')"
+      style="width:36px;height:36px;border-radius:50%;border:1px solid rgba(255,255,255,.16);background:linear-gradient(145deg,rgba(168,85,247,.24),rgba(124,58,237,.14));color:var(--white);font-size:15px;font-weight:800;cursor:pointer;-webkit-tap-highlight-color:transparent;display:grid;place-items:center;font-family:Epilogue,sans-serif;box-shadow:0 8px 20px rgba(0,0,0,.28)">?</button>
   </div>
+
   <div class="scan-hero">
     <div class="scan-card">
       <div class="scan-orbit">
@@ -270,27 +419,42 @@ button,input{font:inherit}
         </button>
       </div>
       <h1 class="scan-title">Scan Receipt</h1>
-      <p class="scan-instruction">tap the logo to scan a receipt, split the bill, or sync it into your dashboard</p>
+      <p class="scan-instruction">Tap the logo to scan a receipt and split it instantly</p>
+      <div class="scan-status-pill" id="scan-status-pill">
+        <span class="scan-status-dot"></span>Ready to scan
+      </div>
       <div class="app-auth-dock" id="app-auth-dock"></div>
     </div>
   </div>
+
   <!-- Hidden camera input: triggered directly from scanLogoAction() to satisfy iOS WKWebView policy -->
   <input id="app-camera-input" type="file" accept="image/*" capture="environment" style="position:fixed;left:-9999px;top:-9999px;opacity:0;pointer-events:none" onchange="handleCameraCapture(event)">
+
   <div class="app-cta-bottom">
-    <button class="dashboard-pill" type="button" onclick="goDashboard()">Go to RAVEN Dashboard</button>
-    <div class="auth-actions" aria-label="Account actions">
+    <button class="dashboard-pill" type="button" onclick="goDashboard()">Open Dashboard →</button>
+    <div class="auth-actions" style="display:flex" aria-label="Account actions">
       <button class="auth-action" type="button" onclick="showAuthPanel('login')">Sign in</button>
       <button class="auth-action secondary" type="button" onclick="showAuthPanel('signup')">Create account</button>
     </div>
   </div>
 </section>
 
-<nav class="home-tabs" id="home-tabs" aria-label="App navigation">
-  <button class="home-tab active" type="button" onclick="showAppHome()"><svg viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10.5V20h14v-9.5"/></svg>Home</button>
-  <button class="home-tab" type="button" onclick="openAppPage('active-bills')"><svg viewBox="0 0 24 24"><path d="M7 3h10l2 4v14H5V7l2-4Z"/><path d="M8 11h8M8 15h6"/></svg>Bills</button>
-  <button class="home-tab" type="button" onclick="openAppPage('trip-hub')"><svg viewBox="0 0 24 24"><path d="M4 18 9 5l4 8 7-3-5 9-4-7-7 6Z"/></svg>Trips</button>
-  <button class="home-tab" type="button" onclick="openAppPage('settings')"><svg viewBox="0 0 24 24"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/><path d="M19.4 15a8 8 0 0 0 .1-6l2-1.5-2-3.4-2.4 1a8 8 0 0 0-5.1-3l-.4-2.6H7.6L7.2 2.1a8 8 0 0 0-5.1 3l-2.4-1-2 3.4 2 1.5a8 8 0 0 0 .1 6l-2 1.5 2 3.4 2.4-1a8 8 0 0 0 5 3l.5 2.6h4l.5-2.6a8 8 0 0 0 5-3l2.4 1 2-3.4-2.2-1.5Z"/></svg>More</button>
-</nav>
+<div id="home-tabs-wrap">
+  <nav class="home-tabs" id="home-tabs" aria-label="App navigation">
+    <button class="home-tab active" type="button" onclick="showAppHome()">
+      <svg viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10.5V20h14v-9.5"/></svg>Home
+    </button>
+    <button class="home-tab" type="button" onclick="openAppPage('active-bills')">
+      <svg viewBox="0 0 24 24"><path d="M7 3h10l2 4v14H5V7l2-4Z"/><path d="M8 11h8M8 15h6"/></svg>Bills
+    </button>
+    <button class="home-tab" type="button" onclick="openAppPage('trip-hub')">
+      <svg viewBox="0 0 24 24"><path d="M4 18 9 5l4 8 7-3-5 9-4-7-7 6Z"/></svg>Trips
+    </button>
+    <button class="home-tab" type="button" onclick="openAppPage('settings')">
+      <svg viewBox="0 0 24 24"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/><path d="M19.4 15a8 8 0 0 0 .1-6l2-1.5-2-3.4-2.4 1a8 8 0 0 0-5.1-3l-.4-2.6H7.6L7.2 2.1a8 8 0 0 0-5.1 3l-2.4-1-2 3.4 2 1.5a8 8 0 0 0 .1 6l-2 1.5 2 3.4 2.4-1a8 8 0 0 0 5 3l.5 2.6h4l.5-2.6a8 8 0 0 0 5-3l2.4 1 2-3.4-2.2-1.5Z"/></svg>More
+    </button>
+  </nav>
+</div>
 
 <div class="loading" id="loading"><div class="loader-mark"><span>R</span></div></div>
 
@@ -378,6 +542,8 @@ function showAppHome(profile){
   document.querySelector('.app-shell').style.display = 'none';
   el('app-home').classList.add('active');
   el('app-home').classList.remove('signed-out','auth-visible');
+  const tabsWrap = el('home-tabs-wrap');
+  if (tabsWrap) tabsWrap.style.display = 'block';
   el('home-tabs').classList.add('active');
   const homeTop = el('home-top');
   if (homeTop) homeTop.style.display = 'flex';
@@ -388,6 +554,9 @@ function showAppHome(profile){
   if (profileBtn) profileBtn.textContent = initial;
   const profileBtn2 = el('home-profile-btn');
   if (profileBtn2) profileBtn2.textContent = initial;
+  // Show the status pill for signed-in users
+  const pill = el('scan-status-pill');
+  if (pill) pill.style.display = 'inline-flex';
 }
 function showSignedOutHome(){
   const shell = document.querySelector('.app-shell');
@@ -397,7 +566,12 @@ function showSignedOutHome(){
   home.classList.remove('auth-visible');
   const homeTop = el('home-top');
   if (homeTop) homeTop.style.display = 'flex';
+  const tabsWrap = el('home-tabs-wrap');
+  if (tabsWrap) tabsWrap.style.display = 'none';
   el('home-tabs').classList.remove('active');
+  // Hide status pill for signed-out users
+  const pill = el('scan-status-pill');
+  if (pill) pill.style.display = 'none';
   const dock = el('app-auth-dock');
   const card = document.querySelector('.auth-card');
   if (dock && card && card.parentElement !== dock) dock.appendChild(card);
