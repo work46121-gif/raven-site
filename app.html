@@ -393,6 +393,13 @@ button,input,textarea{font:inherit}
       <button class="primary-btn" id="reset-button" type="submit">Send reset link</button>
       <button class="secondary-btn" type="button" onclick="showTab('login')">Back to sign in</button>
     </form>
+    <form class="form" id="new-password-form" onsubmit="handleSetNewPassword(event)" style="display:none">
+      <label class="field">
+        <span class="label">New Password</span>
+        <input class="input" id="new-password-input" type="password" autocomplete="new-password" placeholder="New password (min 6 chars)" required>
+      </label>
+      <button class="primary-btn" id="new-password-btn" type="submit">Set New Password</button>
+    </form>
   </main>
   </div><!-- end app-shell-inner -->
 </div>
@@ -473,6 +480,13 @@ function getAppAuthRedirectTo(){
   // Capacitor uses a capacitor:// or file:// origin — fall back to the web URL for OAuth redirects only
   return 'https://ravensplit.com/app.html?app=1';
 }
+// Listen for PASSWORD_RECOVERY event from Supabase (email link click)
+db.auth.onAuthStateChange((event, session) => {
+  if (event === 'PASSWORD_RECOVERY') {
+    showSignedOutHome();
+    showTab('new-password');
+  }
+});
 function showLoading(show){el('loading').classList.toggle('show', !!show)}
 function showMessage(type, text){
   el('message-error').style.display = 'none';
@@ -490,11 +504,11 @@ function toggleResendConfirm(show){
 function showTab(tab){
   clearMessage();
   toggleResendConfirm(false);
-  ['login','signup','reset'].forEach(name => {
+  ['login','signup','reset','new-password'].forEach(name => {
     const form = el(name + '-form');
     if (form) form.classList.toggle('active', name === tab);
   });
-  el('login-tab').classList.toggle('active', tab === 'login' || tab === 'reset');
+  el('login-tab').classList.toggle('active', tab === 'login' || tab === 'reset' || tab === 'new-password');
   el('signup-tab').classList.toggle('active', tab === 'signup');
   if (tab === 'reset') {
     const known = el('login-email').value || localStorage.getItem('raven_remembered_email') || '';
@@ -554,7 +568,7 @@ function showAppHome(profile){
   if (profileBtn) profileBtn.textContent = initial;
   const profileBtn2 = el('home-profile-btn');
   if (profileBtn2) profileBtn2.textContent = initial;
-  // Status pill hidden — removed per UX update
+  // Show the status pill for signed-in users
   const pill = el('scan-status-pill');
   if (pill) pill.style.display = 'none';
 }
@@ -614,8 +628,9 @@ function scanLogoAction(){
     showMessage('success','Sign in or create an account, then tap the logo to scan.');
     return;
   }
-  // Navigate directly to scan — avoids iOS WKWebView camera crash
-  openAppPage('create-bill', { quickscan: true });
+  // Navigate directly to scan — avoids iOS WKWebView file-input crash
+  localStorage.setItem('raven_native_app','1');
+  navigateWithFade('dashboard.html?app=1&page=create-bill&quickscan=1');
 }
 function handleCameraCapture(event){
   const file = event.target.files && event.target.files[0];
@@ -772,6 +787,25 @@ async function handleReset(event){
   if (error) return showMessage('error', error.message);
   showMessage('success','Reset link sent. Check your inbox.');
 }
+async function handleSetNewPassword(event){
+  event.preventDefault();
+  clearMessage();
+  const pw = el('new-password-input').value.trim();
+  if (!pw || pw.length < 6) return showMessage('error','Password must be at least 6 characters.');
+  const btn = el('new-password-btn');
+  btn.disabled = true;
+  btn.textContent = 'Saving...';
+  const { error } = await db.auth.updateUser({ password: pw });
+  btn.disabled = false;
+  btn.textContent = 'Set New Password';
+  if (error) return showMessage('error', error.message);
+  showMessage('success','Password updated! Signing you in...');
+  setTimeout(() => {
+    const { data: { session } } = db.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) routeAfterAuth(session.user);
+    });
+  }, 1200);
+}
 // Double-tap the top-left logo to go to Settings (iOS-friendly — dblclick unreliable on mobile)
 (function(){
   let lastTap = 0;
@@ -801,11 +835,23 @@ async function handleReset(event){
   }
   const hash = window.location.hash;
   if (hash && hash.includes('access_token')) {
-    try { await db.auth.getSession(); history.replaceState(null, '', window.location.pathname); } catch(e) {}
+    try { await db.auth.getSession(); } catch(e) {}
+    // Check if this is a password recovery redirect
+    if (hash.includes('type=recovery')) {
+      history.replaceState(null, '', window.location.pathname);
+      // Show new-password form
+      showSignedOutHome();
+      showTab('new-password');
+      return;
+    }
+    history.replaceState(null, '', window.location.pathname);
   }
   const { data: { session } } = await db.auth.getSession();
-  if (session?.user) routeAfterAuth(session.user);
-  else showSignedOutHome();
+  if (session?.user) {
+    // If session exists but it's a recovery session, show password form
+    const urlHash = window.location.hash || '';
+    routeAfterAuth(session.user);
+  } else showSignedOutHome();
 })();
 </script>
 </body>
