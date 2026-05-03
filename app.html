@@ -554,9 +554,9 @@ function showAppHome(profile){
   if (profileBtn) profileBtn.textContent = initial;
   const profileBtn2 = el('home-profile-btn');
   if (profileBtn2) profileBtn2.textContent = initial;
-  // Show the status pill for signed-in users
+  // Status pill hidden — clean UI
   const pill = el('scan-status-pill');
-  if (pill) pill.style.display = 'inline-flex';
+  if (pill) pill.style.display = 'none';
 }
 function showSignedOutHome(){
   const shell = document.querySelector('.app-shell');
@@ -614,15 +614,8 @@ function scanLogoAction(){
     showMessage('success','Sign in or create an account, then tap the logo to scan.');
     return;
   }
-  // Trigger camera directly from user gesture — required by iOS WKWebView.
-  // A fileInput.click() inside setTimeout after page navigation is blocked on iOS.
-  const camInput = el('app-camera-input');
-  if (camInput) {
-    camInput.value = '';
-    camInput.click();
-  } else {
-    openAppPage('create-bill', { quickscan: true });
-  }
+  // Navigate directly to scan page — more reliable than in-page camera trigger
+  openAppPage('create-bill', { quickscan: true });
 }
 function handleCameraCapture(event){
   const file = event.target.files && event.target.files[0];
