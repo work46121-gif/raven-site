@@ -172,6 +172,26 @@ const server = http.createServer(async (req, res) => {
   if (urlPath === '/onboarding.html' || urlPath === '/onboarding') return serveStaticFile(req, res, './onboarding.html');
   if (urlPath === '/raven-demo.html' || urlPath === '/raven-demo') return serveStaticFile(req, res, './raven-demo.html');
 
+  // app.html — always fetch fresh from raw GitHub so local stale copy is never used
+  if (urlPath === '/app.html' || urlPath === '/app') {
+    const rawUrl = 'https://raw.githubusercontent.com/work46121-gif/raven-site/main/app.html';
+    const ghReq = https.get(rawUrl, ghRes => {
+      if (ghRes.statusCode !== 200) {
+        return serveStaticFile(req, res, './app.html');
+      }
+      let body = '';
+      ghRes.setEncoding('utf8');
+      ghRes.on('data', chunk => body += chunk);
+      ghRes.on('end', () => {
+        body = body.replace(/<script[^>]*src="\/cdn-cgi\/[^"]*"[^>]*><\/script>/gi, '');
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-cache, no-store, must-revalidate' });
+        res.end(body);
+      });
+    });
+    ghReq.on('error', () => serveStaticFile(req, res, './app.html'));
+    return;
+  }
+
   // dashboard.html — always fetch fresh from raw GitHub so local stale copy is never used
   if (urlPath === '/dashboard.html' || urlPath === '/dashboard') {
     const rawUrl = 'https://raw.githubusercontent.com/work46121-gif/raven-site/main/dashboard.html';
