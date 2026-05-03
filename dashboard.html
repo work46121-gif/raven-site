@@ -158,6 +158,8 @@ body.app-mode #mob-settings .mi-ring {
   border-color: rgba(255,255,255,.14) !important;
 }
 body.app-mode .auth-footer { display: none !important; }
+/* Hide "back to ravensplit.com" and any index.html links in app mode */
+body.app-mode a[href="index.html"] { display: none !important; }
 body.app-mode .cb-raven-scan-art { width:86px;height:86px;margin:0 auto 16px;display:block;filter:drop-shadow(0 0 24px rgba(48,209,88,.22)); }
 body.app-mode .cb-raven-add-icon { width:18px;height:18px;display:block; }
 
@@ -2937,6 +2939,32 @@ async function showDashboard() {
         if (appPage === 'create-bill' && quickscan) {
           try { cbGoToStep(1); } catch(e) {}
           setTimeout(() => {
+            // Check if app.html pre-captured an image and stored it in sessionStorage
+            try {
+              const storedImg = sessionStorage.getItem('raven_scan_image');
+              const storedType = sessionStorage.getItem('raven_scan_type') || 'image/jpeg';
+              if (storedImg) {
+                sessionStorage.removeItem('raven_scan_image');
+                sessionStorage.removeItem('raven_scan_type');
+                fetch(storedImg)
+                  .then(r => r.blob())
+                  .then(blob => {
+                    const file = new File([blob], 'receipt.jpg', { type: storedType });
+                    if (typeof cbLoadPhoto === 'function') { cbLoadPhoto(file); return; }
+                    // fallback if cbLoadPhoto not available yet
+                    const dt = new DataTransfer();
+                    dt.items.add(file);
+                    const fi = document.getElementById('cb-file-input');
+                    if (fi) { fi.files = dt.files; fi.dispatchEvent(new Event('change')); }
+                  })
+                  .catch(() => {
+                    const fileInput = document.getElementById('cb-file-input');
+                    if (fileInput) fileInput.click();
+                  });
+                return;
+              }
+            } catch(e) {}
+            // No pre-captured image — open the file/camera picker
             const fileInput = document.getElementById('cb-file-input');
             if (fileInput) fileInput.click();
           }, 280);
