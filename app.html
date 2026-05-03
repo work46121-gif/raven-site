@@ -254,6 +254,14 @@ button,input{font:inherit}
 </div>
 
 <section class="app-home" id="app-home" aria-label="RAVEN home">
+  <!-- Top bar: logo (double-tap = settings) + profile avatar -->
+  <div class="home-top" id="home-top" style="display:none;align-items:center;justify-content:space-between;padding:calc(env(safe-area-inset-top,0px) + 10px) 18px 6px;flex:0 0 auto;position:relative;z-index:4">
+    <div class="home-brand">
+      <button class="home-logo" id="home-logo-btn" type="button" aria-label="RAVEN — double-tap for settings" style="border:0;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent;background:transparent;display:grid;place-items:center;position:relative"></button>
+      <div class="home-title">RAVEN</div>
+    </div>
+    <button id="home-profile-btn" type="button" aria-label="Profile & settings" onclick="openAppPage('settings')" style="width:34px;height:34px;border-radius:50%;border:1px solid rgba(255,255,255,.18);background:rgba(168,85,247,.18);color:var(--white);font-size:14px;font-weight:800;cursor:pointer;-webkit-tap-highlight-color:transparent;display:grid;place-items:center;font-family:Epilogue,sans-serif">?</button>
+  </div>
   <div class="scan-hero">
     <div class="scan-card">
       <div class="scan-orbit">
@@ -266,6 +274,8 @@ button,input{font:inherit}
       <div class="app-auth-dock" id="app-auth-dock"></div>
     </div>
   </div>
+  <!-- Hidden camera input: triggered directly from scanLogoAction() to satisfy iOS WKWebView policy -->
+  <input id="app-camera-input" type="file" accept="image/*" capture="environment" style="position:fixed;left:-9999px;top:-9999px;opacity:0;pointer-events:none" onchange="handleCameraCapture(event)">
   <div class="app-cta-bottom">
     <button class="dashboard-pill" type="button" onclick="goDashboard()">Go to RAVEN Dashboard</button>
     <div class="auth-actions" aria-label="Account actions">
@@ -292,12 +302,12 @@ let pendingConfirmEmail = '';
 
 function el(id){return document.getElementById(id)}
 function getAppAuthRedirectTo(){
-  const fallback = 'https://ravensplit.com/app.html?app=1';
   try {
     const origin = window.location.origin || '';
     if (/^https?:\/\//i.test(origin)) return origin + window.location.pathname + '?app=1';
   } catch(e) {}
-  return fallback;
+  // Capacitor uses a capacitor:// or file:// origin — fall back to the web URL for OAuth redirects only
+  return 'https://ravensplit.com/app.html?app=1';
 }
 function showLoading(show){el('loading').classList.toggle('show', !!show)}
 function showMessage(type, text){
@@ -369,10 +379,15 @@ function showAppHome(profile){
   el('app-home').classList.add('active');
   el('app-home').classList.remove('signed-out','auth-visible');
   el('home-tabs').classList.add('active');
+  const homeTop = el('home-top');
+  if (homeTop) homeTop.style.display = 'flex';
   const local = JSON.parse(localStorage.getItem('raven_profile') || '{}');
   const name = profile?.first_name || local.first_name || local.email || '';
+  const initial = (name || '?').charAt(0).toUpperCase();
   const profileBtn = el('home-profile');
-  if (profileBtn) profileBtn.textContent = (name || '?').charAt(0).toUpperCase();
+  if (profileBtn) profileBtn.textContent = initial;
+  const profileBtn2 = el('home-profile-btn');
+  if (profileBtn2) profileBtn2.textContent = initial;
 }
 function showSignedOutHome(){
   const shell = document.querySelector('.app-shell');
@@ -380,6 +395,8 @@ function showSignedOutHome(){
   const home = el('app-home');
   home.classList.add('active','signed-out');
   home.classList.remove('auth-visible');
+  const homeTop = el('home-top');
+  if (homeTop) homeTop.style.display = 'flex';
   el('home-tabs').classList.remove('active');
   const dock = el('app-auth-dock');
   const card = document.querySelector('.auth-card');
@@ -423,7 +440,33 @@ function scanLogoAction(){
     showMessage('success','Sign in or create an account, then tap the logo to scan.');
     return;
   }
-  openAppPage('create-bill',{ quickscan: true });
+  // Trigger camera directly from user gesture — required by iOS WKWebView.
+  // A fileInput.click() inside setTimeout after page navigation is blocked on iOS.
+  const camInput = el('app-camera-input');
+  if (camInput) {
+    camInput.value = '';
+    camInput.click();
+  } else {
+    openAppPage('create-bill', { quickscan: true });
+  }
+}
+function handleCameraCapture(event){
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e){
+    try {
+      sessionStorage.setItem('raven_scan_image', e.target.result);
+      sessionStorage.setItem('raven_scan_type', file.type || 'image/jpeg');
+    } catch(err) { /* sessionStorage full — dashboard will open picker as fallback */ }
+    localStorage.setItem('raven_native_app','1');
+    navigateWithFade('dashboard.html?app=1&page=create-bill&quickscan=1');
+  };
+  reader.onerror = function(){
+    localStorage.setItem('raven_native_app','1');
+    navigateWithFade('dashboard.html?app=1&page=create-bill');
+  };
+  reader.readAsDataURL(file);
 }
 function openAppPage(page, options){
   localStorage.setItem('raven_native_app','1');
@@ -562,6 +605,24 @@ async function handleReset(event){
   if (error) return showMessage('error', error.message);
   showMessage('success','Reset link sent. Check your inbox.');
 }
+// Double-tap the top-left logo to go to Settings (iOS-friendly — dblclick unreliable on mobile)
+(function(){
+  let lastTap = 0;
+  document.addEventListener('DOMContentLoaded', function(){
+    const logoBtn = document.getElementById('home-logo-btn');
+    if (!logoBtn) return;
+    logoBtn.addEventListener('touchend', function(e){
+      const now = Date.now();
+      if (now - lastTap < 350) {
+        e.preventDefault();
+        openAppPage('settings');
+      }
+      lastTap = now;
+    }, { passive: false });
+    logoBtn.addEventListener('dblclick', function(){ openAppPage('settings'); });
+  });
+})();
+
 (async function init(){
   localStorage.setItem('raven_native_app','1');
   // Fade-in on initial render
