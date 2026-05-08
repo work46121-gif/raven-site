@@ -178,6 +178,8 @@ workflows:
           agvtool new-marketing-version 1.0.0
           /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $APP_BUILD_NUMBER" App/Info.plist
           /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString 1.0.0" App/Info.plist
+          /usr/libexec/PlistBuddy -c "Set :ITSAppUsesNonExemptEncryption false" App/Info.plist 2>/dev/null || \
+            /usr/libexec/PlistBuddy -c "Add :ITSAppUsesNonExemptEncryption bool false" App/Info.plist
         working_directory: ios/App
 
       - name: Build iOS IPA
