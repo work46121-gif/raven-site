@@ -2148,7 +2148,7 @@ async function checkOnboardingAndShow(userId) {
       }
       if (profile.onboarding_complete) {
         const existing = JSON.parse(localStorage.getItem('raven_profile') || '{}');
-        localStorage.setItem('raven_profile', JSON.stringify({ ...existing, user_id: userId, onboarding_complete: true, first_name: profile.first_name || existing.first_name || '', raven_id: profile.raven_id || existing.raven_id || '', username: profile.raven_id || existing.username || existing.raven_id || '', email: currentUser.email }));
+        localStorage.setItem('raven_profile', JSON.stringify({ ...existing, user_id: userId, onboarding_complete: true, first_name: profile.first_name || existing.first_name || '', raven_id: profile.raven_id || existing.raven_id || '', username: profile.raven_id || existing.username || existing.raven_id || '', avatar_url: profile.avatar_url || existing.avatar_url || '', email: currentUser.email }));
         showDashboard(); return;
       } else { window.location.href = 'onboarding.html'; return; }
     }
@@ -8393,6 +8393,24 @@ async function loadChatMessages(tripId) {
   if (container) container.dataset.lastDateKey = '';
   container.innerHTML = '<div style="text-align:center;color:#6E6B80;font-size:12px;padding:20px 0">Loading...</div>';
 
+  let renderedFallback = false;
+  try {
+    const trip = tripDataMap[tripId] || {};
+    const token = trip.share_token || trip.invite_token || '';
+    if (token) {
+      const resp = await fetch(BACKEND + '/trip/' + tripId + '/messages?token=' + encodeURIComponent(token));
+      const payload = await resp.json();
+      if (payload && payload.success !== false && Array.isArray(payload.messages) && payload.messages.length > 0) {
+        container.innerHTML = '';
+        if (container) container.dataset.lastDateKey = '';
+        const enrichedFallback = await enrichTripChatMessages(payload.messages);
+        enrichedFallback.forEach(msg => appendChatMessage(msg, false));
+        renderedFallback = true;
+        scrollChatToBottom();
+      }
+    }
+  } catch(e) {}
+
   try {
     const { data, error } = await db.from('trip_messages')
       .select('*')
@@ -8400,6 +8418,7 @@ async function loadChatMessages(tripId) {
       .order('created_at', { ascending: true })
       .limit(100);
 
+    if (renderedFallback && (error || !data || data.length === 0)) return;
     container.innerHTML = '';
     if (container) container.dataset.lastDateKey = '';
     if (error || !data || data.length === 0) {
@@ -8410,6 +8429,7 @@ async function loadChatMessages(tripId) {
     enriched.forEach(msg => appendChatMessage(msg, false));
     scrollChatToBottom();
   } catch(e) {
+    if (renderedFallback) return;
     container.innerHTML = '<div style="text-align:center;color:#FF4444;font-size:12px;padding:20px 0">Could not load messages</div>';
   }
 }
@@ -8476,6 +8496,7 @@ function appendChatMessage(msg, scroll = true) {
   if (empty) empty.remove();
 
   const container = document.getElementById('chat-messages');
+  if (msg.id && container?.querySelector('[data-msg-id="' + String(msg.id).replace(/"/g, '\\"') + '"]')) return;
   const local = JSON.parse(localStorage.getItem('raven_profile') || '{}');
   const isMe = msg.user_id === local.user_id;
   const dateSource = msg?.created_at || msg?.sent_at || msg?.inserted_at || msg?.timestamp || msg?.createdAt;
@@ -8494,9 +8515,15 @@ function appendChatMessage(msg, scroll = true) {
   }
 
   const el = document.createElement('div');
+  if (msg.id) el.dataset.msgId = String(msg.id);
+  const bodyHtml = msg.message ? '<div style="max-width:80%;padding:9px 13px;border-radius:' + (isMe ? '16px 16px 4px 16px' : '16px 16px 16px 4px') + ';background:' + (isMe ? 'var(--purple)' : '#1A1A24') + ';color:#F0EEF8;font-size:13px;line-height:1.5;word-break:break-word">' + escapeHtml(msg.message) + '</div>' : '';
+  const gifHtml = msg.gif_url ? '<img src="' + escapeHtml(msg.gif_url) + '" style="max-width:190px;border-radius:12px;display:block;margin-top:4px">' : '';
+  const photoHtml = msg.photo_url ? '<img src="' + escapeHtml(msg.photo_url) + '" style="max-width:190px;border-radius:12px;display:block;margin-top:4px">' : '';
   el.style.cssText = 'display:flex;flex-direction:column;align-items:' + (isMe ? 'flex-end' : 'flex-start') + ';gap:3px';
   el.innerHTML = (!isMe ? '<div style="font-size:10px;color:#9896A8;font-weight:600;margin-left:4px">' + escapeHtml(msg.sender_name || 'Someone') + '</div>' : '')
-    + '<div style="max-width:80%;padding:9px 13px;border-radius:' + (isMe ? '16px 16px 4px 16px' : '16px 16px 16px 4px') + ';background:' + (isMe ? 'var(--purple)' : '#1A1A24') + ';color:#F0EEF8;font-size:13px;line-height:1.5;word-break:break-word">' + escapeHtml(msg.message) + '</div>'
+    + bodyHtml
+    + gifHtml
+    + photoHtml
     + '<div style="font-size:10px;color:#6E6B80;margin:0 4px">' + time + '</div>';
 
   container.appendChild(el);
@@ -8524,7 +8551,7 @@ async function sendChatMessage() {
   const local = JSON.parse(localStorage.getItem('raven_profile') || '{}');
   let senderName = local.first_name || currentUser.email?.split('@')[0] || 'Someone';
   try {
-    const { data: liveProfile } = await db.from('profiles').select('first_name,raven_id,email').eq('id', currentUser.id).maybeSingle();
+    const { data: liveProfile } = await db.from('profiles').select('first_name,raven_id,email,avatar_url').eq('id', currentUser.id).maybeSingle();
     senderName = liveProfile?.first_name || senderName;
     if (liveProfile?.first_name) {
       localStorage.setItem('raven_profile', JSON.stringify({ ...local, ...liveProfile, user_id: currentUser.id }));
@@ -8532,19 +8559,32 @@ async function sendChatMessage() {
   } catch(e) {}
 
   try {
-    const { error } = await db.from('trip_messages').insert({
+    const trip = tripDataMap[currentChatTripId] || {};
+    const token = trip.share_token || trip.invite_token || '';
+    const resp = await fetch(BACKEND + '/trip/' + currentChatTripId + '/message', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        token,
+        user_id: currentUser.id,
+        sender_name: senderName,
+        avatar_url: local.avatar_url || '',
+        message
+      })
+    });
+    const payload = await resp.json();
+    if (!payload.success) throw new Error(payload.error || 'Could not send message');
+    appendChatMessage(payload.message || {
       trip_id: currentChatTripId,
       user_id: currentUser.id,
       sender_name: senderName,
-      message: message,
+      avatar_url: local.avatar_url || '',
+      message,
       created_at: new Date().toISOString()
-    });
-    if (error) {
-      console.error('Chat send error:', error);
-      showToast('Could not send message', 'error');
-    }
+    }, true);
   } catch(e) {
     showToast('Could not send message', 'error');
+    input.value = message;
   }
 }
 
