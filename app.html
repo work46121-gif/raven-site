@@ -206,6 +206,7 @@ button,input,textarea{font:inherit}
 .scan-status-pill{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:100px;
   background:rgba(48,209,88,.08);border:1px solid rgba(48,209,88,.18);
   font-size:11px;font-weight:700;color:var(--green);margin-top:12px;flex:0 0 auto;position:relative;z-index:1}
+.app-home .scan-status-pill{display:none}
 .scan-status-dot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 8px rgba(48,209,88,.8);animation:breathe 2s ease-in-out infinite}
 
 /* auth dock */
@@ -780,7 +781,7 @@ async function handleReset(event){
   const btn = el('reset-button');
   btn.disabled = true;
   btn.textContent = 'Sending...';
-  const redirectTo = getAppAuthRedirectTo();
+  const redirectTo = 'https://ravensplit.com/app.html?app=1&reset=1';
   const { error } = await db.auth.resetPasswordForEmail(email, { redirectTo });
   btn.disabled = false;
   btn.textContent = 'Send reset link';
@@ -834,17 +835,26 @@ async function handleSetNewPassword(event){
     el('remember-email').checked = true;
   }
   const hash = window.location.hash;
+  const params = new URLSearchParams(window.location.search);
+  const isPasswordReset = params.get('reset') === '1' || (hash && hash.includes('type=recovery'));
   if (hash && hash.includes('access_token')) {
     try { await db.auth.getSession(); } catch(e) {}
     // Check if this is a password recovery redirect
-    if (hash.includes('type=recovery')) {
-      history.replaceState(null, '', window.location.pathname);
+    if (isPasswordReset) {
+      history.replaceState(null, '', window.location.pathname + '?app=1');
       // Show new-password form
       showSignedOutHome();
       showTab('new-password');
       return;
     }
     history.replaceState(null, '', window.location.pathname);
+  }
+  if (isPasswordReset) {
+    try { await db.auth.getSession(); } catch(e) {}
+    history.replaceState(null, '', window.location.pathname + '?app=1');
+    showSignedOutHome();
+    showTab('new-password');
+    return;
   }
   const { data: { session } } = await db.auth.getSession();
   if (session?.user) {
