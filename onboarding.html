@@ -679,6 +679,16 @@ const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 let currentUser = null;
 let profileData = {};
 
+function dashboardUrl() {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const isApp = params.get('app') === '1' || localStorage.getItem('raven_native_app') === '1';
+    return 'dashboard.html' + (isApp ? '?app=1' : '');
+  } catch(e) {
+    return 'dashboard.html';
+  }
+}
+
 function sanitizeRavenBase(base) {
   return (String(base || '').trim().split(/\s+/)[0] || '').toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 16) || 'raven';
 }
@@ -831,7 +841,7 @@ async function init() {
 
   const { data: { session } } = await db.auth.getSession();
   if (!session?.user) {
-    window.location.href = 'dashboard.html';
+    window.location.href = dashboardUrl();
     return;
   }
 
@@ -841,7 +851,7 @@ async function init() {
   // Check localStorage first (fast)
   const localProfile = JSON.parse(localStorage.getItem('raven_profile') || '{}');
   if (localProfile.onboarding_complete && localProfile.user_id === currentUser.id) {
-    window.location.href = 'dashboard.html';
+    window.location.href = dashboardUrl();
     return;
   }
 
@@ -850,7 +860,7 @@ async function init() {
     const { data: profile, error } = await db.from('profiles').select('*').eq('id', currentUser.id).single();
     if (!error && profile?.onboarding_complete) {
       localStorage.setItem('raven_profile', JSON.stringify({ ...profile, user_id: currentUser.id }));
-      window.location.href = 'dashboard.html';
+      window.location.href = dashboardUrl();
       return;
     }
     if (profile && !error) {
@@ -970,7 +980,7 @@ function goToStep(step) {
 }
 
 function goToDashboard() {
-  window.location.href = 'dashboard.html';
+  window.location.href = dashboardUrl();
 }
 
 function showError(id, msg) {
