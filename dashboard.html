@@ -1892,6 +1892,7 @@ function navigateWithFade(url) {
 let currentUser = null;
 let currentBillId = null;
 let people = [];
+let ravenPasswordRecoveryMode = false;
 
 // ── JOIN TRIP STATE ──────────────────────────────────────────────────────────
 // Handle Supabase password reset redirect — fires when user clicks the reset link in email
@@ -1904,6 +1905,7 @@ db.auth.onAuthStateChange(async (event, session) => {
 });
 
 function showPasswordResetForm() {
+  ravenPasswordRecoveryMode = true;
   document.getElementById('auth-screen').style.display = 'flex';
   document.getElementById('dashboard-screen').style.display = 'none';
   // Hide all auth forms, show reset form
@@ -2054,22 +2056,39 @@ async function init() {
   try {
     // Handle OAuth error params
     const params = new URLSearchParams(window.location.search);
+    const hash = window.location.hash || '';
+    const isPasswordRecovery = params.get('reset') === '1' || hash.includes('type=recovery');
     if (params.get('error')) {
       console.warn('OAuth error:', params.get('error_description'));
       history.replaceState(null, '', window.location.pathname);
     }
     // Handle implicit flow — token comes back in URL hash
-    const hash = window.location.hash;
     if (hash && (hash.includes('access_token') || hash.includes('error'))) {
       try { await db.auth.getSession(); } catch(e) {}
-      history.replaceState(null, '', window.location.pathname);
+      if (isPasswordRecovery) {
+        history.replaceState(null, '', window.location.pathname + (RAVEN_APP_MODE ? '?app=1' : ''));
+        showPasswordResetForm();
+        return;
+      }
+      history.replaceState(null, '', window.location.pathname + (RAVEN_APP_MODE ? '?app=1' : ''));
+    }
+    if (isPasswordRecovery) {
+      try { await db.auth.getSession(); } catch(e) {}
+      history.replaceState(null, '', window.location.pathname + (RAVEN_APP_MODE ? '?app=1' : ''));
+      showPasswordResetForm();
+      return;
     }
     const { data: { session } } = await db.auth.getSession();
     if (session?.user) { currentUser = session.user; await checkOnboardingAndShow(currentUser.id); }
     else { showAuth(); }
     db.auth.onAuthStateChange(async (event, session) => {
       try {
-        if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session?.user) {
+        if (event === 'PASSWORD_RECOVERY') {
+          ravenPasswordRecoveryMode = true;
+          showPasswordResetForm();
+          return;
+        }
+        if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session?.user && !ravenPasswordRecoveryMode) {
           currentUser = session.user;
           if (window.location.hash) history.replaceState(null, '', window.location.pathname);
           await checkOnboardingAndShow(session.user.id);
@@ -2219,7 +2238,7 @@ async function handleForgotPassword() {
   if (!email) return showAuthError('Please enter your email address.');
   const btn = document.getElementById('forgot-btn');
   btn.textContent = 'Sending...'; btn.disabled = true; hideAuthError();
-  const redirectUrl = window.location.origin + window.location.pathname + '?reset=1';
+  const redirectUrl = 'https://ravensplit.com/dashboard.html' + (RAVEN_APP_MODE ? '?app=1&reset=1' : '?reset=1');
   const { error } = await db.auth.resetPasswordForEmail(email, { redirectTo: redirectUrl });
   btn.textContent = 'Send Reset Link →'; btn.disabled = false;
   if (error) {
@@ -6815,7 +6834,7 @@ async function loadTrips() {
   container.innerHTML = trips.map(t => {
     const people = Array.isArray(t.people) ? t.people : JSON.parse(t.people || '[]');
     const tripUrl = FRONTEND + '/trip/' + t.id + '?t=' + t.share_token;
-    const tripUrlReceipt = RAVEN_APP_MODE ? 'dashboard.html?app=1&page=create-bill' : (tripUrl + '&action=receipt');
+    const tripUrlReceipt = tripUrl + '&action=receipt' + (RAVEN_APP_MODE ? '&app=1' : '');
     tripUrlMap[t.id] = tripUrl;
     // Store full trip data safely — never pass user content through onclick attributes
     tripDataMap[t.id] = t;
@@ -6868,7 +6887,7 @@ async function loadTrips() {
       + '<div class="bill-amount trip-open-hit" style="cursor:pointer;color:' + (parseFloat(t.total||0)>0?'#FF9A3C':'var(--green)') + ';touch-action:manipulation;-webkit-tap-highlight-color:transparent" onpointerdown="warmTrip(\'' + safeId + '\')" onclick="openTrip(\'' + safeId + '\')">$' + parseFloat(t.total || 0).toFixed(2) + '</div>'
       + '<div class="bill-progress-wrap"><div class="bill-progress-label">' + tripStatusLabel + '</div><div class="bill-progress"><div class="bill-progress-fill" style="width:100%"></div></div></div>'
       + '<div class="bill-actions" onclick="event.stopPropagation()">'
-      + '<a class="bill-action-btn btn-remind" href="' + tripUrlReceipt + '" data-tripid="' + safeAttrId + '" onclick="' + (RAVEN_APP_MODE ? "event.preventDefault();showPage('create-bill');setMobNav('mob-create');setTimeout(function(){cbSetActiveTrip('" + safeId + "','" + (t.name||'').replace(/'/g,'') + "')},200)" : '') + '" style="display:inline-flex;align-items:center;text-decoration:none;background:rgba(48,209,88,0.1);color:var(--green);border:1px solid rgba(48,209,88,0.25)"><svg class="bill-action-icon"><use href="#icon-active-bills"></use></svg>Receipt</a>'
+      + '<a class="bill-action-btn btn-remind" href="' + tripUrlReceipt + '" data-tripid="' + safeAttrId + '" style="display:inline-flex;align-items:center;text-decoration:none;background:rgba(48,209,88,0.1);color:var(--green);border:1px solid rgba(48,209,88,0.25)"><svg class="bill-action-icon"><use href="#icon-active-bills"></use></svg>Receipt</a>'
       + (isAdmin ? '<button class="bill-action-btn admin-btn" data-tripid="' + t.id + '" style="background:rgba(124,58,237,0.1);color:var(--purple3);border:1px solid rgba(124,58,237,0.2)"><svg class="bill-action-icon"><use href="#icon-roommates"></use></svg>Admin</button>' : '')
       + (RAVEN_APP_MODE
         ? '<button class="bill-action-btn btn-view" type="button" data-tripid="' + safeAttrId + '" style="display:inline-flex;align-items:center;text-decoration:none">Open Trip →</button>'
@@ -7883,7 +7902,26 @@ async function cbCreateFinalBill() {
   if (_cbActiveTripId && billId) {
     try {
       const tripTotal = parseFloat(total) || 0;
-      await db.from('trip_receipts').insert({ trip_id: _cbActiveTripId, bill_id: billId, name: name, total: tripTotal, paid_by: paidBy || cbPeople[0] || '', splits: splits });
+      const tripSplits = {};
+      Object.keys(personAmounts || {}).forEach(person => {
+        tripSplits[person] = parseFloat(personAmounts[person] || 0);
+      });
+      const tripReceiptRow = {
+        trip_id: _cbActiveTripId,
+        bill_id: billId,
+        name: name,
+        total: tripTotal,
+        paid_by: paidBy || cbPeople[0] || '',
+        splits: tripSplits,
+        items: cbItems || []
+      };
+      let { error: tripInsertError } = await db.from('trip_receipts').insert(tripReceiptRow);
+      if (tripInsertError && /bill_id|items/i.test(tripInsertError.message || '')) {
+        const { bill_id, items, ...fallbackTripReceiptRow } = tripReceiptRow;
+        const retry = await db.from('trip_receipts').insert(fallbackTripReceiptRow);
+        tripInsertError = retry.error;
+      }
+      if (tripInsertError) throw tripInsertError;
       const { data: existingTrip } = await db.from('trips').select('total,receipt_count').eq('id', _cbActiveTripId).single();
       if (existingTrip) {
         await db.from('trips').update({ total: parseFloat(existingTrip.total || 0) + tripTotal, receipt_count: (existingTrip.receipt_count || 0) + 1 }).eq('id', _cbActiveTripId);
