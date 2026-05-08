@@ -535,7 +535,7 @@ async function generateUniqueRavenId(base, excludeUserId){
 async function routeAfterAuth(user){
   showLoading(true);
   try {
-    const { data: profile } = await db.from('profiles').select('onboarding_complete,first_name,raven_id,username').eq('id', user.id).maybeSingle();
+    const { data: profile } = await db.from('profiles').select('onboarding_complete,first_name,raven_id,username,avatar_url').eq('id', user.id).maybeSingle();
     if (profile?.onboarding_complete) {
       localStorage.setItem('raven_profile', JSON.stringify({
         user_id: user.id,
@@ -543,6 +543,7 @@ async function routeAfterAuth(user){
         first_name: profile.first_name || '',
         raven_id: profile.raven_id || profile.username || '',
         username: profile.username || profile.raven_id || '',
+        avatar_url: profile.avatar_url || '',
         onboarding_complete: true
       }));
       showLoading(false);
