@@ -164,8 +164,10 @@ button,input,textarea{font:inherit}
 
 /* signed-out bottom bar */
 .auth-actions{display:none;width:100%;gap:10px}
-.app-home.signed-out .dashboard-pill{display:none}
-.app-home.signed-out .auth-actions{display:flex}
+.app-home.signed-out .dashboard-pill{display:none!important}
+.app-home.signed-out .auth-actions{display:flex!important}
+.app-home:not(.signed-out) .auth-actions{display:none!important}
+.app-home:not(.signed-out) .dashboard-pill{display:flex!important}
 
 /* scan section */
 .scan-hero{flex:1;min-height:0;display:flex;align-items:stretch}
@@ -861,7 +863,15 @@ async function handleSetNewPassword(event){
     // If session exists but it's a recovery session, show password form
     const urlHash = window.location.hash || '';
     routeAfterAuth(session.user);
-  } else showSignedOutHome();
+  } else {
+    let cachedProfile = null;
+    try {
+      const local = JSON.parse(localStorage.getItem('raven_profile') || '{}');
+      if (local && (local.user_id || local.email || local.first_name) && local.onboarding_complete !== false) cachedProfile = local;
+    } catch(e) {}
+    if (cachedProfile) showAppHome(cachedProfile);
+    else showSignedOutHome();
+  }
 })();
 </script>
 </body>
