@@ -116,6 +116,26 @@ body.app-mode .modal-btn {
   border-radius: 11px;
   min-height: 36px;
 }
+body.app-mode #page-trip-hub .bill-actions {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 7px !important;
+  width: 100%;
+}
+body.app-mode #page-trip-hub .bill-action-btn {
+  justify-content: center;
+  min-width: 0;
+  width: 100%;
+  padding: 8px 6px !important;
+  font-size: 10px !important;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+body.app-mode #page-trip-hub .bill-action-icon {
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+}
 body.app-mode .form-card {
   border-radius: 18px;
   border-color: rgba(255,255,255,.10);
@@ -2148,10 +2168,11 @@ function hideAuthError() { document.getElementById('auth-error').style.display =
 
 async function handleGoogleAuth() {
   try {
+    const redirectTo = 'https://ravensplit.com/dashboard.html' + (RAVEN_APP_MODE ? '?app=1' : '');
     const { error } = await db.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: 'https://ravensplit.com/dashboard.html'
+        redirectTo
       }
     });
     if (error) showAuthError(error.message);
@@ -6890,8 +6911,8 @@ async function loadTrips() {
       + '<a class="bill-action-btn btn-remind" href="' + tripUrlReceipt + '" data-tripid="' + safeAttrId + '" style="display:inline-flex;align-items:center;text-decoration:none;background:rgba(48,209,88,0.1);color:var(--green);border:1px solid rgba(48,209,88,0.25)"><svg class="bill-action-icon"><use href="#icon-active-bills"></use></svg>Receipt</a>'
       + (isAdmin ? '<button class="bill-action-btn admin-btn" data-tripid="' + t.id + '" style="background:rgba(124,58,237,0.1);color:var(--purple3);border:1px solid rgba(124,58,237,0.2)"><svg class="bill-action-icon"><use href="#icon-roommates"></use></svg>Admin</button>' : '')
       + (RAVEN_APP_MODE
-        ? '<button class="bill-action-btn btn-view" type="button" data-tripid="' + safeAttrId + '" style="display:inline-flex;align-items:center;text-decoration:none">Open Trip →</button>'
-        + '<button class="bill-action-btn" type="button" data-chatid="' + safeAttrId + '" style="display:inline-flex;align-items:center;background:rgba(124,58,237,0.12);color:var(--purple3);border:1px solid rgba(124,58,237,0.25)" onclick="event.stopPropagation();openTripChat(\'' + safeId + '\')"><svg style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Chat</button>'
+        ? '<button class="bill-action-btn" type="button" data-chatid="' + safeAttrId + '" style="display:inline-flex;align-items:center;background:rgba(124,58,237,0.12);color:var(--purple3);border:1px solid rgba(124,58,237,0.25)" onclick="event.stopPropagation();openTripChat(\'' + safeId + '\')"><svg style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Chat</button>'
+        + '<button class="bill-action-btn btn-view" type="button" data-tripid="' + safeAttrId + '" style="display:inline-flex;align-items:center;text-decoration:none">Open Trip →</button>'
         : '<a class="bill-action-btn btn-view" data-tripid="' + safeAttrId + '" href="' + tripUrl + '" style="display:inline-flex;align-items:center;text-decoration:none">Open Trip →</a>')
       + '</div></div>';
   }).join('');
