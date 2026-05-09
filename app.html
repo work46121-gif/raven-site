@@ -633,6 +633,10 @@ function navigateWithFade(url){
   // Small delay so the transition is visible
   setTimeout(() => { window.location.href = url; }, 160);
 }
+function goScanPage(){
+  localStorage.setItem('raven_native_app','1');
+  window.location.href = 'dashboard.html?app=1&page=create-bill';
+}
 function launchRavenFlight(){
   const layer = document.createElement('div');
   layer.className = 'raven-flight';
@@ -656,8 +660,7 @@ function goDashboard(){
   navigateWithRavens('dashboard.html?app=1&page=overview');
 }
 function scanLogoAction(){
-  localStorage.setItem('raven_native_app','1');
-  navigateWithFade('dashboard.html?app=1&page=create-bill');
+  goScanPage();
 }
 function handleCameraCapture(event){
   const file = event.target.files && event.target.files[0];
@@ -838,10 +841,21 @@ async function handleSetNewPassword(event){
   document.addEventListener('DOMContentLoaded', function(){
     const logoBtn = document.getElementById('home-logo-btn');
     if (!logoBtn) return;
+    logoBtn.addEventListener('click', function(e){
+      e.preventDefault();
+      goScanPage();
+    });
     logoBtn.addEventListener('touchend', function(e){
       e.preventDefault();
-      scanLogoAction();
+      goScanPage();
     }, { passive: false });
+    const scanBtn = document.querySelector('.scan-logo-button');
+    if (scanBtn) {
+      scanBtn.addEventListener('pointerup', function(e){
+        e.preventDefault();
+        goScanPage();
+      });
+    }
   });
 })();
 
@@ -856,6 +870,10 @@ async function handleSetNewPassword(event){
   }
   const hash = window.location.hash;
   const params = new URLSearchParams(window.location.search);
+  if (params.get('from') === 'trip') {
+    window.location.replace('dashboard.html?app=1&page=overview');
+    return;
+  }
   const isPasswordReset = params.get('reset') === '1' || (hash && hash.includes('type=recovery'));
   if (hash && hash.includes('access_token')) {
     try { await db.auth.getSession(); } catch(e) {}
