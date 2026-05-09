@@ -1,0 +1,37 @@
+name: Trigger Codemagic iOS Build
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - app.html
+      - dashboard.html
+      - onboarding.html
+      - index.html
+      - capacitor.config.json
+      - codemagic.yaml
+      - package.json
+      - package-lock.json
+      - manifest.json
+      - icon-*.png
+      - apple-touch-icon.png
+      - .github/workflows/codemagic-build.yml
+  workflow_dispatch:
+
+jobs:
+  start-codemagic-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Start Codemagic build
+        env:
+          CODEMAGIC_API_TOKEN: ${{ secrets.CODEMAGIC_API_TOKEN }}
+          CODEMAGIC_APP_ID: ${{ secrets.CODEMAGIC_APP_ID }}
+        run: |
+          test -n "$CODEMAGIC_API_TOKEN"
+          test -n "$CODEMAGIC_APP_ID"
+          curl --fail-with-body \
+            -H "Content-Type: application/json" \
+            -H "x-auth-token: $CODEMAGIC_API_TOKEN" \
+            --data "{\"appId\":\"$CODEMAGIC_APP_ID\",\"workflowId\":\"raven-ios\",\"branch\":\"main\"}" \
+            -X POST https://api.codemagic.io/builds
