@@ -893,7 +893,7 @@ body.app-mode .cb-raven-add-icon { width:18px;height:18px;display:block; }
 
             <div id="cb-photo-card" style="background:var(--dark);border:1px solid var(--border);border-radius:16px;padding:28px">
               <div style="font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted2);margin-bottom:16px">Scan Receipt</div>
-              <div id="cb-dropzone" style="border:2px dashed rgba(48,209,88,0.3);border-radius:14px;background:rgba(48,209,88,0.02);cursor:pointer;overflow:hidden;transition:all 0.25s;min-height:220px;display:flex;align-items:center;justify-content:center" onclick="document.getElementById('cb-file-input').click()" ondragover="event.preventDefault();this.style.borderColor='var(--green)';this.style.background='rgba(48,209,88,0.05)'" ondragleave="this.style.borderColor='rgba(48,209,88,0.3)';this.style.background='rgba(48,209,88,0.02)'" ondrop="cbHandleDrop(event)">
+              <div id="cb-dropzone" style="border:2px dashed rgba(48,209,88,0.3);border-radius:14px;background:rgba(48,209,88,0.02);cursor:pointer;overflow:hidden;transition:all 0.25s;min-height:220px;display:flex;align-items:center;justify-content:center" onclick="cbOpenPicturePicker()" ondragover="event.preventDefault();this.style.borderColor='var(--green)';this.style.background='rgba(48,209,88,0.05)'" ondragleave="this.style.borderColor='rgba(48,209,88,0.3)';this.style.background='rgba(48,209,88,0.02)'" ondrop="cbHandleDrop(event)">
                 <div id="cb-empty-state" style="padding:40px 24px;text-align:center">
                   <svg class="cb-raven-scan-art" viewBox="0 0 96 96" aria-hidden="true">
                     <defs>
@@ -921,7 +921,7 @@ body.app-mode .cb-raven-add-icon { width:18px;height:18px;display:block; }
                 <div id="cb-preview-state" style="display:none;position:relative;width:100%">
                   <img id="cb-preview-img" style="width:100%;display:block;max-height:380px;object-fit:contain">
                   <div style="position:absolute;top:12px;right:12px;display:flex;gap:8px">
-                    <button onclick="event.stopPropagation();document.getElementById('cb-file-input').click()" style="padding:7px 14px;background:rgba(0,0,0,0.8);border:1px solid rgba(255,255,255,0.2);color:white;border-radius:8px;font-size:12px;cursor:pointer;font-family:'Epilogue',sans-serif;font-weight:600">↻ Replace</button>
+                    <button onclick="event.stopPropagation();cbOpenPicturePicker()" style="padding:7px 14px;background:rgba(0,0,0,0.8);border:1px solid rgba(255,255,255,0.2);color:white;border-radius:8px;font-size:12px;cursor:pointer;font-family:'Epilogue',sans-serif;font-weight:600">Replace</button>
                     <button onclick="event.stopPropagation();cbClearPhoto()" style="padding:7px 14px;background:rgba(255,68,68,0.8);border:none;color:white;border-radius:8px;font-size:12px;cursor:pointer;font-family:'Epilogue',sans-serif;font-weight:600">✕ Remove</button>
                   </div>
                 </div>
@@ -7253,23 +7253,48 @@ function cbSkipToStep2() { cbGoToStep(2); cbRenderItems(); cbRenderPeople(); cbS
 function cbHandleFile(event) { const file = event.target.files[0]; if (file) cbLoadPhoto(file); }
 function cbHandleDrop(event) { event.preventDefault(); event.currentTarget.style.borderColor = 'rgba(48,209,88,0.3)'; const file = event.dataTransfer.files[0]; if (file) cbLoadPhoto(file); }
 
+async function cbOpenPicturePicker() {
+  const camera = window.Capacitor?.Plugins?.Camera;
+  if (RAVEN_APP_MODE && camera?.getPhoto) {
+    try {
+      const photo = await camera.getPhoto({
+        quality: 82,
+        allowEditing: false,
+        resultType: 'dataUrl',
+        source: 'PROMPT',
+        correctOrientation: true
+      });
+      if (photo?.dataUrl) {
+        cbLoadDataUrl(photo.dataUrl, photo.format === 'png' ? 'image/png' : 'image/jpeg');
+        return;
+      }
+    } catch(e) {
+      if (e && /cancel/i.test(String(e.message || e))) return;
+      console.warn('Native image picker failed, using web fallback', e);
+    }
+  }
+  const input = document.getElementById('cb-file-input');
+  if (input) input.click();
+}
+
 function cbLoadPhoto(file) {
   cbImageMediaType = file.type || 'image/jpeg';
   const reader = new FileReader();
   reader.onload = async e => {
-    // For screenshots (PNG), keep as PNG to preserve text clarity
-    // For photos (JPEG), resize to 2048px at high quality
-    const isPNG = file.type === 'image/png';
-    const resized = await cbResizeImage(e.target.result, 2048, isPNG ? 'image/png' : 'image/jpeg', isPNG ? 1.0 : 0.92);
-    // Update media type in case we kept PNG
-    cbImageMediaType = isPNG ? 'image/png' : 'image/jpeg';
-    cbImageBase64 = resized.split(',')[1];
-    document.getElementById('cb-preview-img').src = resized;
-    document.getElementById('cb-empty-state').style.display = 'none';
-    document.getElementById('cb-preview-state').style.display = 'block';
-    document.getElementById('cb-scan-wrap').style.display = 'block';
+    cbLoadDataUrl(e.target.result, file.type || 'image/jpeg');
   };
   reader.readAsDataURL(file);
+}
+
+async function cbLoadDataUrl(dataUrl, mediaType) {
+  const isPNG = mediaType === 'image/png';
+  const resized = await cbResizeImage(dataUrl, 2048, isPNG ? 'image/png' : 'image/jpeg', isPNG ? 1.0 : 0.92);
+  cbImageMediaType = isPNG ? 'image/png' : 'image/jpeg';
+  cbImageBase64 = resized.split(',')[1];
+  document.getElementById('cb-preview-img').src = resized;
+  document.getElementById('cb-empty-state').style.display = 'none';
+  document.getElementById('cb-preview-state').style.display = 'block';
+  document.getElementById('cb-scan-wrap').style.display = 'block';
 }
 
 function cbResizeImage(dataUrl, maxSize, outputType, quality) {
