@@ -582,10 +582,25 @@ function showAppHome(profile){
   const local = getCachedAppProfile() || {};
   const name = profile?.first_name || local.first_name || local.email || '';
   const initial = (name || '?').charAt(0).toUpperCase();
+  const avatarUrl = profile?.avatar_url || local.avatar_url || '';
   const profileBtn = el('home-profile');
-  if (profileBtn) profileBtn.textContent = initial;
+  if (profileBtn) {
+    if (avatarUrl) {
+      profileBtn.innerHTML = '<img src="' + avatarUrl + '" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';
+      profileBtn.style.background = 'transparent';
+    } else {
+      profileBtn.textContent = initial;
+    }
+  }
   const profileBtn2 = el('home-profile-btn');
-  if (profileBtn2) profileBtn2.textContent = initial;
+  if (profileBtn2) {
+    if (avatarUrl) {
+      profileBtn2.innerHTML = '<img src="' + avatarUrl + '" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';
+      profileBtn2.style.background = 'transparent';
+    } else {
+      profileBtn2.textContent = initial;
+    }
+  }
   // Show the status pill for signed-in users
   const pill = el('scan-status-pill');
   if (pill) pill.style.display = 'none';
