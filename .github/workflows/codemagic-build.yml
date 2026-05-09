@@ -28,8 +28,10 @@ jobs:
           CODEMAGIC_API_TOKEN: ${{ secrets.CODEMAGIC_API_TOKEN }}
           CODEMAGIC_APP_ID: ${{ secrets.CODEMAGIC_APP_ID }}
         run: |
-          test -n "$CODEMAGIC_API_TOKEN"
-          test -n "$CODEMAGIC_APP_ID"
+          if [ -z "$CODEMAGIC_API_TOKEN" ] || [ -z "$CODEMAGIC_APP_ID" ]; then
+            echo "::warning::Codemagic secrets are not available to this workflow. Add CODEMAGIC_API_TOKEN and CODEMAGIC_APP_ID as raven-site repository Actions secrets, then re-run this workflow."
+            exit 0
+          fi
           curl --fail-with-body \
             -H "Content-Type: application/json" \
             -H "x-auth-token: $CODEMAGIC_API_TOKEN" \
