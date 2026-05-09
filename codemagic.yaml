@@ -180,6 +180,10 @@ workflows:
           /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString 1.0.0" App/Info.plist
           /usr/libexec/PlistBuddy -c "Set :ITSAppUsesNonExemptEncryption false" App/Info.plist 2>/dev/null || \
             /usr/libexec/PlistBuddy -c "Add :ITSAppUsesNonExemptEncryption bool false" App/Info.plist
+          /usr/libexec/PlistBuddy -c "Set :NSCameraUsageDescription RAVEN uses your camera to scan receipt photos." App/Info.plist 2>/dev/null || \
+            /usr/libexec/PlistBuddy -c "Add :NSCameraUsageDescription string RAVEN uses your camera to scan receipt photos." App/Info.plist
+          /usr/libexec/PlistBuddy -c "Set :NSPhotoLibraryUsageDescription RAVEN uses your photo library so you can choose receipt photos." App/Info.plist 2>/dev/null || \
+            /usr/libexec/PlistBuddy -c "Add :NSPhotoLibraryUsageDescription string RAVEN uses your photo library so you can choose receipt photos." App/Info.plist
         working_directory: ios/App
 
       - name: Build iOS IPA
