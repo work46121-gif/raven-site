@@ -411,7 +411,7 @@ button,input,textarea{font:inherit}
   <!-- Top bar -->
   <div class="home-top" id="home-top" style="display:none;align-items:center;justify-content:space-between;padding:calc(env(safe-area-inset-top,0px) + 12px) 18px 8px;flex:0 0 auto;position:relative;z-index:4">
     <div class="home-brand">
-      <button class="home-logo" id="home-logo-btn" type="button" aria-label="RAVEN — double-tap for settings" style="border:0;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent;background:transparent;display:grid;place-items:center;position:relative"></button>
+      <button class="home-logo" id="home-logo-btn" type="button" aria-label="Scan receipt" onclick="scanLogoAction()" style="border:0;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent;background:transparent;display:grid;place-items:center;position:relative"></button>
       <div>
         <div class="home-title">RAVEN</div>
         <div style="font-size:10px;color:var(--muted);font-weight:600;letter-spacing:.08em">AI Bill Splitter</div>
@@ -563,6 +563,13 @@ async function routeAfterAuth(user){
     showAppHome();
   }
 }
+function getCachedAppProfile(){
+  try {
+    const local = JSON.parse(localStorage.getItem('raven_profile') || '{}');
+    if (local && (local.user_id || local.email || local.first_name || local.raven_id || local.username)) return local;
+  } catch(e) {}
+  return null;
+}
 function showAppHome(profile){
   document.querySelector('.app-shell').style.display = 'none';
   el('app-home').classList.add('active');
@@ -572,7 +579,7 @@ function showAppHome(profile){
   el('home-tabs').classList.add('active');
   const homeTop = el('home-top');
   if (homeTop) homeTop.style.display = 'flex';
-  const local = JSON.parse(localStorage.getItem('raven_profile') || '{}');
+  const local = getCachedAppProfile() || {};
   const name = profile?.first_name || local.first_name || local.email || '';
   const initial = (name || '?').charAt(0).toUpperCase();
   const profileBtn = el('home-profile');
@@ -631,7 +638,7 @@ function navigateWithRavens(url){
 }
 function goDashboard(){
   localStorage.setItem('raven_native_app','1');
-  navigateWithRavens('dashboard.html?app=1');
+  navigateWithRavens('dashboard.html?app=1&page=overview');
 }
 function scanLogoAction(){
   localStorage.setItem('raven_native_app','1');
@@ -813,19 +820,13 @@ async function handleSetNewPassword(event){
 }
 // Double-tap the top-left logo to go to Settings (iOS-friendly — dblclick unreliable on mobile)
 (function(){
-  let lastTap = 0;
   document.addEventListener('DOMContentLoaded', function(){
     const logoBtn = document.getElementById('home-logo-btn');
     if (!logoBtn) return;
     logoBtn.addEventListener('touchend', function(e){
-      const now = Date.now();
-      if (now - lastTap < 350) {
-        e.preventDefault();
-        openAppPage('settings');
-      }
-      lastTap = now;
+      e.preventDefault();
+      scanLogoAction();
     }, { passive: false });
-    logoBtn.addEventListener('dblclick', function(){ openAppPage('settings'); });
   });
 })();
 
@@ -874,11 +875,7 @@ async function handleSetNewPassword(event){
     const urlHash = window.location.hash || '';
     routeAfterAuth(session.user);
   } else {
-    let cachedProfile = null;
-    try {
-      const local = JSON.parse(localStorage.getItem('raven_profile') || '{}');
-      if (local && (local.user_id || local.email || local.first_name) && local.onboarding_complete !== false) cachedProfile = local;
-    } catch(e) {}
+    const cachedProfile = getCachedAppProfile();
     if (cachedProfile) showAppHome(cachedProfile);
     else showSignedOutHome();
   }
