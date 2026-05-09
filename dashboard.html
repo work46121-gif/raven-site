@@ -63,7 +63,7 @@ body.app-mode.leaving { opacity: 0; transform: translateY(6px); }
 body.app-mode .sidebar { display: none !important; }
 body.app-mode .main {
   margin-left: 0 !important;
-  padding: 14px 14px calc(92px + env(safe-area-inset-bottom)) !important;
+  padding: 14px 14px calc(78px + env(safe-area-inset-bottom)) !important;
   max-width: 560px;
   margin-left: auto !important;
   margin-right: auto !important;
@@ -149,8 +149,8 @@ body.app-mode #mobile-nav {
   border-top: 1px solid rgba(255,255,255,.12);
   background: linear-gradient(180deg, rgba(8,8,13,.94), #06060A 72%);
   backdrop-filter: blur(22px);
-  padding-top: 8px !important;
-  padding-bottom: calc(7px + env(safe-area-inset-bottom)) !important;
+  padding-top: 5px !important;
+  padding-bottom: calc(2px + env(safe-area-inset-bottom)) !important;
 }
 body.app-mode::after {
   content: "";
@@ -158,7 +158,7 @@ body.app-mode::after {
   left: 0;
   right: 0;
   bottom: 0;
-  height: calc(9px + env(safe-area-inset-bottom));
+  height: calc(2px + env(safe-area-inset-bottom));
   background: #06060A;
   z-index: 199;
   pointer-events: none;
@@ -528,10 +528,10 @@ body.app-mode .cb-raven-add-icon { width:18px;height:18px;display:block; }
 .mob-nav-btn.active .mi-ring { background: rgba(48,209,88,0.1); border-color: rgba(48,209,88,0.24); }
 .mob-nav-btn .mi-ring { box-shadow: inset 0 1px 0 rgba(255,255,255,0.03); }
 .mob-nav-btn:not(.create-btn):not(.active) .mi-ring { background: rgba(168,85,247,0.08); border-color: rgba(168,85,247,0.16); }
-.mob-nav-btn.create-btn { transform: translateY(-2px); }
-.mob-nav-btn.create-btn .mi { width: 38px; height: 38px; margin-bottom: 0; }
-.mob-nav-btn.create-btn .mi-ring { width: 38px; height: 38px; border-radius: 999px; background: var(--green); border: 1px solid rgba(48,209,88,0.32); color:#000; box-shadow: 0 9px 20px rgba(48,209,88,0.18); }
-.mob-nav-btn.create-btn .mi svg { width: 18px; height: 18px; }
+.mob-nav-btn.create-btn { transform: translateY(0); }
+.mob-nav-btn.create-btn .mi { width: 44px; height: 44px; margin-bottom: 0; }
+.mob-nav-btn.create-btn .mi-ring { width: 44px; height: 44px; border-radius: 999px; background: var(--green); border: 1px solid rgba(48,209,88,0.32); color:#000; box-shadow: 0 9px 20px rgba(48,209,88,0.18); }
+.mob-nav-btn.create-btn .mi svg { width: 21px; height: 21px; }
 .mob-nav-label { display:block; line-height:1; }
 .mob-nav-btn.create-btn .mob-nav-label { margin-top: 5px; }
 .mi-ring { display:flex; align-items:center; justify-content:center; width: 31px; height: 31px; border-radius: 12px; border: 1px solid transparent; transition: all 0.15s; }
@@ -3262,6 +3262,23 @@ async function loadOverview() {
   container.innerHTML = activeBillsForOverview.length > 0
     ? activeBillsForOverview.slice(0, 6).map(b => renderBillCard(b)).join('')
     : '<div class="empty-state"><span class="empty-icon empty-icon-svg"><svg class="raven-icon empty"><use href="#icon-overview"></use></svg></span><div class="empty-title">All settled up!</div><div class="empty-sub">No active bills right now. <a href="#" onclick="showPage(\'create-bill\')" style="color:var(--green)">Create one →</a></div></div>';
+  wireBillCardActions(container);
+}
+
+function wireBillCardActions(container) {
+  if (!container) return;
+  container.querySelectorAll('[data-bill-view]').forEach(btn => {
+    if (btn.dataset.bound === '1') return;
+    btn.dataset.bound = '1';
+    btn.style.touchAction = 'manipulation';
+    btn.style.webkitTapHighlightColor = 'transparent';
+    btn.addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      const billId = this.getAttribute('data-bill-view');
+      if (billId) viewBillPage(billId);
+    });
+  });
 }
 
 async function loadActiveBills() {
@@ -3280,6 +3297,7 @@ async function loadActiveBills() {
   const container = document.getElementById('active-bills-list');
   if (bills.length === 0) { container.innerHTML = '<div class="empty-state"><span class="empty-icon empty-icon-svg"><svg class="raven-icon empty"><use href="#icon-active-bills"></use></svg></span><div class="empty-title">No active bills</div><div class="empty-sub">Create a bill to start splitting</div></div>'; return; }
   container.innerHTML = bills.map(b => renderBillCard(b)).join('');
+  wireBillCardActions(container);
 }
 
 // Shared helper: fetch item_selections and augment bills with QR guest participants
@@ -3355,8 +3373,8 @@ function renderBillCard(b) {
   try { const profile = JSON.parse(localStorage.getItem('raven_profile') || '{}'); if (profile.first_name) billUrl += (b.share_token ? '&' : '?') + 'name=' + encodeURIComponent(profile.first_name); } catch(e) {}
   billUrlMap[b.id] = billUrl;
   const viewCta = RAVEN_APP_MODE
-    ? '<button class="bill-action-btn btn-view" onclick="openBillModal(\'' + b.id + '\')" style="display:inline-flex;align-items:center;text-decoration:none">View →</button>'
-    : '<a class="bill-action-btn btn-view" href="' + billUrl + '" style="display:inline-flex;align-items:center;text-decoration:none">View →</a>';
+    ? '<button class="bill-action-btn btn-view" type="button" data-bill-view="' + b.id + '" style="display:inline-flex;align-items:center;text-decoration:none">View →</button>'
+    : '<a class="bill-action-btn btn-view" href="' + billUrl + '" data-bill-view="' + b.id + '" style="display:inline-flex;align-items:center;text-decoration:none">View →</a>';
   const owedDisplay = isFullyPaid
     ? '<span style="color:var(--green);font-weight:700">✓ All paid</span>'
     : '<span style="color:var(--orange)">$' + owed.toFixed(2) + ' owed</span>';
