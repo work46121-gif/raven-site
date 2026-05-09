@@ -437,7 +437,7 @@ button,input,textarea{font:inherit}
     </div>
   </div>
 
-  <!-- Hidden camera input: triggered directly from scanLogoAction() to satisfy iOS WKWebView policy -->
+  <!-- Legacy fallback input. The main scan action routes to the dashboard scan page. -->
   <input id="app-camera-input" type="file" accept="image/*" capture="environment" style="position:fixed;left:-9999px;top:-9999px;opacity:0;pointer-events:none" onchange="handleCameraCapture(event)">
 
   <div class="app-cta-bottom">
@@ -634,13 +634,6 @@ function goDashboard(){
   navigateWithRavens('dashboard.html?app=1');
 }
 function scanLogoAction(){
-  if (el('app-home').classList.contains('signed-out')) {
-    showAuthPanel('login');
-    showMessage('success','Sign in or create an account, then tap the logo to scan.');
-    return;
-  }
-  // Navigate to the scan page. The camera picker opens from a user tap there,
-  // which avoids iOS WKWebView crashes from auto-opening file inputs.
   localStorage.setItem('raven_native_app','1');
   navigateWithFade('dashboard.html?app=1&page=create-bill');
 }
@@ -867,7 +860,15 @@ async function handleSetNewPassword(event){
     showTab('new-password');
     return;
   }
-  const { data: { session } } = await db.auth.getSession();
+  let session = null;
+  for (let attempt = 0; attempt < 4; attempt++) {
+    try {
+      const result = await db.auth.getSession();
+      session = result?.data?.session || null;
+    } catch(e) {}
+    if (session?.user) break;
+    await new Promise(resolve => setTimeout(resolve, 250));
+  }
   if (session?.user) {
     // If session exists but it's a recovery session, show password form
     const urlHash = window.location.hash || '';
