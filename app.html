@@ -471,7 +471,14 @@ button,input,textarea{font:inherit}
 <script>
 const SUPABASE_URL = 'https://ffjpzkpdumdcwnakpaje.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZmanB6a3BkdW1kY3duYWtwYWplIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5ODc4OTcsImV4cCI6MjA4ODU2Mzg5N30.JtDLVu4K1TJ8emcN_mvSHBu6e0y8-jPQv-ypoc9p0RU';
-const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: {
+    flowType: 'implicit',
+    detectSessionInUrl: true,
+    persistSession: true,
+    autoRefreshToken: true
+  }
+});
 let pendingConfirmEmail = '';
 
 function el(id){return document.getElementById(id)}
@@ -632,9 +639,10 @@ function scanLogoAction(){
     showMessage('success','Sign in or create an account, then tap the logo to scan.');
     return;
   }
-  // Navigate directly to scan — avoids iOS WKWebView file-input crash
+  // Navigate to the scan page. The camera picker opens from a user tap there,
+  // which avoids iOS WKWebView crashes from auto-opening file inputs.
   localStorage.setItem('raven_native_app','1');
-  navigateWithFade('dashboard.html?app=1&page=create-bill&quickscan=1');
+  navigateWithFade('dashboard.html?app=1&page=create-bill');
 }
 function handleCameraCapture(event){
   const file = event.target.files && event.target.files[0];
@@ -646,7 +654,7 @@ function handleCameraCapture(event){
       sessionStorage.setItem('raven_scan_type', file.type || 'image/jpeg');
     } catch(err) { /* sessionStorage full — dashboard will open picker as fallback */ }
     localStorage.setItem('raven_native_app','1');
-    navigateWithFade('dashboard.html?app=1&page=create-bill&quickscan=1');
+    navigateWithFade('dashboard.html?app=1&page=create-bill');
   };
   reader.onerror = function(){
     localStorage.setItem('raven_native_app','1');
