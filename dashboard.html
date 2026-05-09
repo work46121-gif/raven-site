@@ -3001,19 +3001,20 @@ async function showDashboard() {
                   const file = new File([blob], 'receipt.jpg', { type: mime });
                   if (typeof cbLoadPhoto === 'function') { cbLoadPhoto(file); }
                   else {
-                    const fileInput = document.getElementById('cb-file-input');
-                    if (fileInput) fileInput.click();
+                    const dropzone = document.getElementById('cb-dropzone');
+                    if (dropzone) dropzone.scrollIntoView({ behavior: 'smooth', block: 'center' });
                   }
                 } catch(convErr) {
-                  const fileInput = document.getElementById('cb-file-input');
-                  if (fileInput) fileInput.click();
+                  const dropzone = document.getElementById('cb-dropzone');
+                  if (dropzone) dropzone.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 }
                 return;
               }
             } catch(e) {}
-            // No pre-captured image — open the file/camera picker
-            const fileInput = document.getElementById('cb-file-input');
-            if (fileInput) fileInput.click();
+            // Do not auto-open the camera picker after navigation. iOS WKWebView
+            // can crash when file inputs are opened outside the original tap.
+            const dropzone = document.getElementById('cb-dropzone');
+            if (dropzone) dropzone.scrollIntoView({ behavior: 'smooth', block: 'center' });
           }, 280);
           try {
             const clean = new URL(window.location.href);
@@ -6245,13 +6246,13 @@ async function openHouseDetailsLegacy(houseId) {
       </div>
       <div class="house-detail-section full">
         <div class="house-detail-label">Tenant Ledger</div>
-        <div class="house-metric-note" style="margin-bottom:12px">Rent roll $${ops.rentRoll.toFixed(2)} â€¢ Utility allocations $${ops.utilityTotal.toFixed(2)} â€¢ Current cycle snapshot</div>
+        <div class="house-metric-note" style="margin-bottom:12px">Rent roll $${ops.rentRoll.toFixed(2)} - Utility allocations $${ops.utilityTotal.toFixed(2)} - Current cycle snapshot</div>
         ${ledgerHtml}
         ${ops.rows.length ? `<div class="modal-actions" style="margin-top:12px">${ops.rows.slice(0, 3).map(row => `<button class="modal-btn modal-btn-remind" onclick="saveHouseTenantPayment('${house.id}','${String(row.name || '').replace(/'/g, "\\'")}','paid')">Mark ${escapeHouseHtml(row.name)} Paid</button>`).join('')}</div>` : ''}
       </div>
       <div class="house-detail-section full">
         <div class="house-detail-label">Utility Allocation</div>
-        <div class="house-metric-note" style="margin-bottom:12px">Current rule: ${escapeHouseHtml(model.meta.utility_split || 'evenly')} â€¢ Raven is reading utility receipts already logged in the house ledger.</div>
+        <div class="house-metric-note" style="margin-bottom:12px">Current rule: ${escapeHouseHtml(model.meta.utility_split || 'evenly')} - Raven is reading utility receipts already logged in the house ledger.</div>
         ${utilitySummaryHtml}
       </div>
       <div class="house-detail-section full">
@@ -8327,6 +8328,9 @@ let currentChatTripId = null;
 let chatSubscription = null;
 let chatMessages = [];
 const tripChatProfileCache = {};
+let tripChatGifUrl = null;
+let tripChatGifTimer = null;
+let tripChatGifPanelOpen = false;
 
 async function enrichTripChatMessages(messages) {
   const rows = Array.isArray(messages) ? messages.slice() : [];
@@ -8539,11 +8543,71 @@ function escapeHtml(str) {
   return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
+function clearTripChatGif() {
+  tripChatGifUrl = null;
+  const wrap = document.getElementById('chat-gif-preview-wrap');
+  const img = document.getElementById('chat-gif-preview-img');
+  if (wrap) wrap.style.display = 'none';
+  if (img) img.src = '';
+}
+
+function toggleTripChatGifPanel() {
+  tripChatGifPanelOpen = !tripChatGifPanelOpen;
+  const panel = document.getElementById('chat-gif-panel');
+  if (panel) panel.style.display = tripChatGifPanelOpen ? 'block' : 'none';
+  if (tripChatGifPanelOpen) document.getElementById('chat-gif-search')?.focus();
+}
+
+function searchTripChatGifs(query) {
+  clearTimeout(tripChatGifTimer);
+  const container = document.getElementById('chat-gif-results');
+  if (!container) return;
+  if (!query.trim()) {
+    container.innerHTML = '<div style="color:#6E6B80;font-size:12px;padding:8px 0">Type to search GIFs...</div>';
+    return;
+  }
+  container.innerHTML = '<div style="color:#6E6B80;font-size:12px;padding:8px 0">Searching...</div>';
+  tripChatGifTimer = setTimeout(() => {
+    fetch(BACKEND + '/gif-search?q=' + encodeURIComponent(query))
+      .then(r => r.json())
+      .then(data => {
+        const gifs = data.gifs || [];
+        if (!gifs.length) {
+          container.innerHTML = '<div style="color:#6E6B80;font-size:12px;padding:8px 0">No results</div>';
+          return;
+        }
+        container.innerHTML = '';
+        gifs.forEach(g => {
+          const url = g.preview || g.full || '';
+          if (!url) return;
+          const img = document.createElement('img');
+          img.src = url;
+          img.style.cssText = 'width:78px;height:78px;object-fit:cover;border-radius:8px;cursor:pointer;border:2px solid transparent';
+          img.onclick = () => {
+            tripChatGifUrl = g.full || url;
+            const preview = document.getElementById('chat-gif-preview-img');
+            const wrap = document.getElementById('chat-gif-preview-wrap');
+            if (preview) preview.src = tripChatGifUrl;
+            if (wrap) wrap.style.display = 'block';
+            tripChatGifPanelOpen = false;
+            const panel = document.getElementById('chat-gif-panel');
+            if (panel) panel.style.display = 'none';
+            const search = document.getElementById('chat-gif-search');
+            if (search) search.value = '';
+            container.innerHTML = '';
+          };
+          container.appendChild(img);
+        });
+      })
+      .catch(() => { container.innerHTML = '<div style="color:#FF4444;font-size:12px;padding:8px 0">Error loading GIFs</div>'; });
+  }, 350);
+}
+
 async function sendChatMessage() {
   if (!currentChatTripId || !currentUser) return;
   const input = document.getElementById('chat-input');
   const message = input.value.trim();
-  if (!message) return;
+  if (!message && !tripChatGifUrl) return;
 
   input.value = '';
   input.style.height = 'auto';
@@ -8569,7 +8633,8 @@ async function sendChatMessage() {
         user_id: currentUser.id,
         sender_name: senderName,
         avatar_url: local.avatar_url || '',
-        message
+        message,
+        gif_url: tripChatGifUrl || null
       })
     });
     const payload = await resp.json();
@@ -8580,8 +8645,10 @@ async function sendChatMessage() {
       sender_name: senderName,
       avatar_url: local.avatar_url || '',
       message,
+      gif_url: tripChatGifUrl || null,
       created_at: new Date().toISOString()
     }, true);
+    clearTripChatGif();
   } catch(e) {
     showToast('Could not send message', 'error');
     input.value = message;
@@ -8597,14 +8664,25 @@ async function sendChatMessage() {
       <div style="font-size:13px;font-weight:700" id="chat-trip-name">Group Chat</div>
       <div style="font-size:10px;color:#6E6B80" id="chat-trip-members">Loading...</div>
     </div>
-    <button onclick="closeTripChat()" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:50%;width:28px;height:28px;color:#9896A8;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center">×</button>
+    <button onclick="closeTripChat()" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:50%;width:28px;height:28px;color:#9896A8;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center">x</button>
   </div>
   <div id="chat-messages" style="flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;min-height:0;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y">
-    <div style="text-align:center;color:#6E6B80;font-size:12px;padding:20px 0" id="chat-empty">No messages yet. Say hi! 👋</div>
+    <div style="text-align:center;color:#6E6B80;font-size:12px;padding:20px 0" id="chat-empty">No messages yet. Say hi!</div>
+  </div>
+  <div id="chat-gif-preview-wrap" style="display:none;padding:8px 12px;border-top:1px solid rgba(255,255,255,0.07);flex-shrink:0">
+    <div style="display:flex;align-items:center;gap:8px">
+      <img id="chat-gif-preview-img" style="height:72px;border-radius:10px;object-fit:cover">
+      <button type="button" onclick="clearTripChatGif()" style="padding:6px 10px;background:rgba(255,68,68,0.12);border:1px solid rgba(255,68,68,0.25);border-radius:8px;color:#FF6B6B;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">Remove</button>
+    </div>
+  </div>
+  <div id="chat-gif-panel" style="display:none;border-top:1px solid rgba(255,255,255,0.07);background:#13131A;flex-shrink:0">
+    <div style="padding:8px 12px"><input id="chat-gif-search" type="text" placeholder="Search GIFs..." oninput="searchTripChatGifs(this.value)" style="width:100%;padding:10px 14px;font-size:13px;background:#1A1A24;border:1px solid rgba(255,255,255,0.08);border-radius:8px;color:#F0EEF8;font-family:inherit;outline:none"></div>
+    <div id="chat-gif-results" style="display:flex;flex-wrap:wrap;gap:6px;padding:0 12px 10px;max-height:170px;overflow-y:auto"><div style="color:#6E6B80;font-size:12px;padding:8px 0">Type to search GIFs...</div></div>
   </div>
   <div style="padding:12px;border-top:1px solid rgba(255,255,255,0.07);flex-shrink:0;display:flex;gap:8px;align-items:flex-end">
+    <button type="button" onclick="toggleTripChatGifPanel()" style="background:#1A1A24;border:1px solid rgba(255,255,255,0.1);border-radius:12px;width:46px;height:38px;color:#9896A8;font-size:12px;font-weight:800;cursor:pointer;flex-shrink:0">GIF</button>
     <textarea id="chat-input" placeholder="Message the group..." rows="1" style="flex:1;background:#1A1A24;border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:10px 14px;color:#F0EEF8;font-family:'Epilogue',sans-serif;font-size:13px;resize:none;outline:none;max-height:80px;line-height:1.5" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChatMessage()}" oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"></textarea>
-    <button onclick="sendChatMessage()" style="background:var(--purple);border:none;border-radius:12px;width:38px;height:38px;color:#fff;font-size:18px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all 0.2s">↑</button>
+    <button onclick="sendChatMessage()" style="background:var(--purple);border:none;border-radius:12px;width:46px;height:38px;color:#fff;font-size:12px;font-weight:800;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all 0.2s">Send</button>
   </div>
 </div>
 
