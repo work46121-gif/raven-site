@@ -8566,7 +8566,10 @@ function renderTripConcierge(summary) {
     + '</div>'
     + '<div style="display:flex;flex-direction:column;gap:5px">' + insights + '</div>'
     + '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:9px">'
-      + '<button type="button" onclick="openTripRavenbot()" class="trip-concierge-chip">Speak to RAVENbot</button>'
+      + '<button type="button" onclick="openTripRavenbot()" class="trip-concierge-chip" style="background:linear-gradient(135deg,rgba(168,85,247,0.2),rgba(48,209,88,0.1));border-color:rgba(168,85,247,0.35);color:#C084FC">✦ Ask RAVENbot</button>'
+      + '<button type="button" onclick="openTripRavenbot();setTimeout(()=>{const i=document.getElementById(\'chat-input\');if(i){i.value=\'Who still owes money?\';sendChatMessage();}},300)" class="trip-concierge-chip">Who owes?</button>'
+      + '<button type="button" onclick="openTripRavenbot();setTimeout(()=>{const i=document.getElementById(\'chat-input\');if(i){i.value=\'What was the biggest expense?\';sendChatMessage();}},300)" class="trip-concierge-chip">Top spend</button>'
+      + '<button type="button" onclick="openTripRavenbot();setTimeout(()=>{const i=document.getElementById(\'chat-input\');if(i){i.value=\'Give me a full settlement summary\';sendChatMessage();}},300)" class="trip-concierge-chip">Settle up</button>'
     + '</div>'
     + '<div id="trip-concierge-details" style="display:none;margin-top:8px">' + (events || '<div style="font-size:10px;color:#6E6B80;padding-top:6px;border-top:1px solid rgba(255,255,255,0.06)">No money activity yet.</div>') + '</div>';
   panel.dataset.summary = JSON.stringify(summary);
@@ -8608,11 +8611,39 @@ function openTripRavenbot() {
   if (panel) panel.style.display = 'none';
   const nameEl = document.getElementById('chat-trip-name');
   const membersEl = document.getElementById('chat-trip-members');
-  if (nameEl) nameEl.textContent = 'Speak to RAVENbot';
-  if (membersEl) membersEl.textContent = 'Private to you';
+  if (nameEl) nameEl.innerHTML = '<span style="background:linear-gradient(135deg,#A855F7,#30D158);-webkit-background-clip:text;color:transparent;-webkit-text-fill-color:transparent">RAVENbot</span>';
+  if (membersEl) membersEl.textContent = 'AI assistant · private to you';
   const input = document.getElementById('chat-input');
-  if (input) input.placeholder = 'Ask RAVENbot about this trip...';
+  if (input) {
+    input.placeholder = 'Ask RAVENbot anything about this trip...';
+    input.focus();
+  }
+  const headerDiv = nameEl?.parentElement;
+  if (headerDiv && !document.getElementById('ravenbot-back-btn')) {
+    const backBtn = document.createElement('button');
+    backBtn.id = 'ravenbot-back-btn';
+    backBtn.innerHTML = '← Group';
+    backBtn.style.cssText = 'background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:999px;color:#9896A8;font-size:10px;font-weight:800;padding:4px 10px;cursor:pointer;margin-top:4px';
+    backBtn.onclick = closeRavenbot;
+    headerDiv.insertBefore(backBtn, headerDiv.firstChild);
+  }
   renderRavenbotMessages();
+}
+
+function closeRavenbot() {
+  tripChatMode = 'group';
+  document.getElementById('ravenbot-back-btn')?.remove();
+  const nameEl = document.getElementById('chat-trip-name');
+  const membersEl = document.getElementById('chat-trip-members');
+  const trip = tripDataMap[currentChatTripId] || {};
+  if (nameEl) nameEl.innerHTML = escapeHtml(trip.name || 'Group Chat');
+  const people = (trip.people || []);
+  if (membersEl) membersEl.textContent = people.length ? people.slice(0,4).join(', ') + (people.length > 4 ? ' +' + (people.length-4) : '') : 'Group chat';
+  const input = document.getElementById('chat-input');
+  if (input) input.placeholder = 'Message the group...';
+  const panel = document.getElementById('trip-concierge-panel');
+  if (panel && tripRavenbotSummary) panel.style.display = 'block';
+  loadChatMessages(currentChatTripId);
 }
 
 function renderRavenbotMessages() {
@@ -8645,20 +8676,82 @@ function appendRavenbotMessage(msg, persist = true) {
   }
 }
 
-function buildRavenbotReply(question) {
+async function callRavenbotAI(userMessage) {
   const summary = tripRavenbotSummary || {};
   const debtors = summary.debtors || [];
-  const lower = String(question || '').toLowerCase();
-  if (lower.includes('owe') || lower.includes('settle') || lower.includes('paid')) {
-    return debtors.length
-      ? debtors.slice(0, 5).map(d => d.name + ' owes $' + Number(d.amount || 0).toFixed(2)).join('\\n')
-      : 'Everyone is settled right now. Outstanding balance is $0.00.';
+  const insights = summary.insights || [];
+  const trip = tripDataMap[currentChatTripId] || {};
+
+  const systemPrompt = [
+    'You are RAVENbot, an AI assistant built into the RAVEN bill-splitting app.',
+    'You are helpful, concise, and friendly. Keep replies under 3 sentences unless detail is needed.',
+    'Never make up numbers — only use the data provided below.',
+    '',
+    '== TRIP DATA ==',
+    'Trip name: ' + (trip.name || 'this trip'),
+    'Total spent: $' + Number(summary.total_spent || 0).toFixed(2),
+    'Receipts: ' + (summary.receipt_count || 0),
+    'People: ' + (trip.people || []).join(', '),
+    '',
+    'WHO OWES WHAT:',
+    debtors.length
+      ? debtors.map(d => d.name + ' owes $' + Number(d.amount || 0).toFixed(2) + (d.to ? ' to ' + d.to : '')).join('\n')
+      : 'Everyone is settled.',
+    '',
+    'INSIGHTS:',
+    insights.length ? insights.join('\n') : 'No additional insights.',
+    '',
+    'RECENT EVENTS:',
+    (summary.events || []).slice(0, 8).join('\n') || 'No recent events.',
+  ].join('\n');
+
+  const typingId = 'ravenbot-typing-' + Date.now();
+  const container = document.getElementById('chat-messages');
+  if (container) {
+    const typingEl = document.createElement('div');
+    typingEl.id = typingId;
+    typingEl.style.cssText = 'display:flex;flex-direction:column;align-items:flex-start;gap:3px';
+    typingEl.innerHTML = '<div style="font-size:10px;color:#30D158;font-weight:900;letter-spacing:0.08em;text-transform:uppercase;margin-left:4px">RAVENbot</div>'
+      + '<div style="padding:10px 14px;border-radius:16px 16px 16px 4px;background:linear-gradient(135deg,rgba(124,58,237,0.18),rgba(48,209,88,0.1));border:1px solid rgba(168,85,247,0.22);color:#9896A8;font-size:13px">'
+      + '<span style="display:inline-flex;gap:4px;align-items:center">'
+      + '<span style="width:6px;height:6px;border-radius:50%;background:#A855F7;animation:ravenbotDot 1.2s ease-in-out infinite"></span>'
+      + '<span style="width:6px;height:6px;border-radius:50%;background:#A855F7;animation:ravenbotDot 1.2s ease-in-out 0.2s infinite"></span>'
+      + '<span style="width:6px;height:6px;border-radius:50%;background:#A855F7;animation:ravenbotDot 1.2s ease-in-out 0.4s infinite"></span>'
+      + '</span></div>';
+    container.appendChild(typingEl);
+    scrollChatToBottom();
   }
-  if (lower.includes('receipt') || lower.includes('spend') || lower.includes('total')) {
-    const biggest = (summary.insights || []).find(x => x.indexOf('Biggest receipt:') === 0);
-    return 'This trip has ' + (summary.receipt_count || 0) + ' receipts and $' + Number(summary.total_spent || 0).toFixed(2) + ' total spent.' + (biggest ? '\\n' + biggest : '');
+
+  const history = getRavenbotMessages().slice(-12);
+  const claudeMessages = history.map(m => ({ role: m.role === 'bot' ? 'assistant' : 'user', content: m.text }));
+  claudeMessages.push({ role: 'user', content: userMessage });
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: systemPrompt,
+        messages: claudeMessages
+      })
+    });
+    const data = await resp.json();
+    const replyText = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('') || "Sorry, I couldn't get a response. Try again.";
+    document.getElementById(typingId)?.remove();
+    appendRavenbotMessage({ role: 'bot', text: replyText, created_at: new Date().toISOString() }, true);
+  } catch(e) {
+    document.getElementById(typingId)?.remove();
+    appendRavenbotMessage({ role: 'bot', text: "Sorry, I'm having trouble connecting right now. Try again in a moment.", created_at: new Date().toISOString() }, true);
   }
-  return (summary.insights || []).join('\\n') || 'Ask me about who owes, top receipts, total spend, or settlement status.';
+  scrollChatToBottom();
+}
+
+function buildRavenbotReply(question) {
+  // Legacy fallback
+  const summary = tripRavenbotSummary || {};
+  return (summary.insights || []).join('\n') || 'Ask me about who owes, top receipts, total spend, or settlement status.';
 }
 
 function getChatDateKey(value) {
@@ -8726,7 +8819,8 @@ function appendChatMessage(msg, scroll = true) {
   if (msg.id && container?.querySelector('[data-msg-id="' + String(msg.id).replace(/"/g, '\\"') + '"]')) return;
   const local = JSON.parse(localStorage.getItem('raven_profile') || '{}');
   const isConcierge = msg.user_id === 'raven-concierge' || msg.system_type === 'concierge';
-  const isMe = !isConcierge && msg.user_id === local.user_id;
+  const myUserId = (typeof currentUser !== 'undefined' && currentUser?.id) || local.user_id || local.id || '';
+  const isMe = !isConcierge && !!myUserId && (msg.user_id === myUserId || msg.user_id === local.user_id || msg.user_id === local.id);
   const dateSource = msg?.created_at || msg?.sent_at || msg?.inserted_at || msg?.timestamp || msg?.createdAt;
   const time = dateSource ? new Date(dateSource).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
   const dateKey = getChatDateKey(dateSource);
@@ -8848,11 +8942,8 @@ async function sendChatMessage() {
 
   if (tripChatMode === 'ravenbot') {
     appendRavenbotMessage({ role: 'user', text: message || '[attachment]', created_at: new Date().toISOString() }, true);
-    setTimeout(() => {
-      appendRavenbotMessage({ role: 'bot', text: buildRavenbotReply(message), created_at: new Date().toISOString() }, true);
-      scrollChatToBottom();
-    }, 180);
     scrollChatToBottom();
+    await callRavenbotAI(message);
     return;
   }
 
@@ -8932,6 +9023,10 @@ async function sendChatMessage() {
 </div>
 
 <style>
+@keyframes ravenbotDot {
+  0%, 80%, 100% { opacity: 0.2; transform: scale(0.8); }
+  40% { opacity: 1; transform: scale(1); }
+}
 .trip-concierge-chip {
   background: rgba(255,255,255,0.06);
   border: 1px solid rgba(255,255,255,0.1);
