@@ -183,8 +183,8 @@ button,input,textarea{font:inherit}
 .scan-card{transform:translateZ(0)}
 
 .scan-orbit{position:relative;width:clamp(148px,24vh,220px);aspect-ratio:1;border-radius:50%;display:grid;place-items:center;margin-bottom:clamp(12px,2.5vh,24px);flex:0 0 auto}
-.scan-orbit::before{content:"";position:absolute;inset:0;border-radius:50%;border:1px dashed rgba(192,132,252,.28);animation:spin 18s linear infinite}
-.scan-orbit::after{content:"";position:absolute;inset:-14%;border-radius:50%;border:1px solid rgba(48,209,88,.07);animation:spin 28s linear infinite reverse}
+.scan-orbit::before{content:"";position:absolute;inset:0;border-radius:50%;border:1px dashed rgba(192,132,252,.28);animation:spin 18s linear infinite;pointer-events:none}
+.scan-orbit::after{content:"";position:absolute;inset:-14%;border-radius:50%;border:1px solid rgba(48,209,88,.07);animation:spin 28s linear infinite reverse;pointer-events:none}
 .scan-logo-button{width:58%;aspect-ratio:1;border:0;border-radius:28%;background:transparent;
   display:grid;place-items:center;padding:0;position:relative;cursor:pointer;
   touch-action:manipulation;-webkit-tap-highlight-color:transparent}
@@ -312,9 +312,7 @@ button,input,textarea{font:inherit}
   <div class="app-shell-inner">
   <header class="topbar">
     <div class="brand">
-      <button type="button" onclick="scanLogoAction()" aria-label="Scan receipt" style="border:0;padding:0;background:transparent;cursor:pointer;-webkit-tap-highlight-color:transparent;display:contents">
-        <div class="brand-logo-mark"></div>
-      </button>
+      <div class="brand-logo-mark"></div>
       <div>
         <div class="brand-name">RAVEN</div>
         <div class="brand-tagline">AI Bill Splitter</div>
@@ -637,7 +635,7 @@ function navigateWithFade(url){
 }
 function goScanPage(){
   localStorage.setItem('raven_native_app','1');
-  window.location.href = 'dashboard.html?app=1&page=create-bill';
+  navigateWithFade('dashboard.html?app=1&page=create-bill');
 }
 function launchRavenFlight(){
   const layer = document.createElement('div');
