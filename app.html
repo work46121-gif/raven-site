@@ -197,6 +197,21 @@ button,input,textarea{font:inherit}
 .scan-mark::after{content:"";position:absolute;width:16px;height:16px;border-radius:50%;background:var(--green);left:50%;bottom:10%;transform:translateX(-50%);box-shadow:0 0 22px rgba(48,209,88,.8)}
 .scan-mark span{font-family:"Bebas Neue";font-size:min(27vw,124px);line-height:.82;background:linear-gradient(175deg,#F1DCFF,#B276FF);-webkit-background-clip:text;color:transparent}
 .scan-logo-button:active .scan-mark{transform:scale(.97);box-shadow:0 14px 44px rgba(168,85,247,.2)}
+.scan-mark.tapped{animation:scanTap 0.55s cubic-bezier(.2,.9,.3,1.2) forwards}
+@keyframes scanTap{
+  0%{transform:scale(1);box-shadow:0 20px 56px rgba(168,85,247,.24)}
+  25%{transform:scale(0.93);box-shadow:0 8px 24px rgba(168,85,247,.1)}
+  55%{transform:scale(1.06);box-shadow:0 28px 72px rgba(168,85,247,.5),0 0 0 12px rgba(48,209,88,.08)}
+  75%{transform:scale(1.02)}
+  100%{transform:scale(1);box-shadow:0 20px 56px rgba(168,85,247,.24)}
+}
+.scan-orbit.burst::before{animation:orbitBurst 0.5s ease-out forwards,spin 18s linear infinite}
+.scan-orbit.burst::after{animation:orbitBurst 0.5s ease-out 0.05s forwards,spin 28s linear infinite reverse}
+@keyframes orbitBurst{
+  0%{opacity:1;transform:scale(1)}
+  50%{opacity:0.7;transform:scale(1.08);border-color:rgba(48,209,88,.5)}
+  100%{opacity:1;transform:scale(1)}
+}
 .scan-logo-button:focus-visible{outline:none}
 .scan-logo-button:focus-visible .scan-mark{box-shadow:0 20px 56px rgba(168,85,247,.26),0 0 0 4px rgba(48,209,88,.2)}
 .scan-orbit,.scan-title,.scan-copy{position:relative;z-index:1}
@@ -635,7 +650,7 @@ function navigateWithFade(url){
 }
 function goScanPage(){
   localStorage.setItem('raven_native_app','1');
-  navigateWithFade('dashboard.html?app=1&page=create-bill');
+  window.location.href = 'dashboard.html?app=1&page=create-bill';
 }
 function launchRavenFlight(){
   const layer = document.createElement('div');
@@ -660,7 +675,21 @@ function goDashboard(){
   navigateWithRavens('dashboard.html?app=1&page=overview');
 }
 function scanLogoAction(){
-  goScanPage();
+  // Trigger RAVEN tap animation, then navigate
+  const mark = document.querySelector('.scan-mark');
+  const orbit = document.querySelector('.scan-orbit');
+  if (mark) {
+    mark.classList.remove('tapped');
+    void mark.offsetWidth; // reflow
+    mark.classList.add('tapped');
+  }
+  if (orbit) {
+    orbit.classList.remove('burst');
+    void orbit.offsetWidth;
+    orbit.classList.add('burst');
+  }
+  launchRavenFlight();
+  setTimeout(() => goScanPage(), 480);
 }
 function handleCameraCapture(event){
   const file = event.target.files && event.target.files[0];
