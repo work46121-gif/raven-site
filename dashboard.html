@@ -58,6 +58,7 @@ body.app-mode.ready { opacity: 1; transform: none; }
 body.app-mode.leaving { opacity: 0; transform: translateY(6px); }
 
 @keyframes pageIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@keyframes ravenbotDot { 0%,80%,100%{opacity:0.2;transform:scale(0.8)} 40%{opacity:1;transform:scale(1)} }
 
 /* App mode polish (when opened from app.html / ?app=1) */
 body.app-mode .sidebar { display: none !important; }
@@ -764,7 +765,7 @@ body.app-mode .cb-raven-add-icon { width:18px;height:18px;display:block; }
 
 <!-- MOBILE HEADER -->
 <div id="mobile-header">
-  <button id="dashboard-raven-home-link" onclick="showPage('create-bill');setMobNav('mob-create')" style="background:none;border:none;padding:0;font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:0.15em;text-decoration:none;background:linear-gradient(135deg,var(--white),var(--purple3));-webkit-background-clip:text;-webkit-text-fill-color:transparent;display:flex;align-items:center;gap:6px;cursor:pointer;-webkit-tap-highlight-color:transparent"><svg class="raven-icon lg" style="-webkit-text-fill-color:initial"><use href="#raven-mark"></use></svg> RAVEN</button>
+  <a href="index.html" id="dashboard-raven-home-link" class="raven-home-link" style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:0.15em;text-decoration:none;background:linear-gradient(135deg,var(--white),var(--purple3));-webkit-background-clip:text;-webkit-text-fill-color:transparent;display:flex;align-items:center;gap:6px"><svg class="raven-icon lg" style="-webkit-text-fill-color:initial"><use href="#raven-mark"></use></svg> RAVEN</a>
   <div style="display:flex;align-items:center;gap:10px">
     <button onclick="handleLogout()" style="padding:6px 12px;background:rgba(255,68,68,0.08);border:1px solid rgba(255,68,68,0.18);border-radius:8px;color:#FF6B6B;font-family:'Epilogue',sans-serif;font-size:11px;font-weight:600;cursor:pointer;-webkit-tap-highlight-color:transparent">⎋ Sign Out</button>
     <div id="mob-user-avatar" onclick="showPage('settings');setMobNav('mob-settings')" style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--purple),var(--green));display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;cursor:pointer;overflow:hidden">?</div>
@@ -2571,7 +2572,6 @@ async function loadSettings() {
     const local = JSON.parse(localStorage.getItem('raven_profile') || '{}');
     if (local.first_name) document.getElementById('set-first').value = local.first_name;
     if (local.last_name) document.getElementById('set-last').value = local.last_name;
-    if (local.raven_id) { const rid = document.getElementById('set-raven-id'); if (rid) rid.value = local.raven_id; }
     if (local.phone) document.getElementById('set-phone').value = local.phone;
     if (local.venmo) document.getElementById('set-venmo').value = local.venmo;
     if (local.cashapp) document.getElementById('set-cashapp').value = local.cashapp;
@@ -2623,23 +2623,6 @@ function renderAvatar(url, firstName) {
     if (sidebar) sidebar.textContent = letter;
     if (mobAv) mobAv.textContent = letter;
   }
-  // Also update display name + raven ID from localStorage so settings page is always current
-  try {
-    const local = JSON.parse(localStorage.getItem('raven_profile') || '{}');
-    const displayEl = document.getElementById('profile-display-name');
-    if (displayEl && (firstName || local.first_name)) {
-      const fn = firstName || local.first_name || '';
-      const ln = local.last_name || '';
-      displayEl.textContent = [fn, ln].filter(Boolean).join(' ');
-    }
-    const ravenIdDisplay = document.getElementById('my-raven-id-display');
-    if (ravenIdDisplay && local.raven_id) ravenIdDisplay.textContent = '@' + local.raven_id;
-    const sidebarName = document.getElementById('sidebar-name');
-    if (sidebarName && (firstName || local.first_name)) {
-      const fn = (firstName || local.first_name || '');
-      sidebarName.textContent = fn.charAt(0).toUpperCase() + fn.slice(1) + ' (me)';
-    }
-  } catch(e) {}
 }
 
 async function handleAvatarUpload(event) {
@@ -2993,11 +2976,13 @@ async function showDashboard() {
     const { data: profile, error: profErr } = await db.from('profiles').select('*').eq('id', currentUser.id).single();
     if (!profErr && profile) {
       const firstName = profile.first_name || local.first_name || '';
+      const lastName = profile.last_name || local.last_name || '';
       const avatarUrl = profile.avatar_url || local.avatar_url || '';
-      // Update localStorage with latest
+      const ravenId = profile.raven_id || local.raven_id || '';
+      const email = currentUser.email || local.email || '';
+      // Update localStorage with latest — full profile
       const existing = JSON.parse(localStorage.getItem('raven_profile') || '{}');
-      const ravenIdForCache = profile.raven_id || existing.raven_id || '';
-      localStorage.setItem('raven_profile', JSON.stringify({ ...existing, first_name: firstName, last_name: profile.last_name || existing.last_name || '', avatar_url: avatarUrl, raven_id: ravenIdForCache, username: ravenIdForCache, user_id: currentUser.id, email: currentUser.email }));
+      localStorage.setItem('raven_profile', JSON.stringify({ ...existing, first_name: firstName, last_name: lastName, avatar_url: avatarUrl, raven_id: ravenId, username: ravenId, email, user_id: currentUser.id }));
       // Render avatar
       if (avatarUrl) renderAvatar(avatarUrl, firstName);
       else if (firstName) renderAvatar(null, firstName);
@@ -3008,8 +2993,6 @@ async function showDashboard() {
         if (greetingEl) greetingEl.textContent = fn;
         const sidebarName = document.getElementById('sidebar-name');
         if (sidebarName) sidebarName.textContent = fn + ' (me)';
-        const ravenIdDisplay = document.getElementById('my-raven-id-display');
-        if (ravenIdDisplay && profile.raven_id) ravenIdDisplay.textContent = '@' + profile.raven_id;
         if (!avatarUrl) {
           document.getElementById('sidebar-avatar').textContent = firstName[0].toUpperCase();
           if (mobAvatar) mobAvatar.textContent = firstName[0].toUpperCase();
@@ -3018,6 +3001,17 @@ async function showDashboard() {
         const greetingEl = document.getElementById('greeting-name');
         if (greetingEl) greetingEl.closest('h1').innerHTML = 'Welcome Back <span style="color:var(--green)" class="raven-r-mark"></span>';
       }
+      // Sync profile settings UI fields immediately from fresh DB data
+      const setFirstEl = document.getElementById('set-first-name');
+      const setLastEl = document.getElementById('set-last-name');
+      const setRavenIdEl = document.getElementById('set-raven-id');
+      const dispNameEl = document.getElementById('profile-display-name');
+      const myRavenIdEl = document.getElementById('my-raven-id-display');
+      if (setFirstEl && firstName) setFirstEl.value = firstName;
+      if (setLastEl) setLastEl.value = lastName;
+      if (setRavenIdEl && ravenId) setRavenIdEl.value = ravenId;
+      if (dispNameEl && firstName) dispNameEl.textContent = firstName + (lastName ? ' ' + lastName : '');
+      if (myRavenIdEl && ravenId) myRavenIdEl.textContent = '@' + ravenId;
     } else {
       // No profile yet — fall back to localStorage
       const firstName = local.first_name || '';
@@ -8587,10 +8581,7 @@ function renderTripConcierge(summary) {
     + '</div>'
     + '<div style="display:flex;flex-direction:column;gap:5px">' + insights + '</div>'
     + '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:9px">'
-      + '<button type="button" onclick="openTripRavenbot()" class="trip-concierge-chip" style="background:linear-gradient(135deg,rgba(168,85,247,0.2),rgba(48,209,88,0.1));border-color:rgba(168,85,247,0.35);color:#C084FC">✦ Ask RAVENbot</button>'
-      + '<button type="button" onclick="openTripRavenbot();setTimeout(()=>{const i=document.getElementById(\'chat-input\');if(i){i.value=\'Who still owes money?\';sendChatMessage();}},300)" class="trip-concierge-chip">Who owes?</button>'
-      + '<button type="button" onclick="openTripRavenbot();setTimeout(()=>{const i=document.getElementById(\'chat-input\');if(i){i.value=\'What was the biggest expense?\';sendChatMessage();}},300)" class="trip-concierge-chip">Top spend</button>'
-      + '<button type="button" onclick="openTripRavenbot();setTimeout(()=>{const i=document.getElementById(\'chat-input\');if(i){i.value=\'Give me a full settlement summary\';sendChatMessage();}},300)" class="trip-concierge-chip">Settle up</button>'
+      + '<button type="button" onclick="openTripRavenbot()" class="trip-concierge-chip">Speak to RAVENbot</button>'
     + '</div>'
     + '<div id="trip-concierge-details" style="display:none;margin-top:8px">' + (events || '<div style="font-size:10px;color:#6E6B80;padding-top:6px;border-top:1px solid rgba(255,255,255,0.06)">No money activity yet.</div>') + '</div>';
   panel.dataset.summary = JSON.stringify(summary);
@@ -8632,39 +8623,11 @@ function openTripRavenbot() {
   if (panel) panel.style.display = 'none';
   const nameEl = document.getElementById('chat-trip-name');
   const membersEl = document.getElementById('chat-trip-members');
-  if (nameEl) nameEl.innerHTML = '<span style="background:linear-gradient(135deg,#A855F7,#30D158);-webkit-background-clip:text;color:transparent;-webkit-text-fill-color:transparent">RAVENbot</span>';
-  if (membersEl) membersEl.textContent = 'AI assistant · private to you';
+  if (nameEl) nameEl.textContent = 'Speak to RAVENbot';
+  if (membersEl) membersEl.textContent = 'Private to you';
   const input = document.getElementById('chat-input');
-  if (input) {
-    input.placeholder = 'Ask RAVENbot anything about this trip...';
-    input.focus();
-  }
-  const headerDiv = nameEl?.parentElement;
-  if (headerDiv && !document.getElementById('ravenbot-back-btn')) {
-    const backBtn = document.createElement('button');
-    backBtn.id = 'ravenbot-back-btn';
-    backBtn.innerHTML = '← Group';
-    backBtn.style.cssText = 'background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:999px;color:#9896A8;font-size:10px;font-weight:800;padding:4px 10px;cursor:pointer;margin-top:4px';
-    backBtn.onclick = closeRavenbot;
-    headerDiv.insertBefore(backBtn, headerDiv.firstChild);
-  }
+  if (input) input.placeholder = 'Ask RAVENbot about this trip...';
   renderRavenbotMessages();
-}
-
-function closeRavenbot() {
-  tripChatMode = 'group';
-  document.getElementById('ravenbot-back-btn')?.remove();
-  const nameEl = document.getElementById('chat-trip-name');
-  const membersEl = document.getElementById('chat-trip-members');
-  const trip = tripDataMap[currentChatTripId] || {};
-  if (nameEl) nameEl.innerHTML = escapeHtml(trip.name || 'Group Chat');
-  const people = (trip.people || []);
-  if (membersEl) membersEl.textContent = people.length ? people.slice(0,4).join(', ') + (people.length > 4 ? ' +' + (people.length-4) : '') : 'Group chat';
-  const input = document.getElementById('chat-input');
-  if (input) input.placeholder = 'Message the group...';
-  const panel = document.getElementById('trip-concierge-panel');
-  if (panel && tripRavenbotSummary) panel.style.display = 'block';
-  loadChatMessages(currentChatTripId);
 }
 
 function renderRavenbotMessages() {
@@ -8697,82 +8660,55 @@ function appendRavenbotMessage(msg, persist = true) {
   }
 }
 
-async function callRavenbotAI(userMessage) {
-  const summary = tripRavenbotSummary || {};
-  const debtors = summary.debtors || [];
-  const insights = summary.insights || [];
-  const trip = tripDataMap[currentChatTripId] || {};
-
-  const systemPrompt = [
-    'You are RAVENbot, an AI assistant built into the RAVEN bill-splitting app.',
-    'You are helpful, concise, and friendly. Keep replies under 3 sentences unless detail is needed.',
-    'Never make up numbers — only use the data provided below.',
-    '',
-    '== TRIP DATA ==',
-    'Trip name: ' + (trip.name || 'this trip'),
-    'Total spent: $' + Number(summary.total_spent || 0).toFixed(2),
-    'Receipts: ' + (summary.receipt_count || 0),
-    'People: ' + (trip.people || []).join(', '),
-    '',
-    'WHO OWES WHAT:',
-    debtors.length
-      ? debtors.map(d => d.name + ' owes $' + Number(d.amount || 0).toFixed(2) + (d.to ? ' to ' + d.to : '')).join('\n')
-      : 'Everyone is settled.',
-    '',
-    'INSIGHTS:',
-    insights.length ? insights.join('\n') : 'No additional insights.',
-    '',
-    'RECENT EVENTS:',
-    (summary.events || []).slice(0, 8).join('\n') || 'No recent events.',
-  ].join('\n');
-
-  const typingId = 'ravenbot-typing-' + Date.now();
+function showRavenbotTyping() {
   const container = document.getElementById('chat-messages');
-  if (container) {
-    const typingEl = document.createElement('div');
-    typingEl.id = typingId;
-    typingEl.style.cssText = 'display:flex;flex-direction:column;align-items:flex-start;gap:3px';
-    typingEl.innerHTML = '<div style="font-size:10px;color:#30D158;font-weight:900;letter-spacing:0.08em;text-transform:uppercase;margin-left:4px">RAVENbot</div>'
-      + '<div style="padding:10px 14px;border-radius:16px 16px 16px 4px;background:linear-gradient(135deg,rgba(124,58,237,0.18),rgba(48,209,88,0.1));border:1px solid rgba(168,85,247,0.22);color:#9896A8;font-size:13px">'
-      + '<span style="display:inline-flex;gap:4px;align-items:center">'
-      + '<span style="width:6px;height:6px;border-radius:50%;background:#A855F7;animation:ravenbotDot 1.2s ease-in-out infinite"></span>'
-      + '<span style="width:6px;height:6px;border-radius:50%;background:#A855F7;animation:ravenbotDot 1.2s ease-in-out 0.2s infinite"></span>'
-      + '<span style="width:6px;height:6px;border-radius:50%;background:#A855F7;animation:ravenbotDot 1.2s ease-in-out 0.4s infinite"></span>'
-      + '</span></div>';
-    container.appendChild(typingEl);
-    scrollChatToBottom();
-  }
-
-  const history = getRavenbotMessages().slice(-12);
-  const claudeMessages = history.map(m => ({ role: m.role === 'bot' ? 'assistant' : 'user', content: m.text }));
-  claudeMessages.push({ role: 'user', content: userMessage });
-
-  try {
-    const resp = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        system: systemPrompt,
-        messages: claudeMessages
-      })
-    });
-    const data = await resp.json();
-    const replyText = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('') || "Sorry, I couldn't get a response. Try again.";
-    document.getElementById(typingId)?.remove();
-    appendRavenbotMessage({ role: 'bot', text: replyText, created_at: new Date().toISOString() }, true);
-  } catch(e) {
-    document.getElementById(typingId)?.remove();
-    appendRavenbotMessage({ role: 'bot', text: "Sorry, I'm having trouble connecting right now. Try again in a moment.", created_at: new Date().toISOString() }, true);
-  }
+  if (!container) return;
+  const el = document.createElement('div');
+  el.id = 'ravenbot-typing-indicator';
+  el.style.cssText = 'display:flex;flex-direction:column;align-items:flex-start;gap:3px;margin:2px 0';
+  el.innerHTML = '<div style="font-size:10px;color:#30D158;font-weight:900;letter-spacing:0.08em;text-transform:uppercase;margin-left:4px">RAVENbot</div>'
+    + '<div style="padding:10px 14px;border-radius:16px 16px 16px 4px;background:linear-gradient(135deg,rgba(124,58,237,0.18),rgba(48,209,88,0.1));border:1px solid rgba(168,85,247,0.22);display:flex;gap:5px;align-items:center">'
+    + '<span class="rbot-dot" style="width:7px;height:7px;border-radius:50%;background:#A855F7;animation:ravenbotDot 1.2s ease-in-out infinite"></span>'
+    + '<span class="rbot-dot" style="width:7px;height:7px;border-radius:50%;background:#A855F7;animation:ravenbotDot 1.2s ease-in-out 0.2s infinite"></span>'
+    + '<span class="rbot-dot" style="width:7px;height:7px;border-radius:50%;background:#A855F7;animation:ravenbotDot 1.2s ease-in-out 0.4s infinite"></span>'
+    + '</div>';
+  container.appendChild(el);
   scrollChatToBottom();
 }
 
-function buildRavenbotReply(question) {
-  // Legacy fallback
+function hideRavenbotTyping() {
+  const el = document.getElementById('ravenbot-typing-indicator');
+  if (el) el.remove();
+}
+
+async function callRavenbotAI(question, history) {
   const summary = tripRavenbotSummary || {};
-  return (summary.insights || []).join('\n') || 'Ask me about who owes, top receipts, total spend, or settlement status.';
+  const systemPrompt = `You are RAVENbot, the private AI assistant embedded inside RAVEN — a smart bill-splitting app. You help users understand their trip expenses. Be concise, friendly, and precise with numbers. Use short paragraphs or line breaks for readability, no markdown headers or bullet asterisks.
+
+Trip context:
+- Total spent: $${Number(summary.total_spent || 0).toFixed(2)}
+- Receipt count: ${summary.receipt_count || 0}
+- Debtors (who owes): ${JSON.stringify((summary.debtors || []).slice(0, 10))}
+- Insights: ${(summary.insights || []).join(' | ')}
+- Latest events: ${(summary.events || []).slice(0, 5).join(' | ')}
+
+Answer only about this trip. If you don't have enough data, say so briefly.`;
+
+  const messages = (history || []).slice(-12).map(m => ({ role: m.role === 'bot' ? 'assistant' : 'user', content: m.text }));
+  messages.push({ role: 'user', content: question });
+
+  try {
+    const resp = await fetch(BACKEND + '/api/ravenbot', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ system: systemPrompt, messages })
+    });
+    if (!resp.ok) throw new Error('Server error ' + resp.status);
+    const data = await resp.json();
+    return data.reply || 'I had trouble generating a response. Try again in a moment.';
+  } catch(e) {
+    return 'I couldn\'t connect right now. Check your connection and try again.';
+  }
 }
 
 function getChatDateKey(value) {
@@ -8840,8 +8776,7 @@ function appendChatMessage(msg, scroll = true) {
   if (msg.id && container?.querySelector('[data-msg-id="' + String(msg.id).replace(/"/g, '\\"') + '"]')) return;
   const local = JSON.parse(localStorage.getItem('raven_profile') || '{}');
   const isConcierge = msg.user_id === 'raven-concierge' || msg.system_type === 'concierge';
-  const myUserId = (typeof currentUser !== 'undefined' && currentUser?.id) || local.user_id || local.id || '';
-  const isMe = !isConcierge && !!myUserId && (msg.user_id === myUserId || msg.user_id === local.user_id || msg.user_id === local.id);
+  const isMe = !isConcierge && (msg.user_id === local.user_id || (currentUser && msg.user_id === currentUser.id));
   const dateSource = msg?.created_at || msg?.sent_at || msg?.inserted_at || msg?.timestamp || msg?.createdAt;
   const time = dateSource ? new Date(dateSource).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
   const dateKey = getChatDateKey(dateSource);
@@ -8964,7 +8899,12 @@ async function sendChatMessage() {
   if (tripChatMode === 'ravenbot') {
     appendRavenbotMessage({ role: 'user', text: message || '[attachment]', created_at: new Date().toISOString() }, true);
     scrollChatToBottom();
-    await callRavenbotAI(message);
+    showRavenbotTyping();
+    const history = getRavenbotMessages();
+    const reply = await callRavenbotAI(message, history);
+    hideRavenbotTyping();
+    appendRavenbotMessage({ role: 'bot', text: reply, created_at: new Date().toISOString() }, true);
+    scrollChatToBottom();
     return;
   }
 
@@ -9044,10 +8984,6 @@ async function sendChatMessage() {
 </div>
 
 <style>
-@keyframes ravenbotDot {
-  0%, 80%, 100% { opacity: 0.2; transform: scale(0.8); }
-  40% { opacity: 1; transform: scale(1); }
-}
 .trip-concierge-chip {
   background: rgba(255,255,255,0.06);
   border: 1px solid rgba(255,255,255,0.1);
