@@ -183,8 +183,8 @@ button,input,textarea{font:inherit}
 .scan-card{transform:translateZ(0)}
 
 .scan-orbit{position:relative;width:clamp(148px,24vh,220px);aspect-ratio:1;border-radius:50%;display:grid;place-items:center;margin-bottom:clamp(12px,2.5vh,24px);flex:0 0 auto}
-.scan-orbit::before{content:"";position:absolute;inset:0;border-radius:50%;border:1px dashed rgba(192,132,252,.28);animation:spin 18s linear infinite;pointer-events:none}
-.scan-orbit::after{content:"";position:absolute;inset:-14%;border-radius:50%;border:1px solid rgba(48,209,88,.07);animation:spin 28s linear infinite reverse;pointer-events:none}
+.scan-orbit::before{content:"";position:absolute;inset:0;border-radius:50%;border:1px dashed rgba(192,132,252,.28);animation:spin 18s linear infinite}
+.scan-orbit::after{content:"";position:absolute;inset:-14%;border-radius:50%;border:1px solid rgba(48,209,88,.07);animation:spin 28s linear infinite reverse}
 .scan-logo-button{width:58%;aspect-ratio:1;border:0;border-radius:28%;background:transparent;
   display:grid;place-items:center;padding:0;position:relative;cursor:pointer;
   touch-action:manipulation;-webkit-tap-highlight-color:transparent}
@@ -197,21 +197,6 @@ button,input,textarea{font:inherit}
 .scan-mark::after{content:"";position:absolute;width:16px;height:16px;border-radius:50%;background:var(--green);left:50%;bottom:10%;transform:translateX(-50%);box-shadow:0 0 22px rgba(48,209,88,.8)}
 .scan-mark span{font-family:"Bebas Neue";font-size:min(27vw,124px);line-height:.82;background:linear-gradient(175deg,#F1DCFF,#B276FF);-webkit-background-clip:text;color:transparent}
 .scan-logo-button:active .scan-mark{transform:scale(.97);box-shadow:0 14px 44px rgba(168,85,247,.2)}
-.scan-mark.tapped{animation:scanTap 0.55s cubic-bezier(.2,.9,.3,1.2) forwards}
-@keyframes scanTap{
-  0%{transform:scale(1);box-shadow:0 20px 56px rgba(168,85,247,.24)}
-  25%{transform:scale(0.93);box-shadow:0 8px 24px rgba(168,85,247,.1)}
-  55%{transform:scale(1.06);box-shadow:0 28px 72px rgba(168,85,247,.5),0 0 0 12px rgba(48,209,88,.08)}
-  75%{transform:scale(1.02)}
-  100%{transform:scale(1);box-shadow:0 20px 56px rgba(168,85,247,.24)}
-}
-.scan-orbit.burst::before{animation:orbitBurst 0.5s ease-out forwards,spin 18s linear infinite}
-.scan-orbit.burst::after{animation:orbitBurst 0.5s ease-out 0.05s forwards,spin 28s linear infinite reverse}
-@keyframes orbitBurst{
-  0%{opacity:1;transform:scale(1)}
-  50%{opacity:0.7;transform:scale(1.08);border-color:rgba(48,209,88,.5)}
-  100%{opacity:1;transform:scale(1)}
-}
 .scan-logo-button:focus-visible{outline:none}
 .scan-logo-button:focus-visible .scan-mark{box-shadow:0 20px 56px rgba(168,85,247,.26),0 0 0 4px rgba(48,209,88,.2)}
 .scan-orbit,.scan-title,.scan-copy{position:relative;z-index:1}
@@ -498,11 +483,9 @@ let pendingConfirmEmail = '';
 
 function el(id){return document.getElementById(id)}
 function getAppAuthRedirectTo(){
-  try {
-    const origin = window.location.origin || '';
-    if (/^https?:\/\//i.test(origin)) return origin + window.location.pathname + '?app=1';
-  } catch(e) {}
-  // Capacitor uses a capacitor:// or file:// origin — fall back to the web URL for OAuth redirects only
+  // Always use the canonical web URL so that email links (confirm, reset)
+  // work from any email client — capacitor:// and file:// URLs are not
+  // clickable from external email apps.
   return 'https://ravensplit.com/app.html?app=1';
 }
 // Listen for PASSWORD_RECOVERY event from Supabase (email link click)
@@ -675,21 +658,7 @@ function goDashboard(){
   navigateWithRavens('dashboard.html?app=1&page=overview');
 }
 function scanLogoAction(){
-  // Trigger RAVEN tap animation, then navigate
-  const mark = document.querySelector('.scan-mark');
-  const orbit = document.querySelector('.scan-orbit');
-  if (mark) {
-    mark.classList.remove('tapped');
-    void mark.offsetWidth; // reflow
-    mark.classList.add('tapped');
-  }
-  if (orbit) {
-    orbit.classList.remove('burst');
-    void orbit.offsetWidth;
-    orbit.classList.add('burst');
-  }
-  launchRavenFlight();
-  setTimeout(() => goScanPage(), 480);
+  goScanPage();
 }
 function handleCameraCapture(event){
   const file = event.target.files && event.target.files[0];
@@ -720,8 +689,18 @@ function openAppPage(page, options){
 async function handleGoogleAuth(){
   clearMessage();
   try {
-    const redirectTo = getAppAuthRedirectTo();
-    const { error } = await db.auth.signInWithOAuth({ provider: 'google', options: { redirectTo } });
+    // Use the canonical web redirect so OAuth callback works from any browser.
+    // In a Capacitor app the OAuth flow opens the device browser; after auth,
+    // Supabase redirects back to ravensplit.com which the app then handles.
+    const redirectTo = 'https://ravensplit.com/app.html?app=1';
+    const { error } = await db.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo,
+        skipBrowserRedirect: false,
+        queryParams: { access_type: 'offline', prompt: 'consent' }
+      }
+    });
     if (error) showMessage('error', error.message);
   } catch(e) {
     showMessage('error', 'Google sign-in failed. Please try email/password.');
@@ -819,19 +798,47 @@ async function handleSignup(event){
     routeAfterAuth(data.session.user);
     return;
   }
+  // No session yet — email confirmation required.
+  // Show a dedicated confirm screen so the user knows exactly what to do.
   pendingConfirmEmail = email;
-  try {
-    await db.auth.resend({
-      type: 'signup',
-      email,
-      options: { emailRedirectTo: getAppAuthRedirectTo() }
-    });
-  } catch(e) {}
-  showTab('login');
-  el('login-email').value = email;
-  toggleResendConfirm(true);
-  showMessage('success','Account created. Check your email to confirm, then sign in here.');
+  showConfirmEmailScreen(email);
 }
+function showConfirmEmailScreen(email) {
+  // Show the auth panel first so the card is visible and in the DOM
+  showSignedOutHome();
+  el('app-home').classList.add('auth-visible');
+  // Move auth card to dock if needed
+  const dock = el('app-auth-dock');
+  const card = document.querySelector('.auth-card');
+  if (dock && card && card.parentElement !== dock) dock.appendChild(card);
+  // Now overwrite the card contents
+  card.innerHTML = `
+    <div style="text-align:center;padding:8px 0 4px">
+      <div style="font-size:44px;margin-bottom:12px">📬</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:.05em;margin-bottom:8px;color:var(--white)">Check Your Email</div>
+      <p style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:20px">
+        We sent a confirmation link to<br>
+        <strong style="color:var(--soft)">${email}</strong><br><br>
+        Tap the link in that email to activate your account, then come back here and sign in.
+      </p>
+      <button class="primary-btn" type="button" style="margin-bottom:10px" onclick="location.reload()">I confirmed — Sign in</button>
+      <button class="secondary-btn" type="button" id="resend-btn-confirm" onclick="resendFromConfirmScreen('${email}')">Resend confirmation email</button>
+      <p style="font-size:11px;color:var(--muted);margin-top:14px">Check your spam folder if you don't see it.</p>
+    </div>
+  `;
+}
+async function resendFromConfirmScreen(email) {
+  pendingConfirmEmail = email;
+  const btn = document.getElementById('resend-btn-confirm');
+  if (btn) { btn.disabled = true; btn.textContent = 'Sending...'; }
+  const { error } = await db.auth.resend({
+    type: 'signup',
+    email,
+    options: { emailRedirectTo: getAppAuthRedirectTo() }
+  });
+  if (btn) { btn.disabled = false; btn.textContent = error ? 'Try again' : 'Sent! Check your inbox'; }
+}
+
 async function handleReset(event){
   event.preventDefault();
   clearMessage();
@@ -839,12 +846,34 @@ async function handleReset(event){
   const btn = el('reset-button');
   btn.disabled = true;
   btn.textContent = 'Sending...';
+  // Always redirect to the canonical web URL — works from any email client
   const redirectTo = 'https://ravensplit.com/app.html?app=1&reset=1';
   const { error } = await db.auth.resetPasswordForEmail(email, { redirectTo });
   btn.disabled = false;
   btn.textContent = 'Send reset link';
   if (error) return showMessage('error', error.message);
-  showMessage('success','Reset link sent. Check your inbox.');
+  // Show a dedicated "check your email" message instead of a small toast
+  showResetEmailSentScreen(email);
+}
+
+function showResetEmailSentScreen(email) {
+  const card = document.querySelector('.auth-card');
+  if (!card) return;
+  card.innerHTML = `
+    <div style="text-align:center;padding:8px 0 4px">
+      <div style="font-size:44px;margin-bottom:12px">🔑</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:.05em;margin-bottom:8px;color:var(--white)">Check Your Email</div>
+      <p style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:20px">
+        A password reset link was sent to<br>
+        <strong style="color:var(--soft)">${email}</strong><br><br>
+        Tap the link in the email. It will open RAVEN and prompt you to set a new password.
+      </p>
+      <button class="secondary-btn" type="button" onclick="location.reload()">Back to sign in</button>
+      <p style="font-size:11px;color:var(--muted);margin-top:14px">Check your spam folder if you don't see it.</p>
+    </div>
+  `;
+  showSignedOutHome();
+  el('app-home').classList.add('auth-visible');
 }
 async function handleSetNewPassword(event){
   event.preventDefault();
@@ -890,32 +919,37 @@ async function handleSetNewPassword(event){
 
 (async function init(){
   localStorage.setItem('raven_native_app','1');
-  // Fade-in on initial render
   requestAnimationFrame(() => document.body.classList.add('ready'));
   const remembered = localStorage.getItem('raven_remembered_email') || '';
   if (remembered) {
     el('login-email').value = remembered;
     el('remember-email').checked = true;
   }
+
   const hash = window.location.hash;
   const params = new URLSearchParams(window.location.search);
+
   if (params.get('from') === 'trip') {
     window.location.replace('dashboard.html?app=1&page=overview');
     return;
   }
+
+  // Detect password recovery from URL before doing anything else.
+  // The reset email sends ?reset=1 AND the hash contains type=recovery.
   const isPasswordReset = params.get('reset') === '1' || (hash && hash.includes('type=recovery'));
+
+  // Parse any tokens in the hash (handles OAuth callback and email magic links)
   if (hash && hash.includes('access_token')) {
     try { await db.auth.getSession(); } catch(e) {}
-    // Check if this is a password recovery redirect
-    if (isPasswordReset) {
+    if (isPasswordReset || hash.includes('type=recovery')) {
       history.replaceState(null, '', window.location.pathname + '?app=1');
-      // Show new-password form
       showSignedOutHome();
       showTab('new-password');
       return;
     }
-    history.replaceState(null, '', window.location.pathname);
+    history.replaceState(null, '', window.location.pathname + '?app=1');
   }
+
   if (isPasswordReset) {
     try { await db.auth.getSession(); } catch(e) {}
     history.replaceState(null, '', window.location.pathname + '?app=1');
@@ -923,6 +957,8 @@ async function handleSetNewPassword(event){
     showTab('new-password');
     return;
   }
+
+  // Retry session fetch a few times to handle slow token exchanges
   let session = null;
   for (let attempt = 0; attempt < 4; attempt++) {
     try {
@@ -932,9 +968,8 @@ async function handleSetNewPassword(event){
     if (session?.user) break;
     await new Promise(resolve => setTimeout(resolve, 250));
   }
+
   if (session?.user) {
-    // If session exists but it's a recovery session, show password form
-    const urlHash = window.location.hash || '';
     routeAfterAuth(session.user);
   } else {
     const cachedProfile = getCachedAppProfile();
