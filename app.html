@@ -396,7 +396,7 @@ button,input,textarea{font:inherit}
       <button class="primary-btn" id="reset-button" type="submit">Send reset link</button>
       <button class="secondary-btn" type="button" onclick="showTab('login')">Back to sign in</button>
     </form>
-    <form class="form" id="new-password-form" onsubmit="handleSetNewPassword(event)" style="display:none">
+    <form class="form" id="new-password-form" onsubmit="handleSetNewPassword(event)">
       <label class="field">
         <span class="label">New Password</span>
         <input class="input" id="new-password-input" type="password" autocomplete="new-password" placeholder="New password (min 6 chars)" required>
@@ -482,16 +482,22 @@ const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
 let pendingConfirmEmail = '';
 
 function el(id){return document.getElementById(id)}
-function getAppAuthRedirectTo(){
-  // Always use the canonical web URL so that email links (confirm, reset)
-  // work from any email client — capacitor:// and file:// URLs are not
-  // clickable from external email apps.
-  return 'https://ravensplit.com/app.html?app=1';
+function getAppAuthRedirectTo(forReset){
+  // Always use canonical web URLs — email clients cannot open capacitor:// links.
+  if (forReset) return 'https://ravensplit.com/app.html?app=1&reset=1';
+  // After email confirmation, send user to onboarding to complete their profile
+  return 'https://ravensplit.com/onboarding.html';
 }
-// Listen for PASSWORD_RECOVERY event from Supabase (email link click)
+// Listen for auth state changes — PRIMARY handler for password reset flow.
+// When user clicks reset link in email, Supabase fires PASSWORD_RECOVERY here.
 db.auth.onAuthStateChange((event, session) => {
   if (event === 'PASSWORD_RECOVERY') {
+    // Show the new password form immediately
     showSignedOutHome();
+    el('app-home').classList.add('auth-visible');
+    const dock = el('app-auth-dock');
+    const card = document.querySelector('.auth-card');
+    if (dock && card && card.parentElement !== dock) dock.appendChild(card);
     showTab('new-password');
   }
 });
@@ -514,7 +520,10 @@ function showTab(tab){
   toggleResendConfirm(false);
   ['login','signup','reset','new-password'].forEach(name => {
     const form = el(name + '-form');
-    if (form) form.classList.toggle('active', name === tab);
+    if (!form) return;
+    form.classList.toggle('active', name === tab);
+    // Override any hardcoded display style
+    form.style.display = '';
   });
   el('login-tab').classList.toggle('active', tab === 'login' || tab === 'reset' || tab === 'new-password');
   el('signup-tab').classList.toggle('active', tab === 'signup');
@@ -847,7 +856,7 @@ async function handleReset(event){
   btn.disabled = true;
   btn.textContent = 'Sending...';
   // Always redirect to the canonical web URL — works from any email client
-  const redirectTo = 'https://ravensplit.com/app.html?app=1&reset=1';
+  const redirectTo = getAppAuthRedirectTo(true);
   const { error } = await db.auth.resetPasswordForEmail(email, { redirectTo });
   btn.disabled = false;
   btn.textContent = 'Send reset link';
@@ -934,42 +943,46 @@ async function handleSetNewPassword(event){
     return;
   }
 
-  // Detect password recovery from URL before doing anything else.
-  // The reset email sends ?reset=1 AND the hash contains type=recovery.
-  const isPasswordReset = params.get('reset') === '1' || (hash && hash.includes('type=recovery'));
-
-  // Parse any tokens in the hash (handles OAuth callback and email magic links)
+  // If the URL has a hash token from an email link, show the shell immediately
+  // and let Supabase parse the hash. The onAuthStateChange listener handles
+  // PASSWORD_RECOVERY; for email confirmation we route after getSession().
   if (hash && hash.includes('access_token')) {
+    showSignedOutHome();
+    // Call getSession so Supabase parses the hash and fires onAuthStateChange
     try { await db.auth.getSession(); } catch(e) {}
-    if (isPasswordReset || hash.includes('type=recovery')) {
+    // Wait for PASSWORD_RECOVERY event to fire if applicable
+    await new Promise(r => setTimeout(r, 400));
+    // If recovery, the listener already showed new-password — just return
+    if (hash.includes('type=recovery')) {
       history.replaceState(null, '', window.location.pathname + '?app=1');
-      showSignedOutHome();
-      showTab('new-password');
       return;
     }
-    history.replaceState(null, '', window.location.pathname + '?app=1');
-  }
-
-  if (isPasswordReset) {
-    try { await db.auth.getSession(); } catch(e) {}
+    // Email confirmation: session should now exist
+    try {
+      const { data: { session } } = await db.auth.getSession();
+      if (session && session.user) {
+        history.replaceState(null, '', window.location.pathname + '?app=1');
+        routeAfterAuth(session.user);
+        return;
+      }
+    } catch(e) {}
     history.replaceState(null, '', window.location.pathname + '?app=1');
     showSignedOutHome();
-    showTab('new-password');
     return;
   }
 
-  // Retry session fetch a few times to handle slow token exchanges
+  // Normal load — check for existing session
   let session = null;
   for (let attempt = 0; attempt < 4; attempt++) {
     try {
       const result = await db.auth.getSession();
-      session = result?.data?.session || null;
+      session = result && result.data && result.data.session || null;
     } catch(e) {}
-    if (session?.user) break;
+    if (session && session.user) break;
     await new Promise(resolve => setTimeout(resolve, 250));
   }
 
-  if (session?.user) {
+  if (session && session.user) {
     routeAfterAuth(session.user);
   } else {
     const cachedProfile = getCachedAppProfile();
