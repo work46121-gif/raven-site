@@ -703,7 +703,40 @@ function goDashboard(){
   localStorage.setItem('raven_native_app','1');
   navigateWithRavens('dashboard.html?app=1&page=overview');
 }
-function scanLogoAction(){
+async function scanLogoAction(){
+  // Try native Capacitor Camera first (works on iOS with direct user gesture)
+  const camera = window.Capacitor?.Plugins?.Camera;
+  if (camera?.getPhoto) {
+    try {
+      const photo = await camera.getPhoto({
+        quality: 85,
+        allowEditing: false,
+        resultType: 'dataUrl',
+        source: 'PROMPT',
+        correctOrientation: true
+      });
+      if (photo?.dataUrl) {
+        try {
+          sessionStorage.setItem('raven_scan_image', photo.dataUrl);
+          sessionStorage.setItem('raven_scan_type', photo.format === 'png' ? 'image/png' : 'image/jpeg');
+        } catch(e) {}
+        localStorage.setItem('raven_native_app', '1');
+        navigateWithFade('dashboard.html?app=1&page=create-bill&quickscan=1');
+        return;
+      }
+    } catch(e) {
+      if (e && /cancel/i.test(String(e.message || e))) return; // user cancelled
+      // Fall through to web file input
+    }
+  }
+  // Web fallback: trigger the hidden file input directly from this gesture
+  const input = document.getElementById('app-camera-input');
+  if (input) {
+    input.value = '';
+    input.click();
+    return;
+  }
+  // Last resort: just go to dashboard scan page
   goScanPage();
 }
 function handleCameraCapture(event){
