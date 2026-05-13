@@ -481,12 +481,49 @@ const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
 });
 let pendingConfirmEmail = '';
 
+// Handle Universal Links (email links opening directly in the app)
+// Capacitor fires 'appUrlOpen' when the app is opened via a universal link
+document.addEventListener('DOMContentLoaded', function() {
+  if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App) {
+    window.Capacitor.Plugins.App.addListener('appUrlOpen', async function(data) {
+      const url = data.url || '';
+      if (!url) return;
+      // Extract the hash/query from the universal link URL
+      const hashIdx = url.indexOf('#');
+      const hash = hashIdx >= 0 ? url.slice(hashIdx) : '';
+      const qIdx = url.indexOf('?');
+      const query = qIdx >= 0 ? url.slice(qIdx, hashIdx >= 0 ? hashIdx : undefined) : '';
+      const params = new URLSearchParams(query);
+      // Password reset link
+      if (hash.includes('type=recovery') || params.get('reset') === '1') {
+        try { await db.auth.getSession(); } catch(e) {}
+        await new Promise(r => setTimeout(r, 300));
+        showSignedOutHome();
+        el('app-home').classList.add('auth-visible');
+        const dock = el('app-auth-dock');
+        const card = document.querySelector('.auth-card');
+        if (dock && card && card.parentElement !== dock) dock.appendChild(card);
+        showTab('new-password');
+        return;
+      }
+      // Email confirmation link
+      if (hash.includes('access_token') || hash.includes('type=signup')) {
+        try { await db.auth.getSession(); } catch(e) {}
+        await new Promise(r => setTimeout(r, 400));
+        const { data: { session } } = await db.auth.getSession();
+        if (session && session.user) routeAfterAuth(session.user);
+      }
+    });
+  }
+});
+
 function el(id){return document.getElementById(id)}
 function getAppAuthRedirectTo(forReset){
   // Always use canonical web URLs — email clients cannot open capacitor:// links.
   if (forReset) return 'https://ravensplit.com/app.html?app=1&reset=1';
-  // After email confirmation, send user to onboarding to complete their profile
-  return 'https://ravensplit.com/onboarding.html';
+  // After email confirmation, return to app.html which detects the session
+  // and routes to onboarding automatically via routeAfterAuth()
+  return 'https://ravensplit.com/app.html?app=1';
 }
 // Listen for auth state changes — PRIMARY handler for password reset flow.
 // When user clicks reset link in email, Supabase fires PASSWORD_RECOVERY here.
@@ -642,7 +679,7 @@ function navigateWithFade(url){
 }
 function goScanPage(){
   localStorage.setItem('raven_native_app','1');
-  window.location.href = 'dashboard.html?app=1&page=create-bill';
+  navigateWithFade('dashboard.html?app=1&page=create-bill&quickscan=1');
 }
 function launchRavenFlight(){
   const layer = document.createElement('div');
@@ -903,28 +940,7 @@ async function handleSetNewPassword(event){
     });
   }, 1200);
 }
-// Double-tap the top-left logo to go to Settings (iOS-friendly — dblclick unreliable on mobile)
-(function(){
-  document.addEventListener('DOMContentLoaded', function(){
-    const logoBtn = document.getElementById('home-logo-btn');
-    if (!logoBtn) return;
-    logoBtn.addEventListener('click', function(e){
-      e.preventDefault();
-      goScanPage();
-    });
-    logoBtn.addEventListener('touchend', function(e){
-      e.preventDefault();
-      goScanPage();
-    }, { passive: false });
-    const scanBtn = document.querySelector('.scan-logo-button');
-    if (scanBtn) {
-      scanBtn.addEventListener('pointerup', function(e){
-        e.preventDefault();
-        goScanPage();
-      });
-    }
-  });
-})();
+// Scan buttons use onclick= in HTML — no extra listeners needed to avoid double-fire on iOS
 
 (async function init(){
   localStorage.setItem('raven_native_app','1');
@@ -938,10 +954,7 @@ async function handleSetNewPassword(event){
   const hash = window.location.hash;
   const params = new URLSearchParams(window.location.search);
 
-  if (params.get('from') === 'trip') {
-    window.location.replace('dashboard.html?app=1&page=overview');
-    return;
-  }
+  // from=trip: user returning from trip hub — handled by normal session check + showAppHome below
 
   // If the URL has a hash token from an email link, show the shell immediately
   // and let Supabase parse the hash. The onAuthStateChange listener handles
