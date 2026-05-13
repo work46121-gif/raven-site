@@ -3014,9 +3014,10 @@ async function showDashboard() {
   loadAllData();
   if (RAVEN_APP_MODE) {
     const appPage = new URLSearchParams(window.location.search).get('page') || 'overview';
-    if (appPage) {
-      setTimeout(() => {
-        showPage(appPage);
+    // Always call showPage so nav state, scroll, and data are all reset correctly
+    setTimeout(() => {
+      showPage(appPage);
+      if (true) {
         const quickscan = new URLSearchParams(window.location.search).get('quickscan') === '1';
         if (appPage === 'create-bill' && quickscan) {
           try { cbGoToStep(1); } catch(e) {}
