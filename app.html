@@ -396,7 +396,7 @@ button,input,textarea{font:inherit}
       <button class="primary-btn" id="reset-button" type="submit">Send reset link</button>
       <button class="secondary-btn" type="button" onclick="showTab('login')">Back to sign in</button>
     </form>
-    <form class="form" id="new-password-form" onsubmit="handleSetNewPassword(event)">
+    <form class="form" id="new-password-form" onsubmit="handleSetNewPassword(event)" style="display:none">
       <label class="field">
         <span class="label">New Password</span>
         <input class="input" id="new-password-input" type="password" autocomplete="new-password" placeholder="New password (min 6 chars)" required>
@@ -411,7 +411,7 @@ button,input,textarea{font:inherit}
   <!-- Top bar -->
   <div class="home-top" id="home-top" style="display:none;align-items:center;justify-content:space-between;padding:calc(env(safe-area-inset-top,0px) + 12px) 18px 8px;flex:0 0 auto;position:relative;z-index:4">
     <div class="home-brand">
-      <div class="home-logo" id="home-logo-btn" style="display:grid;place-items:center;position:relative;cursor:default"></div>
+      <div class="home-logo" id="home-logo-btn" style="display:grid;place-items:center;position:relative"></div>
       <div>
         <div class="home-title">RAVEN</div>
         <div style="font-size:10px;color:var(--muted);font-weight:600;letter-spacing:.08em">AI Bill Splitter</div>
@@ -481,60 +481,19 @@ const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
 });
 let pendingConfirmEmail = '';
 
-// Handle Universal Links (email links opening directly in the app)
-// Capacitor fires 'appUrlOpen' when the app is opened via a universal link
-document.addEventListener('DOMContentLoaded', function() {
-  if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App) {
-    window.Capacitor.Plugins.App.addListener('appUrlOpen', async function(data) {
-      const url = data.url || '';
-      if (!url) return;
-      // Extract the hash/query from the universal link URL
-      const hashIdx = url.indexOf('#');
-      const hash = hashIdx >= 0 ? url.slice(hashIdx) : '';
-      const qIdx = url.indexOf('?');
-      const query = qIdx >= 0 ? url.slice(qIdx, hashIdx >= 0 ? hashIdx : undefined) : '';
-      const params = new URLSearchParams(query);
-      // Password reset link
-      if (hash.includes('type=recovery') || params.get('reset') === '1') {
-        try { await db.auth.getSession(); } catch(e) {}
-        await new Promise(r => setTimeout(r, 300));
-        showSignedOutHome();
-        el('app-home').classList.add('auth-visible');
-        const dock = el('app-auth-dock');
-        const card = document.querySelector('.auth-card');
-        if (dock && card && card.parentElement !== dock) dock.appendChild(card);
-        showTab('new-password');
-        return;
-      }
-      // Email confirmation link
-      if (hash.includes('access_token') || hash.includes('type=signup')) {
-        try { await db.auth.getSession(); } catch(e) {}
-        await new Promise(r => setTimeout(r, 400));
-        const { data: { session } } = await db.auth.getSession();
-        if (session && session.user) routeAfterAuth(session.user);
-      }
-    });
-  }
-});
-
 function el(id){return document.getElementById(id)}
-function getAppAuthRedirectTo(forReset){
-  // Always use canonical web URLs — email clients cannot open capacitor:// links.
-  if (forReset) return 'https://ravensplit.com/app.html?app=1&reset=1';
-  // After email confirmation, return to app.html which detects the session
-  // and routes to onboarding automatically via routeAfterAuth()
+function getAppAuthRedirectTo(){
+  try {
+    const origin = window.location.origin || '';
+    if (/^https?:\/\//i.test(origin)) return origin + window.location.pathname + '?app=1';
+  } catch(e) {}
+  // Capacitor uses a capacitor:// or file:// origin — fall back to the web URL for OAuth redirects only
   return 'https://ravensplit.com/app.html?app=1';
 }
-// Listen for auth state changes — PRIMARY handler for password reset flow.
-// When user clicks reset link in email, Supabase fires PASSWORD_RECOVERY here.
+// Listen for PASSWORD_RECOVERY event from Supabase (email link click)
 db.auth.onAuthStateChange((event, session) => {
   if (event === 'PASSWORD_RECOVERY') {
-    // Show the new password form immediately
     showSignedOutHome();
-    el('app-home').classList.add('auth-visible');
-    const dock = el('app-auth-dock');
-    const card = document.querySelector('.auth-card');
-    if (dock && card && card.parentElement !== dock) dock.appendChild(card);
     showTab('new-password');
   }
 });
@@ -557,10 +516,7 @@ function showTab(tab){
   toggleResendConfirm(false);
   ['login','signup','reset','new-password'].forEach(name => {
     const form = el(name + '-form');
-    if (!form) return;
-    form.classList.toggle('active', name === tab);
-    // Override any hardcoded display style
-    form.style.display = '';
+    if (form) form.classList.toggle('active', name === tab);
   });
   el('login-tab').classList.toggle('active', tab === 'login' || tab === 'reset' || tab === 'new-password');
   el('signup-tab').classList.toggle('active', tab === 'signup');
@@ -679,7 +635,7 @@ function navigateWithFade(url){
 }
 function goScanPage(){
   localStorage.setItem('raven_native_app','1');
-  navigateWithFade('dashboard.html?app=1&page=create-bill&quickscan=1');
+  window.location.href = 'dashboard.html?app=1&page=create-bill';
 }
 function launchRavenFlight(){
   const layer = document.createElement('div');
@@ -704,13 +660,9 @@ function goDashboard(){
   navigateWithRavens('dashboard.html?app=1&page=overview');
 }
 function scanLogoAction(){
-  // IMPORTANT: must NOT be async — iOS requires a synchronous user gesture
-  // to open the camera or file picker. Any await before .click() silently fails.
-
-  // First try Capacitor native camera (non-blocking trigger)
-  const camera = window.Capacitor?.Plugins?.Camera;
-  if (camera?.getPhoto) {
-    // Call without await — handle result via .then()
+  // Must stay synchronous — iOS blocks camera/file picker after any await
+  var camera = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Camera;
+  if (camera && camera.getPhoto) {
     camera.getPhoto({
       quality: 85,
       allowEditing: false,
@@ -725,20 +677,12 @@ function scanLogoAction(){
       } catch(e) {}
       localStorage.setItem('raven_native_app', '1');
       navigateWithFade('dashboard.html?app=1&page=create-bill&quickscan=1');
-    }).catch(function(e) {
-      // User cancelled — do nothing
-    });
+    }).catch(function() {});
     return;
   }
-
-  // Web / file fallback — synchronously click the hidden file input
+  // Web fallback — synchronous click, stays within user gesture
   var input = document.getElementById('app-camera-input');
-  if (input) {
-    input.value = '';
-    input.click();
-    return;
-  }
-  // Last resort
+  if (input) { input.value = ''; input.click(); return; }
   navigateWithFade('dashboard.html?app=1&page=create-bill&quickscan=1');
 }
 function handleCameraCapture(event){
@@ -770,18 +714,8 @@ function openAppPage(page, options){
 async function handleGoogleAuth(){
   clearMessage();
   try {
-    // Use the canonical web redirect so OAuth callback works from any browser.
-    // In a Capacitor app the OAuth flow opens the device browser; after auth,
-    // Supabase redirects back to ravensplit.com which the app then handles.
-    const redirectTo = 'https://ravensplit.com/app.html?app=1';
-    const { error } = await db.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo,
-        skipBrowserRedirect: false,
-        queryParams: { access_type: 'offline', prompt: 'consent' }
-      }
-    });
+    const redirectTo = getAppAuthRedirectTo();
+    const { error } = await db.auth.signInWithOAuth({ provider: 'google', options: { redirectTo } });
     if (error) showMessage('error', error.message);
   } catch(e) {
     showMessage('error', 'Google sign-in failed. Please try email/password.');
@@ -879,47 +813,19 @@ async function handleSignup(event){
     routeAfterAuth(data.session.user);
     return;
   }
-  // No session yet — email confirmation required.
-  // Show a dedicated confirm screen so the user knows exactly what to do.
   pendingConfirmEmail = email;
-  showConfirmEmailScreen(email);
+  try {
+    await db.auth.resend({
+      type: 'signup',
+      email,
+      options: { emailRedirectTo: getAppAuthRedirectTo() }
+    });
+  } catch(e) {}
+  showTab('login');
+  el('login-email').value = email;
+  toggleResendConfirm(true);
+  showMessage('success','Account created. Check your email to confirm, then sign in here.');
 }
-function showConfirmEmailScreen(email) {
-  // Show the auth panel first so the card is visible and in the DOM
-  showSignedOutHome();
-  el('app-home').classList.add('auth-visible');
-  // Move auth card to dock if needed
-  const dock = el('app-auth-dock');
-  const card = document.querySelector('.auth-card');
-  if (dock && card && card.parentElement !== dock) dock.appendChild(card);
-  // Now overwrite the card contents
-  card.innerHTML = `
-    <div style="text-align:center;padding:8px 0 4px">
-      <div style="font-size:44px;margin-bottom:12px">📬</div>
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:.05em;margin-bottom:8px;color:var(--white)">Check Your Email</div>
-      <p style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:20px">
-        We sent a confirmation link to<br>
-        <strong style="color:var(--soft)">${email}</strong><br><br>
-        Tap the link in that email to activate your account, then come back here and sign in.
-      </p>
-      <button class="primary-btn" type="button" style="margin-bottom:10px" onclick="location.reload()">I confirmed — Sign in</button>
-      <button class="secondary-btn" type="button" id="resend-btn-confirm" onclick="resendFromConfirmScreen('${email}')">Resend confirmation email</button>
-      <p style="font-size:11px;color:var(--muted);margin-top:14px">Check your spam folder if you don't see it.</p>
-    </div>
-  `;
-}
-async function resendFromConfirmScreen(email) {
-  pendingConfirmEmail = email;
-  const btn = document.getElementById('resend-btn-confirm');
-  if (btn) { btn.disabled = true; btn.textContent = 'Sending...'; }
-  const { error } = await db.auth.resend({
-    type: 'signup',
-    email,
-    options: { emailRedirectTo: getAppAuthRedirectTo() }
-  });
-  if (btn) { btn.disabled = false; btn.textContent = error ? 'Try again' : 'Sent! Check your inbox'; }
-}
-
 async function handleReset(event){
   event.preventDefault();
   clearMessage();
@@ -927,34 +833,12 @@ async function handleReset(event){
   const btn = el('reset-button');
   btn.disabled = true;
   btn.textContent = 'Sending...';
-  // Always redirect to the canonical web URL — works from any email client
-  const redirectTo = getAppAuthRedirectTo(true);
+  const redirectTo = 'https://ravensplit.com/app.html?app=1&reset=1';
   const { error } = await db.auth.resetPasswordForEmail(email, { redirectTo });
   btn.disabled = false;
   btn.textContent = 'Send reset link';
   if (error) return showMessage('error', error.message);
-  // Show a dedicated "check your email" message instead of a small toast
-  showResetEmailSentScreen(email);
-}
-
-function showResetEmailSentScreen(email) {
-  const card = document.querySelector('.auth-card');
-  if (!card) return;
-  card.innerHTML = `
-    <div style="text-align:center;padding:8px 0 4px">
-      <div style="font-size:44px;margin-bottom:12px">🔑</div>
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:.05em;margin-bottom:8px;color:var(--white)">Check Your Email</div>
-      <p style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:20px">
-        A password reset link was sent to<br>
-        <strong style="color:var(--soft)">${email}</strong><br><br>
-        Tap the link in the email. It will open RAVEN and prompt you to set a new password.
-      </p>
-      <button class="secondary-btn" type="button" onclick="location.reload()">Back to sign in</button>
-      <p style="font-size:11px;color:var(--muted);margin-top:14px">Check your spam folder if you don't see it.</p>
-    </div>
-  `;
-  showSignedOutHome();
-  el('app-home').classList.add('auth-visible');
+  showMessage('success','Reset link sent. Check your inbox.');
 }
 async function handleSetNewPassword(event){
   event.preventDefault();
@@ -975,62 +859,76 @@ async function handleSetNewPassword(event){
     });
   }, 1200);
 }
-// Scan buttons use onclick= in HTML — no extra listeners needed to avoid double-fire on iOS
+// Double-tap the top-left logo to go to Settings (iOS-friendly — dblclick unreliable on mobile)
+(function(){
+  document.addEventListener('DOMContentLoaded', function(){
+    const logoBtn = document.getElementById('home-logo-btn');
+    if (!logoBtn) return;
+    logoBtn.addEventListener('click', function(e){
+      e.preventDefault();
+      goScanPage();
+    });
+    logoBtn.addEventListener('touchend', function(e){
+      e.preventDefault();
+      goScanPage();
+    }, { passive: false });
+    const scanBtn = document.querySelector('.scan-logo-button');
+    if (scanBtn) {
+      scanBtn.addEventListener('pointerup', function(e){
+        e.preventDefault();
+        goScanPage();
+      });
+    }
+  });
+})();
 
 (async function init(){
   localStorage.setItem('raven_native_app','1');
+  // Fade-in on initial render
   requestAnimationFrame(() => document.body.classList.add('ready'));
   const remembered = localStorage.getItem('raven_remembered_email') || '';
   if (remembered) {
     el('login-email').value = remembered;
     el('remember-email').checked = true;
   }
-
   const hash = window.location.hash;
   const params = new URLSearchParams(window.location.search);
-
-  // from=trip: user returning from trip hub — handled by normal session check + showAppHome below
-
-  // If the URL has a hash token from an email link, show the shell immediately
-  // and let Supabase parse the hash. The onAuthStateChange listener handles
-  // PASSWORD_RECOVERY; for email confirmation we route after getSession().
-  if (hash && hash.includes('access_token')) {
-    showSignedOutHome();
-    // Call getSession so Supabase parses the hash and fires onAuthStateChange
-    try { await db.auth.getSession(); } catch(e) {}
-    // Wait for PASSWORD_RECOVERY event to fire if applicable
-    await new Promise(r => setTimeout(r, 400));
-    // If recovery, the listener already showed new-password — just return
-    if (hash.includes('type=recovery')) {
-      history.replaceState(null, '', window.location.pathname + '?app=1');
-      return;
-    }
-    // Email confirmation: session should now exist
-    try {
-      const { data: { session } } = await db.auth.getSession();
-      if (session && session.user) {
-        history.replaceState(null, '', window.location.pathname + '?app=1');
-        routeAfterAuth(session.user);
-        return;
-      }
-    } catch(e) {}
-    history.replaceState(null, '', window.location.pathname + '?app=1');
-    showSignedOutHome();
+  if (params.get('from') === 'trip') {
+    window.location.replace('dashboard.html?app=1&page=overview');
     return;
   }
-
-  // Normal load — check for existing session
+  const isPasswordReset = params.get('reset') === '1' || (hash && hash.includes('type=recovery'));
+  if (hash && hash.includes('access_token')) {
+    try { await db.auth.getSession(); } catch(e) {}
+    // Check if this is a password recovery redirect
+    if (isPasswordReset) {
+      history.replaceState(null, '', window.location.pathname + '?app=1');
+      // Show new-password form
+      showSignedOutHome();
+      showTab('new-password');
+      return;
+    }
+    history.replaceState(null, '', window.location.pathname);
+  }
+  if (isPasswordReset) {
+    try { await db.auth.getSession(); } catch(e) {}
+    history.replaceState(null, '', window.location.pathname + '?app=1');
+    showSignedOutHome();
+    showTab('new-password');
+    return;
+  }
   let session = null;
   for (let attempt = 0; attempt < 4; attempt++) {
     try {
       const result = await db.auth.getSession();
-      session = result && result.data && result.data.session || null;
+      session = result?.data?.session || null;
     } catch(e) {}
-    if (session && session.user) break;
+    if (session?.user) break;
     await new Promise(resolve => setTimeout(resolve, 250));
   }
-
-  if (session && session.user) {
+  if (session?.user) {
+    // If session exists but it's a recovery session, show password form
+    const urlHash = window.location.hash || '';
     routeAfterAuth(session.user);
   } else {
     const cachedProfile = getCachedAppProfile();
