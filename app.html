@@ -661,6 +661,12 @@ function goDashboard(){
   navigateWithRavens('dashboard.html?app=1&page=overview');
 }
 function scanLogoAction(){
+  // If signed out, prompt login instead of scanning
+  var home = el('app-home');
+  if (home && home.classList.contains('signed-out')) {
+    showAuthPanel('login');
+    return;
+  }
   // Must stay synchronous — iOS blocks camera/file picker after any await
   var camera = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Camera;
   if (camera && camera.getPhoto) {
@@ -681,11 +687,11 @@ function scanLogoAction(){
     }).catch(function() {});
     return;
   }
-  // Web fallback — synchronous click, stays within user gesture
   var input = document.getElementById('app-camera-input');
   if (input) { input.value = ''; input.click(); return; }
   navigateWithFade('dashboard.html?app=1&page=create-bill&quickscan=1');
 }
+
 function handleCameraCapture(event){
   const file = event.target.files && event.target.files[0];
   if (!file) return;
