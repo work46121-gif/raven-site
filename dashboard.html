@@ -2131,7 +2131,10 @@ async function init() {
 }
 
 function getAppCachedDashboardUser() {
-  if (!RAVEN_APP_MODE) return null;
+  // Allow cache-based login in app mode — check both URL param and localStorage flag
+  // so returning from trip hub (which may not carry ?app=1) still works
+  const isAppMode = RAVEN_APP_MODE || localStorage.getItem('raven_native_app') === '1';
+  if (!isAppMode) return null;
   try {
     const local = JSON.parse(localStorage.getItem('raven_profile') || '{}');
     const email = String(local.email || '').trim();
