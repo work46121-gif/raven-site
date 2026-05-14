@@ -429,8 +429,7 @@ button,input,textarea{font:inherit}
           onclick="scanLogoAction()"
           oncontextmenu="return false"
           ontouchstart="this._tstart=Date.now()"
-          ontouchend="if(Date.now()-this._tstart<400){scanLogoAction();}"
-          >
+          ontouchend="if(Date.now()-this._tstart<400){scanLogoAction();}">
           <span class="scan-mark" aria-hidden="true"><span>R</span></span>
         </button>
       </div>
@@ -489,11 +488,8 @@ let pendingConfirmEmail = '';
 
 function el(id){return document.getElementById(id)}
 function getAppAuthRedirectTo(){
-  try {
-    const origin = window.location.origin || '';
-    if (/^https?:\/\//i.test(origin)) return origin + window.location.pathname + '?app=1';
-  } catch(e) {}
-  // Capacitor uses a capacitor:// or file:// origin — fall back to the web URL for OAuth redirects only
+  // In Capacitor (iOS/Android), window.location.origin is capacitor://localhost
+  // Always use the hardcoded ravensplit.com URL so Supabase email links work correctly.
   return 'https://ravensplit.com/app.html?app=1';
 }
 // Listen for PASSWORD_RECOVERY event from Supabase (email link click)
@@ -797,31 +793,34 @@ async function handleSignup(event){
     return;
   }
   pendingConfirmEmail = email;
-  try {
-    await db.auth.resend({
-      type: 'signup',
-      email,
-      options: { emailRedirectTo: getAppAuthRedirectTo() }
-    });
-  } catch(e) {}
   showTab('login');
   el('login-email').value = email;
   toggleResendConfirm(true);
-  showMessage('success','Account created. Check your email to confirm, then sign in here.');
+  showMessage('success','Account created! Check your email (and spam folder) for a confirmation link, then sign in here.');
 }
 async function handleReset(event){
   event.preventDefault();
   clearMessage();
   const email = el('reset-email').value.trim();
+  if (!email) return showMessage('error', 'Please enter your email address.');
   const btn = el('reset-button');
   btn.disabled = true;
   btn.textContent = 'Sending...';
   const redirectTo = 'https://ravensplit.com/app.html?app=1&reset=1';
-  const { error } = await db.auth.resetPasswordForEmail(email, { redirectTo });
-  btn.disabled = false;
-  btn.textContent = 'Send reset link';
-  if (error) return showMessage('error', error.message);
-  showMessage('success','Reset link sent. Check your inbox.');
+  try {
+    const { error } = await db.auth.resetPasswordForEmail(email, { redirectTo });
+    btn.disabled = false;
+    btn.textContent = 'Send reset link';
+    if (error) {
+      showMessage('error', error.message || 'Could not send reset email. Please try again.');
+      return;
+    }
+    showMessage('success', 'Reset link sent! Check your inbox and spam folder.');
+  } catch(e) {
+    btn.disabled = false;
+    btn.textContent = 'Send reset link';
+    showMessage('error', 'Something went wrong. Please try again.');
+  }
 }
 async function handleSetNewPassword(event){
   event.preventDefault();
@@ -836,10 +835,11 @@ async function handleSetNewPassword(event){
   btn.textContent = 'Set New Password';
   if (error) return showMessage('error', error.message);
   showMessage('success','Password updated! Signing you in...');
-  setTimeout(() => {
-    const { data: { session } } = db.auth.getSession().then(({ data: { session } }) => {
+  setTimeout(async () => {
+    try {
+      const { data: { session } } = await db.auth.getSession();
       if (session?.user) routeAfterAuth(session.user);
-    });
+    } catch(e) {}
   }, 1200);
 }
 // Double-tap the top-left logo to go to Settings (iOS-friendly — dblclick unreliable on mobile)
