@@ -186,7 +186,7 @@ button,input,textarea{font:inherit}
 .scan-orbit::before{content:"";position:absolute;inset:0;border-radius:50%;border:1px dashed rgba(192,132,252,.28);animation:spin 18s linear infinite}
 .scan-orbit::after{content:"";position:absolute;inset:-14%;border-radius:50%;border:1px solid rgba(48,209,88,.07);animation:spin 28s linear infinite reverse}
 .scan-logo-button{width:58%;aspect-ratio:1;border:0;border-radius:28%;background:transparent;
-  display:grid;place-items:center;padding:0;position:relative;cursor:pointer;
+  display:grid;place-items:center;padding:0;position:relative;cursor:pointer;z-index:10;
   touch-action:manipulation;-webkit-tap-highlight-color:transparent;
   user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 .scan-mark{width:100%;height:100%;border-radius:28%;
@@ -428,9 +428,7 @@ button,input,textarea{font:inherit}
       <div class="scan-orbit">
         <button class="scan-logo-button" type="button" aria-label="Scan receipt"
           onclick="scanLogoAction()"
-          oncontextmenu="return false"
-          ontouchstart="this._tstart=Date.now()"
-          ontouchend="if(Date.now()-this._tstart<400){scanLogoAction();}">
+          oncontextmenu="return false">
           <span class="scan-mark" aria-hidden="true"><span>R</span></span>
         </button>
       </div>
@@ -868,28 +866,19 @@ async function handleSetNewPassword(event){
     showMessage('error', 'Something went wrong. Please try again or request a new reset link.');
   }
 }
-// Double-tap the top-left logo to go to Settings (iOS-friendly — dblclick unreliable on mobile)
-(function(){
-  document.addEventListener('DOMContentLoaded', function(){
-    const logoBtn = document.getElementById('home-logo-btn');
-    if (!logoBtn) return;
-    logoBtn.addEventListener('click', function(e){
+// iOS tap reliability: prevent long-press callout and fire scan on touchend
+document.addEventListener('DOMContentLoaded', function(){
+  document.querySelectorAll('.scan-logo-button, #home-logo-btn').forEach(function(btn){
+    btn.addEventListener('touchstart', function(e){
+      e.stopPropagation();
+    }, { passive: true });
+    btn.addEventListener('touchend', function(e){
       e.preventDefault();
-      goScanPage();
-    });
-    logoBtn.addEventListener('touchend', function(e){
-      e.preventDefault();
-      goScanPage();
+      e.stopPropagation();
+      scanLogoAction();
     }, { passive: false });
-    const scanBtn = document.querySelector('.scan-logo-button');
-    if (scanBtn) {
-      scanBtn.addEventListener('pointerup', function(e){
-        e.preventDefault();
-        goScanPage();
-      });
-    }
   });
-})();
+});
 
 (async function init(){
   localStorage.setItem('raven_native_app','1');
@@ -903,6 +892,7 @@ async function handleSetNewPassword(event){
   const params = new URLSearchParams(window.location.search);
 
   if (params.get('from') === 'trip') {
+    localStorage.setItem('raven_native_app', '1');
     window.location.replace('dashboard.html?app=1&page=overview');
     return;
   }
