@@ -397,12 +397,13 @@ button,input,textarea{font:inherit}
       <button class="primary-btn" id="reset-button" type="submit">Send reset link</button>
       <button class="secondary-btn" type="button" onclick="showTab('login')">Back to sign in</button>
     </form>
-    <form class="form" id="new-password-form" onsubmit="handleSetNewPassword(event)" style="display:none">
+    <form class="form" id="new-password-form" onsubmit="handleSetNewPassword(event)">
+      <p style="font-size:13px;color:var(--muted);margin:0 0 4px;line-height:1.5">Choose a new password for your account.</p>
       <label class="field">
         <span class="label">New Password</span>
-        <input class="input" id="new-password-input" type="password" autocomplete="new-password" placeholder="New password (min 6 chars)" required>
+        <input class="input" id="new-password-input" type="password" autocomplete="new-password" placeholder="At least 6 characters" required>
       </label>
-      <button class="primary-btn" id="new-password-btn" type="submit">Set New Password</button>
+      <button class="primary-btn" id="new-password-btn" type="submit">Set New Password →</button>
     </form>
   </main>
   </div><!-- end app-shell-inner -->
@@ -492,11 +493,21 @@ function getAppAuthRedirectTo(){
   // Always use the hardcoded ravensplit.com URL so Supabase email links work correctly.
   return 'https://ravensplit.com/app.html?app=1';
 }
+// Track if we're in password recovery mode so init() doesn't route away
+let isRecoveryMode = false;
+
 // Listen for PASSWORD_RECOVERY event from Supabase (email link click)
 db.auth.onAuthStateChange((event, session) => {
   if (event === 'PASSWORD_RECOVERY') {
+    isRecoveryMode = true;
+    // Ensure the app-home is visible and the new-password form is shown
     showSignedOutHome();
     showTab('new-password');
+    // Make sure the auth card is in the dock and visible
+    const dock = el('app-auth-dock');
+    const card = document.querySelector('.auth-card');
+    if (dock && card && card.parentElement !== dock) dock.appendChild(card);
+    el('app-home').classList.add('auth-visible');
   }
 });
 function showLoading(show){el('loading').classList.toggle('show', !!show)}
@@ -830,17 +841,32 @@ async function handleSetNewPassword(event){
   const btn = el('new-password-btn');
   btn.disabled = true;
   btn.textContent = 'Saving...';
-  const { error } = await db.auth.updateUser({ password: pw });
-  btn.disabled = false;
-  btn.textContent = 'Set New Password';
-  if (error) return showMessage('error', error.message);
-  showMessage('success','Password updated! Signing you in...');
-  setTimeout(async () => {
-    try {
-      const { data: { session } } = await db.auth.getSession();
-      if (session?.user) routeAfterAuth(session.user);
-    } catch(e) {}
-  }, 1200);
+  try {
+    const { error } = await db.auth.updateUser({ password: pw });
+    btn.disabled = false;
+    btn.textContent = 'Set New Password';
+    if (error) return showMessage('error', error.message || 'Could not update password. The link may have expired.');
+    isRecoveryMode = false;
+    showMessage('success', 'Password updated! Signing you in...');
+    setTimeout(async () => {
+      try {
+        const { data: { session } } = await db.auth.getSession();
+        if (session?.user) {
+          routeAfterAuth(session.user);
+        } else {
+          showTab('login');
+          showMessage('success', 'Password updated! Please sign in with your new password.');
+        }
+      } catch(e) {
+        showTab('login');
+        showMessage('success', 'Password updated! Please sign in.');
+      }
+    }, 1200);
+  } catch(e) {
+    btn.disabled = false;
+    btn.textContent = 'Set New Password';
+    showMessage('error', 'Something went wrong. Please try again or request a new reset link.');
+  }
 }
 // Double-tap the top-left logo to go to Settings (iOS-friendly — dblclick unreliable on mobile)
 (function(){
@@ -867,7 +893,6 @@ async function handleSetNewPassword(event){
 
 (async function init(){
   localStorage.setItem('raven_native_app','1');
-  // Fade-in on initial render
   requestAnimationFrame(() => document.body.classList.add('ready'));
   const remembered = localStorage.getItem('raven_remembered_email') || '';
   if (remembered) {
@@ -876,30 +901,40 @@ async function handleSetNewPassword(event){
   }
   const hash = window.location.hash;
   const params = new URLSearchParams(window.location.search);
+
   if (params.get('from') === 'trip') {
     window.location.replace('dashboard.html?app=1&page=overview');
     return;
   }
-  const isPasswordReset = params.get('reset') === '1' || (hash && hash.includes('type=recovery'));
-  if (hash && hash.includes('access_token')) {
+
+  // --- Password reset link handling ---
+  // Supabase puts #access_token=...&type=recovery in the URL when the user
+  // clicks the reset link in their email.
+  const hashParams = new URLSearchParams((hash || '').replace(/^#/, ''));
+  const isRecoveryHash = hashParams.get('type') === 'recovery' && hashParams.get('access_token');
+  const isRecoveryParam = params.get('reset') === '1';
+
+  if (isRecoveryHash || isRecoveryParam) {
+    isRecoveryMode = true;
+    // Let Supabase parse the hash and establish the recovery session
     try { await db.auth.getSession(); } catch(e) {}
-    // Check if this is a password recovery redirect
-    if (isPasswordReset) {
-      history.replaceState(null, '', window.location.pathname + '?app=1');
-      // Show new-password form
-      showSignedOutHome();
-      showTab('new-password');
-      return;
-    }
-    history.replaceState(null, '', window.location.pathname);
-  }
-  if (isPasswordReset) {
-    try { await db.auth.getSession(); } catch(e) {}
-    history.replaceState(null, '', window.location.pathname + '?app=1');
+    // Clean the URL so a refresh doesn't re-trigger this
+    history.replaceState(null, '', window.location.pathname + '?app=1&reset=1');
     showSignedOutHome();
     showTab('new-password');
+    const dock = el('app-auth-dock');
+    const card = document.querySelector('.auth-card');
+    if (dock && card && card.parentElement !== dock) dock.appendChild(card);
+    el('app-home').classList.add('auth-visible');
     return;
   }
+
+  // --- Give onAuthStateChange a moment to fire for recovery links ---
+  // (sometimes the hash is parsed async by Supabase before init runs)
+  await new Promise(resolve => setTimeout(resolve, 120));
+  if (isRecoveryMode) return; // onAuthStateChange already handled it
+
+  // --- Normal session restore ---
   let session = null;
   for (let attempt = 0; attempt < 4; attempt++) {
     try {
@@ -909,9 +944,11 @@ async function handleSetNewPassword(event){
     if (session?.user) break;
     await new Promise(resolve => setTimeout(resolve, 250));
   }
+
+  // Don't route away if recovery mode kicked in during the session loop
+  if (isRecoveryMode) return;
+
   if (session?.user) {
-    // If session exists but it's a recovery session, show password form
-    const urlHash = window.location.hash || '';
     routeAfterAuth(session.user);
   } else {
     const cachedProfile = getCachedAppProfile();
