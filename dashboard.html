@@ -1887,7 +1887,10 @@ try {
 
 const BACKEND = 'https://raven-backend-production-fb1f.up.railway.app';
 const FRONTEND = 'https://ravensplit.com';
-const RAVEN_APP_MODE = new URLSearchParams(window.location.search).get('app') === '1' || localStorage.getItem('raven_native_app') === '1';
+// Persist app mode flag immediately so returning from trip hub is always detected
+const _appParam = new URLSearchParams(window.location.search).get('app') === '1';
+if (_appParam) localStorage.setItem('raven_native_app', '1');
+const RAVEN_APP_MODE = _appParam || localStorage.getItem('raven_native_app') === '1';
 const APP_PENDING_TRIP_KEY = 'raven_app_pending_trip_open';
 
 function setAppPendingTripOpen(payload) {
@@ -2098,11 +2101,24 @@ async function init() {
       showPasswordResetForm();
       return;
     }
-    const { data: { session } } = await db.auth.getSession();
+    // In app mode, show cached dashboard immediately while session is verified
+    // This prevents the logged-out flash when returning from trip hub
     const cachedUser = getAppCachedDashboardUser();
-    if (session?.user) { currentUser = session.user; await checkOnboardingAndShow(currentUser.id); }
-    else if (cachedUser) { currentUser = cachedUser; await checkOnboardingAndShow(currentUser.id); }
-    else { showAuth(); }
+    if (RAVEN_APP_MODE && cachedUser) {
+      currentUser = cachedUser;
+      showDashboard(); // show instantly from cache
+    }
+    const { data: { session } } = await db.auth.getSession();
+    if (session?.user) {
+      currentUser = session.user;
+      if (!RAVEN_APP_MODE || !cachedUser) await checkOnboardingAndShow(currentUser.id);
+      // In app mode we already showed dashboard — just refresh data silently
+      else { try { loadAllData(); } catch(e) {} }
+    } else if (!RAVEN_APP_MODE && !cachedUser) {
+      showAuth();
+    } else if (!cachedUser) {
+      showAuth();
+    }
     db.auth.onAuthStateChange(async (event, session) => {
       try {
         if (event === 'PASSWORD_RECOVERY') {
