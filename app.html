@@ -703,41 +703,43 @@ function goDashboard(){
   localStorage.setItem('raven_native_app','1');
   navigateWithRavens('dashboard.html?app=1&page=overview');
 }
-async function scanLogoAction(){
-  // Try native Capacitor Camera first (works on iOS with direct user gesture)
+function scanLogoAction(){
+  // IMPORTANT: must NOT be async — iOS requires a synchronous user gesture
+  // to open the camera or file picker. Any await before .click() silently fails.
+
+  // First try Capacitor native camera (non-blocking trigger)
   const camera = window.Capacitor?.Plugins?.Camera;
   if (camera?.getPhoto) {
-    try {
-      const photo = await camera.getPhoto({
-        quality: 85,
-        allowEditing: false,
-        resultType: 'dataUrl',
-        source: 'PROMPT',
-        correctOrientation: true
-      });
-      if (photo?.dataUrl) {
-        try {
-          sessionStorage.setItem('raven_scan_image', photo.dataUrl);
-          sessionStorage.setItem('raven_scan_type', photo.format === 'png' ? 'image/png' : 'image/jpeg');
-        } catch(e) {}
-        localStorage.setItem('raven_native_app', '1');
-        navigateWithFade('dashboard.html?app=1&page=create-bill&quickscan=1');
-        return;
-      }
-    } catch(e) {
-      if (e && /cancel/i.test(String(e.message || e))) return; // user cancelled
-      // Fall through to web file input
-    }
+    // Call without await — handle result via .then()
+    camera.getPhoto({
+      quality: 85,
+      allowEditing: false,
+      resultType: 'dataUrl',
+      source: 'PROMPT',
+      correctOrientation: true
+    }).then(function(photo) {
+      if (!photo || !photo.dataUrl) return;
+      try {
+        sessionStorage.setItem('raven_scan_image', photo.dataUrl);
+        sessionStorage.setItem('raven_scan_type', photo.format === 'png' ? 'image/png' : 'image/jpeg');
+      } catch(e) {}
+      localStorage.setItem('raven_native_app', '1');
+      navigateWithFade('dashboard.html?app=1&page=create-bill&quickscan=1');
+    }).catch(function(e) {
+      // User cancelled — do nothing
+    });
+    return;
   }
-  // Web fallback: trigger the hidden file input directly from this gesture
-  const input = document.getElementById('app-camera-input');
+
+  // Web / file fallback — synchronously click the hidden file input
+  var input = document.getElementById('app-camera-input');
   if (input) {
     input.value = '';
     input.click();
     return;
   }
-  // Last resort: just go to dashboard scan page
-  goScanPage();
+  // Last resort
+  navigateWithFade('dashboard.html?app=1&page=create-bill&quickscan=1');
 }
 function handleCameraCapture(event){
   const file = event.target.files && event.target.files[0];
