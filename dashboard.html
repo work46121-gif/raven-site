@@ -2101,24 +2101,11 @@ async function init() {
       showPasswordResetForm();
       return;
     }
-    // In app mode, show cached dashboard immediately while session is verified
-    // This prevents the logged-out flash when returning from trip hub
     const cachedUser = getAppCachedDashboardUser();
-    if (RAVEN_APP_MODE && cachedUser) {
-      currentUser = cachedUser;
-      showDashboard(); // show instantly from cache
-    }
     const { data: { session } } = await db.auth.getSession();
-    if (session?.user) {
-      currentUser = session.user;
-      if (!RAVEN_APP_MODE || !cachedUser) await checkOnboardingAndShow(currentUser.id);
-      // In app mode we already showed dashboard — just refresh data silently
-      else { try { loadAllData(); } catch(e) {} }
-    } else if (!RAVEN_APP_MODE && !cachedUser) {
-      showAuth();
-    } else if (!cachedUser) {
-      showAuth();
-    }
+    if (session?.user) { currentUser = session.user; await checkOnboardingAndShow(currentUser.id); }
+    else if (cachedUser) { currentUser = cachedUser; await checkOnboardingAndShow(currentUser.id); }
+    else { showAuth(); }
     db.auth.onAuthStateChange(async (event, session) => {
       try {
         if (event === 'PASSWORD_RECOVERY') {
