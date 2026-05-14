@@ -1887,10 +1887,8 @@ try {
 
 const BACKEND = 'https://raven-backend-production-fb1f.up.railway.app';
 const FRONTEND = 'https://ravensplit.com';
-// Persist app mode flag immediately so returning from trip hub is always detected
-const _appParam = new URLSearchParams(window.location.search).get('app') === '1';
-if (_appParam) localStorage.setItem('raven_native_app', '1');
-const RAVEN_APP_MODE = _appParam || localStorage.getItem('raven_native_app') === '1';
+const RAVEN_APP_MODE = new URLSearchParams(window.location.search).get('app') === '1' || localStorage.getItem('raven_native_app') === '1';
+if (RAVEN_APP_MODE) localStorage.setItem('raven_native_app', '1');
 const APP_PENDING_TRIP_KEY = 'raven_app_pending_trip_open';
 
 function setAppPendingTripOpen(payload) {
@@ -2101,8 +2099,8 @@ async function init() {
       showPasswordResetForm();
       return;
     }
-    const cachedUser = getAppCachedDashboardUser();
     const { data: { session } } = await db.auth.getSession();
+    const cachedUser = getAppCachedDashboardUser();
     if (session?.user) { currentUser = session.user; await checkOnboardingAndShow(currentUser.id); }
     else if (cachedUser) { currentUser = cachedUser; await checkOnboardingAndShow(currentUser.id); }
     else { showAuth(); }
@@ -3017,10 +3015,9 @@ async function showDashboard() {
   loadAllData();
   if (RAVEN_APP_MODE) {
     const appPage = new URLSearchParams(window.location.search).get('page') || 'overview';
-    // Always call showPage so nav state, scroll, and data are all reset correctly
-    setTimeout(() => {
-      showPage(appPage);
-      if (true) {
+    if (appPage) {
+      setTimeout(() => {
+        showPage(appPage);
         const quickscan = new URLSearchParams(window.location.search).get('quickscan') === '1';
         if (appPage === 'create-bill' && quickscan) {
           try { cbGoToStep(1); } catch(e) {}
