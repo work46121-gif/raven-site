@@ -2099,11 +2099,22 @@ async function init() {
       showPasswordResetForm();
       return;
     }
-    const { data: { session } } = await db.auth.getSession();
     const cachedUser = getAppCachedDashboardUser();
-    if (session?.user) { currentUser = session.user; await checkOnboardingAndShow(currentUser.id); }
-    else if (cachedUser) { currentUser = cachedUser; await checkOnboardingAndShow(currentUser.id); }
-    else { showAuth(); }
+    // In app mode with cached profile: show dashboard immediately, verify session in background
+    if (cachedUser) {
+      currentUser = cachedUser;
+      await checkOnboardingAndShow(currentUser.id);
+      // Silently refresh session in background — don't block UI on it
+      db.auth.getSession().then(function(result) {
+        if (result && result.data && result.data.session && result.data.session.user) {
+          currentUser = result.data.session.user;
+        }
+      }).catch(function() {});
+    } else {
+      const { data: { session } } = await db.auth.getSession();
+      if (session?.user) { currentUser = session.user; await checkOnboardingAndShow(currentUser.id); }
+      else { showAuth(); }
+    }
     db.auth.onAuthStateChange(async (event, session) => {
       try {
         if (event === 'PASSWORD_RECOVERY') {
