@@ -1889,6 +1889,7 @@ const BACKEND = 'https://raven-backend-production-fb1f.up.railway.app';
 const FRONTEND = 'https://ravensplit.com';
 const RAVEN_APP_MODE = new URLSearchParams(window.location.search).get('app') === '1';
 const APP_PENDING_TRIP_KEY = 'raven_app_pending_trip_open';
+const APP_DASHBOARD_EMAIL_KEY = 'raven_app_dashboard_email';
 
 function setAppPendingTripOpen(payload) {
   try { sessionStorage.setItem(APP_PENDING_TRIP_KEY, JSON.stringify(payload || {})); } catch(e) {}
@@ -1916,22 +1917,35 @@ let ravenPasswordRecoveryMode = false;
 
 function getDashboardUserEmail() {
   const direct = String(currentUser?.email || '').trim();
-  if (isDashboardAccountEmail(direct)) return direct;
+  if (isDashboardAccountEmail(direct)) return rememberDashboardAccountEmail(direct);
   try {
+    const params = new URLSearchParams(window.location.search);
+    const urlEmail = String(params.get('acct') || params.get('email') || '').trim();
+    if (isDashboardAccountEmail(urlEmail)) return rememberDashboardAccountEmail(urlEmail);
     const local = JSON.parse(localStorage.getItem('raven_profile') || '{}');
     const localEmail = String(local.email || '').trim();
-    if (isDashboardAccountEmail(localEmail)) return localEmail;
+    if (isDashboardAccountEmail(localEmail)) return rememberDashboardAccountEmail(localEmail);
+    const appEmail = String(localStorage.getItem(APP_DASHBOARD_EMAIL_KEY) || '').trim();
+    if (isDashboardAccountEmail(appEmail)) return rememberDashboardAccountEmail(appEmail);
     const remembered = String(localStorage.getItem('raven_remembered_email') || '').trim();
-    if (isDashboardAccountEmail(remembered)) return remembered;
+    if (isDashboardAccountEmail(remembered)) return rememberDashboardAccountEmail(remembered);
     return '';
   } catch(e) {
-    return isDashboardAccountEmail(direct) ? direct : '';
+    return isDashboardAccountEmail(direct) ? rememberDashboardAccountEmail(direct) : '';
   }
 }
 
 function isDashboardAccountEmail(email) {
   const value = String(email || '').trim().toLowerCase();
   return !!value && value.includes('@') && !value.endsWith('@raven.app');
+}
+
+function rememberDashboardAccountEmail(email) {
+  const value = String(email || '').trim();
+  if (isDashboardAccountEmail(value)) {
+    try { localStorage.setItem(APP_DASHBOARD_EMAIL_KEY, value); } catch(e) {}
+  }
+  return value;
 }
 
 async function hydrateAppDashboardIdentity() {
@@ -1944,6 +1958,13 @@ async function hydrateAppDashboardIdentity() {
   let local = {};
   try { local = JSON.parse(localStorage.getItem('raven_profile') || '{}'); } catch(e) { local = {}; }
   const nextLocal = { ...local, onboarding_complete: true };
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const urlEmail = String(params.get('acct') || params.get('email') || '').trim();
+    const urlName = String(params.get('name') || '').trim();
+    if (isDashboardAccountEmail(urlEmail)) nextLocal.email = rememberDashboardAccountEmail(urlEmail);
+    if (urlName && !nextLocal.first_name) nextLocal.first_name = urlName;
+  } catch(e) {}
   if (currentUser?.id && currentUser.id !== 'raven-app-user') nextLocal.user_id = currentUser.id;
   if (isDashboardAccountEmail(currentUser?.email)) nextLocal.email = currentUser.email;
 
@@ -1964,12 +1985,19 @@ async function hydrateAppDashboardIdentity() {
   }
 
   if (!isDashboardAccountEmail(nextLocal.email)) {
+    const appEmail = String(localStorage.getItem(APP_DASHBOARD_EMAIL_KEY) || '').trim();
+    if (isDashboardAccountEmail(appEmail)) nextLocal.email = appEmail;
+  }
+  if (!isDashboardAccountEmail(nextLocal.email)) {
     const remembered = String(localStorage.getItem('raven_remembered_email') || '').trim();
     if (isDashboardAccountEmail(remembered)) nextLocal.email = remembered;
   }
 
   try { localStorage.setItem('raven_profile', JSON.stringify(nextLocal)); } catch(e) {}
-  if (isDashboardAccountEmail(nextLocal.email) && currentUser) currentUser.email = nextLocal.email;
+  if (isDashboardAccountEmail(nextLocal.email)) {
+    rememberDashboardAccountEmail(nextLocal.email);
+    if (currentUser) currentUser.email = nextLocal.email;
+  }
 }
 
 function renderOverviewEmptyState(title = 'No active bills', body = 'Create a bill or open Trips to keep going.') {
@@ -2331,6 +2359,7 @@ async function handleLogin() {
     } else {
       localStorage.removeItem('raven_remembered_email');
     }
+    rememberDashboardAccountEmail(email);
     currentUser = data.user; await checkOnboardingAndShow(data.user.id);
   }
 }
@@ -3004,6 +3033,8 @@ async function viewBillPage(billId) {
     if (billUrlMap[billId]) {
       const url = new URL(billUrlMap[billId], window.location.href);
       url.searchParams.set('app', '1');
+      const email = getDashboardUserEmail();
+      if (email) url.searchParams.set('acct', email);
       window.location.href = url.toString();
       return;
     }
@@ -3011,6 +3042,8 @@ async function viewBillPage(billId) {
     const url = new URL(FRONTEND + '/bill/' + billId);
     if (bill?.share_token) url.searchParams.set('t', bill.share_token);
     url.searchParams.set('app', '1');
+    const email = getDashboardUserEmail();
+    if (email) url.searchParams.set('acct', email);
     try {
       const profile = JSON.parse(localStorage.getItem('raven_profile') || '{}');
       if (profile.first_name) url.searchParams.set('name', profile.first_name);
@@ -3530,6 +3563,8 @@ function renderBillCard(b) {
   const billUrlObj = new URL(FRONTEND + '/bill/' + b.id);
   if (b.share_token) billUrlObj.searchParams.set('t', b.share_token);
   if (RAVEN_APP_MODE) billUrlObj.searchParams.set('app', '1');
+  const dashboardEmail = getDashboardUserEmail();
+  if (RAVEN_APP_MODE && dashboardEmail) billUrlObj.searchParams.set('acct', dashboardEmail);
   try {
     const profile = JSON.parse(localStorage.getItem('raven_profile') || '{}');
     if (profile.first_name) billUrlObj.searchParams.set('name', profile.first_name);
@@ -7269,8 +7304,12 @@ function getTripOpenUrl(tripId) {
   try {
     const profile = JSON.parse(localStorage.getItem('raven_profile') || '{}');
     const name = (profile.first_name || '').trim();
+    const email = getDashboardUserEmail();
     const appSuffix = (typeof RAVEN_APP_MODE !== 'undefined' && RAVEN_APP_MODE) ? '&app=1' : '';
-    return (name ? base + '&name=' + encodeURIComponent(name) : base) + appSuffix;
+    return base
+      + (name ? '&name=' + encodeURIComponent(name) : '')
+      + (email && RAVEN_APP_MODE ? '&acct=' + encodeURIComponent(email) : '')
+      + appSuffix;
   } catch(e) {
     return base;
   }
