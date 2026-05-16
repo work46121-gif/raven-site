@@ -1914,6 +1914,36 @@ let currentBillId = null;
 let people = [];
 let ravenPasswordRecoveryMode = false;
 
+function getDashboardUserEmail() {
+  const direct = String(currentUser?.email || '').trim();
+  if (direct && !direct.endsWith('@raven.app')) return direct;
+  try {
+    const local = JSON.parse(localStorage.getItem('raven_profile') || '{}');
+    return String(local.email || direct || '').trim();
+  } catch(e) {
+    return direct;
+  }
+}
+
+function renderOverviewEmptyState(title = 'No active bills', body = 'Create a bill or open Trips to keep going.') {
+  const statActive = document.getElementById('stat-active');
+  const statOwed = document.getElementById('stat-owed');
+  const statCollected = document.getElementById('stat-collected');
+  const statCollectedEmpty = document.getElementById('stat-collected-empty');
+  const statSettled = document.getElementById('stat-settled');
+  const activeCount = document.getElementById('active-count');
+  const overviewBills = document.getElementById('overview-bills');
+  if (statActive) statActive.textContent = '0';
+  if (statOwed) { statOwed.textContent = '-'; statOwed.style.color = 'var(--muted)'; }
+  if (statCollected) statCollected.style.display = 'none';
+  if (statCollectedEmpty) { statCollectedEmpty.style.display = ''; statCollectedEmpty.textContent = '-'; }
+  if (statSettled) statSettled.textContent = '0';
+  if (activeCount) activeCount.textContent = '0';
+  if (overviewBills) {
+    overviewBills.innerHTML = '<div class="empty-state"><span class="empty-icon empty-icon-svg"><svg class="raven-icon empty"><use href="#icon-overview"></use></svg></span><div class="empty-title">' + title + '</div><div class="empty-sub">' + body + '</div></div>';
+  }
+}
+
 // ── JOIN TRIP STATE ──────────────────────────────────────────────────────────
 // Handle Supabase password reset redirect — fires when user clicks the reset link in email
 // Supabase sets the session automatically via the URL hash fragment
@@ -2943,7 +2973,12 @@ async function showDashboard() {
   document.getElementById('dashboard-screen').style.display = 'block';
   if (RAVEN_APP_MODE) {
     localStorage.setItem('raven_native_app','1');
-    try { document.body.classList.add('app-mode'); } catch(e) {}
+    try {
+      document.body.classList.add('app-mode', 'ready');
+      showPage('overview');
+      setMobNav('mob-overview');
+      renderOverviewEmptyState('Loading dashboard...', 'Your Raven activity will appear here.');
+    } catch(e) {}
     document.querySelectorAll('a[href="index.html"], a[href="app.html"]').forEach(a => {
       a.setAttribute('href', 'dashboard.html?app=1');
       a.addEventListener('click', function(e) {
@@ -2963,7 +2998,7 @@ async function showDashboard() {
     if (mobCreateLabel) mobCreateLabel.textContent = 'Scan';
   }
   window.scrollTo(0,0);
-  const fallbackEmail = String(currentUser?.email || '');
+  const fallbackEmail = getDashboardUserEmail();
   const fallbackInitial = (fallbackEmail || currentUser?.id || 'R').charAt(0).toUpperCase();
   document.getElementById('sidebar-avatar').textContent = fallbackInitial;
   const mobAvatar = document.getElementById('mob-user-avatar');
@@ -3227,12 +3262,17 @@ function showPage(page) {
 }
 
 async function loadAllData() {
-  loadOverview().catch(e=>console.warn(e));
+  loadOverview().catch(e=>{ console.warn(e); renderOverviewEmptyState(); });
   loadActiveBills().catch(e=>console.warn(e));
 }
 
 async function loadOverview() {
-  const [bR,pR]=await Promise.all([db.from('bills').select('*,participants(*)').eq('creator_phone',currentUser.email).neq('status','deleted').order('created_at',{ascending:false}),db.from('participants').select('bill_id').eq('phone',currentUser.email)]);
+  const userEmail = getDashboardUserEmail();
+  if (!userEmail) {
+    renderOverviewEmptyState();
+    return;
+  }
+  const [bR,pR]=await Promise.all([db.from('bills').select('*,participants(*)').eq('creator_phone',userEmail).neq('status','deleted').order('created_at',{ascending:false}),db.from('participants').select('bill_id').eq('phone',userEmail)]);
   const{data:myBills}=bR;const{data:partRows}=pR;
   // Fetch participant bills (where I'm listed but not creator)
   const partBillIds = (partRows || []).map(r => r.bill_id).filter(id => !(myBills || []).find(b => b.id === id));
@@ -3266,15 +3306,15 @@ async function loadOverview() {
   // Only count active bills for owed/collectible stats
   let totalOwed = 0, totalCollectible = 0;
   active.forEach(b => {
-    const isCreator = b.creator_phone === currentUser.email;
+    const isCreator = b.creator_phone === userEmail;
     b.participants?.forEach(p => {
       // TOTAL OWED BY YOU: only rows where you are the participant and you haven't paid yet
-      if (!p.paid && p.phone === currentUser.email) {
+      if (!p.paid && p.phone === userEmail) {
         totalOwed += parseFloat(p.amount || 0);
       }
       // YOU'RE OWED: only bills you created, and only what other people still owe you
       // Exclude the payer/creator row itself (amount=0 when they paid the bill)
-      if (isCreator && !p.paid && p.phone !== currentUser.email && parseFloat(p.amount || 0) > 0) {
+      if (isCreator && !p.paid && p.phone !== userEmail && parseFloat(p.amount || 0) > 0) {
         totalCollectible += parseFloat(p.amount || 0);
       }
     });
@@ -3331,9 +3371,15 @@ function wireBillCardActions(container) {
 }
 
 async function loadActiveBills() {
+  const userEmail = getDashboardUserEmail();
+  if (!userEmail) {
+    const container = document.getElementById('active-bills-list');
+    if (container) container.innerHTML = '<div class="empty-state"><span class="empty-icon empty-icon-svg"><svg class="raven-icon empty"><use href="#icon-active-bills"></use></svg></span><div class="empty-title">No active bills</div><div class="empty-sub">Create a bill to start splitting</div></div>';
+    return;
+  }
   const [{ data: myBills }, { data: partRows }] = await Promise.all([
-    db.from('bills').select('*, participants(*)').eq('creator_phone', currentUser.email).eq('status', 'active').order('created_at', { ascending: false }),
-    db.from('participants').select('bill_id').eq('phone', currentUser.email)
+    db.from('bills').select('*, participants(*)').eq('creator_phone', userEmail).eq('status', 'active').order('created_at', { ascending: false }),
+    db.from('participants').select('bill_id').eq('phone', userEmail)
   ]);
   const partBillIds = (partRows || []).map(r => r.bill_id).filter(id => !(myBills || []).find(b => b.id === id));
   let partBills = [];
