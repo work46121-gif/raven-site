@@ -557,6 +557,22 @@ async function routeAfterAuth(user){
       showAppHome(profile);
       return;
     }
+    const cached = getCachedAppProfile();
+    if (cached || new URLSearchParams(window.location.search).get('app') === '1') {
+      localStorage.setItem('raven_profile', JSON.stringify({
+        ...(cached || {}),
+        user_id: cached?.user_id || user.id,
+        email: cached?.email || user.email || '',
+        first_name: cached?.first_name || profile?.first_name || '',
+        raven_id: cached?.raven_id || profile?.raven_id || profile?.username || '',
+        username: cached?.username || profile?.username || profile?.raven_id || '',
+        avatar_url: cached?.avatar_url || profile?.avatar_url || '',
+        onboarding_complete: true
+      }));
+      showLoading(false);
+      showAppHome(profile || cached || {});
+      return;
+    }
     window.location.href = 'onboarding.html';
   } catch(e) {
     showLoading(false);
@@ -635,7 +651,7 @@ function navigateWithFade(url){
 }
 function goScanPage(){
   localStorage.setItem('raven_native_app','1');
-  window.location.href = 'dashboard.html?app=1&page=create-bill';
+  window.location.assign('dashboard.html?app=1&page=create-bill');
 }
 function launchRavenFlight(){
   const layer = document.createElement('div');
@@ -839,6 +855,16 @@ async function handleSetNewPassword(event){
 // Double-tap the top-left logo to go to Settings (iOS-friendly — dblclick unreliable on mobile)
 (function(){
   document.addEventListener('DOMContentLoaded', function(){
+    function captureScanTap(e) {
+      const target = e.target && e.target.closest ? e.target.closest('#home-logo-btn,.scan-logo-button') : null;
+      if (!target) return;
+      e.preventDefault();
+      e.stopPropagation();
+      goScanPage();
+    }
+    document.addEventListener('click', captureScanTap, true);
+    document.addEventListener('touchend', captureScanTap, { capture: true, passive: false });
+    document.addEventListener('pointerup', captureScanTap, true);
     const logoBtn = document.getElementById('home-logo-btn');
     if (!logoBtn) return;
     logoBtn.addEventListener('click', function(e){
@@ -894,38 +920,23 @@ async function handleSetNewPassword(event){
     showTab('new-password');
     return;
   }
-
-  // ── FAST PATH: show app home immediately if we have a cached profile.
-  // This prevents the login screen from flashing when the user navigates
-  // back from dashboard.html. Session is then verified in the background;
-  // if genuinely expired we sign them out at that point.
-  const cachedProfile = getCachedAppProfile();
-  if (cachedProfile) {
-    showAppHome(cachedProfile);
-  }
-
   let session = null;
-  // Single fast attempt first; retry up to 3 more times only if needed
   for (let attempt = 0; attempt < 4; attempt++) {
     try {
       const result = await db.auth.getSession();
       session = result?.data?.session || null;
     } catch(e) {}
     if (session?.user) break;
-    if (attempt < 3) await new Promise(resolve => setTimeout(resolve, 250));
+    await new Promise(resolve => setTimeout(resolve, 250));
   }
-
   if (session?.user) {
-    // Session confirmed — refresh profile data in background (stays on app-home)
+    // If session exists but it's a recovery session, show password form
+    const urlHash = window.location.hash || '';
     routeAfterAuth(session.user);
-  } else if (!cachedProfile) {
-    // No session AND no cached profile → genuinely signed out
-    showSignedOutHome();
   } else {
-    // No valid session but had a cached profile — session expired.
-    // Clear stale cache and prompt sign-in.
-    localStorage.removeItem('raven_profile');
-    showSignedOutHome();
+    const cachedProfile = getCachedAppProfile();
+    if (cachedProfile) showAppHome(cachedProfile);
+    else showSignedOutHome();
   }
 })();
 </script>
