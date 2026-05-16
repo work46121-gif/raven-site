@@ -188,6 +188,7 @@ button,input,textarea{font:inherit}
 .scan-logo-button{width:58%;aspect-ratio:1;border:0;border-radius:28%;background:transparent;
   display:grid;place-items:center;padding:0;position:relative;cursor:pointer;
   touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+#home-logo-btn,.scan-logo-button{touch-action:none;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
 .scan-mark{width:100%;height:100%;border-radius:28%;
   background:linear-gradient(148deg,#1C1C2E,#08080E);
   border:1px solid rgba(255,255,255,.12);display:grid;place-items:center;position:relative;
@@ -544,6 +545,7 @@ async function routeAfterAuth(user){
   try {
     const { data: profile } = await db.from('profiles').select('onboarding_complete,first_name,raven_id,username,avatar_url').eq('id', user.id).maybeSingle();
     if (profile?.onboarding_complete) {
+      try { localStorage.setItem('raven_app_dashboard_email', user.email || ''); } catch(e) {}
       localStorage.setItem('raven_profile', JSON.stringify({
         user_id: user.id,
         email: user.email,
@@ -559,6 +561,7 @@ async function routeAfterAuth(user){
     }
     const cached = getCachedAppProfile();
     if (cached || new URLSearchParams(window.location.search).get('app') === '1') {
+      try { if (user.email) localStorage.setItem('raven_app_dashboard_email', user.email); } catch(e) {}
       localStorage.setItem('raven_profile', JSON.stringify({
         ...(cached || {}),
         user_id: cached?.user_id || user.id,
@@ -650,8 +653,14 @@ function navigateWithFade(url){
   setTimeout(() => { window.location.href = url; }, 160);
 }
 function goScanPage(){
+  if (goScanPage._navigating) return;
+  goScanPage._navigating = true;
   localStorage.setItem('raven_native_app','1');
-  window.location.assign('dashboard.html?app=1&page=create-bill');
+  const url = 'dashboard.html?app=1&page=create-bill';
+  window.location.href = url;
+  setTimeout(() => {
+    try { window.location.replace(url); } catch(e) {}
+  }, 120);
 }
 function launchRavenFlight(){
   const layer = document.createElement('div');
@@ -738,6 +747,7 @@ async function handleLogin(event){
   }
   if (el('remember-email').checked) localStorage.setItem('raven_remembered_email', email);
   else localStorage.removeItem('raven_remembered_email');
+  localStorage.setItem('raven_app_dashboard_email', email);
   if (data?.user) routeAfterAuth(data.user);
 }
 async function resendConfirmationEmail(){
@@ -860,8 +870,12 @@ async function handleSetNewPassword(event){
       if (!target) return;
       e.preventDefault();
       e.stopPropagation();
+      if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
       goScanPage();
     }
+    document.addEventListener('touchstart', captureScanTap, { capture: true, passive: false });
+    document.addEventListener('pointerdown', captureScanTap, true);
+    document.addEventListener('mousedown', captureScanTap, true);
     document.addEventListener('click', captureScanTap, true);
     document.addEventListener('touchend', captureScanTap, { capture: true, passive: false });
     document.addEventListener('pointerup', captureScanTap, true);
