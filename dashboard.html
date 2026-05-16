@@ -1887,7 +1887,7 @@ try {
 
 const BACKEND = 'https://raven-backend-production-fb1f.up.railway.app';
 const FRONTEND = 'https://ravensplit.com';
-const RAVEN_APP_MODE = new URLSearchParams(window.location.search).get('app') === '1' || localStorage.getItem('raven_native_app') === '1';
+const RAVEN_APP_MODE = new URLSearchParams(window.location.search).get('app') === '1';
 const APP_PENDING_TRIP_KEY = 'raven_app_pending_trip_open';
 
 function setAppPendingTripOpen(payload) {
@@ -2098,17 +2098,7 @@ async function init() {
       showPasswordResetForm();
       return;
     }
-    // Retry session lookup — after navigating back from an external domain (e.g. Railway trip/bill
-    // page), Supabase sometimes needs a moment to hydrate the token from localStorage.
-    let session = null;
-    for (let attempt = 0; attempt < 4; attempt++) {
-      try {
-        const result = await db.auth.getSession();
-        session = result?.data?.session || null;
-      } catch(e) {}
-      if (session?.user) break;
-      if (attempt < 3) await new Promise(r => setTimeout(r, 250));
-    }
+    const { data: { session } } = await db.auth.getSession();
     const cachedUser = getAppCachedDashboardUser();
     if (session?.user) { currentUser = session.user; await checkOnboardingAndShow(currentUser.id); }
     else if (cachedUser) { currentUser = cachedUser; await checkOnboardingAndShow(currentUser.id); }
