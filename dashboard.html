@@ -1916,13 +1916,60 @@ let ravenPasswordRecoveryMode = false;
 
 function getDashboardUserEmail() {
   const direct = String(currentUser?.email || '').trim();
-  if (direct && !direct.endsWith('@raven.app')) return direct;
+  if (isDashboardAccountEmail(direct)) return direct;
   try {
     const local = JSON.parse(localStorage.getItem('raven_profile') || '{}');
-    return String(local.email || direct || '').trim();
+    const localEmail = String(local.email || '').trim();
+    if (isDashboardAccountEmail(localEmail)) return localEmail;
+    const remembered = String(localStorage.getItem('raven_remembered_email') || '').trim();
+    if (isDashboardAccountEmail(remembered)) return remembered;
+    return '';
   } catch(e) {
-    return direct;
+    return isDashboardAccountEmail(direct) ? direct : '';
   }
+}
+
+function isDashboardAccountEmail(email) {
+  const value = String(email || '').trim().toLowerCase();
+  return !!value && value.includes('@') && !value.endsWith('@raven.app');
+}
+
+async function hydrateAppDashboardIdentity() {
+  if (!RAVEN_APP_MODE) return;
+  try {
+    const { data: { session } } = await db.auth.getSession();
+    if (session?.user) currentUser = session.user;
+  } catch(e) {}
+
+  let local = {};
+  try { local = JSON.parse(localStorage.getItem('raven_profile') || '{}'); } catch(e) { local = {}; }
+  const nextLocal = { ...local, onboarding_complete: true };
+  if (currentUser?.id && currentUser.id !== 'raven-app-user') nextLocal.user_id = currentUser.id;
+  if (isDashboardAccountEmail(currentUser?.email)) nextLocal.email = currentUser.email;
+
+  const profileUserId = currentUser?.app_cached ? (local.user_id || local.id || '') : (currentUser?.id || local.user_id || local.id || '');
+  if (profileUserId && profileUserId !== 'raven-app-user') {
+    try {
+      const { data: profile } = await db.from('profiles').select('first_name,raven_id,username,avatar_url,email').eq('id', profileUserId).maybeSingle();
+      if (profile) {
+        if (profile.first_name) nextLocal.first_name = profile.first_name;
+        if (profile.raven_id || profile.username) {
+          nextLocal.raven_id = profile.raven_id || profile.username;
+          nextLocal.username = profile.username || profile.raven_id;
+        }
+        if (profile.avatar_url) nextLocal.avatar_url = profile.avatar_url;
+        if (isDashboardAccountEmail(profile.email)) nextLocal.email = profile.email;
+      }
+    } catch(e) {}
+  }
+
+  if (!isDashboardAccountEmail(nextLocal.email)) {
+    const remembered = String(localStorage.getItem('raven_remembered_email') || '').trim();
+    if (isDashboardAccountEmail(remembered)) nextLocal.email = remembered;
+  }
+
+  try { localStorage.setItem('raven_profile', JSON.stringify(nextLocal)); } catch(e) {}
+  if (isDashboardAccountEmail(nextLocal.email) && currentUser) currentUser.email = nextLocal.email;
 }
 
 function renderOverviewEmptyState(title = 'No active bills', body = 'Create a bill or open Trips to keep going.') {
@@ -2189,10 +2236,11 @@ async function checkOnboardingAndShow(userId) {
   if (RAVEN_APP_MODE) {
     try {
       const existing = JSON.parse(localStorage.getItem('raven_profile') || '{}');
+      const realEmail = isDashboardAccountEmail(currentUser?.email) ? currentUser.email : (isDashboardAccountEmail(existing.email) ? existing.email : '');
       localStorage.setItem('raven_profile', JSON.stringify({
         ...existing,
         user_id: existing.user_id || userId || currentUser?.id || 'raven-app-user',
-        email: existing.email || currentUser?.email || '',
+        email: realEmail,
         onboarding_complete: true
       }));
     } catch(e) {}
@@ -2987,6 +3035,7 @@ async function showDashboard() {
   document.getElementById('dashboard-screen').style.display = 'block';
   if (RAVEN_APP_MODE) {
     localStorage.setItem('raven_native_app','1');
+    await hydrateAppDashboardIdentity();
     try {
       document.body.classList.add('app-mode', 'ready');
       showPage('overview');
