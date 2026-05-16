@@ -1887,9 +1887,8 @@ try {
 
 const BACKEND = 'https://raven-backend-production-fb1f.up.railway.app';
 const FRONTEND = 'https://ravensplit.com';
-const RAVEN_APP_MODE = new URLSearchParams(window.location.search).get('app') === '1';
+const RAVEN_APP_MODE = new URLSearchParams(window.location.search).get('app') === '1' || localStorage.getItem('raven_native_app') === '1';
 const APP_PENDING_TRIP_KEY = 'raven_app_pending_trip_open';
-const APP_DASHBOARD_EMAIL_KEY = 'raven_app_dashboard_email';
 
 function setAppPendingTripOpen(payload) {
   try { sessionStorage.setItem(APP_PENDING_TRIP_KEY, JSON.stringify(payload || {})); } catch(e) {}
@@ -1914,110 +1913,6 @@ let currentUser = null;
 let currentBillId = null;
 let people = [];
 let ravenPasswordRecoveryMode = false;
-
-function getDashboardUserEmail() {
-  const direct = String(currentUser?.email || '').trim();
-  if (isDashboardAccountEmail(direct)) return rememberDashboardAccountEmail(direct);
-  try {
-    const params = new URLSearchParams(window.location.search);
-    const urlEmail = String(params.get('acct') || params.get('email') || '').trim();
-    if (isDashboardAccountEmail(urlEmail)) return rememberDashboardAccountEmail(urlEmail);
-    const local = JSON.parse(localStorage.getItem('raven_profile') || '{}');
-    const localEmail = String(local.email || '').trim();
-    if (isDashboardAccountEmail(localEmail)) return rememberDashboardAccountEmail(localEmail);
-    const appEmail = String(localStorage.getItem(APP_DASHBOARD_EMAIL_KEY) || '').trim();
-    if (isDashboardAccountEmail(appEmail)) return rememberDashboardAccountEmail(appEmail);
-    const remembered = String(localStorage.getItem('raven_remembered_email') || '').trim();
-    if (isDashboardAccountEmail(remembered)) return rememberDashboardAccountEmail(remembered);
-    return '';
-  } catch(e) {
-    return isDashboardAccountEmail(direct) ? rememberDashboardAccountEmail(direct) : '';
-  }
-}
-
-function isDashboardAccountEmail(email) {
-  const value = String(email || '').trim().toLowerCase();
-  return !!value && value.includes('@') && !value.endsWith('@raven.app');
-}
-
-function rememberDashboardAccountEmail(email) {
-  const value = String(email || '').trim();
-  if (isDashboardAccountEmail(value)) {
-    try { localStorage.setItem(APP_DASHBOARD_EMAIL_KEY, value); } catch(e) {}
-  }
-  return value;
-}
-
-async function hydrateAppDashboardIdentity() {
-  if (!RAVEN_APP_MODE) return;
-  try {
-    const { data: { session } } = await db.auth.getSession();
-    if (session?.user) currentUser = session.user;
-  } catch(e) {}
-
-  let local = {};
-  try { local = JSON.parse(localStorage.getItem('raven_profile') || '{}'); } catch(e) { local = {}; }
-  const nextLocal = { ...local, onboarding_complete: true };
-  try {
-    const params = new URLSearchParams(window.location.search);
-    const urlEmail = String(params.get('acct') || params.get('email') || '').trim();
-    const urlName = String(params.get('name') || '').trim();
-    if (isDashboardAccountEmail(urlEmail)) nextLocal.email = rememberDashboardAccountEmail(urlEmail);
-    if (urlName && !nextLocal.first_name) nextLocal.first_name = urlName;
-  } catch(e) {}
-  if (currentUser?.id && currentUser.id !== 'raven-app-user') nextLocal.user_id = currentUser.id;
-  if (isDashboardAccountEmail(currentUser?.email)) nextLocal.email = currentUser.email;
-
-  const profileUserId = currentUser?.app_cached ? (local.user_id || local.id || '') : (currentUser?.id || local.user_id || local.id || '');
-  if (profileUserId && profileUserId !== 'raven-app-user') {
-    try {
-      const { data: profile } = await db.from('profiles').select('first_name,raven_id,username,avatar_url,email').eq('id', profileUserId).maybeSingle();
-      if (profile) {
-        if (profile.first_name) nextLocal.first_name = profile.first_name;
-        if (profile.raven_id || profile.username) {
-          nextLocal.raven_id = profile.raven_id || profile.username;
-          nextLocal.username = profile.username || profile.raven_id;
-        }
-        if (profile.avatar_url) nextLocal.avatar_url = profile.avatar_url;
-        if (isDashboardAccountEmail(profile.email)) nextLocal.email = profile.email;
-      }
-    } catch(e) {}
-  }
-
-  if (!isDashboardAccountEmail(nextLocal.email)) {
-    const appEmail = String(localStorage.getItem(APP_DASHBOARD_EMAIL_KEY) || '').trim();
-    if (isDashboardAccountEmail(appEmail)) nextLocal.email = appEmail;
-  }
-  if (!isDashboardAccountEmail(nextLocal.email)) {
-    const remembered = String(localStorage.getItem('raven_remembered_email') || '').trim();
-    if (isDashboardAccountEmail(remembered)) nextLocal.email = remembered;
-  }
-
-  try { localStorage.setItem('raven_profile', JSON.stringify(nextLocal)); } catch(e) {}
-  if (isDashboardAccountEmail(nextLocal.email)) {
-    rememberDashboardAccountEmail(nextLocal.email);
-    if (currentUser) currentUser.email = nextLocal.email;
-  }
-}
-
-function renderOverviewEmptyState(title = 'No active bills', body = 'Create a bill or open Trips to keep going.') {
-  const statActive = document.getElementById('stat-active');
-  const statOwed = document.getElementById('stat-owed');
-  const statCollected = document.getElementById('stat-collected');
-  const statCollectedEmpty = document.getElementById('stat-collected-empty');
-  const statSettled = document.getElementById('stat-settled');
-  const activeCount = document.getElementById('active-count');
-  const overviewBills = document.getElementById('overview-bills');
-  if (statActive) statActive.textContent = '0';
-  if (statOwed) { statOwed.textContent = '-'; statOwed.style.color = 'var(--muted)'; }
-  if (statCollected) statCollected.style.display = 'none';
-  if (statCollectedEmpty) { statCollectedEmpty.style.display = ''; statCollectedEmpty.textContent = '-'; }
-  if (statSettled) statSettled.textContent = '0';
-  if (activeCount) activeCount.textContent = '0';
-  if (overviewBills) {
-    overviewBills.innerHTML = '<div class="empty-state"><span class="empty-icon empty-icon-svg"><svg class="raven-icon empty"><use href="#icon-overview"></use></svg></span><div class="empty-title">' + title + '</div><div class="empty-sub">' + body + '</div></div>';
-  }
-}
 
 // ── JOIN TRIP STATE ──────────────────────────────────────────────────────────
 // Handle Supabase password reset redirect — fires when user clicks the reset link in email
@@ -2135,8 +2030,8 @@ async function handlePendingJoinIfAny(userId, userEmail, knownDisplayName) {
     if (!displayName) {
       try {
         const { data: profile } = await db.from('profiles').select('first_name').eq('id', userId).maybeSingle();
-        displayName = profile?.first_name || String(userEmail || 'RAVEN member').split('@')[0];
-      } catch(e) { displayName = String(userEmail || 'RAVEN member').split('@')[0]; }
+        displayName = profile?.first_name || userEmail.split('@')[0];
+      } catch(e) { displayName = userEmail.split('@')[0]; }
     }
     const r = await fetch(FRONTEND + '/trip/' + pending.tripId + '/join', {
       method: 'POST',
@@ -2203,7 +2098,17 @@ async function init() {
       showPasswordResetForm();
       return;
     }
-    const { data: { session } } = await db.auth.getSession();
+    // Retry session lookup — after navigating back from an external domain (e.g. Railway trip/bill
+    // page), Supabase sometimes needs a moment to hydrate the token from localStorage.
+    let session = null;
+    for (let attempt = 0; attempt < 4; attempt++) {
+      try {
+        const result = await db.auth.getSession();
+        session = result?.data?.session || null;
+      } catch(e) {}
+      if (session?.user) break;
+      if (attempt < 3) await new Promise(r => setTimeout(r, 250));
+    }
     const cachedUser = getAppCachedDashboardUser();
     if (session?.user) { currentUser = session.user; await checkOnboardingAndShow(currentUser.id); }
     else if (cachedUser) { currentUser = cachedUser; await checkOnboardingAndShow(currentUser.id); }
@@ -2239,13 +2144,9 @@ function getAppCachedDashboardUser() {
   try {
     const local = JSON.parse(localStorage.getItem('raven_profile') || '{}');
     const email = String(local.email || '').trim();
-    const id = String(local.user_id || local.id || local.raven_id || local.username || email || local.first_name || 'raven-app-user').trim();
-    if (id || email || local.first_name || local.raven_id || local.username || local.avatar_url) {
-      return {
-        id: id || email || 'raven-app-user',
-        email: email || String(local.raven_id || local.username || local.first_name || 'app-user').replace(/\s+/g, '').toLowerCase() + '@raven.app',
-        app_cached: true
-      };
+    const id = String(local.user_id || local.id || '').trim();
+    if (email && (id || local.first_name || local.raven_id || local.username)) {
+      return { id: id || email, email, app_cached: true };
     }
   } catch(e) {}
   return null;
@@ -2261,34 +2162,16 @@ async function checkOnboardingAndShow(userId) {
   const redirected = await handlePendingJoinIfAny(userId, currentUser.email, knownName);
   if (redirected) return;
 
-  if (RAVEN_APP_MODE) {
-    try {
-      const existing = JSON.parse(localStorage.getItem('raven_profile') || '{}');
-      const realEmail = isDashboardAccountEmail(currentUser?.email) ? currentUser.email : (isDashboardAccountEmail(existing.email) ? existing.email : '');
-      localStorage.setItem('raven_profile', JSON.stringify({
-        ...existing,
-        user_id: existing.user_id || userId || currentUser?.id || 'raven-app-user',
-        email: realEmail,
-        onboarding_complete: true
-      }));
-    } catch(e) {}
-    showDashboard();
-    return;
-  }
-
   try {
     const local = JSON.parse(localStorage.getItem('raven_profile') || '{}');
-    if (RAVEN_APP_MODE && (local.email || local.user_id || local.id || local.first_name || local.raven_id || local.username || local.avatar_url)) {
-      showDashboard();
-      return;
-    }
+    if (RAVEN_APP_MODE && currentUser?.app_cached && local.email) { showDashboard(); return; }
     if (local.user_id === userId && local.onboarding_complete) { showDashboard(); return; }
   } catch(e) {}
   try {
     const { data: profile, error } = await db.from('profiles').select('*').eq('id', userId).single();
     if (!error && profile) {
       // Ensure every profile has a raven_id — generate one if missing (mel → mel1 → mel2)
-      if ((shouldRefreshAutoRavenId(profile.raven_id, profile.first_name, currentUser.email || '')) && profile.first_name) {
+      if ((shouldRefreshAutoRavenId(profile.raven_id, profile.first_name, currentUser.email)) && profile.first_name) {
         try {
           const ravenId = await generateUniqueRavenId(sanitizeRavenBase(profile.first_name), userId);
           await persistRavenHandle(userId, ravenId);
@@ -2359,7 +2242,6 @@ async function handleLogin() {
     } else {
       localStorage.removeItem('raven_remembered_email');
     }
-    rememberDashboardAccountEmail(email);
     currentUser = data.user; await checkOnboardingAndShow(data.user.id);
   }
 }
@@ -3033,8 +2915,6 @@ async function viewBillPage(billId) {
     if (billUrlMap[billId]) {
       const url = new URL(billUrlMap[billId], window.location.href);
       url.searchParams.set('app', '1');
-      const email = getDashboardUserEmail();
-      if (email) url.searchParams.set('acct', email);
       window.location.href = url.toString();
       return;
     }
@@ -3042,8 +2922,6 @@ async function viewBillPage(billId) {
     const url = new URL(FRONTEND + '/bill/' + billId);
     if (bill?.share_token) url.searchParams.set('t', bill.share_token);
     url.searchParams.set('app', '1');
-    const email = getDashboardUserEmail();
-    if (email) url.searchParams.set('acct', email);
     try {
       const profile = JSON.parse(localStorage.getItem('raven_profile') || '{}');
       if (profile.first_name) url.searchParams.set('name', profile.first_name);
@@ -3068,13 +2946,7 @@ async function showDashboard() {
   document.getElementById('dashboard-screen').style.display = 'block';
   if (RAVEN_APP_MODE) {
     localStorage.setItem('raven_native_app','1');
-    await hydrateAppDashboardIdentity();
-    try {
-      document.body.classList.add('app-mode', 'ready');
-      showPage('overview');
-      setMobNav('mob-overview');
-      renderOverviewEmptyState('Loading dashboard...', 'Your Raven activity will appear here.');
-    } catch(e) {}
+    try { document.body.classList.add('app-mode'); } catch(e) {}
     document.querySelectorAll('a[href="index.html"], a[href="app.html"]').forEach(a => {
       a.setAttribute('href', 'dashboard.html?app=1');
       a.addEventListener('click', function(e) {
@@ -3094,16 +2966,14 @@ async function showDashboard() {
     if (mobCreateLabel) mobCreateLabel.textContent = 'Scan';
   }
   window.scrollTo(0,0);
-  const fallbackEmail = getDashboardUserEmail();
-  const fallbackInitial = (fallbackEmail || currentUser?.id || 'R').charAt(0).toUpperCase();
-  document.getElementById('sidebar-avatar').textContent = fallbackInitial;
+  document.getElementById('sidebar-avatar').textContent = currentUser.email[0].toUpperCase();
   const mobAvatar = document.getElementById('mob-user-avatar');
-  if (mobAvatar) mobAvatar.textContent = fallbackInitial;
+  if (mobAvatar) mobAvatar.textContent = currentUser.email[0].toUpperCase();
   const mobQN = document.getElementById('mob-quick-nav');
   if (mobQN && window.innerWidth <= 768) mobQN.style.display = 'block';
 
   // Identify user in PostHog for analytics
-  try { if (typeof posthog !== 'undefined') posthog.identify(currentUser.id, { email: currentUser.email || '' }); } catch(e) {}
+  try { if (typeof posthog !== 'undefined') posthog.identify(currentUser.id, { email: currentUser.email }); } catch(e) {}
 
   // Always fetch full profile from DB on load — avatar_url may not be in localStorage
   try {
@@ -3112,9 +2982,7 @@ async function showDashboard() {
     if (local.avatar_url) renderAvatar(local.avatar_url, local.first_name);
 
     // Fetch profile — use select('*') to avoid 400 if specific columns don't exist yet
-    const { data: profile, error: profErr } = currentUser?.app_cached
-      ? { data: null, error: { message: 'app cached profile' } }
-      : await db.from('profiles').select('*').eq('id', currentUser.id).single();
+    const { data: profile, error: profErr } = await db.from('profiles').select('*').eq('id', currentUser.id).single();
     if (!profErr && profile) {
       const firstName = profile.first_name || local.first_name || '';
       const avatarUrl = profile.avatar_url || local.avatar_url || '';
@@ -3358,17 +3226,12 @@ function showPage(page) {
 }
 
 async function loadAllData() {
-  loadOverview().catch(e=>{ console.warn(e); renderOverviewEmptyState(); });
+  loadOverview().catch(e=>console.warn(e));
   loadActiveBills().catch(e=>console.warn(e));
 }
 
 async function loadOverview() {
-  const userEmail = getDashboardUserEmail();
-  if (!userEmail) {
-    renderOverviewEmptyState();
-    return;
-  }
-  const [bR,pR]=await Promise.all([db.from('bills').select('*,participants(*)').eq('creator_phone',userEmail).neq('status','deleted').order('created_at',{ascending:false}),db.from('participants').select('bill_id').eq('phone',userEmail)]);
+  const [bR,pR]=await Promise.all([db.from('bills').select('*,participants(*)').eq('creator_phone',currentUser.email).neq('status','deleted').order('created_at',{ascending:false}),db.from('participants').select('bill_id').eq('phone',currentUser.email)]);
   const{data:myBills}=bR;const{data:partRows}=pR;
   // Fetch participant bills (where I'm listed but not creator)
   const partBillIds = (partRows || []).map(r => r.bill_id).filter(id => !(myBills || []).find(b => b.id === id));
@@ -3402,15 +3265,15 @@ async function loadOverview() {
   // Only count active bills for owed/collectible stats
   let totalOwed = 0, totalCollectible = 0;
   active.forEach(b => {
-    const isCreator = b.creator_phone === userEmail;
+    const isCreator = b.creator_phone === currentUser.email;
     b.participants?.forEach(p => {
       // TOTAL OWED BY YOU: only rows where you are the participant and you haven't paid yet
-      if (!p.paid && p.phone === userEmail) {
+      if (!p.paid && p.phone === currentUser.email) {
         totalOwed += parseFloat(p.amount || 0);
       }
       // YOU'RE OWED: only bills you created, and only what other people still owe you
       // Exclude the payer/creator row itself (amount=0 when they paid the bill)
-      if (isCreator && !p.paid && p.phone !== userEmail && parseFloat(p.amount || 0) > 0) {
+      if (isCreator && !p.paid && p.phone !== currentUser.email && parseFloat(p.amount || 0) > 0) {
         totalCollectible += parseFloat(p.amount || 0);
       }
     });
@@ -3467,15 +3330,9 @@ function wireBillCardActions(container) {
 }
 
 async function loadActiveBills() {
-  const userEmail = getDashboardUserEmail();
-  if (!userEmail) {
-    const container = document.getElementById('active-bills-list');
-    if (container) container.innerHTML = '<div class="empty-state"><span class="empty-icon empty-icon-svg"><svg class="raven-icon empty"><use href="#icon-active-bills"></use></svg></span><div class="empty-title">No active bills</div><div class="empty-sub">Create a bill to start splitting</div></div>';
-    return;
-  }
   const [{ data: myBills }, { data: partRows }] = await Promise.all([
-    db.from('bills').select('*, participants(*)').eq('creator_phone', userEmail).eq('status', 'active').order('created_at', { ascending: false }),
-    db.from('participants').select('bill_id').eq('phone', userEmail)
+    db.from('bills').select('*, participants(*)').eq('creator_phone', currentUser.email).eq('status', 'active').order('created_at', { ascending: false }),
+    db.from('participants').select('bill_id').eq('phone', currentUser.email)
   ]);
   const partBillIds = (partRows || []).map(r => r.bill_id).filter(id => !(myBills || []).find(b => b.id === id));
   let partBills = [];
@@ -3563,8 +3420,6 @@ function renderBillCard(b) {
   const billUrlObj = new URL(FRONTEND + '/bill/' + b.id);
   if (b.share_token) billUrlObj.searchParams.set('t', b.share_token);
   if (RAVEN_APP_MODE) billUrlObj.searchParams.set('app', '1');
-  const dashboardEmail = getDashboardUserEmail();
-  if (RAVEN_APP_MODE && dashboardEmail) billUrlObj.searchParams.set('acct', dashboardEmail);
   try {
     const profile = JSON.parse(localStorage.getItem('raven_profile') || '{}');
     if (profile.first_name) billUrlObj.searchParams.set('name', profile.first_name);
@@ -7304,12 +7159,8 @@ function getTripOpenUrl(tripId) {
   try {
     const profile = JSON.parse(localStorage.getItem('raven_profile') || '{}');
     const name = (profile.first_name || '').trim();
-    const email = getDashboardUserEmail();
     const appSuffix = (typeof RAVEN_APP_MODE !== 'undefined' && RAVEN_APP_MODE) ? '&app=1' : '';
-    return base
-      + (name ? '&name=' + encodeURIComponent(name) : '')
-      + (email && RAVEN_APP_MODE ? '&acct=' + encodeURIComponent(email) : '')
-      + appSuffix;
+    return (name ? base + '&name=' + encodeURIComponent(name) : base) + appSuffix;
   } catch(e) {
     return base;
   }
