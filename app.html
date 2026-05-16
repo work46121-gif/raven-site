@@ -186,9 +186,8 @@ button,input,textarea{font:inherit}
 .scan-orbit::before{content:"";position:absolute;inset:0;border-radius:50%;border:1px dashed rgba(192,132,252,.28);animation:spin 18s linear infinite}
 .scan-orbit::after{content:"";position:absolute;inset:-14%;border-radius:50%;border:1px solid rgba(48,209,88,.07);animation:spin 28s linear infinite reverse}
 .scan-logo-button{width:58%;aspect-ratio:1;border:0;border-radius:28%;background:transparent;
-  display:grid;place-items:center;padding:0;position:relative;cursor:pointer;z-index:10;
-  touch-action:manipulation;-webkit-tap-highlight-color:transparent;
-  user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+  display:grid;place-items:center;padding:0;position:relative;cursor:pointer;
+  touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 .scan-mark{width:100%;height:100%;border-radius:28%;
   background:linear-gradient(148deg,#1C1C2E,#08080E);
   border:1px solid rgba(255,255,255,.12);display:grid;place-items:center;position:relative;
@@ -397,13 +396,12 @@ button,input,textarea{font:inherit}
       <button class="primary-btn" id="reset-button" type="submit">Send reset link</button>
       <button class="secondary-btn" type="button" onclick="showTab('login')">Back to sign in</button>
     </form>
-    <form class="form" id="new-password-form" onsubmit="handleSetNewPassword(event)">
-      <p style="font-size:13px;color:var(--muted);margin:0 0 4px;line-height:1.5">Choose a new password for your account.</p>
+    <form class="form" id="new-password-form" onsubmit="handleSetNewPassword(event)" style="display:none">
       <label class="field">
         <span class="label">New Password</span>
-        <input class="input" id="new-password-input" type="password" autocomplete="new-password" placeholder="At least 6 characters" required>
+        <input class="input" id="new-password-input" type="password" autocomplete="new-password" placeholder="New password (min 6 chars)" required>
       </label>
-      <button class="primary-btn" id="new-password-btn" type="submit">Set New Password →</button>
+      <button class="primary-btn" id="new-password-btn" type="submit">Set New Password</button>
     </form>
   </main>
   </div><!-- end app-shell-inner -->
@@ -413,7 +411,7 @@ button,input,textarea{font:inherit}
   <!-- Top bar -->
   <div class="home-top" id="home-top" style="display:none;align-items:center;justify-content:space-between;padding:calc(env(safe-area-inset-top,0px) + 12px) 18px 8px;flex:0 0 auto;position:relative;z-index:4">
     <div class="home-brand">
-      <button class="home-logo" id="home-logo-btn" type="button" aria-label="Scan receipt" onclick="scanLogoAction()" oncontextmenu="return false" style="border:0;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;background:transparent;display:grid;place-items:center;position:relative"></button>
+      <button class="home-logo" id="home-logo-btn" type="button" aria-label="Scan receipt" onclick="scanLogoAction()" style="border:0;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent;background:transparent;display:grid;place-items:center;position:relative"></button>
       <div>
         <div class="home-title">RAVEN</div>
         <div style="font-size:10px;color:var(--muted);font-weight:600;letter-spacing:.08em">AI Bill Splitter</div>
@@ -426,9 +424,7 @@ button,input,textarea{font:inherit}
   <div class="scan-hero">
     <div class="scan-card">
       <div class="scan-orbit">
-        <button class="scan-logo-button" type="button" aria-label="Scan receipt"
-          onclick="scanLogoAction()"
-          oncontextmenu="return false">
+        <button class="scan-logo-button" type="button" aria-label="Scan receipt" onclick="scanLogoAction()">
           <span class="scan-mark" aria-hidden="true"><span>R</span></span>
         </button>
       </div>
@@ -487,25 +483,24 @@ let pendingConfirmEmail = '';
 
 function el(id){return document.getElementById(id)}
 function getAppAuthRedirectTo(){
-  // In Capacitor (iOS/Android), window.location.origin is capacitor://localhost
-  // Always use the hardcoded ravensplit.com URL so Supabase email links work correctly.
+  // Always use the production URL for email confirmation links — these open in the system
+  // browser, not the WebView, so capacitor:// / http://localhost origins won't work.
   return 'https://ravensplit.com/app.html?app=1';
 }
-// Track if we're in password recovery mode so init() doesn't route away
-let isRecoveryMode = false;
-
+function getOAuthRedirectTo(){
+  // OAuth browser redirects can use the current origin if it's a real https URL (web browser),
+  // otherwise fall back to production (Capacitor / local dev).
+  try {
+    const origin = window.location.origin || '';
+    if (/^https:\/\//i.test(origin)) return origin + window.location.pathname + '?app=1';
+  } catch(e) {}
+  return 'https://ravensplit.com/app.html?app=1';
+}
 // Listen for PASSWORD_RECOVERY event from Supabase (email link click)
 db.auth.onAuthStateChange((event, session) => {
   if (event === 'PASSWORD_RECOVERY') {
-    isRecoveryMode = true;
-    // Ensure the app-home is visible and the new-password form is shown
     showSignedOutHome();
     showTab('new-password');
-    // Make sure the auth card is in the dock and visible
-    const dock = el('app-auth-dock');
-    const card = document.querySelector('.auth-card');
-    if (dock && card && card.parentElement !== dock) dock.appendChild(card);
-    el('app-home').classList.add('auth-visible');
   }
 });
 function showLoading(show){el('loading').classList.toggle('show', !!show)}
@@ -702,7 +697,7 @@ function openAppPage(page, options){
 async function handleGoogleAuth(){
   clearMessage();
   try {
-    const redirectTo = getAppAuthRedirectTo();
+    const redirectTo = getOAuthRedirectTo();
     const { error } = await db.auth.signInWithOAuth({ provider: 'google', options: { redirectTo } });
     if (error) showMessage('error', error.message);
   } catch(e) {
@@ -802,34 +797,31 @@ async function handleSignup(event){
     return;
   }
   pendingConfirmEmail = email;
+  try {
+    await db.auth.resend({
+      type: 'signup',
+      email,
+      options: { emailRedirectTo: getAppAuthRedirectTo() }
+    });
+  } catch(e) {}
   showTab('login');
   el('login-email').value = email;
   toggleResendConfirm(true);
-  showMessage('success','Account created! Check your email (and spam folder) for a confirmation link, then sign in here.');
+  showMessage('success','Account created. Check your email to confirm, then sign in here.');
 }
 async function handleReset(event){
   event.preventDefault();
   clearMessage();
   const email = el('reset-email').value.trim();
-  if (!email) return showMessage('error', 'Please enter your email address.');
   const btn = el('reset-button');
   btn.disabled = true;
   btn.textContent = 'Sending...';
   const redirectTo = 'https://ravensplit.com/app.html?app=1&reset=1';
-  try {
-    const { error } = await db.auth.resetPasswordForEmail(email, { redirectTo });
-    btn.disabled = false;
-    btn.textContent = 'Send reset link';
-    if (error) {
-      showMessage('error', error.message || 'Could not send reset email. Please try again.');
-      return;
-    }
-    showMessage('success', 'Reset link sent! Check your inbox and spam folder.');
-  } catch(e) {
-    btn.disabled = false;
-    btn.textContent = 'Send reset link';
-    showMessage('error', 'Something went wrong. Please try again.');
-  }
+  const { error } = await db.auth.resetPasswordForEmail(email, { redirectTo });
+  btn.disabled = false;
+  btn.textContent = 'Send reset link';
+  if (error) return showMessage('error', error.message);
+  showMessage('success','Reset link sent. Check your inbox.');
 }
 async function handleSetNewPassword(event){
   event.preventDefault();
@@ -839,49 +831,43 @@ async function handleSetNewPassword(event){
   const btn = el('new-password-btn');
   btn.disabled = true;
   btn.textContent = 'Saving...';
-  try {
-    const { error } = await db.auth.updateUser({ password: pw });
-    btn.disabled = false;
-    btn.textContent = 'Set New Password';
-    if (error) return showMessage('error', error.message || 'Could not update password. The link may have expired.');
-    isRecoveryMode = false;
-    showMessage('success', 'Password updated! Signing you in...');
-    setTimeout(async () => {
-      try {
-        const { data: { session } } = await db.auth.getSession();
-        if (session?.user) {
-          routeAfterAuth(session.user);
-        } else {
-          showTab('login');
-          showMessage('success', 'Password updated! Please sign in with your new password.');
-        }
-      } catch(e) {
-        showTab('login');
-        showMessage('success', 'Password updated! Please sign in.');
-      }
-    }, 1200);
-  } catch(e) {
-    btn.disabled = false;
-    btn.textContent = 'Set New Password';
-    showMessage('error', 'Something went wrong. Please try again or request a new reset link.');
-  }
+  const { error } = await db.auth.updateUser({ password: pw });
+  btn.disabled = false;
+  btn.textContent = 'Set New Password';
+  if (error) return showMessage('error', error.message);
+  showMessage('success','Password updated! Signing you in...');
+  setTimeout(() => {
+    const { data: { session } } = db.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) routeAfterAuth(session.user);
+    });
+  }, 1200);
 }
-// iOS tap reliability: prevent long-press callout and fire scan on touchend
-document.addEventListener('DOMContentLoaded', function(){
-  document.querySelectorAll('.scan-logo-button, #home-logo-btn').forEach(function(btn){
-    btn.addEventListener('touchstart', function(e){
-      e.stopPropagation();
-    }, { passive: true });
-    btn.addEventListener('touchend', function(e){
+// Double-tap the top-left logo to go to Settings (iOS-friendly — dblclick unreliable on mobile)
+(function(){
+  document.addEventListener('DOMContentLoaded', function(){
+    const logoBtn = document.getElementById('home-logo-btn');
+    if (!logoBtn) return;
+    logoBtn.addEventListener('click', function(e){
       e.preventDefault();
-      e.stopPropagation();
-      scanLogoAction();
+      goScanPage();
+    });
+    logoBtn.addEventListener('touchend', function(e){
+      e.preventDefault();
+      goScanPage();
     }, { passive: false });
+    const scanBtn = document.querySelector('.scan-logo-button');
+    if (scanBtn) {
+      scanBtn.addEventListener('pointerup', function(e){
+        e.preventDefault();
+        goScanPage();
+      });
+    }
   });
-});
+})();
 
 (async function init(){
   localStorage.setItem('raven_native_app','1');
+  // Fade-in on initial render
   requestAnimationFrame(() => document.body.classList.add('ready'));
   const remembered = localStorage.getItem('raven_remembered_email') || '';
   if (remembered) {
@@ -890,41 +876,30 @@ document.addEventListener('DOMContentLoaded', function(){
   }
   const hash = window.location.hash;
   const params = new URLSearchParams(window.location.search);
-
   if (params.get('from') === 'trip') {
-    localStorage.setItem('raven_native_app', '1');
     window.location.replace('dashboard.html?app=1&page=overview');
     return;
   }
-
-  // --- Password reset link handling ---
-  // Supabase puts #access_token=...&type=recovery in the URL when the user
-  // clicks the reset link in their email.
-  const hashParams = new URLSearchParams((hash || '').replace(/^#/, ''));
-  const isRecoveryHash = hashParams.get('type') === 'recovery' && hashParams.get('access_token');
-  const isRecoveryParam = params.get('reset') === '1';
-
-  if (isRecoveryHash || isRecoveryParam) {
-    isRecoveryMode = true;
-    // Let Supabase parse the hash and establish the recovery session
+  const isPasswordReset = params.get('reset') === '1' || (hash && hash.includes('type=recovery'));
+  if (hash && hash.includes('access_token')) {
     try { await db.auth.getSession(); } catch(e) {}
-    // Clean the URL so a refresh doesn't re-trigger this
-    history.replaceState(null, '', window.location.pathname + '?app=1&reset=1');
+    // Check if this is a password recovery redirect
+    if (isPasswordReset) {
+      history.replaceState(null, '', window.location.pathname + '?app=1');
+      // Show new-password form
+      showSignedOutHome();
+      showTab('new-password');
+      return;
+    }
+    history.replaceState(null, '', window.location.pathname);
+  }
+  if (isPasswordReset) {
+    try { await db.auth.getSession(); } catch(e) {}
+    history.replaceState(null, '', window.location.pathname + '?app=1');
     showSignedOutHome();
     showTab('new-password');
-    const dock = el('app-auth-dock');
-    const card = document.querySelector('.auth-card');
-    if (dock && card && card.parentElement !== dock) dock.appendChild(card);
-    el('app-home').classList.add('auth-visible');
     return;
   }
-
-  // --- Give onAuthStateChange a moment to fire for recovery links ---
-  // (sometimes the hash is parsed async by Supabase before init runs)
-  await new Promise(resolve => setTimeout(resolve, 120));
-  if (isRecoveryMode) return; // onAuthStateChange already handled it
-
-  // --- Normal session restore ---
   let session = null;
   for (let attempt = 0; attempt < 4; attempt++) {
     try {
@@ -934,11 +909,9 @@ document.addEventListener('DOMContentLoaded', function(){
     if (session?.user) break;
     await new Promise(resolve => setTimeout(resolve, 250));
   }
-
-  // Don't route away if recovery mode kicked in during the session loop
-  if (isRecoveryMode) return;
-
   if (session?.user) {
+    // If session exists but it's a recovery session, show password form
+    const urlHash = window.location.hash || '';
     routeAfterAuth(session.user);
   } else {
     const cachedProfile = getCachedAppProfile();
