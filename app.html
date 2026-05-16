@@ -483,17 +483,11 @@ let pendingConfirmEmail = '';
 
 function el(id){return document.getElementById(id)}
 function getAppAuthRedirectTo(){
-  // Always use the production URL for email confirmation links — these open in the system
-  // browser, not the WebView, so capacitor:// / http://localhost origins won't work.
-  return 'https://ravensplit.com/app.html?app=1';
-}
-function getOAuthRedirectTo(){
-  // OAuth browser redirects can use the current origin if it's a real https URL (web browser),
-  // otherwise fall back to production (Capacitor / local dev).
   try {
     const origin = window.location.origin || '';
-    if (/^https:\/\//i.test(origin)) return origin + window.location.pathname + '?app=1';
+    if (/^https?:\/\//i.test(origin)) return origin + window.location.pathname + '?app=1';
   } catch(e) {}
+  // Capacitor uses a capacitor:// or file:// origin — fall back to the web URL for OAuth redirects only
   return 'https://ravensplit.com/app.html?app=1';
 }
 // Listen for PASSWORD_RECOVERY event from Supabase (email link click)
@@ -697,7 +691,7 @@ function openAppPage(page, options){
 async function handleGoogleAuth(){
   clearMessage();
   try {
-    const redirectTo = getOAuthRedirectTo();
+    const redirectTo = getAppAuthRedirectTo();
     const { error } = await db.auth.signInWithOAuth({ provider: 'google', options: { redirectTo } });
     if (error) showMessage('error', error.message);
   } catch(e) {
@@ -900,23 +894,38 @@ async function handleSetNewPassword(event){
     showTab('new-password');
     return;
   }
+
+  // ── FAST PATH: show app home immediately if we have a cached profile.
+  // This prevents the login screen from flashing when the user navigates
+  // back from dashboard.html. Session is then verified in the background;
+  // if genuinely expired we sign them out at that point.
+  const cachedProfile = getCachedAppProfile();
+  if (cachedProfile) {
+    showAppHome(cachedProfile);
+  }
+
   let session = null;
+  // Single fast attempt first; retry up to 3 more times only if needed
   for (let attempt = 0; attempt < 4; attempt++) {
     try {
       const result = await db.auth.getSession();
       session = result?.data?.session || null;
     } catch(e) {}
     if (session?.user) break;
-    await new Promise(resolve => setTimeout(resolve, 250));
+    if (attempt < 3) await new Promise(resolve => setTimeout(resolve, 250));
   }
+
   if (session?.user) {
-    // If session exists but it's a recovery session, show password form
-    const urlHash = window.location.hash || '';
+    // Session confirmed — refresh profile data in background (stays on app-home)
     routeAfterAuth(session.user);
+  } else if (!cachedProfile) {
+    // No session AND no cached profile → genuinely signed out
+    showSignedOutHome();
   } else {
-    const cachedProfile = getCachedAppProfile();
-    if (cachedProfile) showAppHome(cachedProfile);
-    else showSignedOutHome();
+    // No valid session but had a cached profile — session expired.
+    // Clear stale cache and prompt sign-in.
+    localStorage.removeItem('raven_profile');
+    showSignedOutHome();
   }
 })();
 </script>
