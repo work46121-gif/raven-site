@@ -2158,7 +2158,10 @@ async function checkOnboardingAndShow(userId) {
 
   try {
     const local = JSON.parse(localStorage.getItem('raven_profile') || '{}');
-    if (RAVEN_APP_MODE && currentUser?.app_cached && (local.email || local.user_id || local.id || local.first_name || local.raven_id || local.username || local.avatar_url)) { showDashboard(); return; }
+    if (RAVEN_APP_MODE && (local.email || local.user_id || local.id || local.first_name || local.raven_id || local.username || local.avatar_url)) {
+      showDashboard();
+      return;
+    }
     if (local.user_id === userId && local.onboarding_complete) { showDashboard(); return; }
   } catch(e) {}
   try {
