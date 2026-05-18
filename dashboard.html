@@ -1971,14 +1971,21 @@ async function hydrateAppDashboardIdentity() {
   const profileUserId = currentUser?.app_cached ? (local.user_id || local.id || '') : (currentUser?.id || local.user_id || local.id || '');
   if (profileUserId && profileUserId !== 'raven-app-user') {
     try {
-      const { data: profile } = await db.from('profiles').select('first_name,raven_id,username,avatar_url,email').eq('id', profileUserId).maybeSingle();
+      const { data: profile } = await db.from('profiles').select('first_name,last_name,phone,raven_id,username,avatar_url,email,venmo,cashapp,zelle,applepay,onboarding_complete').eq('id', profileUserId).maybeSingle();
       if (profile) {
-        if (profile.first_name) nextLocal.first_name = profile.first_name;
+        if (Object.prototype.hasOwnProperty.call(profile, 'first_name')) nextLocal.first_name = profile.first_name || '';
+        if (Object.prototype.hasOwnProperty.call(profile, 'last_name')) nextLocal.last_name = profile.last_name || '';
+        if (Object.prototype.hasOwnProperty.call(profile, 'phone')) nextLocal.phone = profile.phone || '';
         if (profile.raven_id || profile.username) {
           nextLocal.raven_id = profile.raven_id || profile.username;
           nextLocal.username = profile.username || profile.raven_id;
         }
-        if (profile.avatar_url) nextLocal.avatar_url = profile.avatar_url;
+        if (Object.prototype.hasOwnProperty.call(profile, 'avatar_url')) nextLocal.avatar_url = profile.avatar_url || '';
+        if (Object.prototype.hasOwnProperty.call(profile, 'venmo')) nextLocal.venmo = profile.venmo || '';
+        if (Object.prototype.hasOwnProperty.call(profile, 'cashapp')) nextLocal.cashapp = profile.cashapp || '';
+        if (Object.prototype.hasOwnProperty.call(profile, 'zelle')) nextLocal.zelle = profile.zelle || '';
+        if (Object.prototype.hasOwnProperty.call(profile, 'applepay')) nextLocal.applepay = profile.applepay || '';
+        if (Object.prototype.hasOwnProperty.call(profile, 'onboarding_complete')) nextLocal.onboarding_complete = !!profile.onboarding_complete;
         if (isDashboardAccountEmail(profile.email)) nextLocal.email = profile.email;
       }
     } catch(e) {}
@@ -2264,13 +2271,25 @@ async function checkOnboardingAndShow(userId) {
   if (RAVEN_APP_MODE) {
     try {
       const existing = JSON.parse(localStorage.getItem('raven_profile') || '{}');
+      let nextProfile = { ...existing, user_id: existing.user_id || userId || currentUser?.id || 'raven-app-user' };
       const realEmail = isDashboardAccountEmail(currentUser?.email) ? currentUser.email : (isDashboardAccountEmail(existing.email) ? existing.email : '');
-      localStorage.setItem('raven_profile', JSON.stringify({
-        ...existing,
-        user_id: existing.user_id || userId || currentUser?.id || 'raven-app-user',
-        email: realEmail,
-        onboarding_complete: true
-      }));
+      if (realEmail) nextProfile.email = realEmail;
+      if (userId && userId !== 'raven-app-user' && !currentUser?.app_cached) {
+        try {
+          const { data: profile } = await db.from('profiles').select('*').eq('id', userId).maybeSingle();
+          if (profile) {
+            nextProfile = {
+              ...nextProfile,
+              ...profile,
+              user_id: userId,
+              email: isDashboardAccountEmail(profile.email) ? profile.email : (realEmail || nextProfile.email || ''),
+              username: profile.username || profile.raven_id || nextProfile.username || '',
+              onboarding_complete: !!profile.onboarding_complete
+            };
+          }
+        } catch(e) {}
+      }
+      localStorage.setItem('raven_profile', JSON.stringify(nextProfile));
     } catch(e) {}
     showDashboard();
     return;
@@ -2706,19 +2725,23 @@ async function loadSettings() {
     if (local.applepay) document.getElementById('set-applepay').value = local.applepay;
     const { data: profile } = await db.from('profiles').select('*').eq('id', currentUser.id).single();
     if (profile) {
-      if (profile.first_name) document.getElementById('set-first').value = profile.first_name;
-      if (profile.last_name) document.getElementById('set-last').value = profile.last_name;
-      if (profile.phone) document.getElementById('set-phone').value = profile.phone;
-      if (profile.venmo) document.getElementById('set-venmo').value = profile.venmo;
-      if (profile.cashapp) document.getElementById('set-cashapp').value = profile.cashapp;
-      if (profile.zelle) document.getElementById('set-zelle').value = profile.zelle;
-      if (profile.applepay) document.getElementById('set-applepay').value = profile.applepay || '';
+      document.getElementById('set-first').value = profile.first_name || '';
+      document.getElementById('set-last').value = profile.last_name || '';
+      document.getElementById('set-phone').value = profile.phone || '';
+      document.getElementById('set-venmo').value = profile.venmo || '';
+      document.getElementById('set-cashapp').value = profile.cashapp || '';
+      document.getElementById('set-zelle').value = profile.zelle || '';
+      document.getElementById('set-applepay').value = profile.applepay || '';
       const ensuredRavenId = await ensureCurrentUserRavenId(profile);
       if (ensuredRavenId) document.getElementById('set-raven-id').value = ensuredRavenId;
       if (profile.avatar_url) renderAvatar(profile.avatar_url, profile.first_name);
       else if (profile.first_name) renderAvatar(null, profile.first_name);
       const displayName = [profile.first_name, profile.last_name].filter(Boolean).join(' ') || currentUser.email;
       document.getElementById('profile-display-name').textContent = displayName;
+      try {
+        const existing = JSON.parse(localStorage.getItem('raven_profile') || '{}');
+        localStorage.setItem('raven_profile', JSON.stringify({ ...existing, ...profile, user_id: currentUser.id, username: profile.username || profile.raven_id || existing.username || '' }));
+      } catch(e) {}
     }
   } catch(e) {}
   try {
@@ -7143,7 +7166,7 @@ async function loadTrips() {
       + '<a class="bill-action-btn btn-remind" href="' + tripUrlReceipt + '" data-tripid="' + safeAttrId + '" style="display:inline-flex;align-items:center;text-decoration:none;background:rgba(48,209,88,0.1);color:var(--green);border:1px solid rgba(48,209,88,0.25)"><svg class="bill-action-icon"><use href="#icon-active-bills"></use></svg>Receipt</a>'
       + (isAdmin ? '<button class="bill-action-btn admin-btn" data-tripid="' + t.id + '" style="background:rgba(124,58,237,0.1);color:var(--purple3);border:1px solid rgba(124,58,237,0.2)"><svg class="bill-action-icon"><use href="#icon-roommates"></use></svg>Admin</button>' : '')
       + (RAVEN_APP_MODE
-        ? '<button class="bill-action-btn" type="button" data-chatid="' + safeAttrId + '" style="display:inline-flex;align-items:center;background:rgba(124,58,237,0.12);color:var(--purple3);border:1px solid rgba(124,58,237,0.25)" onclick="event.stopPropagation();openTripChat(\'' + safeId + '\')"><svg style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Chat</button>'
+        ? '<button class="bill-action-btn" type="button" data-chatid="' + safeAttrId + '" style="display:inline-flex;align-items:center;position:relative;background:rgba(124,58,237,0.12);color:var(--purple3);border:1px solid rgba(124,58,237,0.25)" onclick="event.stopPropagation();openTripChat(\'' + safeId + '\')"><svg style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Chat<span class="trip-chat-unread-dot" data-chatbadge="' + safeAttrId + '" style="display:none;position:absolute;top:5px;right:7px;width:8px;height:8px;border-radius:50%;background:#30D158;box-shadow:0 0 10px rgba(48,209,88,0.8)"></span></button>'
         + '<button class="bill-action-btn btn-view" type="button" data-tripid="' + safeAttrId + '" style="display:inline-flex;align-items:center;text-decoration:none">Open Trip →</button>'
         : '<a class="bill-action-btn btn-view" data-tripid="' + safeAttrId + '" href="' + tripUrl + '" style="display:inline-flex;align-items:center;text-decoration:none">Open Trip →</a>')
       + '</div></div>';
@@ -7199,6 +7222,7 @@ async function loadTrips() {
     });
   });
 
+  setTimeout(refreshTripChatUnreadBadges, 200);
 }
 
 function openCreateTrip() {
@@ -8604,6 +8628,60 @@ let tripChatGifPanelOpen = false;
 let tripChatMode = 'group';
 let tripRavenbotSummary = null;
 
+function getTripChatSeenKey(tripId) {
+  const local = JSON.parse(localStorage.getItem('raven_profile') || '{}');
+  return 'trip_chat_seen_' + tripId + '_' + (local.user_id || currentUser?.id || local.email || 'local');
+}
+
+function getTripChatIdentitySet() {
+  const local = JSON.parse(localStorage.getItem('raven_profile') || '{}');
+  return new Set([
+    currentUser?.id,
+    currentUser?.email,
+    local.user_id,
+    local.id,
+    local.email,
+    local.raven_id,
+    local.username
+  ].map(v => String(v || '').trim()).filter(Boolean));
+}
+
+function isMyTripChatMessage(msg) {
+  const ids = getTripChatIdentitySet();
+  return ids.has(String(msg?.user_id || '').trim()) || ids.has(String(msg?.sender_email || '').trim());
+}
+
+function markTripChatSeen(tripId) {
+  if (!tripId) return;
+  localStorage.setItem(getTripChatSeenKey(tripId), new Date().toISOString());
+  updateTripChatUnreadBadge(tripId, false);
+}
+
+function updateTripChatUnreadBadge(tripId, hasUnread) {
+  const selector = '[data-chatbadge="' + String(tripId || '').replace(/"/g, '\\"') + '"]';
+  document.querySelectorAll(selector).forEach(el => { el.style.display = hasUnread ? 'block' : 'none'; });
+}
+
+async function refreshTripChatUnreadBadges() {
+  const buttons = Array.from(document.querySelectorAll('[data-chatid]'));
+  if (!buttons.length || !currentUser) return;
+  const tripIds = [...new Set(buttons.map(btn => btn.getAttribute('data-chatid')).filter(Boolean))];
+  const seen = {};
+  tripIds.forEach(id => { seen[id] = localStorage.getItem(getTripChatSeenKey(id)) || ''; });
+  try {
+    const { data } = await db.from('trip_messages')
+      .select('trip_id,user_id,created_at')
+      .in('trip_id', tripIds)
+      .order('created_at', { ascending: false })
+      .limit(100);
+    const latestByTrip = {};
+    (data || []).forEach(msg => {
+      if (!latestByTrip[msg.trip_id] && !isMyTripChatMessage(msg) && msg.user_id !== 'raven-concierge') latestByTrip[msg.trip_id] = msg;
+    });
+    tripIds.forEach(id => updateTripChatUnreadBadge(id, !!(latestByTrip[id] && (!seen[id] || new Date(latestByTrip[id].created_at) > new Date(seen[id])))));
+  } catch(e) {}
+}
+
 async function enrichTripChatMessages(messages) {
   const rows = Array.isArray(messages) ? messages.slice() : [];
   const userIds = [...new Set(rows.map(msg => String(msg.user_id || '').trim()).filter(Boolean))];
@@ -8629,6 +8707,7 @@ function openChat(t){openTripChat(t);}
 async function openTripChat(tripId) {
   currentChatTripId = tripId;
   tripChatMode = 'group';
+  markTripChatSeen(tripId);
   const modal = document.getElementById('trip-chat-modal');
   modal.style.display = 'flex';
   setupTripChatScrollLock();
@@ -8653,6 +8732,7 @@ async function openTripChat(tripId) {
       if (tripChatMode !== 'group') return;
       const enriched = await enrichTripChatMessages([payload.new]);
       appendChatMessage(enriched[0] || payload.new);
+      markTripChatSeen(tripId);
     })
     .subscribe();
 
@@ -8822,16 +8902,46 @@ function buildRavenbotReply(question) {
   const summary = tripRavenbotSummary || {};
   const debtors = summary.debtors || [];
   const lower = String(question || '').toLowerCase();
+  const insights = Array.isArray(summary.insights) ? summary.insights : [];
+  const events = Array.isArray(summary.events) ? summary.events : [];
+  const receiptCount = summary.receipt_count || 0;
+  const totalSpent = Number(summary.total_spent || 0);
+  const starters = [
+    'Here is what I see:',
+    'Quick read:',
+    'RAVEN take:',
+    'Money map:'
+  ];
+  const starter = starters[Math.abs(lower.split('').reduce((n, ch) => n + ch.charCodeAt(0), 0)) % starters.length];
   if (lower.includes('owe') || lower.includes('settle') || lower.includes('paid')) {
     return debtors.length
-      ? debtors.slice(0, 5).map(d => d.name + ' owes $' + Number(d.amount || 0).toFixed(2)).join('\\n')
-      : 'Everyone is settled right now. Outstanding balance is $0.00.';
+      ? starter + '\\n' + debtors.slice(0, 5).map(d => '- ' + d.name + ' owes $' + Number(d.amount || 0).toFixed(2)).join('\\n') + '\\n\\nBest next move: ping the biggest balance first, then mark people paid as they settle.'
+      : 'Everyone is settled right now. Outstanding balance is $0.00. If someone says they paid outside RAVEN, use the receipt/payment details to double-check.';
   }
-  if (lower.includes('receipt') || lower.includes('spend') || lower.includes('total')) {
-    const biggest = (summary.insights || []).find(x => x.indexOf('Biggest receipt:') === 0);
-    return 'This trip has ' + (summary.receipt_count || 0) + ' receipts and $' + Number(summary.total_spent || 0).toFixed(2) + ' total spent.' + (biggest ? '\\n' + biggest : '');
+  if (lower.includes('biggest') || lower.includes('largest') || lower.includes('expensive')) {
+    const biggest = insights.find(x => x.indexOf('Biggest receipt:') === 0);
+    return biggest ? biggest + '\\n\\nThat is the one I would audit first if totals feel off.' : 'I do not have a clear biggest receipt yet. Add or scan receipts and I can rank them.';
   }
-  return (summary.insights || []).join('\\n') || 'Ask me about who owes, top receipts, total spend, or settlement status.';
+  if (lower.includes('latest') || lower.includes('recent') || lower.includes('activity') || lower.includes('new')) {
+    if (events.length) {
+      return starter + '\\n' + events.slice(0, 4).map(ev => '- ' + (ev.title || 'Trip activity') + (ev.detail ? ': ' + ev.detail : '')).join('\\n');
+    }
+    const latest = insights.find(x => x.indexOf('Latest activity:') === 0);
+    return latest || 'No recent trip activity is showing yet.';
+  }
+  if (lower.includes('receipt') || lower.includes('spend') || lower.includes('total') || lower.includes('summary')) {
+    const biggest = insights.find(x => x.indexOf('Biggest receipt:') === 0);
+    return starter + '\\n' + receiptCount + ' receipts logged.\\n$' + totalSpent.toFixed(2) + ' total spend.' + (biggest ? '\\n' + biggest : '') + '\\n\\nAsk me “who owes?” or “latest activity?” for a narrower answer.';
+  }
+  if (lower.includes('help') || lower.includes('what can') || lower.includes('?')) {
+    return 'Try asking me:\\n- Who owes money?\\n- What was the biggest receipt?\\n- What changed recently?\\n- Is everyone settled?\\n- Give me a trip summary';
+  }
+  const rotating = [
+    'I can answer that best if you ask about balances, receipts, totals, or recent activity.',
+    'I am watching the trip ledger. Ask “who owes?” for balances or “biggest receipt?” for spend details.',
+    'I have the trip summary loaded. Try “latest activity” or “is everyone settled?”'
+  ];
+  return insights.length ? starter + '\\n' + insights.slice(0, 3).join('\\n') + '\\n\\n' + rotating[Math.floor(Math.random() * rotating.length)] : rotating[Math.floor(Math.random() * rotating.length)];
 }
 
 function getChatDateKey(value) {
@@ -8897,9 +9007,8 @@ function appendChatMessage(msg, scroll = true) {
 
   const container = document.getElementById('chat-messages');
   if (msg.id && container?.querySelector('[data-msg-id="' + String(msg.id).replace(/"/g, '\\"') + '"]')) return;
-  const local = JSON.parse(localStorage.getItem('raven_profile') || '{}');
   const isConcierge = msg.user_id === 'raven-concierge' || msg.system_type === 'concierge';
-  const isMe = !isConcierge && msg.user_id === local.user_id;
+  const isMe = !isConcierge && isMyTripChatMessage(msg);
   const dateSource = msg?.created_at || msg?.sent_at || msg?.inserted_at || msg?.timestamp || msg?.createdAt;
   const time = dateSource ? new Date(dateSource).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
   const dateKey = getChatDateKey(dateSource);
@@ -9029,13 +9138,14 @@ async function sendChatMessage() {
     return;
   }
 
-  const local = JSON.parse(localStorage.getItem('raven_profile') || '{}');
+  let local = JSON.parse(localStorage.getItem('raven_profile') || '{}');
   let senderName = local.first_name || currentUser.email?.split('@')[0] || 'Someone';
   try {
     const { data: liveProfile } = await db.from('profiles').select('first_name,raven_id,email,avatar_url').eq('id', currentUser.id).maybeSingle();
     senderName = liveProfile?.first_name || senderName;
     if (liveProfile?.first_name) {
-      localStorage.setItem('raven_profile', JSON.stringify({ ...local, ...liveProfile, user_id: currentUser.id }));
+      local = { ...local, ...liveProfile, user_id: currentUser.id };
+      localStorage.setItem('raven_profile', JSON.stringify(local));
     }
   } catch(e) {}
 
@@ -9065,6 +9175,7 @@ async function sendChatMessage() {
       gif_url: tripChatGifUrl || null,
       created_at: new Date().toISOString()
     }, true);
+    markTripChatSeen(currentChatTripId);
     clearTripChatGif();
   } catch(e) {
     showToast('Could not send message', 'error');
