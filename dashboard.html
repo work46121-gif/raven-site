@@ -2712,18 +2712,41 @@ async function cbMarkPaidOther() {
 function cbClosePayModal() { document.getElementById('cb-pay-modal').style.display = 'none'; payModalParticipantId = null; payModalBillId = null; }
 
 async function loadSettings() {
-  document.getElementById('set-email').value = currentUser.email;
-  document.getElementById('set-email-display').textContent = currentUser.email;
+  let local = {};
+  try { local = JSON.parse(localStorage.getItem('raven_profile') || '{}'); } catch(e) { local = {}; }
+  const effectiveEmail = getDashboardUserEmail() || currentUser?.email || local.email || '';
+  document.getElementById('set-email').value = effectiveEmail;
+  document.getElementById('set-email-display').textContent = effectiveEmail;
   try {
-    const local = JSON.parse(localStorage.getItem('raven_profile') || '{}');
     if (local.first_name) document.getElementById('set-first').value = local.first_name;
-    if (local.last_name) document.getElementById('set-last').value = local.last_name;
+    if (local.last_name && String(local.last_name).trim().toLowerCase() !== 'smith') document.getElementById('set-last').value = local.last_name;
+    else document.getElementById('set-last').value = '';
     if (local.phone) document.getElementById('set-phone').value = local.phone;
     if (local.venmo) document.getElementById('set-venmo').value = local.venmo;
     if (local.cashapp) document.getElementById('set-cashapp').value = local.cashapp;
     if (local.zelle) document.getElementById('set-zelle').value = local.zelle;
     if (local.applepay) document.getElementById('set-applepay').value = local.applepay;
-    const { data: profile } = await db.from('profiles').select('*').eq('id', currentUser.id).single();
+    if (local.avatar_url || local.first_name) renderAvatar(local.avatar_url || null, local.first_name || effectiveEmail || 'R');
+    const localDisplayName = [local.first_name, local.last_name && String(local.last_name).trim().toLowerCase() !== 'smith' ? local.last_name : ''].filter(Boolean).join(' ') || effectiveEmail || 'Your Profile';
+    document.getElementById('profile-display-name').textContent = localDisplayName;
+    if (local.raven_id || local.username) document.getElementById('set-raven-id').value = local.raven_id || local.username || '';
+
+    let profile = null;
+    const uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const idCandidates = [currentUser?.id, local.user_id, local.id].map(v => String(v || '').trim()).filter(v => uuidRe.test(v));
+    for (const idCandidate of [...new Set(idCandidates)]) {
+      const { data } = await db.from('profiles').select('*').eq('id', idCandidate).maybeSingle();
+      if (data) { profile = data; break; }
+    }
+    if (!profile && isDashboardAccountEmail(effectiveEmail)) {
+      const { data } = await db.from('profiles').select('*').eq('email', effectiveEmail).maybeSingle();
+      if (data) profile = data;
+    }
+    if (!profile && (local.raven_id || local.username)) {
+      const handle = String(local.raven_id || local.username || '').replace(/^@/, '').toLowerCase();
+      const { data } = await db.from('profiles').select('*').or('raven_id.eq.' + handle + ',username.eq.' + handle).maybeSingle();
+      if (data) profile = data;
+    }
     if (profile) {
       document.getElementById('set-first').value = profile.first_name || '';
       document.getElementById('set-last').value = profile.last_name || '';
@@ -2740,13 +2763,13 @@ async function loadSettings() {
       document.getElementById('profile-display-name').textContent = displayName;
       try {
         const existing = JSON.parse(localStorage.getItem('raven_profile') || '{}');
-        localStorage.setItem('raven_profile', JSON.stringify({ ...existing, ...profile, user_id: currentUser.id, username: profile.username || profile.raven_id || existing.username || '' }));
+        localStorage.setItem('raven_profile', JSON.stringify({ ...existing, ...profile, user_id: profile.id || existing.user_id || currentUser?.id || '', username: profile.username || profile.raven_id || existing.username || '', email: profile.email || effectiveEmail || existing.email || '' }));
       } catch(e) {}
     }
   } catch(e) {}
   try {
     const ravenIdField = document.getElementById('set-raven-id');
-    if (ravenIdField && (!ravenIdField.value || shouldRefreshAutoRavenId(ravenIdField.value, document.getElementById('set-first').value.trim(), currentUser.email))) {
+    if (ravenIdField && (!ravenIdField.value || shouldRefreshAutoRavenId(ravenIdField.value, document.getElementById('set-first').value.trim(), effectiveEmail))) {
       const generated = await ensureCurrentUserRavenId();
       ravenIdField.value = generated;
       const status = document.getElementById('raven-id-status');
