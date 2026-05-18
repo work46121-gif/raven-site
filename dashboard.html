@@ -1921,6 +1921,52 @@ function markRavenSignedIn() {
   try { localStorage.removeItem(RAVEN_SIGNED_OUT_KEY); } catch(e) {}
 }
 
+function isNativeAppMode() {
+  try {
+    if (window.Capacitor?.isNativePlatform && window.Capacitor.isNativePlatform()) return true;
+    if (RAVEN_APP_MODE) return true;
+    return localStorage.getItem('raven_native_app') === '1';
+  } catch(e) {
+    return false;
+  }
+}
+
+function getDashboardAuthRedirectTo() {
+  return isNativeAppMode() ? 'ravensplit://auth/callback' : 'https://ravensplit.com/dashboard.html';
+}
+
+function getDashboardPasswordResetRedirectTo() {
+  return isNativeAppMode() ? 'ravensplit://auth/reset?app=1&reset=1' : 'https://ravensplit.com/dashboard.html?reset=1';
+}
+
+function getDashboardConfirmRedirectTo() {
+  return isNativeAppMode() ? 'ravensplit://auth/callback?app=1' : 'https://ravensplit.com/dashboard.html';
+}
+
+function handleNativeAuthCallbackUrl(url) {
+  try {
+    const incoming = new URL(url);
+    const isRavenAuth = incoming.protocol === 'ravensplit:' && incoming.hostname === 'auth';
+    if (!isRavenAuth && !/\/app\.html|\/dashboard\.html/.test(incoming.pathname)) return false;
+    const hash = incoming.hash || '';
+    const isReset = incoming.pathname.includes('reset') || incoming.searchParams.get('reset') === '1' || hash.includes('type=recovery');
+    window.location.replace('app.html?app=1' + (isReset ? '&reset=1' : '') + hash);
+    return true;
+  } catch(e) {
+    return false;
+  }
+}
+
+function setupNativeAppUrlListener() {
+  const appPlugin = window.Capacitor?.Plugins?.App;
+  if (!appPlugin?.addListener || setupNativeAppUrlListener._ready) return;
+  setupNativeAppUrlListener._ready = true;
+  appPlugin.addListener('appUrlOpen', ({ url }) => {
+    if (url) handleNativeAuthCallbackUrl(url);
+  });
+}
+setupNativeAppUrlListener();
+
 function setAppPendingTripOpen(payload) {
   try { sessionStorage.setItem(APP_PENDING_TRIP_KEY, JSON.stringify(payload || {})); } catch(e) {}
 }
@@ -2390,7 +2436,7 @@ function hideAuthError() { document.getElementById('auth-error').style.display =
 
 async function handleGoogleAuth() {
   try {
-    const redirectTo = 'https://ravensplit.com/dashboard.html' + (RAVEN_APP_MODE ? '?app=1' : '');
+    const redirectTo = getDashboardAuthRedirectTo();
     const { error } = await db.auth.signInWithOAuth({
       provider: 'google',
       options: {
@@ -2439,7 +2485,11 @@ async function resendConfirmation(email) {
   const addr = email || document.getElementById('login-email')?.value.trim();
   if (!addr) return showAuthError('Enter your email address first.');
   try {
-    const { error } = await db.auth.resend({ type: 'signup', email: addr });
+    const { error } = await db.auth.resend({
+      type: 'signup',
+      email: addr,
+      options: { emailRedirectTo: getDashboardConfirmRedirectTo() }
+    });
     if (error) return showAuthError(error.message);
     hideAuthError();
     showToast('✅ Confirmation email resent to ' + addr, 'success');
@@ -2483,7 +2533,7 @@ async function handleForgotPassword() {
   if (!email) return showAuthError('Please enter your email address.');
   const btn = document.getElementById('forgot-btn');
   btn.textContent = 'Sending...'; btn.disabled = true; hideAuthError();
-  const redirectUrl = 'https://ravensplit.com/dashboard.html' + (RAVEN_APP_MODE ? '?app=1&reset=1' : '?reset=1');
+  const redirectUrl = getDashboardPasswordResetRedirectTo();
   const { error } = await db.auth.resetPasswordForEmail(email, { redirectTo: redirectUrl });
   btn.textContent = 'Send Reset Link →'; btn.disabled = false;
   if (error) {
@@ -2523,6 +2573,7 @@ async function handleSignup() {
     email,
     password,
     options: {
+      emailRedirectTo: getDashboardConfirmRedirectTo(),
       data: {
         first_name: firstName || '',
         username: ravenId || '',
