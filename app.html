@@ -529,6 +529,38 @@ function getAppAuthRedirectTo(){
   // Capacitor uses a capacitor:// or file:// origin — fall back to the web URL for OAuth redirects only
   return 'https://ravensplit.com/app.html?app=1';
 }
+function showPasswordResetFormFromUrl(url){
+  try {
+    const incoming = new URL(url || window.location.href, window.location.href);
+    const hash = incoming.hash || '';
+    const query = incoming.search || '?app=1&reset=1';
+    if (!/reset=1/.test(query) && !/type=recovery/.test(hash)) return false;
+    const target = 'app.html?app=1&reset=1' + hash;
+    if (hash && window.location.href.indexOf(target) === -1) {
+      window.location.href = target;
+      return true;
+    }
+    try { db.auth.getSession(); } catch(e) {}
+    history.replaceState(null, '', window.location.pathname + '?app=1&reset=1');
+    showSignedOutHome();
+    showTab('new-password');
+    return true;
+  } catch(e) {
+    return false;
+  }
+}
+function setupNativeAppUrlListener(){
+  const appPlugin = window.Capacitor?.Plugins?.App;
+  if (!appPlugin?.addListener || setupNativeAppUrlListener._ready) return;
+  setupNativeAppUrlListener._ready = true;
+  appPlugin.addListener('appUrlOpen', ({ url }) => {
+    if (!url) return;
+    if (url.includes('/app.html') || url.includes('/dashboard.html')) {
+      showPasswordResetFormFromUrl(url);
+    }
+  });
+}
+setupNativeAppUrlListener();
 // Listen for PASSWORD_RECOVERY event from Supabase (email link click)
 db.auth.onAuthStateChange((event, session) => {
   if (event === 'PASSWORD_RECOVERY') {
@@ -976,6 +1008,7 @@ async function handleSetNewPassword(event){
     return;
   }
   const isPasswordReset = params.get('reset') === '1' || (hash && hash.includes('type=recovery'));
+  if (isPasswordReset && showPasswordResetFormFromUrl(window.location.href)) return;
   if (hash && hash.includes('access_token')) {
     try { await db.auth.getSession(); } catch(e) {}
     // Check if this is a password recovery redirect
