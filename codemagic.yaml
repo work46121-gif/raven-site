@@ -69,11 +69,33 @@ workflows:
           npx cap sync ios
         working_directory: .
 
-      - name: Configure iOS universal links
+      - name: Configure iOS deep links
         script: |
           set -e
+          INFO_PLIST="ios/App/App/Info.plist"
           ENTITLEMENTS_PATH="ios/App/App/App.entitlements"
           PBXPROJ_PATH="ios/App/App.xcodeproj/project.pbxproj"
+
+          /usr/libexec/PlistBuddy -c "Delete :CFBundleURLTypes" "$INFO_PLIST" 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes array" "$INFO_PLIST"
+          /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0 dict" "$INFO_PLIST"
+          /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0:CFBundleURLName string com.ravensplit.app" "$INFO_PLIST"
+          /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0:CFBundleURLSchemes array" "$INFO_PLIST"
+          /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0:CFBundleURLSchemes:0 string ravensplit" "$INFO_PLIST"
+          /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0:CFBundleURLSchemes:1 string com.ravensplit.app" "$INFO_PLIST"
+
+          if [ "${ENABLE_ASSOCIATED_DOMAINS:-0}" != "1" ]; then
+            echo "Skipping Associated Domains entitlement. Set ENABLE_ASSOCIATED_DOMAINS=1 after the Apple App ID and provisioning profile include Associated Domains."
+            rm -f "$ENTITLEMENTS_PATH"
+            ruby - "$PBXPROJ_PATH" <<'RUBY'
+          path = ARGV.fetch(0)
+          text = File.read(path)
+          text.gsub!(/\n\s*CODE_SIGN_ENTITLEMENTS = App\/App\.entitlements;/, '')
+          File.write(path, text)
+          RUBY
+            plutil -lint "$INFO_PLIST"
+            exit 0
+          fi
 
           mkdir -p "$(dirname "$ENTITLEMENTS_PATH")"
           cat > "$ENTITLEMENTS_PATH" <<'PLIST'
@@ -223,10 +245,15 @@ workflows:
 
       - name: Build iOS IPA
         script: |
+          set -o pipefail
           xcode-project build-ipa \
             --workspace "$XCODE_WORKSPACE" \
             --scheme "$XCODE_SCHEME" \
-            --export-options-plist /Users/builder/export_options.plist
+            --export-options-plist /Users/builder/export_options.plist || {
+              echo "xcode-project build-ipa failed. Recent xcodebuild logs:"
+              find /tmp/xcodebuild_logs -type f -maxdepth 1 -print -exec tail -n 220 {} \; 2>/dev/null || true
+              exit 1
+            }
         working_directory: .
 
     artifacts:
