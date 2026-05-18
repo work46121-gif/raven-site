@@ -1,0 +1,14 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "3637XCKFN8.com.ravensplit.app",
+        "paths": [
+          "/app.html*",
+          "/dashboard.html*"
+        ]
+      }
+    ]
+  }
+}
