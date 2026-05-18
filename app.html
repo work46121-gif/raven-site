@@ -182,13 +182,14 @@ button,input,textarea{font:inherit}
   filter:blur(20px);opacity:.9;pointer-events:none;animation:scanGlow 7s ease-in-out infinite}
 .scan-card{transform:translateZ(0)}
 
-.scan-orbit{position:relative;width:clamp(148px,24vh,220px);aspect-ratio:1;border-radius:50%;display:grid;place-items:center;margin-bottom:clamp(12px,2.5vh,24px);flex:0 0 auto}
+.scan-orbit{position:relative;width:clamp(148px,24vh,220px);aspect-ratio:1;border-radius:50%;display:grid;place-items:center;margin-bottom:clamp(12px,2.5vh,24px);flex:0 0 auto;pointer-events:none}
 .scan-orbit::before{content:"";position:absolute;inset:0;border-radius:50%;border:1px dashed rgba(192,132,252,.28);animation:spin 18s linear infinite}
 .scan-orbit::after{content:"";position:absolute;inset:-14%;border-radius:50%;border:1px solid rgba(48,209,88,.07);animation:spin 28s linear infinite reverse}
 .scan-logo-button{width:58%;aspect-ratio:1;border:0;border-radius:28%;background:transparent;
   display:grid;place-items:center;padding:0;position:relative;cursor:pointer;
-  touch-action:manipulation;-webkit-tap-highlight-color:transparent}
-#home-logo-btn,.scan-logo-button{touch-action:none;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+  touch-action:manipulation;-webkit-tap-highlight-color:transparent;pointer-events:auto}
+#home-logo-btn,.scan-logo-button{touch-action:manipulation;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+#home-logo-btn *, .scan-logo-button *{pointer-events:none;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
 .scan-mark{width:100%;height:100%;border-radius:28%;
   background:linear-gradient(148deg,#1C1C2E,#08080E);
   border:1px solid rgba(255,255,255,.12);display:grid;place-items:center;position:relative;
@@ -200,6 +201,11 @@ button,input,textarea{font:inherit}
 .scan-logo-button:active .scan-mark{transform:scale(.97);box-shadow:0 14px 44px rgba(168,85,247,.2)}
 .scan-logo-button:focus-visible{outline:none}
 .scan-logo-button:focus-visible .scan-mark{box-shadow:0 20px 56px rgba(168,85,247,.26),0 0 0 4px rgba(48,209,88,.2)}
+.scan-logo-button.is-launching .scan-mark{animation:scanLogoLaunch .42s cubic-bezier(.2,.9,.18,1) forwards}
+.scan-logo-button.is-launching::before{content:"";position:absolute;inset:-34%;border-radius:50%;border:2px solid rgba(48,209,88,.42);animation:scanLogoRipple .46s ease-out forwards}
+.scan-logo-button.is-launching::after{content:"";position:absolute;inset:-16%;border-radius:50%;background:radial-gradient(circle,rgba(48,209,88,.18),rgba(168,85,247,.12) 45%,transparent 70%);animation:scanLogoFlash .46s ease-out forwards;z-index:-1}
+.home-logo.is-launching{animation:scanLogoLaunch .42s cubic-bezier(.2,.9,.18,1) forwards}
+.home-logo.is-launching::after{box-shadow:0 0 22px rgba(48,209,88,1)}
 .scan-orbit,.scan-title,.scan-copy{position:relative;z-index:1}
 
 /* scan title + instruction */
@@ -283,6 +289,9 @@ button,input,textarea{font:inherit}
 @keyframes spin{to{transform:rotate(360deg)}}
 @keyframes loaderPulse{0%,100%{transform:scale(1);box-shadow:0 0 0 rgba(168,85,247,0)}50%{transform:scale(1.05);box-shadow:0 0 40px rgba(168,85,247,.3)}}
 @keyframes scanGlow{0%,100%{transform:translateY(0);opacity:.7}50%{transform:translateY(-14px);opacity:1}}
+@keyframes scanLogoLaunch{0%{transform:scale(1)}42%{transform:scale(.9) rotate(-2deg);box-shadow:0 10px 34px rgba(48,209,88,.22),0 0 0 1px rgba(48,209,88,.14) inset}100%{transform:scale(1.13) rotate(1deg);box-shadow:0 24px 74px rgba(48,209,88,.34),0 0 0 1px rgba(48,209,88,.22) inset}}
+@keyframes scanLogoRipple{0%{transform:scale(.72);opacity:.85}100%{transform:scale(1.28);opacity:0}}
+@keyframes scanLogoFlash{0%{transform:scale(.72);opacity:0}40%{opacity:1}100%{transform:scale(1.2);opacity:0}}
 @keyframes ravenFly{0%{transform:translateX(0) translateY(18px) scale(.85);opacity:0}12%{opacity:1}100%{transform:translateX(calc(100vw + 110px)) translateY(-22px) scale(1.08);opacity:0}}
 @keyframes flyWing{0%,100%{transform:rotate(-18deg)}50%{transform:rotate(20deg)}}
 @keyframes flyWingRight{0%,100%{transform:scaleX(-1) rotate(-18deg)}50%{transform:scaleX(-1) rotate(20deg)}}
@@ -412,7 +421,7 @@ button,input,textarea{font:inherit}
   <!-- Top bar -->
   <div class="home-top" id="home-top" style="display:none;align-items:center;justify-content:space-between;padding:calc(env(safe-area-inset-top,0px) + 12px) 18px 8px;flex:0 0 auto;position:relative;z-index:4">
     <div class="home-brand">
-      <button class="home-logo" id="home-logo-btn" type="button" aria-label="Scan receipt" onclick="scanLogoAction()" style="border:0;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent;background:transparent;display:grid;place-items:center;position:relative"></button>
+      <button class="home-logo" id="home-logo-btn" type="button" aria-label="Scan receipt" onclick="return scanLogoAction(event)" style="border:0;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent;background:transparent;display:grid;place-items:center;position:relative"></button>
       <div>
         <div class="home-title">RAVEN</div>
         <div style="font-size:10px;color:var(--muted);font-weight:600;letter-spacing:.08em">AI Bill Splitter</div>
@@ -425,7 +434,7 @@ button,input,textarea{font:inherit}
   <div class="scan-hero">
     <div class="scan-card">
       <div class="scan-orbit">
-        <button class="scan-logo-button" type="button" aria-label="Scan receipt" onclick="scanLogoAction()">
+        <button class="scan-logo-button" type="button" aria-label="Scan receipt" onclick="return scanLogoAction(event)">
           <span class="scan-mark" aria-hidden="true"><span>R</span></span>
         </button>
       </div>
@@ -470,6 +479,35 @@ button,input,textarea{font:inherit}
 <div class="loading" id="loading"><div class="loader-mark"><span>R</span></div></div>
 
 <script>
+window.RAVEN_SCAN_URL = 'dashboard.html?app=1&page=create-bill';
+window.animateScanLogo = window.animateScanLogo || function animateScanLogo(source){
+  const target = source && source.closest ? source.closest('#home-logo-btn,.scan-logo-button') : null;
+  const logo = target || document.querySelector('.scan-logo-button') || document.getElementById('home-logo-btn');
+  if (logo) {
+    logo.classList.remove('is-launching');
+    void logo.offsetWidth;
+    logo.classList.add('is-launching');
+  }
+  try { if (navigator.vibrate) navigator.vibrate(18); } catch(e) {}
+};
+window.goScanPage = window.goScanPage || function goScanPage(source){
+  if (window.goScanPage._navigating) return false;
+  window.goScanPage._navigating = true;
+  try { localStorage.setItem('raven_native_app','1'); } catch(e) {}
+  window.animateScanLogo(source);
+  setTimeout(() => { window.location.href = window.RAVEN_SCAN_URL; }, 430);
+  setTimeout(() => {
+    try { window.location.replace(window.RAVEN_SCAN_URL); } catch(e) {}
+  }, 760);
+  return false;
+};
+window.scanLogoAction = window.scanLogoAction || function scanLogoAction(event){
+  if (event) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+  return window.goScanPage(event?.currentTarget || event?.target);
+};
 const SUPABASE_URL = 'https://ffjpzkpdumdcwnakpaje.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZmanB6a3BkdW1kY3duYWtwYWplIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5ODc4OTcsImV4cCI6MjA4ODU2Mzg5N30.JtDLVu4K1TJ8emcN_mvSHBu6e0y8-jPQv-ypoc9p0RU';
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
@@ -652,16 +690,28 @@ function navigateWithFade(url){
   // Small delay so the transition is visible
   setTimeout(() => { window.location.href = url; }, 160);
 }
-function goScanPage(){
-  if (goScanPage._navigating) return;
-  goScanPage._navigating = true;
+window.animateScanLogo = function animateScanLogo(source){
+  const target = source && source.closest ? source.closest('#home-logo-btn,.scan-logo-button') : null;
+  const logo = target || document.querySelector('.scan-logo-button') || document.getElementById('home-logo-btn');
+  if (logo) {
+    logo.classList.remove('is-launching');
+    void logo.offsetWidth;
+    logo.classList.add('is-launching');
+  }
+  try { if (navigator.vibrate) navigator.vibrate(18); } catch(e) {}
+};
+window.goScanPage = function goScanPage(source){
+  if (window.goScanPage._navigating) return false;
+  window.goScanPage._navigating = true;
   localStorage.setItem('raven_native_app','1');
-  const url = 'dashboard.html?app=1&page=create-bill';
-  window.location.href = url;
+  const url = window.RAVEN_SCAN_URL || 'dashboard.html?app=1&page=create-bill';
+  window.animateScanLogo(source);
+  setTimeout(() => { window.location.href = url; }, 430);
   setTimeout(() => {
     try { window.location.replace(url); } catch(e) {}
-  }, 120);
-}
+  }, 760);
+  return false;
+};
 function launchRavenFlight(){
   const layer = document.createElement('div');
   layer.className = 'raven-flight';
@@ -684,9 +734,13 @@ function goDashboard(){
   localStorage.setItem('raven_native_app','1');
   navigateWithRavens('dashboard.html?app=1&page=overview');
 }
-function scanLogoAction(){
-  goScanPage();
-}
+window.scanLogoAction = function scanLogoAction(event){
+  if (event) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+  return window.goScanPage(event?.currentTarget || event?.target);
+};
 function handleCameraCapture(event){
   const file = event.target.files && event.target.files[0];
   if (!file) return;
@@ -871,7 +925,12 @@ async function handleSetNewPassword(event){
       e.preventDefault();
       e.stopPropagation();
       if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
-      goScanPage();
+      window.scanLogoAction({ preventDefault(){}, stopPropagation(){}, currentTarget: target, target });
+    }
+    function blockLogoSelection(e) {
+      const target = e.target && e.target.closest ? e.target.closest('#home-logo-btn,.scan-logo-button') : null;
+      if (!target) return;
+      e.preventDefault();
     }
     document.addEventListener('touchstart', captureScanTap, { capture: true, passive: false });
     document.addEventListener('pointerdown', captureScanTap, true);
@@ -879,21 +938,20 @@ async function handleSetNewPassword(event){
     document.addEventListener('click', captureScanTap, true);
     document.addEventListener('touchend', captureScanTap, { capture: true, passive: false });
     document.addEventListener('pointerup', captureScanTap, true);
+    document.addEventListener('contextmenu', blockLogoSelection, true);
+    document.addEventListener('selectstart', blockLogoSelection, true);
     const logoBtn = document.getElementById('home-logo-btn');
     if (!logoBtn) return;
     logoBtn.addEventListener('click', function(e){
-      e.preventDefault();
-      goScanPage();
+      window.scanLogoAction(e);
     });
     logoBtn.addEventListener('touchend', function(e){
-      e.preventDefault();
-      goScanPage();
+      window.scanLogoAction(e);
     }, { passive: false });
     const scanBtn = document.querySelector('.scan-logo-button');
     if (scanBtn) {
       scanBtn.addEventListener('pointerup', function(e){
-        e.preventDefault();
-        goScanPage();
+        window.scanLogoAction(e);
       });
     }
   });
