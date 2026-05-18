@@ -69,6 +69,41 @@ workflows:
           npx cap sync ios
         working_directory: .
 
+      - name: Configure iOS universal links
+        script: |
+          set -e
+          ENTITLEMENTS_PATH="ios/App/App/App.entitlements"
+          PBXPROJ_PATH="ios/App/App.xcodeproj/project.pbxproj"
+
+          mkdir -p "$(dirname "$ENTITLEMENTS_PATH")"
+          cat > "$ENTITLEMENTS_PATH" <<'PLIST'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>com.apple.developer.associated-domains</key>
+            <array>
+              <string>applinks:ravensplit.com</string>
+              <string>applinks:www.ravensplit.com</string>
+            </array>
+          </dict>
+          </plist>
+          PLIST
+
+          ruby - "$PBXPROJ_PATH" <<'RUBY'
+          path = ARGV.fetch(0)
+          text = File.read(path)
+          text.gsub!(/CODE_SIGN_ENTITLEMENTS = [^;]+;/, 'CODE_SIGN_ENTITLEMENTS = App/App.entitlements;')
+          unless text.include?('CODE_SIGN_ENTITLEMENTS = App/App.entitlements;')
+            text.gsub!(/(PRODUCT_BUNDLE_IDENTIFIER = com\.ravensplit\.app;\n)/, "\\1\t\t\t\tCODE_SIGN_ENTITLEMENTS = App/App.entitlements;\n")
+          end
+          File.write(path, text)
+          RUBY
+
+          grep -n "CODE_SIGN_ENTITLEMENTS" "$PBXPROJ_PATH"
+          plutil -lint "$ENTITLEMENTS_PATH"
+        working_directory: .
+
       - name: Generate iOS app icons
         script: |
           set -e
