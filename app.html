@@ -523,11 +523,22 @@ let pendingConfirmEmail = '';
 function el(id){return document.getElementById(id)}
 function getAppAuthRedirectTo(){
   try {
+    if (window.Capacitor?.isNativePlatform && window.Capacitor.isNativePlatform()) {
+      return 'ravensplit://auth/callback';
+    }
     const origin = window.location.origin || '';
     if (/^https?:\/\//i.test(origin)) return origin + window.location.pathname + '?app=1';
   } catch(e) {}
   // Capacitor uses a capacitor:// or file:// origin — fall back to the web URL for OAuth redirects only
   return 'https://ravensplit.com/app.html?app=1';
+}
+function getAppPasswordResetRedirectTo(){
+  try {
+    if (window.Capacitor?.isNativePlatform && window.Capacitor.isNativePlatform()) {
+      return 'ravensplit://auth/reset?app=1&reset=1';
+    }
+  } catch(e) {}
+  return 'https://ravensplit.com/app.html?app=1&reset=1';
 }
 function showPasswordResetFormFromUrl(url){
   try {
@@ -555,7 +566,7 @@ function setupNativeAppUrlListener(){
   setupNativeAppUrlListener._ready = true;
   appPlugin.addListener('appUrlOpen', ({ url }) => {
     if (!url) return;
-    if (url.includes('/app.html') || url.includes('/dashboard.html')) {
+    if (url.includes('/app.html') || url.includes('/dashboard.html') || url.indexOf('ravensplit://auth/') === 0) {
       showPasswordResetFormFromUrl(url);
     }
   });
@@ -925,7 +936,7 @@ async function handleReset(event){
   const btn = el('reset-button');
   btn.disabled = true;
   btn.textContent = 'Sending...';
-  const redirectTo = 'https://ravensplit.com/app.html?app=1&reset=1';
+  const redirectTo = getAppPasswordResetRedirectTo();
   const { error } = await db.auth.resetPasswordForEmail(email, { redirectTo });
   btn.disabled = false;
   btn.textContent = 'Send reset link';
