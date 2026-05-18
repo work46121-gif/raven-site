@@ -166,6 +166,7 @@ button,input,textarea{font:inherit}
 .auth-actions{display:none;width:100%;gap:10px}
 .app-home.signed-out .dashboard-pill{display:none!important}
 .app-home.signed-out .auth-actions{display:flex!important}
+.app-home.signed-out #home-profile-btn{display:none!important}
 .app-home:not(.signed-out) .auth-actions{display:none!important}
 .app-home:not(.signed-out) .dashboard-pill{display:flex!important}
 
@@ -519,8 +520,42 @@ const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   }
 });
 let pendingConfirmEmail = '';
+const RAVEN_SIGNED_OUT_KEY = 'raven_signed_out';
 
 function el(id){return document.getElementById(id)}
+function clearRavenSignedInCache(){
+  try { localStorage.setItem(RAVEN_SIGNED_OUT_KEY, '1'); } catch(e) {}
+  [
+    'raven_profile',
+    'raven_app_dashboard_email',
+    'raven_native_app',
+    'raven_trip_name'
+  ].forEach(key => { try { localStorage.removeItem(key); } catch(e) {} });
+  try {
+    Object.keys(localStorage).forEach(key => {
+      if (/supabase|auth-token|sb-/i.test(key)) localStorage.removeItem(key);
+      if (/^raven_bill_name_|^raven_bill_claim_as_/i.test(key)) localStorage.removeItem(key);
+    });
+  } catch(e) {}
+  try {
+    Object.keys(sessionStorage).forEach(key => {
+      if (/raven_profile|raven_trip_name|supabase|auth-token|sb-/i.test(key)) sessionStorage.removeItem(key);
+    });
+  } catch(e) {}
+}
+function isRavenSignedOut(){
+  try { return localStorage.getItem(RAVEN_SIGNED_OUT_KEY) === '1'; } catch(e) { return false; }
+}
+function markRavenSignedIn(){
+  try { localStorage.removeItem(RAVEN_SIGNED_OUT_KEY); } catch(e) {}
+}
+async function enforceAppSignedOut(){
+  clearRavenSignedInCache();
+  try { await db.auth.signOut({ scope: 'global' }); }
+  catch(e) { try { await db.auth.signOut(); } catch(_) {} }
+  clearRavenSignedInCache();
+  showSignedOutHome();
+}
 function getAppAuthRedirectTo(){
   try {
     if (window.Capacitor?.isNativePlatform && window.Capacitor.isNativePlatform()) {
@@ -676,6 +711,7 @@ async function routeAfterAuth(user){
   }
 }
 function getCachedAppProfile(){
+  if (isRavenSignedOut()) return null;
   try {
     const local = JSON.parse(localStorage.getItem('raven_profile') || '{}');
     if (local && (local.user_id || local.email || local.first_name || local.raven_id || local.username)) return local;
@@ -706,6 +742,7 @@ function showAppHome(profile){
   }
   const profileBtn2 = el('home-profile-btn');
   if (profileBtn2) {
+    profileBtn2.style.display = '';
     if (avatarUrl) {
       profileBtn2.innerHTML = '<img src="' + avatarUrl + '" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';
       profileBtn2.style.background = 'transparent';
@@ -731,6 +768,17 @@ function showSignedOutHome(){
   // Hide status pill for signed-out users
   const pill = el('scan-status-pill');
   if (pill) pill.style.display = 'none';
+  const profileBtn = el('home-profile');
+  if (profileBtn) {
+    profileBtn.textContent = '?';
+    profileBtn.style.background = '';
+  }
+  const profileBtn2 = el('home-profile-btn');
+  if (profileBtn2) {
+    profileBtn2.textContent = '?';
+    profileBtn2.style.background = '';
+    profileBtn2.style.display = 'none';
+  }
   const dock = el('app-auth-dock');
   const card = document.querySelector('.auth-card');
   if (dock && card && card.parentElement !== dock) dock.appendChild(card);
@@ -786,6 +834,10 @@ function navigateWithRavens(url){
   setTimeout(() => navigateWithFade(url), 380);
 }
 function goDashboard(){
+  if (isRavenSignedOut()) {
+    showAuthPanel('login');
+    return;
+  }
   localStorage.setItem('raven_native_app','1');
   navigateWithRavens('dashboard.html?app=1&page=overview');
 }
@@ -815,6 +867,10 @@ function handleCameraCapture(event){
   reader.readAsDataURL(file);
 }
 function openAppPage(page, options){
+  if (isRavenSignedOut()) {
+    showAuthPanel('login');
+    return;
+  }
   localStorage.setItem('raven_native_app','1');
   const params = new URLSearchParams();
   params.set('app', '1');
@@ -856,6 +912,7 @@ async function handleLogin(event){
   }
   if (el('remember-email').checked) localStorage.setItem('raven_remembered_email', email);
   else localStorage.removeItem('raven_remembered_email');
+  markRavenSignedIn();
   localStorage.setItem('raven_app_dashboard_email', email);
   if (data?.user) routeAfterAuth(data.user);
 }
@@ -905,6 +962,7 @@ async function handleSignup(event){
     return showMessage('error', error.message);
   }
   if (data?.user) {
+    markRavenSignedIn();
     try {
       await db.from('profiles').upsert({
         id: data.user.id,
@@ -958,7 +1016,10 @@ async function handleSetNewPassword(event){
   showMessage('success','Password updated! Signing you in...');
   setTimeout(() => {
     const { data: { session } } = db.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) routeAfterAuth(session.user);
+      if (session?.user) {
+        markRavenSignedIn();
+        routeAfterAuth(session.user);
+      }
     });
   }, 1200);
 }
@@ -1014,6 +1075,10 @@ async function handleSetNewPassword(event){
   }
   const hash = window.location.hash;
   const params = new URLSearchParams(window.location.search);
+  if (params.get('signed_out') === '1') {
+    clearRavenSignedInCache();
+    try { history.replaceState(null, '', window.location.pathname + '?app=1'); } catch(e) {}
+  }
   if (params.get('from') === 'trip') {
     window.location.replace('dashboard.html?app=1&page=overview');
     return;
@@ -1039,6 +1104,10 @@ async function handleSetNewPassword(event){
     showTab('new-password');
     return;
   }
+  if (isRavenSignedOut()) {
+    await enforceAppSignedOut();
+    return;
+  }
   let session = null;
   for (let attempt = 0; attempt < 4; attempt++) {
     try {
@@ -1051,9 +1120,10 @@ async function handleSetNewPassword(event){
   if (session?.user) {
     // If session exists but it's a recovery session, show password form
     const urlHash = window.location.hash || '';
+    markRavenSignedIn();
     routeAfterAuth(session.user);
   } else {
-    const cachedProfile = getCachedAppProfile();
+    const cachedProfile = isRavenSignedOut() ? null : getCachedAppProfile();
     if (cachedProfile) showAppHome(cachedProfile);
     else showSignedOutHome();
   }
