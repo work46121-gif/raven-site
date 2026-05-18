@@ -598,8 +598,23 @@ async function routeAfterAuth(user){
       return;
     }
     const cached = getCachedAppProfile();
-    if (cached || new URLSearchParams(window.location.search).get('app') === '1') {
+    if (cached?.onboarding_complete) {
       try { if (user.email) localStorage.setItem('raven_app_dashboard_email', user.email); } catch(e) {}
+      localStorage.setItem('raven_profile', JSON.stringify({
+        ...cached,
+        user_id: cached.user_id || user.id,
+        email: cached.email || user.email || '',
+        first_name: cached.first_name || profile?.first_name || '',
+        raven_id: cached.raven_id || profile?.raven_id || profile?.username || '',
+        username: cached.username || profile?.username || profile?.raven_id || '',
+        avatar_url: cached.avatar_url || profile?.avatar_url || '',
+        onboarding_complete: true
+      }));
+      showLoading(false);
+      showAppHome(profile || cached || {});
+      return;
+    }
+    if (cached || new URLSearchParams(window.location.search).get('app') === '1') {
       localStorage.setItem('raven_profile', JSON.stringify({
         ...(cached || {}),
         user_id: cached?.user_id || user.id,
@@ -608,13 +623,10 @@ async function routeAfterAuth(user){
         raven_id: cached?.raven_id || profile?.raven_id || profile?.username || '',
         username: cached?.username || profile?.username || profile?.raven_id || '',
         avatar_url: cached?.avatar_url || profile?.avatar_url || '',
-        onboarding_complete: true
+        onboarding_complete: false
       }));
-      showLoading(false);
-      showAppHome(profile || cached || {});
-      return;
     }
-    window.location.href = 'onboarding.html';
+    window.location.href = 'onboarding.html' + (new URLSearchParams(window.location.search).get('app') === '1' ? '?app=1' : '');
   } catch(e) {
     showLoading(false);
     showAppHome();
@@ -813,8 +825,7 @@ async function resendConfirmationEmail(){
   btn.textContent = 'Sending confirmation...';
   const { error } = await db.auth.resend({
     type: 'signup',
-    email,
-    options: { emailRedirectTo: getAppAuthRedirectTo() }
+    email
   });
   btn.disabled = false;
   btn.textContent = 'Resend confirmation email';
@@ -837,7 +848,6 @@ async function handleSignup(event){
     email,
     password,
     options: {
-      emailRedirectTo: getAppAuthRedirectTo(),
       data: { first_name: first, raven_id: ravenId, username: ravenId }
     }
   });
@@ -871,13 +881,6 @@ async function handleSignup(event){
     return;
   }
   pendingConfirmEmail = email;
-  try {
-    await db.auth.resend({
-      type: 'signup',
-      email,
-      options: { emailRedirectTo: getAppAuthRedirectTo() }
-    });
-  } catch(e) {}
   showTab('login');
   el('login-email').value = email;
   toggleResendConfirm(true);
