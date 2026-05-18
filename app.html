@@ -556,9 +556,19 @@ async function enforceAppSignedOut(){
   clearRavenSignedInCache();
   showSignedOutHome();
 }
+function isNativeAppMode(){
+  try {
+    if (window.Capacitor?.isNativePlatform && window.Capacitor.isNativePlatform()) return true;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('app') === '1') return true;
+    return localStorage.getItem('raven_native_app') === '1';
+  } catch(e) {
+    return false;
+  }
+}
 function getAppAuthRedirectTo(){
   try {
-    if (window.Capacitor?.isNativePlatform && window.Capacitor.isNativePlatform()) {
+    if (isNativeAppMode()) {
       return 'ravensplit://auth/callback';
     }
     const origin = window.location.origin || '';
@@ -569,11 +579,28 @@ function getAppAuthRedirectTo(){
 }
 function getAppPasswordResetRedirectTo(){
   try {
-    if (window.Capacitor?.isNativePlatform && window.Capacitor.isNativePlatform()) {
+    if (isNativeAppMode()) {
       return 'ravensplit://auth/reset?app=1&reset=1';
     }
   } catch(e) {}
   return 'https://ravensplit.com/app.html?app=1&reset=1';
+}
+function getAppConfirmRedirectTo(){
+  return isNativeAppMode() ? 'ravensplit://auth/callback?app=1' : 'https://ravensplit.com/app.html?app=1';
+}
+function handleNativeAuthCallbackUrl(url){
+  try {
+    const incoming = new URL(url);
+    const isRavenAuth = incoming.protocol === 'ravensplit:' && incoming.hostname === 'auth';
+    if (!isRavenAuth && !/\/app\.html|\/dashboard\.html/.test(incoming.pathname)) return false;
+    const hash = incoming.hash || '';
+    const isReset = incoming.pathname.includes('reset') || incoming.searchParams.get('reset') === '1' || hash.includes('type=recovery');
+    const target = 'app.html?app=1' + (isReset ? '&reset=1' : '') + hash;
+    window.location.replace(target);
+    return true;
+  } catch(e) {
+    return false;
+  }
 }
 function showPasswordResetFormFromUrl(url){
   try {
@@ -601,6 +628,7 @@ function setupNativeAppUrlListener(){
   setupNativeAppUrlListener._ready = true;
   appPlugin.addListener('appUrlOpen', ({ url }) => {
     if (!url) return;
+    if (handleNativeAuthCallbackUrl(url)) return;
     if (url.includes('/app.html') || url.includes('/dashboard.html') || url.indexOf('ravensplit://auth/') === 0) {
       showPasswordResetFormFromUrl(url);
     }
@@ -925,7 +953,8 @@ async function resendConfirmationEmail(){
   btn.textContent = 'Sending confirmation...';
   const { error } = await db.auth.resend({
     type: 'signup',
-    email
+    email,
+    options: { emailRedirectTo: getAppConfirmRedirectTo() }
   });
   btn.disabled = false;
   btn.textContent = 'Resend confirmation email';
@@ -948,6 +977,7 @@ async function handleSignup(event){
     email,
     password,
     options: {
+      emailRedirectTo: getAppConfirmRedirectTo(),
       data: { first_name: first, raven_id: ravenId, username: ravenId }
     }
   });
