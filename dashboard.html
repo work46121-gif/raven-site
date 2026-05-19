@@ -1892,6 +1892,10 @@ const APP_PENDING_TRIP_KEY = 'raven_app_pending_trip_open';
 const APP_DASHBOARD_EMAIL_KEY = 'raven_app_dashboard_email';
 const RAVEN_SIGNED_OUT_KEY = 'raven_signed_out';
 
+if (RAVEN_APP_MODE) {
+  try { document.body.classList.add('app-mode'); } catch(e) {}
+}
+
 function isRavenSignedOut() {
   try { return localStorage.getItem(RAVEN_SIGNED_OUT_KEY) === '1'; } catch(e) { return false; }
 }
