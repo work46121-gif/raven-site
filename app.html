@@ -137,6 +137,14 @@ button,input,textarea{font:inherit}
 .error,.success{display:none;border-radius:13px;padding:11px 13px;font-size:12.5px;line-height:1.45;margin-bottom:10px}
 .error{background:rgba(255,107,107,.08);border:1px solid rgba(255,107,107,.22);color:#FFB3B3}
 .success{background:rgba(48,209,88,.08);border:1px solid rgba(48,209,88,.22);color:#A7F3B7}
+.auth-card.confirm-mode{padding:26px 18px;text-align:center}
+.email-confirm-panel{display:grid;gap:18px;justify-items:center}
+.email-confirm-icon{font-size:46px;line-height:1}
+.email-confirm-title{font-size:24px;font-weight:900;color:var(--white);line-height:1.15}
+.email-confirm-copy{font-size:15px;line-height:1.7;color:var(--muted);margin:0;max-width:310px}
+.email-confirm-copy strong{color:var(--white);font-weight:900;word-break:break-word}
+.email-confirm-ok{width:100%;border:1px solid rgba(48,209,88,.28);border-radius:16px;background:rgba(48,209,88,.08);color:var(--green);font-size:15px;font-weight:800;line-height:1.45;padding:15px}
+.email-confirm-back{border:0;background:transparent;color:var(--muted);font-size:14px;font-weight:700;text-decoration:underline;cursor:pointer;padding:8px}
 
 /* ── APP HOME (signed-in scan screen) ── */
 .app-home{display:none;height:100vh;height:100dvh;min-height:100vh;min-height:100dvh;overflow:hidden;
@@ -226,6 +234,7 @@ button,input,textarea{font:inherit}
 .app-home.auth-visible .scan-title{font-size:clamp(30px,5.5vh,44px);margin-bottom:6px}
 .app-home.auth-visible .scan-copy,.app-home.auth-visible .scan-instruction,.app-home.auth-visible .scan-status-pill{display:none}
 .app-home .auth-card{width:100%;max-height:none;overflow:visible;padding:12px;border-radius:20px}
+.app-home .auth-card.confirm-mode{padding:24px 18px;border-radius:20px}
 .app-home .tabs{margin-bottom:10px}
 .app-home .form{gap:9px}
 .app-home .input{padding:11px 12px}
@@ -511,6 +520,7 @@ window.scanLogoAction = window.scanLogoAction || function scanLogoAction(event){
 };
 const SUPABASE_URL = 'https://ffjpzkpdumdcwnakpaje.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZmanB6a3BkdW1kY3duYWtwYWplIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5ODc4OTcsImV4cCI6MjA4ODU2Mzg5N30.JtDLVu4K1TJ8emcN_mvSHBu6e0y8-jPQv-ypoc9p0RU';
+const BACKEND = 'https://raven-backend-production-fb1f.up.railway.app';
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
     flowType: 'implicit',
@@ -659,6 +669,12 @@ function toggleResendConfirm(show){
 function showTab(tab){
   clearMessage();
   toggleResendConfirm(false);
+  const confirmPanel = el('email-confirm-panel');
+  if (confirmPanel) confirmPanel.remove();
+  const card = document.querySelector('.auth-card');
+  if (card) card.classList.remove('confirm-mode');
+  const tabs = card ? card.querySelector('.tabs') : null;
+  if (tabs) tabs.style.display = '';
   ['login','signup','reset','new-password'].forEach(name => {
     const form = el(name + '-form');
     if (form) form.classList.toggle('active', name === tab);
@@ -669,6 +685,35 @@ function showTab(tab){
     const known = el('login-email').value || localStorage.getItem('raven_remembered_email') || '';
     el('reset-email').value = known;
   }
+}
+function showEmailConfirmationPanel(email){
+  clearMessage();
+  toggleResendConfirm(false);
+  const card = document.querySelector('.auth-card');
+  if (!card) return;
+  card.classList.add('confirm-mode');
+  ['login','signup','reset','new-password'].forEach(name => {
+    const form = el(name + '-form');
+    if (form) form.classList.remove('active');
+  });
+  const tabs = card.querySelector('.tabs');
+  if (tabs) tabs.style.display = 'none';
+  const old = el('email-confirm-panel');
+  if (old) old.remove();
+  const panel = document.createElement('div');
+  panel.id = 'email-confirm-panel';
+  panel.className = 'email-confirm-panel';
+  panel.innerHTML =
+    '<div class="email-confirm-icon">Email</div>' +
+    '<div class="email-confirm-title">Check your email</div>' +
+    '<p class="email-confirm-copy">We sent a confirmation link to <strong>' + String(email).replace(/[<>&"]/g, ch => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[ch])) + '</strong>.<br>Click it to activate your account.</p>' +
+    '<div class="email-confirm-ok">Once confirmed, come back and sign in</div>' +
+    '<button class="email-confirm-back" type="button">Back to Sign In</button>';
+  panel.querySelector('button').onclick = function(){
+    if (tabs) tabs.style.display = '';
+    showTab('login');
+  };
+  card.appendChild(panel);
 }
 function sanitizeRavenBase(base){
   return (String(base || '').trim().split(/\s+/)[0] || '').toLowerCase().replace(/[^a-z0-9_]/g,'').slice(0,16) || 'raven';
@@ -973,6 +1018,32 @@ async function handleSignup(event){
   btn.textContent = 'Creating...';
   let ravenId = '';
   try { ravenId = await generateUniqueRavenId(first || 'raven'); } catch(e) {}
+  if (isNativeAppMode()) {
+    try {
+      const response = await fetch(BACKEND + '/auth/app-signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          firstName: first,
+          email,
+          password,
+          redirectTo: getAppConfirmRedirectTo()
+        })
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok || !payload.success) throw new Error(payload.error || 'Could not create account.');
+      btn.disabled = false;
+      btn.textContent = 'Create account';
+      pendingConfirmEmail = email;
+      el('login-email').value = email;
+      showEmailConfirmationPanel(email);
+      return;
+    } catch(e) {
+      btn.disabled = false;
+      btn.textContent = 'Create account';
+      return showMessage('error', e.message || 'Could not send confirmation email. Please try again.');
+    }
+  }
   const { data, error } = await db.auth.signUp({
     email,
     password,
