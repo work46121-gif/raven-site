@@ -529,7 +529,7 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const BACKEND = 'https://raven-backend-production-fb1f.up.railway.app';
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
-    flowType: 'implicit',
+    flowType: 'pkce',
     detectSessionInUrl: true,
     persistSession: true,
     autoRefreshToken: true
@@ -977,8 +977,20 @@ async function handleGoogleAuth(){
   clearMessage();
   try {
     const redirectTo = getAppAuthRedirectTo();
-    const { error } = await db.auth.signInWithOAuth({ provider: 'google', options: { redirectTo } });
+    localStorage.setItem('raven_native_app','1');
+    markRavenSignedIn();
+    const { data, error } = await db.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo,
+        skipBrowserRedirect: true,
+        queryParams: { prompt: 'select_account' }
+      }
+    });
     if (error) showMessage('error', error.message);
+    if (data?.url) {
+      window.location.href = data.url;
+    }
   } catch(e) {
     showMessage('error', 'Google sign-in failed. Please try email/password.');
   }
