@@ -529,7 +529,7 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const BACKEND = 'https://raven-backend-production-fb1f.up.railway.app';
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
-    flowType: 'pkce',
+    flowType: 'implicit',
     detectSessionInUrl: true,
     persistSession: true,
     autoRefreshToken: true
@@ -1248,10 +1248,24 @@ async function handleSetNewPassword(event){
         return;
       }
     } catch(e) {
+      let session = null;
+      for (let attempt = 0; attempt < 4; attempt++) {
+        try {
+          const result = await db.auth.getSession();
+          session = result?.data?.session || null;
+        } catch(_) {}
+        if (session?.user) break;
+        await new Promise(resolve => setTimeout(resolve, 250));
+      }
       history.replaceState(null, '', window.location.pathname + '?app=1');
+      if (session?.user) {
+        markRavenSignedIn();
+        routeAfterAuth(session.user);
+        return;
+      }
       showSignedOutHome();
       showAuthPanel('login');
-      showMessage('error', 'Google sign-in did not finish. Please try again.');
+      showMessage('error', 'Google sign-in could not finish in Safari. Please use email sign-in for now.');
       return;
     }
   }
