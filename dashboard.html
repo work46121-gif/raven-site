@@ -1935,6 +1935,44 @@ function hasRavenCachedIdentity() {
   }
 }
 
+function getAppReturnDashboardUser() {
+  const params = new URLSearchParams(window.location.search);
+  let local = {};
+  try { local = JSON.parse(localStorage.getItem('raven_profile') || '{}'); } catch(e) { local = {}; }
+  const urlEmail = String(params.get('acct') || params.get('email') || '').trim();
+  const appEmail = String(localStorage.getItem(APP_DASHBOARD_EMAIL_KEY) || '').trim();
+  const remembered = String(localStorage.getItem('raven_remembered_email') || '').trim();
+  const email = isDashboardAccountEmail(urlEmail) ? urlEmail
+    : isDashboardAccountEmail(local.email) ? local.email
+    : isDashboardAccountEmail(appEmail) ? appEmail
+    : isDashboardAccountEmail(remembered) ? remembered
+    : '';
+  const firstName = String(params.get('name') || local.first_name || '').trim();
+  const id = String(local.user_id || local.id || local.raven_id || local.username || email || firstName || 'raven-app-user').trim();
+  const nextLocal = {
+    ...local,
+    user_id: id || 'raven-app-user',
+    email: email || local.email || '',
+    first_name: firstName || local.first_name || '',
+    raven_id: local.raven_id || local.username || '',
+    username: local.username || local.raven_id || '',
+    onboarding_complete: true
+  };
+  try { localStorage.setItem('raven_profile', JSON.stringify(nextLocal)); } catch(e) {}
+  if (email) rememberDashboardAccountEmail(email);
+  return {
+    id: id || 'raven-app-user',
+    email: email || String(firstName || local.raven_id || local.username || 'app-user').replace(/\s+/g, '').toLowerCase() + '@raven.app',
+    app_cached: true
+  };
+}
+
+async function enterAppDashboardReturnMode() {
+  markRavenSignedIn();
+  currentUser = getAppCachedDashboardUser(true) || getAppReturnDashboardUser();
+  await checkOnboardingAndShow(currentUser.id);
+}
+
 function isNativeAppMode() {
   try {
     if (window.Capacitor?.isNativePlatform && window.Capacitor.isNativePlatform()) return true;
@@ -2293,7 +2331,7 @@ async function init() {
       clearRavenSignedInCache();
       try { history.replaceState(null, '', window.location.pathname + (RAVEN_APP_MODE ? '?app=1' : '')); } catch(e) {}
     }
-    if (RAVEN_APP_MODE && params.get('signed_out') !== '1' && isRavenSignedOut() && hasRavenCachedIdentity()) {
+    if (RAVEN_APP_MODE && params.get('signed_out') !== '1') {
       markRavenSignedIn();
     }
     if (params.get('error')) {
@@ -2329,7 +2367,8 @@ async function init() {
         }
       } catch(e) {
         history.replaceState(null, '', window.location.pathname + (RAVEN_APP_MODE ? '?app=1' : ''));
-        showAuth();
+        if (RAVEN_APP_MODE) await enterAppDashboardReturnMode();
+        else showAuth();
         showAuthError('Google sign-in did not finish. Please try again.');
         return;
       }
@@ -2346,6 +2385,7 @@ async function init() {
     const cachedUser = getAppCachedDashboardUser();
     if (session?.user) { markRavenSignedIn(); currentUser = session.user; await checkOnboardingAndShow(currentUser.id); }
     else if (cachedUser) { currentUser = cachedUser; await checkOnboardingAndShow(currentUser.id); }
+    else if (RAVEN_APP_MODE) { await enterAppDashboardReturnMode(); }
     else { showAuth(); }
     db.auth.onAuthStateChange(async (event, session) => {
       try {
@@ -2360,6 +2400,10 @@ async function init() {
           if (window.location.hash) history.replaceState(null, '', window.location.pathname);
           await checkOnboardingAndShow(session.user.id);
         } else if (event === 'SIGNED_OUT') {
+          if (RAVEN_APP_MODE && !isRavenSignedOut()) {
+            await enterAppDashboardReturnMode();
+            return;
+          }
           const cachedUser = isRavenSignedOut() ? null : getAppCachedDashboardUser();
           if (cachedUser) { currentUser = cachedUser; await checkOnboardingAndShow(cachedUser.id); }
           else { currentUser = null; showAuth(); }
@@ -2370,13 +2414,14 @@ async function init() {
     console.warn('init error:', e);
     const cachedUser = getAppCachedDashboardUser();
     if (cachedUser) { currentUser = cachedUser; await checkOnboardingAndShow(cachedUser.id); }
+    else if (RAVEN_APP_MODE) await enterAppDashboardReturnMode();
     else showAuth();
   }
 }
 
-function getAppCachedDashboardUser() {
+function getAppCachedDashboardUser(force = false) {
   if (!RAVEN_APP_MODE) return null;
-  if (isRavenSignedOut()) return null;
+  if (isRavenSignedOut() && !force) return null;
   try {
     const local = JSON.parse(localStorage.getItem('raven_profile') || '{}');
     const appEmail = String(localStorage.getItem(APP_DASHBOARD_EMAIL_KEY) || '').trim();
