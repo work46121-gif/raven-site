@@ -1925,6 +1925,16 @@ function markRavenSignedIn() {
   try { localStorage.removeItem(RAVEN_SIGNED_OUT_KEY); } catch(e) {}
 }
 
+function hasRavenCachedIdentity() {
+  try {
+    const local = JSON.parse(localStorage.getItem('raven_profile') || '{}');
+    const appEmail = String(localStorage.getItem(APP_DASHBOARD_EMAIL_KEY) || '').trim();
+    return !!(local.user_id || local.id || local.email || local.first_name || local.raven_id || local.username || local.avatar_url || appEmail);
+  } catch(e) {
+    return false;
+  }
+}
+
 function isNativeAppMode() {
   try {
     if (window.Capacitor?.isNativePlatform && window.Capacitor.isNativePlatform()) return true;
@@ -1954,7 +1964,14 @@ function handleNativeAuthCallbackUrl(url) {
     if (!isRavenAuth && !/\/app\.html|\/dashboard\.html/.test(incoming.pathname)) return false;
     const hash = incoming.hash || '';
     const isReset = incoming.pathname.includes('reset') || incoming.searchParams.get('reset') === '1' || hash.includes('type=recovery');
-    window.location.replace('app.html?app=1' + (isReset ? '&reset=1' : '') + hash);
+    const params = new URLSearchParams();
+    params.set('app', '1');
+    if (isReset) params.set('reset', '1');
+    ['code','error','error_description','type'].forEach(key => {
+      const value = incoming.searchParams.get(key);
+      if (value) params.set(key, value);
+    });
+    window.location.replace('app.html?' + params.toString() + hash);
     return true;
   } catch(e) {
     return false;
@@ -2276,6 +2293,9 @@ async function init() {
       clearRavenSignedInCache();
       try { history.replaceState(null, '', window.location.pathname + (RAVEN_APP_MODE ? '?app=1' : '')); } catch(e) {}
     }
+    if (RAVEN_APP_MODE && params.get('signed_out') !== '1' && isRavenSignedOut() && hasRavenCachedIdentity()) {
+      markRavenSignedIn();
+    }
     if (params.get('error')) {
       console.warn('OAuth error:', params.get('error_description'));
       history.replaceState(null, '', window.location.pathname);
@@ -2295,6 +2315,24 @@ async function init() {
       history.replaceState(null, '', window.location.pathname + (RAVEN_APP_MODE ? '?app=1' : ''));
       showPasswordResetForm();
       return;
+    }
+    if (params.get('code') && !isPasswordRecovery) {
+      try {
+        const { data, error } = await db.auth.exchangeCodeForSession(params.get('code'));
+        if (error) throw error;
+        history.replaceState(null, '', window.location.pathname + (RAVEN_APP_MODE ? '?app=1' : ''));
+        if (data?.session?.user) {
+          markRavenSignedIn();
+          currentUser = data.session.user;
+          await checkOnboardingAndShow(currentUser.id);
+          return;
+        }
+      } catch(e) {
+        history.replaceState(null, '', window.location.pathname + (RAVEN_APP_MODE ? '?app=1' : ''));
+        showAuth();
+        showAuthError('Google sign-in did not finish. Please try again.');
+        return;
+      }
     }
     if (isRavenSignedOut()) {
       try { await db.auth.signOut({ scope: 'global' }); }
@@ -2341,7 +2379,8 @@ function getAppCachedDashboardUser() {
   if (isRavenSignedOut()) return null;
   try {
     const local = JSON.parse(localStorage.getItem('raven_profile') || '{}');
-    const email = String(local.email || '').trim();
+    const appEmail = String(localStorage.getItem(APP_DASHBOARD_EMAIL_KEY) || '').trim();
+    const email = String(local.email || appEmail || '').trim();
     const id = String(local.user_id || local.id || local.raven_id || local.username || email || local.first_name || 'raven-app-user').trim();
     if (id || email || local.first_name || local.raven_id || local.username || local.avatar_url) {
       return {
