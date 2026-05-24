@@ -1831,7 +1831,7 @@ body.app-mode .cb-raven-add-icon { width:18px;height:18px;display:block; }
       <button class="modal-btn modal-btn-remind" id="modal-remind-btn"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" style="vertical-align:middle;margin-right:4px"><path d="M8 2a4 4 0 0 0-4 4v3l-1 1.5h10L12 9V6a4 4 0 0 0-4-4z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M6.5 12.5a1.5 1.5 0 0 0 3 0" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg> Remind Unpaid</button>
       <button class="modal-btn" id="modal-edit-toggle-btn" style="background:rgba(48,209,88,0.08);border:1px solid rgba(48,209,88,0.2);color:var(--green)" onclick="toggleBillEditPanel()">✏️ Edit Bill</button>
       <button class="modal-btn" id="modal-add-person-btn" style="background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.2);color:var(--purple3)">👤 Add Person</button>
-      <button class="modal-btn modal-btn-delete" id="modal-delete-btn">🗑 Delete</button>
+      <button class="modal-btn modal-btn-delete" id="modal-delete-btn">Remove from Bill Page</button>
     </div>
 
     <!-- Edit Bill panel -->
@@ -3770,13 +3770,13 @@ async function loadActiveBills() {
     return;
   }
   const [{ data: myBills }, { data: partRows }] = await Promise.all([
-    db.from('bills').select('*, participants(*)').eq('creator_phone', userEmail).eq('status', 'active').order('created_at', { ascending: false }),
+    db.from('bills').select('*, participants(*)').eq('creator_phone', userEmail).neq('status', 'deleted').order('created_at', { ascending: false }),
     db.from('participants').select('bill_id').eq('phone', userEmail)
   ]);
   const partBillIds = (partRows || []).map(r => r.bill_id).filter(id => !(myBills || []).find(b => b.id === id));
   let partBills = [];
   if (partBillIds.length > 0) {
-    const { data } = await db.from('bills').select('*, participants(*)').in('id', partBillIds).eq('status', 'active').order('created_at', { ascending: false });
+    const { data } = await db.from('bills').select('*, participants(*)').in('id', partBillIds).neq('status', 'deleted').order('created_at', { ascending: false });
     partBills = data || [];
   }
   const bills = [...(myBills || []), ...partBills].sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
@@ -3845,12 +3845,9 @@ function renderBillCard(b) {
     const isBillPayer = paidByKey && billPreviewParticipantKey(p.name) === paidByKey;
     return p.paid || isBillPayer;
   }).length || 0;
-  // Use live_people_count as a floor — QR joiners may not be in participants yet
   const total = Math.max(parts.length || 0, b.live_people_count || 0);
   const pct = total > 0 ? Math.round((paid / total) * 100) : 0;
   const isCreator = b.creator_phone === currentUser.email;
-  // For creator bills: owed = what others haven't paid yet
-  // For shared/member bills: owed = only what YOU owe
   const myParticipantRow = parts.find(p => p.phone === currentUser.email);
   const owed = isCreator
     ? (parts.filter(p => !p.paid && p.phone !== currentUser.email).reduce((s, p) => s + parseFloat(p.amount || 0), 0) || 0)
@@ -3865,26 +3862,26 @@ function renderBillCard(b) {
     const profile = JSON.parse(localStorage.getItem('raven_profile') || '{}');
     if (profile.first_name) billUrlObj.searchParams.set('name', profile.first_name);
   } catch(e) {}
-  let billUrl = billUrlObj.toString();
+  const billUrl = billUrlObj.toString();
   billUrlMap[b.id] = billUrl;
   const viewCta = RAVEN_APP_MODE
-    ? '<button class="bill-action-btn btn-view" type="button" data-bill-view="' + b.id + '" style="display:inline-flex;align-items:center;text-decoration:none">View →</button>'
-    : '<a class="bill-action-btn btn-view" href="' + billUrl + '" data-bill-view="' + b.id + '" style="display:inline-flex;align-items:center;text-decoration:none">View →</a>';
+    ? '<button class="bill-action-btn btn-view" type="button" data-bill-view="' + b.id + '" style="display:inline-flex;align-items:center;text-decoration:none">View</button>'
+    : '<a class="bill-action-btn btn-view" href="' + billUrl + '" data-bill-view="' + b.id + '" style="display:inline-flex;align-items:center;text-decoration:none">View</a>';
   const owedDisplay = isFullyPaid
-    ? '<span style="color:var(--green);font-weight:700">✓ All paid</span>'
+    ? '<span style="color:var(--green);font-weight:700">' + (b.status === 'completed' ? 'Completed' : 'All paid') + '</span>'
     : '<span style="color:var(--orange)">$' + owed.toFixed(2) + ' owed</span>';
   const sharedBadge = !isCreator ? '<span style="font-size:10px;background:rgba(124,58,237,0.12);border:1px solid rgba(124,58,237,0.2);color:var(--purple3);padding:2px 7px;border-radius:6px;vertical-align:middle;margin-left:6px">shared</span>' : '';
+  const completedBadge = b.status === 'completed' ? ' <span class="status-badge status-completed" style="font-size:10px;padding:2px 7px;vertical-align:middle">Completed</span>' : '';
   return '<div class="bill-card" onclick="openBillModal(\'' + b.id + '\')">' +
-    '<div><div class="bill-name">' + b.name + sharedBadge + ' <span class="bill-id">' + b.id + '</span></div><div class="bill-meta"><span>' + total + ' people</span><span>' + paid + '/' + total + ' paid</span>' + owedDisplay + '</div></div>' +
+    '<div><div class="bill-name">' + b.name + sharedBadge + completedBadge + ' <span class="bill-id">' + b.id + '</span></div><div class="bill-meta"><span>' + total + ' people</span><span>' + paid + '/' + total + ' paid</span>' + owedDisplay + '</div></div>' +
     '<div class="bill-amount" style="color:' + (isFullyPaid ? 'var(--green)' : 'var(--white)') + '">$' + parseFloat(b.total).toFixed(2) + '</div>' +
     '<div class="bill-progress-wrap"><div class="bill-progress-label">' + pct + '% paid</div><div class="bill-progress"><div class="bill-progress-fill" style="width:' + pct + '%;background:' + (isFullyPaid ? 'var(--green)' : 'var(--purple)') + '"></div></div></div>' +
     '<div class="bill-actions" onclick="event.stopPropagation()">' +
-    (isCreator ? '<button class="bill-action-btn btn-remind" onclick="sendReminder(\'' + b.id + '\')">🔔 Remind</button>' : '') +
-    '<button class="bill-action-btn" onclick="shareBillLink(\'' + b.id + '\',\'' + (b.name||'').replace(/'/g,"\\'") + '\',\'' + (b.share_token||'') + '\')" style="background:rgba(0,140,255,0.1);border:1px solid rgba(0,140,255,0.2);color:#4DB8FF">📤 Share</button>' +
+    (isCreator ? '<button class="bill-action-btn btn-remind" onclick="sendReminder(\'' + b.id + '\')">Remind</button>' : '') +
+    '<button class="bill-action-btn" onclick="shareBillLink(\'' + b.id + '\',\'' + (b.name||'').replace(/'/g,"\\'") + '\',\'' + (b.share_token||'') + '\')" style="background:rgba(0,140,255,0.1);border:1px solid rgba(0,140,255,0.2);color:#4DB8FF">Share</button>' +
     viewCta +
     '</div></div>';
 }
-
 function generateId() { const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; return Array.from({length: 5}, () => chars[Math.floor(Math.random() * chars.length)]).join(''); }
 
 function buildRavenPaymentMessage(amount, contextName, methodLabel) {
@@ -4057,19 +4054,19 @@ async function openBillModal(billId) {
       badge = '<span class="participant-amount" style="background:rgba(124,58,237,0.12);border:1px solid rgba(124,58,237,0.25);color:#C084FC;padding:3px 10px;border-radius:8px;font-size:12px;font-weight:700">💳 Paid the bill</span>';
       action = '';
     } else if (p.paid) {
-      badge = '<span class="participant-amount paid-tag">💳 Paid</span>';
-      action = '';
+      badge = '<span class="participant-amount paid-tag">Paid</span>';
+      action = '<button class="mark-paid-btn" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.16);color:var(--muted2)" onclick="unmarkPaidFromDashboard(\'' + p.id + '\', \'' + billId + '\')">Undo</button>';
     } else {
       const amt = parseFloat(p.amount || 0);
       if (amt > 0) {
         badge = '<span class="participant-amount owed-tag">$' + amt.toFixed(2) + ' owed</span>';
-        action = '<button class="mark-paid-btn" onclick="openPayModal(\'' + p.id + '\', \'' + billId + '\', ' + amt.toFixed(2) + ')">💳 Pay</button>';
+        action = '<button class="mark-paid-btn" onclick="openPayModal(\'' + p.id + '\', \'' + billId + '\', ' + amt.toFixed(2) + ')">Pay</button>';
       } else if (p._selCount > 0) {
         badge = '<span style="font-size:11px;color:var(--muted)">items claimed · visit bill page</span>';
         action = '';
       } else {
         badge = '<span class="participant-amount owed-tag">$0.00 owed</span>';
-        action = '<button class="mark-paid-btn" onclick="openPayModal(\'' + p.id + '\', \'' + billId + '\', 0)">💳 Pay</button>';
+        action = '<button class="mark-paid-btn" onclick="openPayModal(\'' + p.id + '\', \'' + billId + '\', 0)">Pay</button>';
       }
     }
     const removeBtn = '<button class="mark-paid-btn" style="background:rgba(255,68,68,0.08);border:1px solid rgba(255,68,68,0.2);color:#FF6B6B" onclick="removeParticipantFromBillPreview(\'' + billId + '\', \'' + String(p.name || '').replace(/'/g, "\\'") + '\')">Remove</button>';
@@ -4301,6 +4298,15 @@ async function markPaid(participantId, billId, method) {
   openBillModal(billId); loadAllData();
 }
 
+async function unmarkPaidFromDashboard(participantId, billId) {
+  if (!participantId || !billId) return;
+  await db.from('participants').update({ paid: false, paid_at: null, payment_method: null }).eq('id', participantId);
+  await db.from('bills').update({ status: 'active' }).eq('id', billId);
+  showToast('Payment undone', 'success');
+  openBillModal(billId);
+  loadAllData();
+}
+
 async function sendReminder(billId) {
   const btn = document.getElementById('modal-remind-btn');
   if (btn) { btn.textContent = 'Sending...'; btn.disabled = true; }
@@ -4351,10 +4357,10 @@ async function deleteBill(billId) {
   const wrap = document.createElement('div');
   wrap.id = 'delete-confirm-wrap';
   wrap.style.cssText = 'margin-top:12px;padding:14px;background:rgba(255,68,68,0.06);border:1px solid rgba(255,68,68,0.2);border-radius:10px';
-  wrap.innerHTML = '<div style="font-size:13px;font-weight:600;color:#FF6B6B;margin-bottom:10px">⚠ Delete this bill? This cannot be undone.</div>' +
+  wrap.innerHTML = '<div style="font-size:13px;font-weight:600;color:#FF6B6B;margin-bottom:10px">Remove this bill from the Bills page? It will stay in History.</div>' +
     '<div style="display:flex;gap:8px">' +
     '<button id="delete-cancel-btn" style="flex:1;padding:10px;background:var(--dark2);border:1px solid var(--border);border-radius:8px;color:var(--muted);font-family:\'Epilogue\',sans-serif;font-size:13px;font-weight:600;cursor:pointer">Cancel</button>' +
-    '<button id="delete-confirm-btn" style="flex:1;padding:10px;background:rgba(255,68,68,0.15);border:1px solid rgba(255,68,68,0.3);border-radius:8px;color:#FF6B6B;font-family:\'Epilogue\',sans-serif;font-size:13px;font-weight:700;cursor:pointer">Yes, Delete</button>' +
+    '<button id="delete-confirm-btn" style="flex:1;padding:10px;background:rgba(255,68,68,0.15);border:1px solid rgba(255,68,68,0.3);border-radius:8px;color:#FF6B6B;font-family:\'Epilogue\',sans-serif;font-size:13px;font-weight:700;cursor:pointer">Remove</button>' +
     '</div>';
 
   // Append inside modal content
@@ -4367,7 +4373,7 @@ async function deleteBill(billId) {
     await db.from('bills').update({ status: 'deleted' }).eq('id', billId);
     wrap.remove();
     closeBillModal();
-    showToast('Bill deleted', 'success');
+    showToast('Removed from Bills page', 'success');
     loadAllData();
   };
 }
@@ -9519,14 +9525,22 @@ async function sendChatMessage() {
 
   try {
     const trip = tripDataMap[currentChatTripId] || {};
-    const token = trip.share_token || trip.invite_token || '';
+    let token = trip.share_token || trip.invite_token || '';
+    if (!token) {
+      try {
+        const { data: liveTrip } = await db.from('trips').select('share_token,invite_token').eq('id', currentChatTripId).maybeSingle();
+        token = liveTrip?.share_token || liveTrip?.invite_token || '';
+        if (liveTrip) tripDataMap[currentChatTripId] = { ...trip, ...liveTrip };
+      } catch(e) {}
+    }
     if (!token) throw new Error('Missing trip token');
+    const chatUserId = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(currentUser.id || '')) ? currentUser.id : null;
     const resp = await fetch(BACKEND + '/trip/' + currentChatTripId + '/message', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         token,
-        user_id: currentUser.id,
+        user_id: chatUserId,
         sender_name: senderName,
         avatar_url: local.avatar_url || '',
         message,
@@ -9537,7 +9551,7 @@ async function sendChatMessage() {
     if (!payload.success) throw new Error(payload.error || 'Could not send message');
     appendChatMessage(payload.message || {
       trip_id: currentChatTripId,
-      user_id: currentUser.id,
+      user_id: chatUserId,
       sender_name: senderName,
       avatar_url: local.avatar_url || '',
       message,
