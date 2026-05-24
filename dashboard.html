@@ -414,6 +414,19 @@ body.app-mode .cb-raven-add-icon { width:18px;height:18px;display:block; }
 .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
 .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(8px); z-index: 500; display: none; align-items: center; justify-content: center; padding: 20px; }
 .modal-overlay.open { display: flex; }
+.trip-open-loader { position: fixed; inset: 0; z-index: 1800; display: none; align-items: center; justify-content: center; background: radial-gradient(circle at 50% 38%, rgba(124,58,237,0.24), rgba(5,5,9,0.94) 54%, rgba(5,5,9,0.98)); backdrop-filter: blur(12px); opacity: 0; transition: opacity 0.18s ease; }
+.trip-open-loader.show { display: flex; opacity: 1; }
+.trip-open-loader-inner { display: flex; flex-direction: column; align-items: center; gap: 18px; transform: translateY(-10px); }
+.trip-open-loader-mark { position: relative; width: 118px; height: 118px; border-radius: 32px; display: flex; align-items: center; justify-content: center; background: linear-gradient(145deg, rgba(20,20,32,0.96), rgba(7,7,12,0.96)); border: 1px solid rgba(255,255,255,0.12); box-shadow: 0 20px 70px rgba(124,58,237,0.38), inset 0 -20px 38px rgba(48,209,88,0.08); animation: ravenTripFloat 1.4s ease-in-out infinite; }
+.trip-open-loader-mark::before, .trip-open-loader-mark::after { content: ""; position: absolute; inset: -28px; border-radius: 42px; border: 1px solid rgba(168,85,247,0.35); animation: ravenTripRing 1.35s ease-out infinite; }
+.trip-open-loader-mark::after { inset: -48px; border-color: rgba(48,209,88,0.18); animation-delay: 0.35s; }
+.trip-open-loader-letter { font-family: 'Bebas Neue', sans-serif; font-size: 92px; line-height: 1; background: linear-gradient(180deg, #F0D7FF, #A855F7 70%, #30D158); -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: 0; }
+.trip-open-loader-dot { position: absolute; width: 24px; height: 24px; border-radius: 50%; background: var(--green); bottom: 22px; right: 34px; box-shadow: 0 0 24px rgba(48,209,88,0.8); animation: ravenTripDot 0.7s ease-in-out infinite alternate; }
+.trip-open-loader-title { font-family: 'Bebas Neue', sans-serif; font-size: 34px; letter-spacing: 0.1em; color: var(--white); text-align: center; }
+.trip-open-loader-sub { color: var(--muted2); font-size: 13px; font-weight: 700; letter-spacing: 0.04em; text-align: center; }
+@keyframes ravenTripFloat { 0%,100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-7px) scale(1.02); } }
+@keyframes ravenTripRing { 0% { transform: scale(0.72); opacity: 0.85; } 100% { transform: scale(1.14); opacity: 0; } }
+@keyframes ravenTripDot { from { transform: scale(0.82); } to { transform: scale(1.14); } }
 .modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); z-index: 600; display: none; align-items: center; justify-content: center; padding: 20px; }
 .modal-bg.open { display: flex; }
 .modal { background: var(--dark); border: 1px solid var(--border2); border-radius: 20px; padding: 32px; width: 100%; max-width: 520px; max-height: 85vh; overflow-y: auto; position: relative; }
@@ -759,6 +772,19 @@ body.app-mode .cb-raven-add-icon { width:18px;height:18px;display:block; }
       </div>
     </div>
     <div class="auth-footer"><a href="index.html" style="color:var(--muted);text-decoration:none">← Back to ravensplit.com</a></div>
+  </div>
+</div>
+
+<div id="trip-open-loader" class="trip-open-loader" aria-live="polite" aria-hidden="true">
+  <div class="trip-open-loader-inner">
+    <div class="trip-open-loader-mark">
+      <div class="trip-open-loader-letter">R</div>
+      <div class="trip-open-loader-dot"></div>
+    </div>
+    <div>
+      <div class="trip-open-loader-title">Opening Trip Hub</div>
+      <div class="trip-open-loader-sub">Syncing receipts and chat</div>
+    </div>
   </div>
 </div>
 
@@ -2734,6 +2760,25 @@ async function handleSignup() {
 
 let payModalParticipantId = null;
 let payModalBillId = null;
+let payModalMethodOptions = [];
+
+function payModalBuildMethodOptions(profile) {
+  const opts = [];
+  if (profile?.venmo) {
+    const handle = profile.venmo.startsWith('@') ? profile.venmo : '@' + profile.venmo;
+    opts.push({ label: 'Venmo (' + handle + ')', method: 'Venmo ' + handle });
+  }
+  if (profile?.cashapp) {
+    const tag = profile.cashapp.startsWith('$') ? profile.cashapp : '$' + profile.cashapp;
+    opts.push({ label: 'Cash App (' + tag + ')', method: 'Cash App ' + tag });
+  }
+  if (profile?.zelle) opts.push({ label: 'Zelle (' + profile.zelle + ')', method: 'Zelle ' + profile.zelle });
+  if (profile?.applepay) opts.push({ label: 'Apple Pay (' + profile.applepay + ')', method: 'Apple Pay ' + profile.applepay });
+  ['Cash','Bank Transfer','Venmo','Cash App','Zelle','Apple Pay','Other'].forEach(method => {
+    if (!opts.some(opt => opt.method.toLowerCase().startsWith(method.toLowerCase()))) opts.push({ label: method, method });
+  });
+  return opts;
+}
 
 async function openPayModal(participantId, billId, amount) {
   payModalParticipantId = participantId; payModalBillId = billId;
@@ -2808,6 +2853,7 @@ async function openPayModal(participantId, billId, amount) {
 
   const mc = document.getElementById('pay-modal-methods');
   mc.innerHTML = '';
+  payModalMethodOptions = payModalBuildMethodOptions(profile);
 
   function addLinkRow(href, target, bg, iconBg, iconText, title, handle) {
     const a = document.createElement('a');
@@ -2858,15 +2904,15 @@ async function openPayModal(participantId, billId, amount) {
       : displayName + ' hasn\'t set up payment methods yet.';
     mc.innerHTML = '<div style="text-align:center;padding:12px;color:var(--muted);font-size:12px;margin-bottom:4px">' + askText + '</div>';
     // Auto-show the method submenu when no payment links are available
-    ['Cash','Bank Transfer','Venmo','Cash App','Zelle','Apple Pay','Other'].forEach(function(m) {
+    payModalMethodOptions.forEach(function(opt) {
       const b = document.createElement('button');
-      b.textContent = m;
+      b.textContent = opt.label;
       b.style.cssText = 'display:block;width:100%;padding:11px 16px;margin-bottom:6px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:#F0EEF8;font-family:\'Epilogue\',sans-serif;font-size:13px;font-weight:600;cursor:pointer;text-align:left';
       b.addEventListener('click', (function(method){ return async function() {
         if (!payModalParticipantId || !payModalBillId) return;
         await markPaid(payModalParticipantId, payModalBillId, method);
         cbClosePayModal(); showToast('✅ Marked as paid via ' + method + '!', 'success');
-      }; })(m));
+      }; })(opt.method));
       mc.appendChild(b);
     });
     // Hide the "other method" button since methods are already shown
@@ -2883,16 +2929,16 @@ function cbToggleOtherMethods() {
   if (!container) return;
   if (container.children.length > 0) { container.innerHTML = ''; document.getElementById('pay-modal-other-btn').textContent = '✓ Paid via method ›'; return; }
   document.getElementById('pay-modal-other-btn').textContent = '✓ Paid via method ▴';
-  ['Cash','Bank Transfer','Venmo','Cash App','Zelle','Apple Pay','Other'].forEach(function(m) {
+  (payModalMethodOptions.length ? payModalMethodOptions : payModalBuildMethodOptions(null)).forEach(function(opt) {
     const b = document.createElement('button');
-    b.textContent = m;
+    b.textContent = opt.label;
     b.style.cssText = 'width:100%;padding:11px 16px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:#F0EEF8;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;text-align:left';
     b.addEventListener('click', (function(method){ return async function() {
       if (!payModalParticipantId || !payModalBillId) return;
       try { if (typeof posthog !== 'undefined') posthog.capture('payment_marked_paid', { bill_id: payModalBillId, method }); } catch(e) {}
       await markPaid(payModalParticipantId, payModalBillId, method);
       cbClosePayModal(); showToast('✅ Marked as paid via ' + method + '!', 'success');
-    }; })(m));
+    }; })(opt.method));
     container.appendChild(b);
   });
 }
@@ -7544,6 +7590,7 @@ async function createTrip() {
 function openTrip(tripId) {
   const url = getTripOpenUrl(tripId);
   if (!url) {
+    hideTripOpenLoader();
     if (RAVEN_APP_MODE) {
       try { showToast('Trip is still loading. Try again in a moment.', 'error'); } catch(e) {}
       try { loadTrips(); } catch(e) {}
@@ -7556,8 +7603,32 @@ function openTrip(tripId) {
     if (openTrip._pendingUrl === url) openTrip._pendingUrl = '';
   }, 1500);
   try { warmTrip(tripId); } catch(e) {}
+  showTripOpenLoader();
   window.location.href = url;
 }
+
+function showTripOpenLoader() {
+  const loader = document.getElementById('trip-open-loader');
+  if (!loader) return;
+  loader.style.display = 'flex';
+  loader.setAttribute('aria-hidden', 'false');
+  requestAnimationFrame(() => loader.classList.add('show'));
+  clearTimeout(showTripOpenLoader._timer);
+  showTripOpenLoader._timer = setTimeout(hideTripOpenLoader, 9000);
+}
+
+function hideTripOpenLoader() {
+  const loader = document.getElementById('trip-open-loader');
+  if (!loader) return;
+  loader.classList.remove('show');
+  loader.setAttribute('aria-hidden', 'true');
+  clearTimeout(showTripOpenLoader._timer);
+  setTimeout(() => {
+    if (!loader.classList.contains('show')) loader.style.display = 'none';
+  }, 200);
+}
+
+window.addEventListener('pageshow', hideTripOpenLoader);
 
 function getTripOpenUrl(tripId) {
   const base = tripUrlMap[tripId];
@@ -7637,7 +7708,74 @@ function cbLivePeopleAdj(delta) {
   if (el) el.textContent = cbLivePeopleCount;
 }
 
+function cbClearFieldError(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.style.borderColor = '';
+  el.style.boxShadow = '';
+  const msg = document.getElementById(id + '-error');
+  if (msg) msg.remove();
+}
+
+function cbSetFieldError(id, message) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.style.borderColor = 'rgba(255,68,68,0.75)';
+  el.style.boxShadow = '0 0 0 3px rgba(255,68,68,0.12)';
+  let msg = document.getElementById(id + '-error');
+  if (!msg) {
+    msg = document.createElement('div');
+    msg.id = id + '-error';
+    msg.style.cssText = 'margin-top:6px;color:#FF6B6B;font-size:11px;font-weight:700;letter-spacing:0.02em';
+    const parent = el.parentElement || el;
+    parent.insertAdjacentElement('afterend', msg);
+  }
+  msg.textContent = message;
+}
+
+function cbValidateStep1(showErrors = true) {
+  cbClearFieldError('cb-name');
+  const name = document.getElementById('cb-name')?.value.trim() || '';
+  if (name) return true;
+  if (showErrors) {
+    cbSetFieldError('cb-name', 'Enter a bill name');
+    showToast('Enter a bill name', 'error');
+  }
+  return false;
+}
+
+function cbValidateStep2(showErrors = true) {
+  ['cb-paidby','cb-even-total','cb-person-input','cb-item-name','cb-item-price'].forEach(cbClearFieldError);
+  let ok = true;
+  const paidBy = document.getElementById('cb-paidby')?.value || '';
+  if (cbPeople.length === 0) {
+    ok = false;
+    if (showErrors) cbSetFieldError('cb-person-input', 'Add at least one person');
+  }
+  if (!paidBy) {
+    ok = false;
+    if (showErrors) cbSetFieldError('cb-paidby', 'Mark who paid');
+  }
+  if (cbSplitMode === 'even') {
+    const base = parseFloat(document.getElementById('cb-even-total')?.value) || 0;
+    if (base <= 0) {
+      ok = false;
+      if (showErrors) cbSetFieldError('cb-even-total', 'Enter the bill amount');
+    }
+  } else if (cbItems.reduce((sum, item) => sum + (parseFloat(item.price) || 0), 0) <= 0) {
+    ok = false;
+    if (showErrors) {
+      cbSetFieldError('cb-item-name', 'Add at least one item');
+      cbSetFieldError('cb-item-price', 'Enter an amount');
+    }
+  }
+  if (!ok && showErrors) showToast('Finish the red fields before continuing', 'error');
+  return ok;
+}
+
 function cbGoToStep(step) {
+  if (step >= 2 && !cbValidateStep1(true)) return;
+  if (step >= 3 && !cbValidateStep2(true)) return;
   [1,2,3].forEach(s => {
     const el = document.getElementById('cb-step-' + s);
     if (el) el.style.display = s === step ? 'block' : 'none';
@@ -8338,7 +8476,10 @@ function cbBuildStep3() {
 }
 async function cbCreateFinalBill() {
   const name = document.getElementById('cb-name').value.trim();
-  if (!name) return showToast('Enter a bill name', 'error');
+  if (!cbValidateStep1(true) || !cbValidateStep2(true)) {
+    cbGoToStep(!name ? 1 : 2);
+    return;
+  }
   if (cbPeople.length === 0) return showToast('Add at least one person', 'error');
   const tax = parseFloat(document.getElementById('cb-tax')?.value) || 0;
   const tip = parseFloat(document.getElementById('cb-tip')?.value) || 0;
@@ -9343,7 +9484,7 @@ function searchTripChatGifs(query) {
 }
 
 async function sendChatMessage() {
-  if (!currentChatTripId || !currentUser) return;
+  if (!currentChatTripId) return;
   const input = document.getElementById('chat-input');
   const message = input.value.trim();
   if (!message && !tripChatGifUrl) return;
@@ -9361,20 +9502,25 @@ async function sendChatMessage() {
     return;
   }
 
-  let local = JSON.parse(localStorage.getItem('raven_profile') || '{}');
+  let local = {};
+  try { local = JSON.parse(localStorage.getItem('raven_profile') || '{}'); } catch(e) {}
+  if (!currentUser) currentUser = getAppCachedDashboardUser(true) || getAppReturnDashboardUser();
   let senderName = local.first_name || currentUser.email?.split('@')[0] || 'Someone';
   try {
-    const { data: liveProfile } = await db.from('profiles').select('first_name,raven_id,email,avatar_url').eq('id', currentUser.id).maybeSingle();
-    senderName = liveProfile?.first_name || senderName;
-    if (liveProfile?.first_name) {
-      local = { ...local, ...liveProfile, user_id: currentUser.id };
-      localStorage.setItem('raven_profile', JSON.stringify(local));
+    if (!currentUser.app_cached) {
+      const { data: liveProfile } = await db.from('profiles').select('first_name,raven_id,email,avatar_url').eq('id', currentUser.id).maybeSingle();
+      senderName = liveProfile?.first_name || senderName;
+      if (liveProfile?.first_name) {
+        local = { ...local, ...liveProfile, user_id: currentUser.id };
+        localStorage.setItem('raven_profile', JSON.stringify(local));
+      }
     }
   } catch(e) {}
 
   try {
     const trip = tripDataMap[currentChatTripId] || {};
     const token = trip.share_token || trip.invite_token || '';
+    if (!token) throw new Error('Missing trip token');
     const resp = await fetch(BACKEND + '/trip/' + currentChatTripId + '/message', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
