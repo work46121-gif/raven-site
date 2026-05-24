@@ -654,6 +654,30 @@ function showPasswordResetFormFromUrl(url){
     return false;
   }
 }
+async function preparePasswordResetFromUrl(url){
+  try {
+    const incoming = new URL(url || window.location.href, window.location.href);
+    const hash = incoming.hash || '';
+    const isReset = incoming.searchParams.get('reset') === '1' || hash.includes('type=recovery');
+    if (!isReset) return false;
+    const code = incoming.searchParams.get('code');
+    if (code) {
+      const { error } = await db.auth.exchangeCodeForSession(code);
+      if (error) throw error;
+    } else if (hash.includes('access_token=')) {
+      try { await db.auth.getSession(); } catch(e) {}
+    }
+    history.replaceState(null, '', window.location.pathname + '?app=1&reset=1');
+    showSignedOutHome();
+    showTab('new-password');
+    return true;
+  } catch(e) {
+    showSignedOutHome();
+    showTab('reset');
+    showMessage('error', 'That reset link could not be opened. Send yourself a fresh reset link and try again.');
+    return true;
+  }
+}
 function setupNativeAppUrlListener(){
   const appPlugin = window.Capacitor?.Plugins?.App;
   if (!appPlugin?.addListener || setupNativeAppUrlListener._ready) return;
@@ -662,7 +686,7 @@ function setupNativeAppUrlListener(){
     if (!url) return;
     if (handleNativeAuthCallbackUrl(url)) return;
     if (url.includes('/app.html') || url.includes('/dashboard.html') || url.indexOf('ravensplit://auth/') === 0) {
-      showPasswordResetFormFromUrl(url);
+      preparePasswordResetFromUrl(url);
     }
   });
 }
@@ -1236,7 +1260,24 @@ async function handleSetNewPassword(event){
     return;
   }
   const isPasswordReset = params.get('reset') === '1' || (hash && hash.includes('type=recovery'));
-  if (isPasswordReset && showPasswordResetFormFromUrl(window.location.href)) return;
+  if (isPasswordReset && await preparePasswordResetFromUrl(window.location.href)) return;
+  if (hash && hash.includes('access_token=')) {
+    let session = null;
+    for (let attempt = 0; attempt < 4; attempt++) {
+      try {
+        const result = await db.auth.getSession();
+        session = result?.data?.session || null;
+      } catch(_) {}
+      if (session?.user) break;
+      await new Promise(resolve => setTimeout(resolve, 250));
+    }
+    history.replaceState(null, '', window.location.pathname + '?app=1');
+    if (session?.user) {
+      markRavenSignedIn();
+      routeAfterAuth(session.user);
+      return;
+    }
+  }
   if (params.get('code') && !isPasswordReset) {
     try {
       const { data, error } = await db.auth.exchangeCodeForSession(params.get('code'));
