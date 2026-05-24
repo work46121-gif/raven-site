@@ -805,7 +805,11 @@ async function routeAfterAuth(user){
       return;
     }
     const cached = getCachedAppProfile();
-    if (cached?.onboarding_complete) {
+    const cachedMatchesUser = cached && (
+      (cached.user_id && cached.user_id === user.id) ||
+      (cached.email && user.email && String(cached.email).toLowerCase() === String(user.email).toLowerCase())
+    );
+    if (cachedMatchesUser && cached?.onboarding_complete) {
       try { if (user.email) localStorage.setItem('raven_app_dashboard_email', user.email); } catch(e) {}
       localStorage.setItem('raven_profile', JSON.stringify({
         ...cached,
@@ -821,15 +825,15 @@ async function routeAfterAuth(user){
       showAppHome(profile || cached || {});
       return;
     }
-    if (cached || new URLSearchParams(window.location.search).get('app') === '1') {
+    if ((cachedMatchesUser && cached) || new URLSearchParams(window.location.search).get('app') === '1') {
       localStorage.setItem('raven_profile', JSON.stringify({
-        ...(cached || {}),
-        user_id: cached?.user_id || user.id,
-        email: cached?.email || user.email || '',
-        first_name: cached?.first_name || profile?.first_name || '',
-        raven_id: cached?.raven_id || profile?.raven_id || profile?.username || '',
-        username: cached?.username || profile?.username || profile?.raven_id || '',
-        avatar_url: cached?.avatar_url || profile?.avatar_url || '',
+        ...(cachedMatchesUser ? cached : {}),
+        user_id: user.id,
+        email: user.email || '',
+        first_name: cachedMatchesUser ? (cached?.first_name || profile?.first_name || '') : (profile?.first_name || ''),
+        raven_id: cachedMatchesUser ? (cached?.raven_id || profile?.raven_id || profile?.username || '') : (profile?.raven_id || profile?.username || ''),
+        username: cachedMatchesUser ? (cached?.username || profile?.username || profile?.raven_id || '') : (profile?.username || profile?.raven_id || ''),
+        avatar_url: cachedMatchesUser ? (cached?.avatar_url || profile?.avatar_url || '') : (profile?.avatar_url || ''),
         onboarding_complete: false
       }));
     }
@@ -1178,10 +1182,21 @@ async function handleReset(event){
   btn.disabled = true;
   btn.textContent = 'Sending...';
   const redirectTo = getAppPasswordResetRedirectTo();
-  const { error } = await db.auth.resetPasswordForEmail(email, { redirectTo });
+  let error = null;
+  try {
+    const resp = await fetch(BACKEND + '/auth/app-reset', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, redirectTo })
+    });
+    const payload = await resp.json().catch(() => ({}));
+    if (!resp.ok || payload.success === false) throw new Error(payload.error || 'Could not send reset link.');
+  } catch(e) {
+    error = e;
+  }
   btn.disabled = false;
   btn.textContent = 'Send reset link';
-  if (error) return showMessage('error', error.message);
+  if (error) return showMessage('error', error.message || 'Could not send reset link.');
   showMessage('success','Reset link sent. Check your inbox.');
 }
 async function handleSetNewPassword(event){
