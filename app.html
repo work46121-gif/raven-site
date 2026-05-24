@@ -619,7 +619,7 @@ function handleNativeAuthCallbackUrl(url){
     const isRavenAuth = incoming.protocol === 'ravensplit:' && incoming.hostname === 'auth';
     if (!isRavenAuth && !/\/app\.html|\/dashboard\.html/.test(incoming.pathname)) return false;
     const hash = incoming.hash || '';
-    const isReset = incoming.pathname.includes('reset') || incoming.searchParams.get('reset') === '1' || hash.includes('type=recovery');
+    const isReset = incoming.pathname.includes('reset') || incoming.searchParams.get('reset') === '1' || incoming.searchParams.get('type') === 'recovery' || hash.includes('type=recovery');
     const params = new URLSearchParams();
     params.set('app', '1');
     if (isReset) params.set('reset', '1');
@@ -658,7 +658,7 @@ async function preparePasswordResetFromUrl(url){
   try {
     const incoming = new URL(url || window.location.href, window.location.href);
     const hash = incoming.hash || '';
-    const isReset = incoming.searchParams.get('reset') === '1' || hash.includes('type=recovery');
+    const isReset = incoming.searchParams.get('reset') === '1' || incoming.searchParams.get('type') === 'recovery' || hash.includes('type=recovery');
     if (!isReset) return false;
     const code = incoming.searchParams.get('code');
     if (code) {
@@ -682,6 +682,16 @@ function setupNativeAppUrlListener(){
   const appPlugin = window.Capacitor?.Plugins?.App;
   if (!appPlugin?.addListener || setupNativeAppUrlListener._ready) return;
   setupNativeAppUrlListener._ready = true;
+  if (appPlugin.getLaunchUrl) {
+    appPlugin.getLaunchUrl().then(result => {
+      const url = result?.url || '';
+      if (!url) return;
+      if (handleNativeAuthCallbackUrl(url)) return;
+      if (url.includes('/app.html') || url.includes('/dashboard.html') || url.indexOf('ravensplit://auth/') === 0) {
+        preparePasswordResetFromUrl(url);
+      }
+    }).catch(() => {});
+  }
   appPlugin.addListener('appUrlOpen', ({ url }) => {
     if (!url) return;
     if (handleNativeAuthCallbackUrl(url)) return;
@@ -1259,7 +1269,7 @@ async function handleSetNewPassword(event){
     window.location.replace('dashboard.html?app=1&page=overview');
     return;
   }
-  const isPasswordReset = params.get('reset') === '1' || (hash && hash.includes('type=recovery'));
+  const isPasswordReset = params.get('reset') === '1' || params.get('type') === 'recovery' || (hash && hash.includes('type=recovery'));
   if (isPasswordReset && await preparePasswordResetFromUrl(window.location.href)) return;
   if (hash && hash.includes('access_token=')) {
     let session = null;
