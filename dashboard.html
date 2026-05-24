@@ -1932,12 +1932,13 @@ function clearRavenSignedInCache() {
     'raven_profile',
     APP_DASHBOARD_EMAIL_KEY,
     'raven_native_app',
-    'raven_trip_name'
+    'raven_trip_name',
+    'raven_remembered_email'
   ].forEach(key => { try { localStorage.removeItem(key); } catch(e) {} });
   try {
     Object.keys(localStorage).forEach(key => {
       if (/supabase|auth-token|sb-/i.test(key)) localStorage.removeItem(key);
-      if (/^raven_bill_name_|^raven_bill_claim_as_/i.test(key)) localStorage.removeItem(key);
+      if (/^raven_bill_name_|^raven_bill_claim_as_|^ravenbot_chat_|^raven_trip_|^raven_app_/i.test(key)) localStorage.removeItem(key);
     });
   } catch(e) {}
   try {
@@ -2393,8 +2394,8 @@ async function init() {
         }
       } catch(e) {
         history.replaceState(null, '', window.location.pathname + (RAVEN_APP_MODE ? '?app=1' : ''));
-        if (RAVEN_APP_MODE) await enterAppDashboardReturnMode();
-        else showAuth();
+        currentUser = null;
+        showAuth();
         showAuthError('Google sign-in did not finish. Please try again.');
         return;
       }
@@ -2408,10 +2409,7 @@ async function init() {
       return;
     }
     const { data: { session } } = await db.auth.getSession();
-    const cachedUser = getAppCachedDashboardUser();
     if (session?.user) { markRavenSignedIn(); currentUser = session.user; await checkOnboardingAndShow(currentUser.id); }
-    else if (cachedUser) { currentUser = cachedUser; await checkOnboardingAndShow(currentUser.id); }
-    else if (RAVEN_APP_MODE) { await enterAppDashboardReturnMode(); }
     else { showAuth(); }
     db.auth.onAuthStateChange(async (event, session) => {
       try {
@@ -2426,22 +2424,15 @@ async function init() {
           if (window.location.hash) history.replaceState(null, '', window.location.pathname);
           await checkOnboardingAndShow(session.user.id);
         } else if (event === 'SIGNED_OUT') {
-          if (RAVEN_APP_MODE && !isRavenSignedOut()) {
-            await enterAppDashboardReturnMode();
-            return;
-          }
-          const cachedUser = isRavenSignedOut() ? null : getAppCachedDashboardUser();
-          if (cachedUser) { currentUser = cachedUser; await checkOnboardingAndShow(cachedUser.id); }
-          else { currentUser = null; showAuth(); }
+          currentUser = null;
+          showAuth();
         }
       } catch(e) { console.warn('auth state change error:', e); }
     });
   } catch(e) {
     console.warn('init error:', e);
-    const cachedUser = getAppCachedDashboardUser();
-    if (cachedUser) { currentUser = cachedUser; await checkOnboardingAndShow(cachedUser.id); }
-    else if (RAVEN_APP_MODE) await enterAppDashboardReturnMode();
-    else showAuth();
+    currentUser = null;
+    showAuth();
   }
 }
 
@@ -2452,11 +2443,12 @@ function getAppCachedDashboardUser(force = false) {
     const local = JSON.parse(localStorage.getItem('raven_profile') || '{}');
     const appEmail = String(localStorage.getItem(APP_DASHBOARD_EMAIL_KEY) || '').trim();
     const email = String(local.email || appEmail || '').trim();
-    const id = String(local.user_id || local.id || local.raven_id || local.username || email || local.first_name || 'raven-app-user').trim();
-    if (id || email || local.first_name || local.raven_id || local.username || local.avatar_url) {
+    const id = String(local.user_id || local.id || '').trim();
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id);
+    if (isUuid && isDashboardAccountEmail(email)) {
       return {
-        id: id || email || 'raven-app-user',
-        email: email || String(local.raven_id || local.username || local.first_name || 'app-user').replace(/\s+/g, '').toLowerCase() + '@raven.app',
+        id,
+        email,
         app_cached: true
       };
     }
@@ -2482,10 +2474,10 @@ async function checkOnboardingAndShow(userId) {
   if (RAVEN_APP_MODE) {
     try {
       const existing = JSON.parse(localStorage.getItem('raven_profile') || '{}');
-      let nextProfile = { ...existing, user_id: existing.user_id || userId || currentUser?.id || 'raven-app-user' };
-      const realEmail = isDashboardAccountEmail(currentUser?.email) ? currentUser.email : (isDashboardAccountEmail(existing.email) ? existing.email : '');
+      const realEmail = isDashboardAccountEmail(currentUser?.email) ? currentUser.email : '';
+      let nextProfile = { user_id: userId || currentUser?.id || '', email: realEmail };
       if (realEmail) nextProfile.email = realEmail;
-      if (userId && userId !== 'raven-app-user' && !currentUser?.app_cached) {
+      if (userId && !currentUser?.app_cached) {
         try {
           const { data: profile } = await db.from('profiles').select('*').eq('id', userId).maybeSingle();
           if (profile) {
@@ -2493,7 +2485,7 @@ async function checkOnboardingAndShow(userId) {
               ...nextProfile,
               ...profile,
               user_id: userId,
-              email: isDashboardAccountEmail(profile.email) ? profile.email : (realEmail || nextProfile.email || ''),
+              email: isDashboardAccountEmail(profile.email) ? profile.email : (realEmail || ''),
               username: profile.username || profile.raven_id || nextProfile.username || '',
               onboarding_complete: !!profile.onboarding_complete
             };
@@ -2501,6 +2493,10 @@ async function checkOnboardingAndShow(userId) {
         } catch(e) {}
       }
       localStorage.setItem('raven_profile', JSON.stringify(nextProfile));
+      if (!nextProfile.onboarding_complete) {
+        window.location.href = 'onboarding.html?app=1';
+        return;
+      }
     } catch(e) {}
     showDashboard();
     return;
