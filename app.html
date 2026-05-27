@@ -537,6 +537,8 @@ const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
 });
 let pendingConfirmEmail = '';
 const RAVEN_SIGNED_OUT_KEY = 'raven_signed_out';
+const RAVEN_GOOGLE_AUTH_KEY = 'raven_google_auth_in_progress';
+let ravenAuthRouting = false;
 
 function el(id){return document.getElementById(id)}
 function clearRavenSignedInCache(){
@@ -564,6 +566,23 @@ function isRavenSignedOut(){
 }
 function markRavenSignedIn(){
   try { localStorage.removeItem(RAVEN_SIGNED_OUT_KEY); } catch(e) {}
+}
+function clearAppIdentityForAuthSwitch(){
+  [
+    'raven_profile',
+    'raven_app_dashboard_email',
+    'raven_trip_name'
+  ].forEach(key => { try { localStorage.removeItem(key); } catch(e) {} });
+  try {
+    Object.keys(localStorage).forEach(key => {
+      if (/supabase|auth-token|sb-/i.test(key)) localStorage.removeItem(key);
+    });
+  } catch(e) {}
+  try {
+    Object.keys(sessionStorage).forEach(key => {
+      if (/raven_profile|raven_trip_name|supabase|auth-token|sb-|raven_auth/i.test(key)) sessionStorage.removeItem(key);
+    });
+  } catch(e) {}
 }
 function hasRavenCachedIdentity(){
   try {
@@ -786,6 +805,13 @@ async function generateUniqueRavenId(base, excludeUserId){
   return (clean + Date.now().toString().slice(-3)).slice(0,20);
 }
 async function routeAfterAuth(user){
+  if (!user?.id) {
+    showLoading(false);
+    showSignedOutHome();
+    return;
+  }
+  if (ravenAuthRouting === user.id) return;
+  ravenAuthRouting = user.id;
   showLoading(true);
   try {
     const { data: profile } = await db.from('profiles').select('onboarding_complete,first_name,raven_id,username,avatar_url').eq('id', user.id).maybeSingle();
@@ -801,6 +827,7 @@ async function routeAfterAuth(user){
         onboarding_complete: true
       }));
       showLoading(false);
+      ravenAuthRouting = false;
       showAppHome(profile);
       return;
     }
@@ -822,6 +849,7 @@ async function routeAfterAuth(user){
         onboarding_complete: true
       }));
       showLoading(false);
+      ravenAuthRouting = false;
       showAppHome(profile || cached || {});
       return;
     }
@@ -840,6 +868,7 @@ async function routeAfterAuth(user){
     window.location.href = 'onboarding.html' + (new URLSearchParams(window.location.search).get('app') === '1' ? '?app=1' : '');
   } catch(e) {
     showLoading(false);
+    ravenAuthRouting = false;
     showAppHome();
   }
 }
@@ -1012,11 +1041,17 @@ function openAppPage(page, options){
   navigateWithFade('dashboard.html?' + params.toString());
 }
 async function handleGoogleAuth(){
+  if (handleGoogleAuth._busy) return;
+  handleGoogleAuth._busy = true;
   clearMessage();
+  showLoading(true);
   try {
     const redirectTo = getAppAuthRedirectTo();
     localStorage.setItem('raven_native_app','1');
-    markRavenSignedIn();
+    clearAppIdentityForAuthSwitch();
+    try { await db.auth.signOut(); } catch(e) {}
+    try { localStorage.removeItem(RAVEN_SIGNED_OUT_KEY); } catch(e) {}
+    try { sessionStorage.setItem(RAVEN_GOOGLE_AUTH_KEY, String(Date.now())); } catch(e) {}
     const { data, error } = await db.auth.signInWithOAuth({
       provider: 'google',
       options: {
@@ -1025,12 +1060,23 @@ async function handleGoogleAuth(){
         queryParams: { prompt: 'select_account' }
       }
     });
-    if (error) showMessage('error', error.message);
+    if (error) {
+      showLoading(false);
+      showMessage('error', error.message);
+      handleGoogleAuth._busy = false;
+      return;
+    }
     if (data?.url) {
       window.location.href = data.url;
+      return;
     }
+    showLoading(false);
+    showMessage('error', 'Google sign-in did not open. Please try again.');
   } catch(e) {
+    showLoading(false);
     showMessage('error', 'Google sign-in failed. Please try email/password.');
+  } finally {
+    setTimeout(() => { handleGoogleAuth._busy = false; }, 1200);
   }
 }
 async function handleLogin(event){
@@ -1279,6 +1325,10 @@ async function handleSetNewPassword(event){
   }
   if (params.get('signed_out') !== '1' && isRavenSignedOut() && hasRavenCachedIdentity()) {
     markRavenSignedIn();
+  }
+  if (params.get('code') || (hash && hash.includes('access_token='))) {
+    try { localStorage.removeItem(RAVEN_SIGNED_OUT_KEY); } catch(e) {}
+    try { sessionStorage.removeItem(RAVEN_GOOGLE_AUTH_KEY); } catch(e) {}
   }
   if (params.get('from') === 'trip') {
     window.location.replace('dashboard.html?app=1&page=overview');
