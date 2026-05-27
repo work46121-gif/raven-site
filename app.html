@@ -728,6 +728,13 @@ db.auth.onAuthStateChange((event, session) => {
   }
 });
 function showLoading(show){el('loading').classList.toggle('show', !!show)}
+function recoverAuthScreen(message){
+  try { document.body.classList.remove('leaving'); document.body.classList.add('ready'); } catch(e) {}
+  showLoading(false);
+  showSignedOutHome();
+  showAuthPanel('login');
+  if (message) showMessage('error', message);
+}
 function showMessage(type, text){
   el('message-error').style.display = 'none';
   el('message-success').style.display = 'none';
@@ -917,6 +924,7 @@ function showAppHome(profile){
   if (pill) pill.style.display = 'none';
 }
 function showSignedOutHome(){
+  showLoading(false);
   const shell = document.querySelector('.app-shell');
   if (shell) shell.style.display = 'none';
   const home = el('app-home');
@@ -1428,6 +1436,19 @@ async function handleSetNewPassword(event){
     else showSignedOutHome();
   }
 })();
+
+setTimeout(() => {
+  try {
+    const loading = el('loading')?.classList.contains('show');
+    const homeVisible = el('app-home')?.classList.contains('active');
+    const shellVisible = document.querySelector('.app-shell')?.style.display !== 'none';
+    if (loading && !homeVisible && !shellVisible) {
+      recoverAuthScreen('Google sign-in got stuck. Please try again.');
+    } else if (!homeVisible && !shellVisible) {
+      recoverAuthScreen('');
+    }
+  } catch(e) {}
+}, 6500);
 </script>
 </body>
 </html>
