@@ -833,16 +833,6 @@ function launchRavenSignupFlight() {
 
 // ── INIT ──
 async function init() {
-  try {
-    const isNativeApp = localStorage.getItem('raven_native_app') === '1';
-    const localProfile = JSON.parse(localStorage.getItem('raven_profile') || '{}');
-    if (isNativeApp && (localProfile.user_id || localProfile.email || localProfile.first_name || localProfile.raven_id || localProfile.username || localProfile.avatar_url)) {
-      localStorage.setItem('raven_profile', JSON.stringify({ ...localProfile, onboarding_complete: true }));
-      window.location.replace('dashboard.html?app=1&page=overview');
-      return;
-    }
-  } catch(e) {}
-
   const hash = window.location.hash;
   if (hash && hash.includes('access_token')) {
     await db.auth.getSession();
@@ -860,9 +850,20 @@ async function init() {
 
   // Check localStorage first (fast)
   const localProfile = JSON.parse(localStorage.getItem('raven_profile') || '{}');
-  if (localProfile.onboarding_complete && localProfile.user_id === currentUser.id) {
+  const localUserId = String(localProfile.user_id || localProfile.id || '');
+  const localEmail = String(localProfile.email || '').toLowerCase();
+  const sessionEmail = String(currentUser.email || '').toLowerCase();
+  const localMatchesSession = (localUserId && localUserId === currentUser.id) || (localEmail && sessionEmail && localEmail === sessionEmail);
+  if (localMatchesSession && localProfile.onboarding_complete) {
     window.location.href = dashboardUrl();
     return;
+  }
+  if (!localMatchesSession && (localProfile.user_id || localProfile.id || localProfile.email || localProfile.first_name || localProfile.raven_id || localProfile.username || localProfile.avatar_url)) {
+    localStorage.setItem('raven_profile', JSON.stringify({
+      user_id: currentUser.id,
+      email: currentUser.email || '',
+      onboarding_complete: false
+    }));
   }
 
   // Try Supabase
