@@ -116,6 +116,16 @@ body.app-mode .modal-btn {
   border-radius: 11px;
   min-height: 36px;
 }
+body.app-mode .bill-actions {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px !important;
+}
+body.app-mode .bill-actions .bill-action-btn {
+  justify-content: center;
+  width: 100%;
+  min-width: 0;
+}
 body.app-mode #page-trip-hub .bill-actions {
   display: grid !important;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -3794,6 +3804,14 @@ function wireBillCardActions(container) {
   });
 }
 
+function openBillSettings(billId, event) {
+  if (event) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+  openBillModal(billId);
+}
+
 async function loadActiveBills() {
   const userEmail = getDashboardUserEmail();
   if (!userEmail) {
@@ -3896,9 +3914,10 @@ function renderBillCard(b) {
   } catch(e) {}
   const billUrl = billUrlObj.toString();
   billUrlMap[b.id] = billUrl;
+  const settingsCta = '<button class="bill-action-btn" type="button" onclick="openBillSettings(\'' + b.id + '\', event)" style="display:inline-flex;align-items:center;text-decoration:none;background:rgba(48,209,88,0.1);border:1px solid rgba(48,209,88,0.22);color:var(--green)">Bill Settings</button>';
   const viewCta = RAVEN_APP_MODE
-    ? '<button class="bill-action-btn btn-view" type="button" data-bill-view="' + b.id + '" style="display:inline-flex;align-items:center;text-decoration:none">View</button>'
-    : '<a class="bill-action-btn btn-view" href="' + billUrl + '" data-bill-view="' + b.id + '" style="display:inline-flex;align-items:center;text-decoration:none">View</a>';
+    ? '<button class="bill-action-btn btn-view" type="button" data-bill-view="' + b.id + '" style="display:inline-flex;align-items:center;text-decoration:none">Bill Page</button>'
+    : '<a class="bill-action-btn btn-view" href="' + billUrl + '" data-bill-view="' + b.id + '" style="display:inline-flex;align-items:center;text-decoration:none">Bill Page</a>';
   const owedDisplay = isFullyPaid
     ? '<span style="color:var(--green);font-weight:700">' + (b.status === 'completed' ? 'Completed' : 'All paid') + '</span>'
     : '<span style="color:var(--orange)">$' + owed.toFixed(2) + ' owed</span>';
@@ -3909,6 +3928,7 @@ function renderBillCard(b) {
     '<div class="bill-amount" style="color:' + (isFullyPaid ? 'var(--green)' : 'var(--white)') + '">$' + parseFloat(b.total).toFixed(2) + '</div>' +
     '<div class="bill-progress-wrap"><div class="bill-progress-label">' + pct + '% paid</div><div class="bill-progress"><div class="bill-progress-fill" style="width:' + pct + '%;background:' + (isFullyPaid ? 'var(--green)' : 'var(--purple)') + '"></div></div></div>' +
     '<div class="bill-actions" onclick="event.stopPropagation()">' +
+    settingsCta +
     (isCreator ? '<button class="bill-action-btn btn-remind" onclick="sendReminder(\'' + b.id + '\')">Remind</button>' : '') +
     '<button class="bill-action-btn" onclick="shareBillLink(\'' + b.id + '\',\'' + (b.name||'').replace(/'/g,"\\'") + '\',\'' + (b.share_token||'') + '\')" style="background:rgba(0,140,255,0.1);border:1px solid rgba(0,140,255,0.2);color:#4DB8FF">Share</button>' +
     viewCta +
