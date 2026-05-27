@@ -782,7 +782,7 @@ body.app-mode .cb-raven-add-icon { width:18px;height:18px;display:block; }
       <div class="trip-open-loader-dot"></div>
     </div>
     <div>
-      <div class="trip-open-loader-title">Opening Trip Hub</div>
+      <div class="trip-open-loader-title">Opening Trip</div>
       <div class="trip-open-loader-sub">Syncing receipts and chat</div>
     </div>
   </div>
@@ -2409,8 +2409,22 @@ async function init() {
       return;
     }
     const { data: { session } } = await db.auth.getSession();
-    if (session?.user) { markRavenSignedIn(); currentUser = session.user; await checkOnboardingAndShow(currentUser.id); }
-    else { showAuth(); }
+    if (session?.user) {
+      markRavenSignedIn();
+      currentUser = session.user;
+      await checkOnboardingAndShow(currentUser.id);
+    } else if (RAVEN_APP_MODE) {
+      const cachedUser = getAppCachedDashboardUser();
+      if (cachedUser) {
+        markRavenSignedIn();
+        currentUser = cachedUser;
+        await checkOnboardingAndShow(cachedUser.id);
+      } else {
+        showAuth();
+      }
+    } else {
+      showAuth();
+    }
     db.auth.onAuthStateChange(async (event, session) => {
       try {
         if (event === 'PASSWORD_RECOVERY') {
@@ -2475,7 +2489,13 @@ async function checkOnboardingAndShow(userId) {
     try {
       const existing = JSON.parse(localStorage.getItem('raven_profile') || '{}');
       const realEmail = isDashboardAccountEmail(currentUser?.email) ? currentUser.email : '';
-      let nextProfile = { user_id: userId || currentUser?.id || '', email: realEmail };
+      const existingEmail = String(existing.email || '').trim().toLowerCase();
+      const existingId = String(existing.user_id || existing.id || '').trim();
+      const targetId = String(userId || currentUser?.id || '').trim();
+      const existingMatchesUser = (targetId && existingId === targetId) || (realEmail && existingEmail === realEmail.toLowerCase());
+      let nextProfile = existingMatchesUser
+        ? { ...existing, user_id: targetId || existingId, email: realEmail || existing.email || '' }
+        : { user_id: targetId, email: realEmail };
       if (realEmail) nextProfile.email = realEmail;
       if (userId && !currentUser?.app_cached) {
         try {
@@ -2644,10 +2664,26 @@ async function handleForgotPassword() {
   const btn = document.getElementById('forgot-btn');
   btn.textContent = 'Sending...'; btn.disabled = true; hideAuthError();
   const redirectUrl = getDashboardPasswordResetRedirectTo();
-  const { error } = await db.auth.resetPasswordForEmail(email, { redirectTo: redirectUrl });
+  let error = null;
+  if (isNativeAppMode()) {
+    try {
+      const resp = await fetch(BACKEND + '/auth/app-reset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, redirectTo: redirectUrl })
+      });
+      const payload = await resp.json().catch(() => ({}));
+      if (!resp.ok || payload.success === false) throw new Error(payload.error || 'Could not send reset link.');
+    } catch(e) {
+      error = e;
+    }
+  } else {
+    const result = await db.auth.resetPasswordForEmail(email, { redirectTo: redirectUrl });
+    error = result.error;
+  }
   btn.textContent = 'Send Reset Link →'; btn.disabled = false;
   if (error) {
-    showAuthError(error.message);
+    showAuthError(error.message || 'Could not send reset link.');
   } else {
     document.getElementById('forgot-success').style.display = 'block';
     btn.style.display = 'none';
@@ -7605,13 +7641,16 @@ function openTrip(tripId) {
     if (openTrip._pendingUrl === url) openTrip._pendingUrl = '';
   }, 1500);
   try { warmTrip(tripId); } catch(e) {}
-  showTripOpenLoader();
+  const tripName = String(tripDataMap[tripId]?.name || 'Trip Hub').trim();
+  showTripOpenLoader(tripName);
   window.location.href = url;
 }
 
-function showTripOpenLoader() {
+function showTripOpenLoader(tripName) {
   const loader = document.getElementById('trip-open-loader');
   if (!loader) return;
+  const title = loader.querySelector('.trip-open-loader-title');
+  if (title) title.textContent = 'Opening ' + (tripName || 'Trip Hub');
   loader.style.display = 'flex';
   loader.setAttribute('aria-hidden', 'false');
   requestAnimationFrame(() => loader.classList.add('show'));
