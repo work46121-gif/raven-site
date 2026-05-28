@@ -68,6 +68,36 @@ body::after {
   padding: calc(env(safe-area-inset-top,0px) + 28px) 20px calc(env(safe-area-inset-bottom,0px) + 28px);
 }
 
+.cancel-onboarding-btn {
+  position: fixed;
+  top: calc(env(safe-area-inset-top,0px) + 16px);
+  right: 16px;
+  z-index: 20;
+  border: 1px solid var(--border2);
+  background: rgba(19,19,26,0.82);
+  color: var(--muted2);
+  border-radius: 999px;
+  padding: 10px 16px;
+  font: 700 12px/1 'Epilogue', sans-serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: 0 12px 28px rgba(0,0,0,0.24);
+  backdrop-filter: blur(12px);
+  transition: color 0.18s ease, border-color 0.18s ease, transform 0.18s ease, background 0.18s ease;
+}
+.cancel-onboarding-btn:hover {
+  color: var(--white);
+  border-color: rgba(255,255,255,0.22);
+  background: rgba(26,26,36,0.92);
+  transform: translateY(-1px);
+}
+.cancel-onboarding-btn:disabled {
+  cursor: wait;
+  opacity: 0.7;
+  transform: none;
+}
+
 /* Logo */
 .logo {
   text-align: center;
@@ -396,6 +426,13 @@ select.input { font-size: 16px; }
 @keyframes spin { to{transform:rotate(360deg)} }
 .loading-text { font-size: 14px; color: var(--muted); }
 @media (max-width: 560px) {
+  .cancel-onboarding-btn {
+    top: calc(env(safe-area-inset-top,0px) + 10px);
+    right: 12px;
+    padding: 9px 12px;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+  }
   .card { padding: 28px 20px; border-radius: 20px; }
   .step-title { font-size: 28px; }
   .phone-wrap { flex-direction: column; gap: 8px; padding: 10px; }
@@ -408,6 +445,7 @@ select.input { font-size: 16px; }
 <body>
 
 <div class="grid-bg"></div>
+<button type="button" class="cancel-onboarding-btn" onclick="cancelOnboarding()">Cancel setup</button>
 
 <div class="loading-overlay" id="loading-overlay">
   <div class="spinner"></div>
@@ -994,6 +1032,74 @@ function goToStep(step) {
 
 function goToDashboard() {
   window.location.href = dashboardUrl();
+}
+
+function isAppOnboardingMode() {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('app') === '1' || localStorage.getItem('raven_native_app') === '1';
+  } catch(e) {
+    return false;
+  }
+}
+
+function clearOnboardingAuthCache(keepAppMode) {
+  try { localStorage.setItem('raven_signed_out', '1'); } catch(e) {}
+  const explicitKeys = [
+    'raven_profile',
+    'raven_app_dashboard_email',
+    'raven_google_auth_in_progress',
+    'raven_pending_auth_email',
+    'raven_pending_confirmation_email',
+    'raven_trip_name',
+    'raven_selected_trip_id'
+  ];
+  if (!keepAppMode) explicitKeys.push('raven_native_app');
+  explicitKeys.forEach(key => {
+    try { localStorage.removeItem(key); } catch(e) {}
+    try { sessionStorage.removeItem(key); } catch(e) {}
+  });
+  try {
+    Object.keys(localStorage).forEach(key => {
+      if (/^(sb-|supabase|raven_app_|raven_trip_|raven_bill_|ravenbot_chat_)/i.test(key)) {
+        if (keepAppMode && key === 'raven_native_app') return;
+        localStorage.removeItem(key);
+      }
+    });
+  } catch(e) {}
+  try {
+    Object.keys(sessionStorage).forEach(key => {
+      if (/^(sb-|supabase|raven_app_|raven_trip_|raven_bill_|ravenbot_chat_)/i.test(key)) {
+        sessionStorage.removeItem(key);
+      }
+    });
+  } catch(e) {}
+}
+
+async function cancelOnboarding() {
+  const isApp = isAppOnboardingMode();
+  const btn = document.querySelector('.cancel-onboarding-btn');
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Signing out...';
+  }
+  try {
+    const text = document.querySelector('.loading-text');
+    if (text) text.textContent = 'Signing out...';
+    showLoading();
+  } catch(e) {}
+  try {
+    await db.auth.signOut({ scope: 'global' });
+  } catch(e) {
+    try { await db.auth.signOut(); } catch(_) {}
+  }
+  clearOnboardingAuthCache(isApp);
+  if (isApp) {
+    try { localStorage.setItem('raven_native_app', '1'); } catch(e) {}
+    window.location.replace('app.html?app=1&signed_out=1');
+  } else {
+    window.location.replace('dashboard.html?signed_out=1');
+  }
 }
 
 function showError(id, msg) {
