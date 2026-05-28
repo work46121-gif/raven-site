@@ -965,7 +965,6 @@ async function init() {
   }
 
   currentUser = session.user;
-  await ensureGeneratedRavenId();
 
   // Check localStorage first (fast)
   const localProfile = JSON.parse(localStorage.getItem('raven_profile') || '{}');
