@@ -27,6 +27,7 @@
   --red: #FF4444;
 }
 html, body { min-height: 100vh; width: 100%; font-family: 'Epilogue', sans-serif; background: var(--black); color: var(--white); overflow-x: hidden; -webkit-text-size-adjust: 100%; touch-action: manipulation; }
+html.app-mode, html.app-mode body { height: 100%; overflow: hidden; }
 
 /* Background */
 body::before {
@@ -440,10 +441,88 @@ select.input { font-size: 16px; }
   .input-phone { padding: 10px 4px 6px; font-size: 18px; }
   .phone-meta { flex-direction: column; align-items: flex-start; }
 }
+
+html.app-mode .container {
+  position: fixed;
+  inset: 0;
+  min-height: 0;
+  height: 100dvh;
+  justify-content: center;
+  padding: calc(env(safe-area-inset-top,0px) + 36px) 16px calc(env(safe-area-inset-bottom,0px) + 74px);
+  overflow: hidden;
+}
+html.app-mode .logo {
+  margin-bottom: 14px;
+}
+html.app-mode .logo-icon {
+  display: none;
+}
+html.app-mode .logo-name {
+  font-size: 30px;
+}
+html.app-mode .logo-sub {
+  font-size: 10px;
+}
+html.app-mode .card {
+  max-width: 430px;
+  max-height: calc(100dvh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px) - 132px);
+  overflow: hidden;
+  padding: 22px 18px;
+  border-radius: 20px;
+}
+html.app-mode .progress-wrap {
+  margin-bottom: 18px;
+}
+html.app-mode .step-header {
+  margin-bottom: 16px;
+}
+html.app-mode .step-title {
+  font-size: 27px;
+}
+html.app-mode .step-sub {
+  font-size: 12px;
+  line-height: 1.45;
+}
+html.app-mode .form {
+  gap: 10px;
+}
+html.app-mode .input,
+html.app-mode .select {
+  padding: 11px 13px;
+}
+html.app-mode .btn-next {
+  padding: 13px;
+}
+html.app-mode .agreement {
+  padding: 11px;
+}
+html.app-mode .agreement-text {
+  font-size: 11px;
+  line-height: 1.45;
+}
+html.app-mode .cancel-onboarding-btn {
+  top: auto;
+  left: 16px;
+  right: 16px;
+  bottom: calc(env(safe-area-inset-bottom,0px) + 12px);
+  z-index: 80;
+  padding: 13px 16px;
+  background: rgba(19,19,26,0.94);
+  border-color: rgba(255,255,255,0.16);
+  color: var(--white);
+}
 </style>
 </head>
 <body>
 
+<script>
+try {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('app') === '1' || localStorage.getItem('raven_native_app') === '1') {
+    document.documentElement.classList.add('app-mode');
+  }
+} catch(e) {}
+</script>
 <div class="grid-bg"></div>
 <button type="button" class="cancel-onboarding-btn" onclick="cancelOnboarding()">Cancel setup</button>
 
