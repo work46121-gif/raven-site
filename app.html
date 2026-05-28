@@ -630,7 +630,7 @@ function getAppPasswordResetRedirectTo(){
   return 'https://ravensplit.com/app.html?app=1&reset=1';
 }
 function getAppConfirmRedirectTo(){
-  return isNativeAppMode() ? 'ravensplit://auth/callback?app=1' : 'https://ravensplit.com/app.html?app=1';
+  return 'https://ravensplit.com/app.html?app=1';
 }
 function handleNativeAuthCallbackUrl(url){
   try {
