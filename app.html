@@ -538,6 +538,7 @@ const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
 let pendingConfirmEmail = '';
 const RAVEN_SIGNED_OUT_KEY = 'raven_signed_out';
 const RAVEN_GOOGLE_AUTH_KEY = 'raven_google_auth_in_progress';
+const RAVEN_SIGNUP_AUTH_KEY = 'raven_signup_auth_in_progress';
 let ravenAuthRouting = false;
 
 function el(id){return document.getElementById(id)}
@@ -566,6 +567,24 @@ function isRavenSignedOut(){
 }
 function markRavenSignedIn(){
   try { localStorage.removeItem(RAVEN_SIGNED_OUT_KEY); } catch(e) {}
+}
+function markFreshAuthStart(key){
+  const value = String(Date.now());
+  try { sessionStorage.setItem(key, value); } catch(e) {}
+  try { localStorage.setItem(key, value); } catch(e) {}
+}
+function hasFreshAuthStart(){
+  const now = Date.now();
+  return [RAVEN_GOOGLE_AUTH_KEY, RAVEN_SIGNUP_AUTH_KEY].some(key => {
+    const value = Number(sessionStorage.getItem(key) || localStorage.getItem(key) || 0);
+    return value && now - value < 10 * 60 * 1000;
+  });
+}
+function clearFreshAuthStart(){
+  [RAVEN_GOOGLE_AUTH_KEY, RAVEN_SIGNUP_AUTH_KEY].forEach(key => {
+    try { sessionStorage.removeItem(key); } catch(e) {}
+    try { localStorage.removeItem(key); } catch(e) {}
+  });
 }
 async function consumeImplicitAuthFromUrl(){
   try {
@@ -852,7 +871,15 @@ async function routeAfterAuth(user){
       }));
       showLoading(false);
       ravenAuthRouting = false;
+      clearFreshAuthStart();
       showAppHome(profile);
+      return;
+    }
+    if (!profile && !hasFreshAuthStart()) {
+      await enforceAppSignedOut();
+      ravenAuthRouting = false;
+      showAuthPanel('login');
+      showMessage('error', 'That account was removed or setup was canceled. Please create the account again.');
       return;
     }
     const cached = getCachedAppProfile();
@@ -874,6 +901,7 @@ async function routeAfterAuth(user){
       }));
       showLoading(false);
       ravenAuthRouting = false;
+      clearFreshAuthStart();
       showAppHome(profile || cached || {});
       return;
     }
@@ -1083,7 +1111,7 @@ async function handleGoogleAuth(){
     clearAppIdentityForAuthSwitch();
     try { await db.auth.signOut(); } catch(e) {}
     try { localStorage.removeItem(RAVEN_SIGNED_OUT_KEY); } catch(e) {}
-    try { sessionStorage.setItem(RAVEN_GOOGLE_AUTH_KEY, String(Date.now())); } catch(e) {}
+    markFreshAuthStart(RAVEN_GOOGLE_AUTH_KEY);
     const { data, error } = await db.auth.signInWithOAuth({
       provider: 'google',
       options: {
@@ -1171,6 +1199,7 @@ async function handleSignup(event){
   const btn = el('signup-button');
   btn.disabled = true;
   btn.textContent = 'Creating...';
+  markFreshAuthStart(RAVEN_SIGNUP_AUTH_KEY);
   let ravenId = '';
   try { ravenId = await generateUniqueRavenId(first || 'raven'); } catch(e) {}
   if (isNativeAppMode()) {
@@ -1207,7 +1236,8 @@ async function handleSignup(event){
       }
       showEmailConfirmationPanel(email);
       return;
-    } catch(e) {
+      } catch(e) {
+      clearFreshAuthStart();
       btn.disabled = false;
       btn.textContent = 'Create account';
       return showMessage('error', e.message || 'Could not send confirmation email. Please try again.');
@@ -1222,6 +1252,7 @@ async function handleSignup(event){
     }
   });
   if (error) {
+    clearFreshAuthStart();
     btn.disabled = false;
     btn.textContent = 'Create account';
     if ((error.message || '').toLowerCase().includes('registered')) {
@@ -1365,7 +1396,6 @@ async function handleSetNewPassword(event){
   }
   if (params.get('code') || (hash && hash.includes('access_token='))) {
     try { localStorage.removeItem(RAVEN_SIGNED_OUT_KEY); } catch(e) {}
-    try { sessionStorage.removeItem(RAVEN_GOOGLE_AUTH_KEY); } catch(e) {}
   }
   if (params.get('from') === 'trip') {
     window.location.replace('dashboard.html?app=1&page=overview');
