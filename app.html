@@ -872,11 +872,18 @@ async function routeAfterAuth(user){
         onboarding_complete: false
       }));
     }
+    showLoading(false);
+    ravenAuthRouting = false;
     window.location.href = 'onboarding.html' + (new URLSearchParams(window.location.search).get('app') === '1' ? '?app=1' : '');
   } catch(e) {
     showLoading(false);
     ravenAuthRouting = false;
-    showAppHome();
+    localStorage.setItem('raven_profile', JSON.stringify({
+      user_id: user.id,
+      email: user.email || '',
+      onboarding_complete: false
+    }));
+    window.location.href = 'onboarding.html' + (new URLSearchParams(window.location.search).get('app') === '1' ? '?app=1' : '');
   }
 }
 function getCachedAppProfile(){
