@@ -277,7 +277,8 @@ body.app-mode .cb-raven-add-icon { width:18px;height:18px;display:block; }
   border-radius: 16px;
   background: linear-gradient(135deg, rgba(48,209,88,0.08), rgba(124,58,237,0.10) 58%, rgba(12,12,18,0.92));
   box-shadow: 0 18px 40px rgba(0,0,0,0.26), inset 0 0 0 1px rgba(255,255,255,0.03);
-  padding: 18px;
+  padding: 16px 18px;
+  cursor: pointer;
 }
 .tutorial-sample-card::before {
   content: "";
@@ -297,10 +298,9 @@ body.app-mode .cb-raven-add-icon { width:18px;height:18px;display:block; }
 .tutorial-sample-top {
   position: relative;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 14px;
-  margin-bottom: 14px;
 }
 .tutorial-sample-kicker {
   font-size: 10px;
@@ -337,10 +337,11 @@ body.app-mode .cb-raven-add-icon { width:18px;height:18px;display:block; }
 }
 .tutorial-steps {
   position: relative;
-  display: grid;
+  display: none;
   gap: 8px;
   margin: 14px 0 16px;
 }
+.tutorial-sample-card.expanded .tutorial-steps { display: grid; }
 .tutorial-step {
   display: flex;
   align-items: flex-start;
@@ -377,10 +378,11 @@ body.app-mode .cb-raven-add-icon { width:18px;height:18px;display:block; }
 }
 .tutorial-sample-actions {
   position: relative;
-  display: flex;
+  display: none;
   gap: 10px;
   flex-wrap: wrap;
 }
+.tutorial-sample-card.expanded .tutorial-sample-actions { display: flex; }
 .tutorial-sample-actions button {
   min-height: 38px;
   border-radius: 11px;
@@ -3981,8 +3983,8 @@ async function loadActiveBills() {
 }
 
 function renderSampleBillTutorial() {
-  return '<div class="tutorial-sample-card" id="sample-bill-tutorial">'
-    + '<div class="tutorial-sample-top"><div><div class="tutorial-sample-kicker">Sample Bill</div><div class="tutorial-sample-title">See how a receipt becomes a split bill</div><div class="tutorial-sample-copy">A quick guided bill stays here as a reference. It is only a tutorial and will not show up in your totals.</div></div><div class="tutorial-sample-badge">Guide</div></div>'
+  return '<div class="tutorial-sample-card" id="sample-bill-tutorial" onclick="toggleTutorialGuide(event, this)">'
+    + '<div class="tutorial-sample-top"><div><div class="tutorial-sample-kicker">Sample Bill</div><div class="tutorial-sample-title">Receipt split walkthrough</div><div class="tutorial-sample-copy">Tap to open the guide. This is not included in your totals.</div></div><div class="tutorial-sample-badge">Guide</div></div>'
     + '<div class="tutorial-steps">'
     + '<div class="tutorial-step"><div class="tutorial-step-num">1</div><div><strong>Tap the Scan tab</strong><span>Start from the green scan button or the Bills tab New Bill action.</span></div></div>'
     + '<div class="tutorial-step"><div class="tutorial-step-num">2</div><div><strong>Enter the bill name</strong><span>Name it something easy to recognize, like Dinner at Jade.</span></div></div>'
@@ -3991,8 +3993,18 @@ function renderSampleBillTutorial() {
     + '<div class="tutorial-step"><div class="tutorial-step-num">5</div><div><strong>Assign each item</strong><span>Tap items to choose who ordered them and split shared items evenly.</span></div></div>'
     + '<div class="tutorial-step"><div class="tutorial-step-num">6</div><div><strong>Review and share</strong><span>Confirm totals, save the bill, then share it with friends.</span></div></div>'
     + '</div>'
-    + '<div class="tutorial-sample-actions"><button class="primary" type="button" onclick="showPage(&quot;create-bill&quot;)">Try a Bill</button><button type="button" onclick="document.getElementById(&quot;sample-bill-tutorial&quot;)?.scrollIntoView({behavior:&quot;smooth&quot;,block:&quot;center&quot;})">Replay guide</button></div>'
+    + '<div class="tutorial-sample-actions"><button class="primary" type="button" onclick="event.stopPropagation();showPage(&quot;create-bill&quot;)">Try a Bill</button><button type="button" onclick="event.stopPropagation();toggleTutorialGuide(event, document.getElementById(&quot;sample-bill-tutorial&quot;), true)">Close guide</button></div>'
     + '</div>';
+}
+
+function toggleTutorialGuide(event, card, forceClose) {
+  if (event) event.stopPropagation();
+  if (!card) return;
+  if (forceClose) {
+    card.classList.remove('expanded');
+    return;
+  }
+  card.classList.toggle('expanded');
 }
 
 // Shared helper: fetch item_selections and augment bills with QR guest participants
@@ -7810,8 +7822,8 @@ async function loadTrips() {
 }
 
 function renderSampleTripTutorial() {
-  return '<div class="tutorial-sample-card" id="sample-trip-tutorial">'
-    + '<div class="tutorial-sample-top"><div><div class="tutorial-sample-kicker">Sample Trip</div><div class="tutorial-sample-title">Use Trip Hub for group travel spending</div><div class="tutorial-sample-copy">This guide stays under your real trips. It shows the flow without creating a real trip or changing balances.</div></div><div class="tutorial-sample-badge">Guide</div></div>'
+  return '<div class="tutorial-sample-card" id="sample-trip-tutorial" onclick="toggleTutorialGuide(event, this)">'
+    + '<div class="tutorial-sample-top"><div><div class="tutorial-sample-kicker">Sample Trip</div><div class="tutorial-sample-title">Trip Hub walkthrough</div><div class="tutorial-sample-copy">Tap to open the guide. This is not included in your balances.</div></div><div class="tutorial-sample-badge">Guide</div></div>'
     + '<div class="tutorial-steps">'
     + '<div class="tutorial-step"><div class="tutorial-step-num">1</div><div><strong>Create or open a trip</strong><span>Use New Trip for a vacation, event, house weekend, or shared itinerary.</span></div></div>'
     + '<div class="tutorial-step"><div class="tutorial-step-num">2</div><div><strong>Add the people going</strong><span>Invite friends, add guests, or include RAVEN friends already in your account.</span></div></div>'
@@ -7820,7 +7832,7 @@ function renderSampleTripTutorial() {
     + '<div class="tutorial-step"><div class="tutorial-step-num">5</div><div><strong>Chat and settle up</strong><span>Use Trip Chat for messages, then mark payments as settled as people pay.</span></div></div>'
     + '<div class="tutorial-step"><div class="tutorial-step-num">6</div><div><strong>Share the trip</strong><span>Send the trip link so everyone can view receipts and balances.</span></div></div>'
     + '</div>'
-    + '<div class="tutorial-sample-actions"><button class="primary" type="button" onclick="openCreateTrip()">Try a Trip</button><button type="button" onclick="document.getElementById(&quot;sample-trip-tutorial&quot;)?.scrollIntoView({behavior:&quot;smooth&quot;,block:&quot;center&quot;})">Replay guide</button></div>'
+    + '<div class="tutorial-sample-actions"><button class="primary" type="button" onclick="event.stopPropagation();openCreateTrip()">Try a Trip</button><button type="button" onclick="event.stopPropagation();toggleTutorialGuide(event, document.getElementById(&quot;sample-trip-tutorial&quot;), true)">Close guide</button></div>'
     + '</div>';
 }
 
