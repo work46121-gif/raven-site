@@ -270,6 +270,134 @@ body.app-mode .cb-raven-add-icon { width:18px;height:18px;display:block; }
 .stat-value.purple { color: var(--purple3); }
 .stat-sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
 .bills-list { display: flex; flex-direction: column; gap: 12px; }
+.tutorial-sample-card {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(48,209,88,0.26);
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(48,209,88,0.08), rgba(124,58,237,0.10) 58%, rgba(12,12,18,0.92));
+  box-shadow: 0 18px 40px rgba(0,0,0,0.26), inset 0 0 0 1px rgba(255,255,255,0.03);
+  padding: 18px;
+}
+.tutorial-sample-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 16px;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(48,209,88,0.18), transparent);
+  transform: translateX(-120%);
+  animation: tutorialSweep 3.8s ease-in-out infinite;
+}
+@keyframes tutorialSweep {
+  0%, 38% { transform: translateX(-120%); opacity: 0; }
+  48% { opacity: 1; }
+  72%, 100% { transform: translateX(120%); opacity: 0; }
+}
+.tutorial-sample-top {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+.tutorial-sample-kicker {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #6EF1A6;
+  margin-bottom: 6px;
+}
+.tutorial-sample-title {
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--white);
+  margin-bottom: 4px;
+}
+.tutorial-sample-copy {
+  font-size: 12px;
+  color: var(--muted2);
+  line-height: 1.55;
+}
+.tutorial-sample-badge {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 52px;
+  padding: 8px 10px;
+  border-radius: 999px;
+  background: rgba(48,209,88,0.12);
+  border: 1px solid rgba(48,209,88,0.28);
+  color: var(--green);
+  font-size: 11px;
+  font-weight: 800;
+}
+.tutorial-steps {
+  position: relative;
+  display: grid;
+  gap: 8px;
+  margin: 14px 0 16px;
+}
+.tutorial-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 11px;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+  background: rgba(6,6,10,0.36);
+}
+.tutorial-step-num {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: var(--green);
+  color: #000;
+  font-size: 11px;
+  font-weight: 900;
+}
+.tutorial-step strong {
+  display: block;
+  font-size: 13px;
+  color: var(--white);
+  margin-bottom: 2px;
+}
+.tutorial-step span {
+  display: block;
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.45;
+}
+.tutorial-sample-actions {
+  position: relative;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.tutorial-sample-actions button {
+  min-height: 38px;
+  border-radius: 11px;
+  padding: 10px 14px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.04);
+  color: var(--muted2);
+  font-family: 'Epilogue', sans-serif;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.tutorial-sample-actions .primary {
+  background: var(--green);
+  border-color: var(--green);
+  color: #000;
+}
 .bill-card { background: var(--dark); border: 1px solid var(--border); border-radius: 14px; padding: 20px 24px; display: grid; grid-template-columns: 1fr auto auto auto; align-items: center; gap: 20px; transition: all 0.2s; cursor: pointer; }
 .bill-card:hover { border-color: var(--border2); background: var(--dark2); transform: translateX(2px); }
 .bill-name { font-weight: 600; font-size: 15px; margin-bottom: 4px; }
@@ -1228,6 +1356,21 @@ body.app-mode .cb-raven-add-icon { width:18px;height:18px;display:block; }
           <button onclick="searchFriends()" style="padding:12px 18px;background:var(--purple);border:none;border-radius:10px;color:#fff;font-family:'Epilogue',sans-serif;font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap">Search</button>
         </div>
         <div id="friend-search-results" style="margin-top:12px;display:flex;flex-direction:column;gap:8px"></div>
+      </div>
+
+      <!-- Exact phone-contact matching -->
+      <div style="max-width:520px;margin-bottom:24px">
+        <div style="background:linear-gradient(135deg,rgba(48,209,88,0.08),rgba(124,58,237,0.08));border:1px solid rgba(48,209,88,0.22);border-radius:16px;padding:18px 20px">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:14px">
+            <div>
+              <div style="font-size:11px;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;color:var(--green);margin-bottom:7px">Phone contacts</div>
+              <div style="font-size:15px;font-weight:800;color:var(--white);margin-bottom:5px">Add friends already on RAVEN</div>
+              <div style="font-size:12px;color:var(--muted);line-height:1.55">RAVEN only checks contacts you approve. It only shows exact phone-number matches from RAVEN profiles.</div>
+            </div>
+            <button id="sync-contacts-btn" onclick="syncRavenPhoneContacts()" style="flex-shrink:0;padding:10px 14px;background:var(--green);border:none;border-radius:10px;color:#000;font-family:'Epilogue',sans-serif;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap">Sync</button>
+          </div>
+          <div id="contact-sync-results" style="display:none;margin-top:14px;flex-direction:column;gap:8px"></div>
+        </div>
       </div>
 
       <!-- Notification Center — always shown, populated by JS -->
@@ -3816,7 +3959,7 @@ async function loadActiveBills() {
   const userEmail = getDashboardUserEmail();
   if (!userEmail) {
     const container = document.getElementById('active-bills-list');
-    if (container) container.innerHTML = '<div class="empty-state"><span class="empty-icon empty-icon-svg"><svg class="raven-icon empty"><use href="#icon-active-bills"></use></svg></span><div class="empty-title">No active bills</div><div class="empty-sub">Create a bill to start splitting</div></div>';
+    if (container) container.innerHTML = '<div class="empty-state"><span class="empty-icon empty-icon-svg"><svg class="raven-icon empty"><use href="#icon-active-bills"></use></svg></span><div class="empty-title">No active bills</div><div class="empty-sub">Create a bill to start splitting</div></div>' + renderSampleBillTutorial();
     return;
   }
   const [{ data: myBills }, { data: partRows }] = await Promise.all([
@@ -3832,9 +3975,24 @@ async function loadActiveBills() {
   const bills = [...(myBills || []), ...partBills].sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
   await augmentBillsWithGuests(bills);
   const container = document.getElementById('active-bills-list');
-  if (bills.length === 0) { container.innerHTML = '<div class="empty-state"><span class="empty-icon empty-icon-svg"><svg class="raven-icon empty"><use href="#icon-active-bills"></use></svg></span><div class="empty-title">No active bills</div><div class="empty-sub">Create a bill to start splitting</div></div>'; return; }
-  container.innerHTML = bills.map(b => renderBillCard(b)).join('');
+  if (bills.length === 0) { container.innerHTML = '<div class="empty-state"><span class="empty-icon empty-icon-svg"><svg class="raven-icon empty"><use href="#icon-active-bills"></use></svg></span><div class="empty-title">No active bills</div><div class="empty-sub">Create a bill to start splitting</div></div>' + renderSampleBillTutorial(); return; }
+  container.innerHTML = bills.map(b => renderBillCard(b)).join('') + renderSampleBillTutorial();
   wireBillCardActions(container);
+}
+
+function renderSampleBillTutorial() {
+  return '<div class="tutorial-sample-card" id="sample-bill-tutorial">'
+    + '<div class="tutorial-sample-top"><div><div class="tutorial-sample-kicker">Sample Bill</div><div class="tutorial-sample-title">See how a receipt becomes a split bill</div><div class="tutorial-sample-copy">A quick guided bill stays here as a reference. It is only a tutorial and will not show up in your totals.</div></div><div class="tutorial-sample-badge">Guide</div></div>'
+    + '<div class="tutorial-steps">'
+    + '<div class="tutorial-step"><div class="tutorial-step-num">1</div><div><strong>Tap the Scan tab</strong><span>Start from the green scan button or the Bills tab New Bill action.</span></div></div>'
+    + '<div class="tutorial-step"><div class="tutorial-step-num">2</div><div><strong>Enter the bill name</strong><span>Name it something easy to recognize, like Dinner at Jade.</span></div></div>'
+    + '<div class="tutorial-step"><div class="tutorial-step-num">3</div><div><strong>Scan or enter manually</strong><span>Add a receipt photo, or skip the photo and type the items yourself.</span></div></div>'
+    + '<div class="tutorial-step"><div class="tutorial-step-num">4</div><div><strong>Add people</strong><span>Add friends, guests, or people from your trip.</span></div></div>'
+    + '<div class="tutorial-step"><div class="tutorial-step-num">5</div><div><strong>Assign each item</strong><span>Tap items to choose who ordered them and split shared items evenly.</span></div></div>'
+    + '<div class="tutorial-step"><div class="tutorial-step-num">6</div><div><strong>Review and share</strong><span>Confirm totals, save the bill, then share it with friends.</span></div></div>'
+    + '</div>'
+    + '<div class="tutorial-sample-actions"><button class="primary" type="button" onclick="showPage(&quot;create-bill&quot;)">Try a Bill</button><button type="button" onclick="document.getElementById(&quot;sample-bill-tutorial&quot;)?.scrollIntoView({behavior:&quot;smooth&quot;,block:&quot;center&quot;})">Replay guide</button></div>'
+    + '</div>';
 }
 
 // Shared helper: fetch item_selections and augment bills with QR guest participants
@@ -5177,6 +5335,105 @@ async function sendFriendRequest(friendId, friendName, btn) {
     btn.disabled = false;
     showToast('Friend request sent to ' + friendName + '!', 'success');
   } catch(e) { showToast('Error sending request', 'error'); btn.textContent = '+ Add Friend'; btn.disabled = false; }
+}
+
+function normalizeRavenContactPhone(phone) {
+  const digits = String(phone || '').replace(/\D/g, '');
+  if (!digits) return '';
+  if (digits.length === 10) return '+1' + digits;
+  if (digits.length === 11 && digits[0] === '1') return '+' + digits;
+  if (digits.length >= 8 && digits.length <= 15) return '+' + digits;
+  return '';
+}
+
+function renderContactSyncMessage(message, tone) {
+  const box = document.getElementById('contact-sync-results');
+  if (!box) return;
+  const color = tone === 'error' ? '#FFB4B4' : tone === 'success' ? 'var(--green)' : 'var(--muted2)';
+  const border = tone === 'error' ? 'rgba(255,68,68,0.28)' : tone === 'success' ? 'rgba(48,209,88,0.25)' : 'var(--border)';
+  box.style.display = 'flex';
+  box.innerHTML = '<div style="padding:12px 14px;background:rgba(6,6,10,0.38);border:1px solid ' + border + ';border-radius:12px;color:' + color + ';font-size:12px;line-height:1.5">' + escapeHtml(message) + '</div>';
+}
+
+async function syncRavenPhoneContacts() {
+  const btn = document.getElementById('sync-contacts-btn');
+  if (!currentUser?.id) return renderContactSyncMessage('Sign in first, then sync contacts.', 'error');
+  if (!navigator.contacts || typeof navigator.contacts.select !== 'function') {
+    renderContactSyncMessage('Contact matching needs phone contact permission. This browser/app shell does not expose contacts yet, so no recommendations were made.', 'error');
+    return;
+  }
+  try {
+    if (btn) { btn.disabled = true; btn.textContent = 'Checking...'; }
+    const contacts = await navigator.contacts.select(['name', 'tel'], { multiple: true });
+    const approvedPhones = new Map();
+    (contacts || []).forEach(contact => {
+      const contactName = Array.isArray(contact.name) ? contact.name[0] : contact.name;
+      (contact.tel || []).forEach(phone => {
+        const normalized = normalizeRavenContactPhone(phone);
+        if (normalized && !approvedPhones.has(normalized)) approvedPhones.set(normalized, contactName || 'Phone contact');
+      });
+    });
+    const phones = [...approvedPhones.keys()];
+    if (!phones.length) return renderContactSyncMessage('No valid phone numbers were selected from contacts.', 'error');
+
+    const matches = [];
+    for (let i = 0; i < phones.length; i += 60) {
+      const chunk = phones.slice(i, i + 60);
+      const { data } = await db.from('profiles')
+        .select('id,first_name,last_name,raven_id,avatar_url,phone')
+        .in('phone', chunk)
+        .neq('id', currentUser.id);
+      (data || []).forEach(p => {
+        if (p.phone && approvedPhones.has(p.phone)) matches.push({ ...p, contact_name: approvedPhones.get(p.phone) });
+      });
+    }
+    const unique = [];
+    const seen = new Set();
+    matches.forEach(p => { if (p.id && !seen.has(p.id)) { seen.add(p.id); unique.push(p); } });
+    if (!unique.length) return renderContactSyncMessage('No exact RAVEN phone matches found in the contacts you selected.', 'success');
+
+    const { data: existing } = await db.from('raven_friends')
+      .select('friend_id,user_id,status')
+      .or('user_id.eq.' + currentUser.id + ',friend_id.eq.' + currentUser.id);
+    const friendMap = {};
+    (existing || []).forEach(f => {
+      const otherId = f.user_id === currentUser.id ? f.friend_id : f.user_id;
+      friendMap[otherId] = f.status;
+    });
+
+    const box = document.getElementById('contact-sync-results');
+    box.style.display = 'flex';
+    box.innerHTML = '<div style="font-size:11px;color:var(--muted);line-height:1.45;margin-bottom:2px">Exact matches only from the contacts you selected.</div>';
+    unique.forEach(p => {
+      const name = [p.first_name, p.last_name].filter(Boolean).join(' ') || p.raven_id || p.contact_name || 'RAVEN user';
+      const status = friendMap[p.id];
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:center;gap:12px;padding:12px 14px;background:rgba(6,6,10,0.42);border:1px solid var(--border);border-radius:12px';
+      row.innerHTML = friendAvatar(name, p.avatar_url, 38)
+        + '<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700;color:var(--white)">' + escapeHtml(name) + '</div>'
+        + '<div style="font-size:11px;color:var(--muted)">Matched exact phone contact' + (p.raven_id ? ' · @' + escapeHtml(p.raven_id) : '') + '</div></div>';
+      const actionBtn = document.createElement('button');
+      actionBtn.style.cssText = 'padding:8px 12px;border-radius:9px;font-family:inherit;font-size:12px;font-weight:800;cursor:pointer;border:1px solid;white-space:nowrap;flex-shrink:0';
+      if (status === 'accepted') {
+        actionBtn.textContent = 'Friends';
+        actionBtn.style.cssText += 'background:rgba(48,209,88,0.08);border-color:rgba(48,209,88,0.22);color:var(--green)';
+      } else if (status === 'pending') {
+        actionBtn.textContent = 'Pending';
+        actionBtn.style.cssText += 'background:rgba(255,255,255,0.05);border-color:var(--border);color:var(--muted)';
+      } else {
+        actionBtn.textContent = 'Add';
+        actionBtn.style.cssText += 'background:rgba(124,58,237,0.12);border-color:rgba(124,58,237,0.3);color:var(--purple3)';
+        actionBtn.onclick = () => sendFriendRequest(p.id, name, actionBtn);
+      }
+      row.appendChild(actionBtn);
+      box.appendChild(row);
+    });
+  } catch(e) {
+    if (e && e.name === 'AbortError') return renderContactSyncMessage('Contact sync canceled. Nothing was uploaded or matched.', 'error');
+    renderContactSyncMessage('Could not check contacts on this device.', 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Sync'; }
+  }
 }
 
 async function loadFriendRequests() {
@@ -7430,7 +7687,7 @@ async function loadTrips() {
   trips.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
   if (trips.length === 0) {
-    container.innerHTML = '<div class="empty-state"><span class="empty-icon empty-icon-svg"><svg class="raven-icon empty"><use href="#icon-trip-hub"></use></svg></span><div class="empty-title">No trips yet</div><div class="empty-sub">Create a trip hub or join one via an invite link</div></div>';
+    container.innerHTML = '<div class="empty-state"><span class="empty-icon empty-icon-svg"><svg class="raven-icon empty"><use href="#icon-trip-hub"></use></svg></span><div class="empty-title">No trips yet</div><div class="empty-sub">Create a trip hub or join one via an invite link</div></div>' + renderSampleTripTutorial();
     return;
   }
 
@@ -7497,7 +7754,7 @@ async function loadTrips() {
         + '<button class="bill-action-btn btn-view" type="button" data-tripid="' + safeAttrId + '" style="display:inline-flex;align-items:center;text-decoration:none">Open Trip →</button>'
         : '<a class="bill-action-btn btn-view" data-tripid="' + safeAttrId + '" href="' + tripUrl + '" style="display:inline-flex;align-items:center;text-decoration:none">Open Trip →</a>')
       + '</div></div>';
-  }).join('');
+  }).join('') + renderSampleTripTutorial();
 
   // Wire admin buttons directly after rendering — bypasses stopPropagation on parent
   container.querySelectorAll('.admin-btn').forEach(btn => {
@@ -7550,6 +7807,21 @@ async function loadTrips() {
   });
 
   setTimeout(refreshTripChatUnreadBadges, 200);
+}
+
+function renderSampleTripTutorial() {
+  return '<div class="tutorial-sample-card" id="sample-trip-tutorial">'
+    + '<div class="tutorial-sample-top"><div><div class="tutorial-sample-kicker">Sample Trip</div><div class="tutorial-sample-title">Use Trip Hub for group travel spending</div><div class="tutorial-sample-copy">This guide stays under your real trips. It shows the flow without creating a real trip or changing balances.</div></div><div class="tutorial-sample-badge">Guide</div></div>'
+    + '<div class="tutorial-steps">'
+    + '<div class="tutorial-step"><div class="tutorial-step-num">1</div><div><strong>Create or open a trip</strong><span>Use New Trip for a vacation, event, house weekend, or shared itinerary.</span></div></div>'
+    + '<div class="tutorial-step"><div class="tutorial-step-num">2</div><div><strong>Add the people going</strong><span>Invite friends, add guests, or include RAVEN friends already in your account.</span></div></div>'
+    + '<div class="tutorial-step"><div class="tutorial-step-num">3</div><div><strong>Add receipts to the trip</strong><span>Tap Receipt from the trip card, scan a receipt, or enter it manually.</span></div></div>'
+    + '<div class="tutorial-step"><div class="tutorial-step-num">4</div><div><strong>Assign items and payers</strong><span>Each receipt keeps the payer, item splits, tax, tip, and who still owes what.</span></div></div>'
+    + '<div class="tutorial-step"><div class="tutorial-step-num">5</div><div><strong>Chat and settle up</strong><span>Use Trip Chat for messages, then mark payments as settled as people pay.</span></div></div>'
+    + '<div class="tutorial-step"><div class="tutorial-step-num">6</div><div><strong>Share the trip</strong><span>Send the trip link so everyone can view receipts and balances.</span></div></div>'
+    + '</div>'
+    + '<div class="tutorial-sample-actions"><button class="primary" type="button" onclick="openCreateTrip()">Try a Trip</button><button type="button" onclick="document.getElementById(&quot;sample-trip-tutorial&quot;)?.scrollIntoView({behavior:&quot;smooth&quot;,block:&quot;center&quot;})">Replay guide</button></div>'
+    + '</div>';
 }
 
 function openCreateTrip() {
