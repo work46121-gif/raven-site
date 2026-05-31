@@ -720,6 +720,7 @@ async function preparePasswordResetFromUrl(url){
       const { error } = await db.auth.exchangeCodeForSession(code);
       if (error) throw error;
     } else if (hash.includes('access_token=')) {
+      await consumeImplicitAuthFromUrl();
       try { await db.auth.getSession(); } catch(e) {}
     }
     history.replaceState(null, '', window.location.pathname + '?app=1&reset=1');
@@ -756,6 +757,28 @@ function setupNativeAppUrlListener(){
   });
 }
 setupNativeAppUrlListener();
+async function recoverPendingNativeAuth(reason){
+  if (!isNativeAppMode() || !hasFreshAuthStart() || ravenAuthRouting) return;
+  try {
+    const { data } = await db.auth.getSession();
+    const user = data?.session?.user;
+    if (!user) return;
+    try { window.Capacitor?.Plugins?.Browser?.close?.(); } catch(_) {}
+    markRavenSignedIn();
+    routeAfterAuth(user);
+  } catch(e) {
+    console.warn('native auth resume recovery failed:', reason, e);
+  }
+}
+try {
+  document.addEventListener('visibilitychange', function(){
+    if (!document.hidden) setTimeout(() => recoverPendingNativeAuth('visibility'), 250);
+  });
+  window.addEventListener('focus', function(){ setTimeout(() => recoverPendingNativeAuth('focus'), 250); });
+  window.Capacitor?.Plugins?.App?.addListener?.('resume', function(){
+    setTimeout(() => recoverPendingNativeAuth('resume'), 250);
+  });
+} catch(e) {}
 // Listen for PASSWORD_RECOVERY event from Supabase (email link click)
 db.auth.onAuthStateChange((event, session) => {
   if (event === 'PASSWORD_RECOVERY') {
