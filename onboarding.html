@@ -533,7 +533,8 @@ html.app-mode .cancel-onboarding-inline { display: block; }
 <script>
 try {
   const params = new URLSearchParams(window.location.search);
-  if (params.get('app') === '1' || localStorage.getItem('raven_native_app') === '1') {
+  const isNativeCapacitor = !!(window.Capacitor?.isNativePlatform && window.Capacitor.isNativePlatform());
+  if (params.get('app') === '1' || isNativeCapacitor) {
     document.documentElement.classList.add('app-mode');
   }
 } catch(e) {}
@@ -817,7 +818,8 @@ let profileData = {};
 function dashboardUrl() {
   try {
     const params = new URLSearchParams(window.location.search);
-    const isApp = params.get('app') === '1' || localStorage.getItem('raven_native_app') === '1';
+    const isNativeCapacitor = !!(window.Capacitor?.isNativePlatform && window.Capacitor.isNativePlatform());
+    const isApp = params.get('app') === '1' || isNativeCapacitor;
     return 'dashboard.html' + (isApp ? '?app=1' : '');
   } catch(e) {
     return 'dashboard.html';
@@ -1131,7 +1133,8 @@ function goToDashboard() {
 function isAppOnboardingMode() {
   try {
     const params = new URLSearchParams(window.location.search);
-    return params.get('app') === '1' || localStorage.getItem('raven_native_app') === '1';
+    const isNativeCapacitor = !!(window.Capacitor?.isNativePlatform && window.Capacitor.isNativePlatform());
+    return params.get('app') === '1' || isNativeCapacitor;
   } catch(e) {
     return false;
   }
