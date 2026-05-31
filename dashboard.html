@@ -2671,7 +2671,7 @@ async function init() {
       currentUser = session.user;
       await checkOnboardingAndShow(currentUser.id);
     } else if (RAVEN_APP_MODE) {
-      const cachedUser = getAppCachedDashboardUser();
+      const cachedUser = getAppCachedDashboardUser(true) || getAppReturnDashboardUser();
       if (cachedUser) {
         markRavenSignedIn();
         currentUser = cachedUser;
@@ -3946,7 +3946,11 @@ function showPage(page) {
 
 async function loadAllData() {
   loadOverview().catch(e=>{ console.warn(e); renderOverviewEmptyState(); });
-  loadActiveBills().catch(e=>console.warn(e));
+  loadActiveBills().catch(e=>{
+    console.warn(e);
+    const container = document.getElementById('active-bills-list');
+    if (container) container.innerHTML = '<div class="empty-state"><span class="empty-icon empty-icon-svg"><svg class="raven-icon empty"><use href="#icon-active-bills"></use></svg></span><div class="empty-title">Bills will refresh</div><div class="empty-sub">Tap Bills again if this view just returned from a bill page.</div></div>' + renderSampleBillTutorial();
+  });
 }
 
 async function loadOverview() {
@@ -4062,28 +4066,32 @@ function openBillSettings(billId, event) {
 }
 
 async function loadActiveBills() {
-  const userEmail = getDashboardUserEmail();
-  if (!userEmail) {
-    const container = document.getElementById('active-bills-list');
-    if (container) container.innerHTML = '<div class="empty-state"><span class="empty-icon empty-icon-svg"><svg class="raven-icon empty"><use href="#icon-active-bills"></use></svg></span><div class="empty-title">No active bills</div><div class="empty-sub">Create a bill to start splitting</div></div>' + renderSampleBillTutorial();
-    return;
-  }
-  const [{ data: myBills }, { data: partRows }] = await Promise.all([
-    db.from('bills').select('*, participants(*)').eq('creator_phone', userEmail).neq('status', 'deleted').order('created_at', { ascending: false }),
-    db.from('participants').select('bill_id').eq('phone', userEmail)
-  ]);
-  const partBillIds = (partRows || []).map(r => r.bill_id).filter(id => !(myBills || []).find(b => b.id === id));
-  let partBills = [];
-  if (partBillIds.length > 0) {
-    const { data } = await db.from('bills').select('*, participants(*)').in('id', partBillIds).neq('status', 'deleted').order('created_at', { ascending: false });
-    partBills = data || [];
-  }
-  const bills = [...(myBills || []), ...partBills].sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
-  await augmentBillsWithGuests(bills);
   const container = document.getElementById('active-bills-list');
-  if (bills.length === 0) { container.innerHTML = '<div class="empty-state"><span class="empty-icon empty-icon-svg"><svg class="raven-icon empty"><use href="#icon-active-bills"></use></svg></span><div class="empty-title">No active bills</div><div class="empty-sub">Create a bill to start splitting</div></div>' + renderSampleBillTutorial(); return; }
-  container.innerHTML = bills.map(b => renderBillCard(b)).join('') + renderSampleBillTutorial();
-  wireBillCardActions(container);
+  try {
+    const userEmail = getDashboardUserEmail();
+    if (!userEmail) {
+      if (container) container.innerHTML = '<div class="empty-state"><span class="empty-icon empty-icon-svg"><svg class="raven-icon empty"><use href="#icon-active-bills"></use></svg></span><div class="empty-title">No active bills</div><div class="empty-sub">Create a bill to start splitting</div></div>' + renderSampleBillTutorial();
+      return;
+    }
+    const [{ data: myBills }, { data: partRows }] = await Promise.all([
+      db.from('bills').select('*, participants(*)').eq('creator_phone', userEmail).neq('status', 'deleted').order('created_at', { ascending: false }),
+      db.from('participants').select('bill_id').eq('phone', userEmail)
+    ]);
+    const partBillIds = (partRows || []).map(r => r.bill_id).filter(id => !(myBills || []).find(b => b.id === id));
+    let partBills = [];
+    if (partBillIds.length > 0) {
+      const { data } = await db.from('bills').select('*, participants(*)').in('id', partBillIds).neq('status', 'deleted').order('created_at', { ascending: false });
+      partBills = data || [];
+    }
+    const bills = [...(myBills || []), ...partBills].sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
+    await augmentBillsWithGuests(bills);
+    if (bills.length === 0) { container.innerHTML = '<div class="empty-state"><span class="empty-icon empty-icon-svg"><svg class="raven-icon empty"><use href="#icon-active-bills"></use></svg></span><div class="empty-title">No active bills</div><div class="empty-sub">Create a bill to start splitting</div></div>' + renderSampleBillTutorial(); return; }
+    container.innerHTML = bills.map(b => renderBillCard(b)).join('') + renderSampleBillTutorial();
+    wireBillCardActions(container);
+  } catch(e) {
+    console.warn('loadActiveBills error:', e);
+    if (container) container.innerHTML = '<div class="empty-state"><span class="empty-icon empty-icon-svg"><svg class="raven-icon empty"><use href="#icon-active-bills"></use></svg></span><div class="empty-title">Bills will refresh</div><div class="empty-sub">Tap Bills again if this view just returned from a bill page.</div></div>' + renderSampleBillTutorial();
+  }
 }
 
 function renderSampleBillTutorial() {
@@ -4214,6 +4222,7 @@ async function loadHistory() {
 }
 
 function renderBillCard(b) {
+  const userEmail = getDashboardUserEmail();
   const parts = dedupeBillPreviewParticipants(b.participants || []);
   const paidByKey = billPreviewParticipantKey(b.paid_by || '');
   const paid = parts.filter(p => {
@@ -4222,10 +4231,10 @@ function renderBillCard(b) {
   }).length || 0;
   const total = Math.max(parts.length || 0, b.live_people_count || 0);
   const pct = total > 0 ? Math.round((paid / total) * 100) : 0;
-  const isCreator = b.creator_phone === currentUser.email;
-  const myParticipantRow = parts.find(p => p.phone === currentUser.email);
+  const isCreator = b.creator_phone === userEmail;
+  const myParticipantRow = parts.find(p => p.phone === userEmail);
   const owed = isCreator
-    ? (parts.filter(p => !p.paid && p.phone !== currentUser.email).reduce((s, p) => s + parseFloat(p.amount || 0), 0) || 0)
+    ? (parts.filter(p => !p.paid && p.phone !== userEmail).reduce((s, p) => s + parseFloat(p.amount || 0), 0) || 0)
     : (myParticipantRow && !myParticipantRow.paid ? parseFloat(myParticipantRow.amount || 0) : 0);
   const isFullyPaid = owed === 0 && total > 0;
   const billUrlObj = new URL(FRONTEND + '/bill/' + b.id);
@@ -7803,6 +7812,11 @@ async function saveCreateHouse() {
 async function loadTrips() {
   const container = document.getElementById('trips-list');
   container.innerHTML = '<div class="loading"><div class="spinner"></div> Loading...</div>';
+  const userEmail = getDashboardUserEmail();
+  if (!userEmail) {
+    container.innerHTML = '<div class="empty-state"><span class="empty-icon empty-icon-svg"><svg class="raven-icon empty"><use href="#icon-trip-hub"></use></svg></span><div class="empty-title">No trips yet</div><div class="empty-sub">Create a trip hub or join one via an invite link</div></div>' + renderSampleTripTutorial();
+    return;
+  }
 
   let trips = [];
   const seen = new Set();
@@ -7810,14 +7824,14 @@ async function loadTrips() {
   try {
     // 1. Trips created by this user
     const { data: createdTrips, error: e1 } = await db.from('trips').select('*')
-      .eq('creator_email', currentUser.email)
+      .eq('creator_email', userEmail)
       .neq('type', 'roommates')
       .order('created_at', { ascending: false });
     if (e1) console.warn('loadTrips creator query:', e1.message);
     (createdTrips || []).forEach(t => { if (!seen.has(t.id)) { seen.add(t.id); trips.push(t); } });
 
     // 2. Trips where member_emails JSON string contains this user's email (added via raven_id)
-    const emailEscaped = currentUser.email.toLowerCase().replace(/[%_]/g, '\\$&');
+    const emailEscaped = userEmail.toLowerCase().replace(/[%_]/g, '\\$&');
     const { data: memberTrips, error: e2 } = await db.from('trips').select('*')
       .ilike('member_emails', '%' + emailEscaped + '%')
       .neq('type', 'roommates')
@@ -7838,7 +7852,9 @@ async function loadTrips() {
 
     // 4. Trips from DB profiles.joined_trips column (extra fallback)
     try {
-      const { data: prof } = await db.from('profiles').select('joined_trips').eq('id', currentUser.id).maybeSingle();
+      const profileId = String(currentUser?.id || '').trim();
+      const hasRealProfileId = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{12}$/i.test(profileId);
+      const { data: prof } = hasRealProfileId ? await db.from('profiles').select('joined_trips').eq('id', profileId).maybeSingle() : { data: null };
       if (prof?.joined_trips) {
         let dbJoined = typeof prof.joined_trips === 'string' ? JSON.parse(prof.joined_trips) : prof.joined_trips;
         const extraIds = (dbJoined || []).filter(id => !seen.has(id));
@@ -7865,13 +7881,13 @@ async function loadTrips() {
     tripUrlMap[t.id] = tripUrl;
     // Store full trip data safely — never pass user content through onclick attributes
     tripDataMap[t.id] = t;
-    const isCreator = t.creator_email === currentUser.email;
+    const isCreator = t.creator_email === userEmail;
     let coAdminsList = [];
     try { coAdminsList = Array.isArray(t.co_admins) ? t.co_admins : JSON.parse(t.co_admins || '[]'); } catch(e) {}
-    const userEmail = (currentUser.email || '').toLowerCase();
+    const lowerUserEmail = userEmail.toLowerCase();
     const _localProfile = (() => { try { return JSON.parse(localStorage.getItem('raven_profile') || '{}'); } catch(e) { return {}; } })();
-    const userDisplayName = (_localProfile.first_name || userEmail.split('@')[0] || '').toLowerCase();
-    const isCoAdmin = coAdminsList.some(a => { const al = a.toLowerCase(); return al === userEmail || al === userDisplayName || userEmail.startsWith(al + '@') || al === userEmail.split('@')[0]; });
+    const userDisplayName = (_localProfile.first_name || lowerUserEmail.split('@')[0] || '').toLowerCase();
+    const isCoAdmin = coAdminsList.some(a => { const al = a.toLowerCase(); return al === lowerUserEmail || al === userDisplayName || lowerUserEmail.startsWith(al + '@') || al === lowerUserEmail.split('@')[0]; });
     const isAdmin = isCreator || isCoAdmin;
     const safeId = String(t.id || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
     const safeAttrId = String(t.id || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
