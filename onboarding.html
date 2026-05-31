@@ -511,6 +511,21 @@ html.app-mode .cancel-onboarding-btn {
   border-color: rgba(255,255,255,0.16);
   color: var(--white);
 }
+.cancel-onboarding-inline {
+  display: none;
+  width: 100%;
+  margin: 0 0 14px;
+  padding: 11px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.04);
+  color: var(--muted2);
+  font-family: 'Epilogue', sans-serif;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+html.app-mode .cancel-onboarding-inline { display: block; }
 </style>
 </head>
 <body>
@@ -539,6 +554,7 @@ try {
   </div>
 
   <div class="card" id="main-card">
+    <button type="button" class="cancel-onboarding-inline" onclick="cancelOnboarding()">Cancel setup</button>
 
     <!-- PROGRESS BAR -->
     <div class="progress-wrap">
@@ -1156,11 +1172,11 @@ function clearOnboardingAuthCache(keepAppMode) {
 
 async function cancelOnboarding() {
   const isApp = isAppOnboardingMode();
-  const btn = document.querySelector('.cancel-onboarding-btn');
-  if (btn) {
+  const buttons = document.querySelectorAll('.cancel-onboarding-btn,.cancel-onboarding-inline');
+  buttons.forEach(btn => {
     btn.disabled = true;
     btn.textContent = 'Signing out...';
-  }
+  });
   try {
     const text = document.querySelector('.loading-text');
     if (text) text.textContent = 'Signing out...';
