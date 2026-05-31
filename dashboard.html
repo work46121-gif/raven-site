@@ -400,6 +400,108 @@ body.app-mode .cb-raven-add-icon { width:18px;height:18px;display:block; }
   border-color: var(--green);
   color: #000;
 }
+.sample-guide-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 920;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(0,0,0,0.78);
+  backdrop-filter: blur(10px);
+}
+.sample-guide-modal.open { display: flex; }
+.sample-guide-panel {
+  width: min(760px, 100%);
+  max-height: min(86vh, 760px);
+  overflow-y: auto;
+  border: 1px solid rgba(48,209,88,0.22);
+  border-radius: 18px;
+  background: linear-gradient(145deg, #101019, #08080D 62%, rgba(48,209,88,0.08));
+  box-shadow: 0 24px 80px rgba(0,0,0,0.6);
+  padding: 22px;
+  position: relative;
+}
+.sample-guide-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.06);
+  color: var(--muted2);
+  cursor: pointer;
+  font-size: 18px;
+}
+.sample-guide-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 34px;
+  letter-spacing: 0.05em;
+  line-height: 1;
+  margin: 8px 42px 8px 0;
+}
+.sample-guide-copy {
+  color: var(--muted2);
+  font-size: 13px;
+  line-height: 1.55;
+  margin: 0 42px 18px 0;
+}
+.sample-guide-preview {
+  border: 1px solid rgba(255,255,255,0.09);
+  border-radius: 14px;
+  background: rgba(6,6,10,0.62);
+  padding: 16px;
+  margin-bottom: 14px;
+}
+.sample-guide-preview-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 14px;
+  align-items: center;
+}
+.sample-guide-preview-name {
+  font-size: 18px;
+  font-weight: 900;
+  color: var(--white);
+  margin-bottom: 6px;
+}
+.sample-guide-preview-meta {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.45;
+}
+.sample-guide-preview-total {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 36px;
+  color: var(--green);
+  letter-spacing: 0.04em;
+}
+.sample-guide-action-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+.sample-guide-action-row button {
+  min-height: 42px;
+  padding: 11px 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.05);
+  color: var(--muted2);
+  font-family: 'Epilogue', sans-serif;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.sample-guide-action-row .primary {
+  background: var(--green);
+  border-color: var(--green);
+  color: #000;
+}
 .bill-card { background: var(--dark); border: 1px solid var(--border); border-radius: 14px; padding: 20px 24px; display: grid; grid-template-columns: 1fr auto auto auto; align-items: center; gap: 20px; transition: all 0.2s; cursor: pointer; }
 .bill-card:hover { border-color: var(--border2); background: var(--dark2); transform: translateX(2px); }
 .bill-name { font-weight: 600; font-size: 15px; margin-bottom: 4px; }
@@ -3833,6 +3935,8 @@ function showPage(page) {
   if (page === 'active-bills')  loadActiveBills();
   if (page === 'history')       loadHistory();
   if (page === 'settings')      loadSettings();
+  const qn = document.getElementById('mob-quick-nav');
+  if (qn) qn.style.display = (RAVEN_APP_MODE && page === 'settings') ? 'block' : (page === 'settings' && window.innerWidth <= 768 ? 'block' : 'none');
   if (page === 'notifications') loadNotifications();
   if (page === 'invite')        loadInvitePage();
   if (page === 'trip-hub')      loadTrips();
@@ -3983,28 +4087,79 @@ async function loadActiveBills() {
 }
 
 function renderSampleBillTutorial() {
-  return '<div class="tutorial-sample-card" id="sample-bill-tutorial" onclick="toggleTutorialGuide(event, this)">'
-    + '<div class="tutorial-sample-top"><div><div class="tutorial-sample-kicker">Sample Bill</div><div class="tutorial-sample-title">Receipt split walkthrough</div><div class="tutorial-sample-copy">Tap to open the guide. This is not included in your totals.</div></div><div class="tutorial-sample-badge">Guide</div></div>'
-    + '<div class="tutorial-steps">'
-    + '<div class="tutorial-step"><div class="tutorial-step-num">1</div><div><strong>Tap the Scan tab</strong><span>Start from the green scan button or the Bills tab New Bill action.</span></div></div>'
-    + '<div class="tutorial-step"><div class="tutorial-step-num">2</div><div><strong>Enter the bill name</strong><span>Name it something easy to recognize, like Dinner at Jade.</span></div></div>'
-    + '<div class="tutorial-step"><div class="tutorial-step-num">3</div><div><strong>Scan or enter manually</strong><span>Add a receipt photo, or skip the photo and type the items yourself.</span></div></div>'
-    + '<div class="tutorial-step"><div class="tutorial-step-num">4</div><div><strong>Add people</strong><span>Add friends, guests, or people from your trip.</span></div></div>'
-    + '<div class="tutorial-step"><div class="tutorial-step-num">5</div><div><strong>Assign each item</strong><span>Tap items to choose who ordered them and split shared items evenly.</span></div></div>'
-    + '<div class="tutorial-step"><div class="tutorial-step-num">6</div><div><strong>Review and share</strong><span>Confirm totals, save the bill, then share it with friends.</span></div></div>'
-    + '</div>'
-    + '<div class="tutorial-sample-actions"><button class="primary" type="button" onclick="event.stopPropagation();showPage(&quot;create-bill&quot;)">Try a Bill</button><button type="button" onclick="event.stopPropagation();toggleTutorialGuide(event, document.getElementById(&quot;sample-bill-tutorial&quot;), true)">Close guide</button></div>'
+  return '<div class="tutorial-sample-card" id="sample-bill-tutorial" onclick="openSampleGuide(&quot;bill&quot;, event)">'
+    + '<div class="tutorial-sample-top"><div><div class="tutorial-sample-kicker">Sample Bill</div><div class="tutorial-sample-title">Receipt split walkthrough</div><div class="tutorial-sample-copy">Tap to open a sample bill and guided steps. This is not included in your totals.</div></div><div class="tutorial-sample-badge">Open</div></div>'
     + '</div>';
 }
 
-function toggleTutorialGuide(event, card, forceClose) {
-  if (event) event.stopPropagation();
-  if (!card) return;
-  if (forceClose) {
-    card.classList.remove('expanded');
-    return;
+function getSampleGuide(type) {
+  if (type === 'trip') {
+    return {
+      title: 'Trip Hub Guide',
+      copy: 'A sample trip that shows how group travel spending works without creating a real trip or changing balances.',
+      previewName: 'Fort Weekend Sample',
+      previewMeta: '4 people · 3 receipts · all settled',
+      previewTotal: '$0.00',
+      primaryLabel: 'Try a Trip',
+      primaryAction: 'openCreateTrip',
+      steps: [
+        ['Create or open a trip', 'Use New Trip for a vacation, event, house weekend, or shared itinerary.'],
+        ['Add the people going', 'Invite friends, add guests, or include RAVEN friends already in your account.'],
+        ['Add receipts to the trip', 'Tap Receipt from the trip card, scan a receipt, or enter it manually.'],
+        ['Assign items and payers', 'Each receipt keeps the payer, item splits, tax, tip, and who still owes what.'],
+        ['Chat and settle up', 'Use Trip Chat for messages, then mark payments as settled as people pay.'],
+        ['Share the trip', 'Send the trip link so everyone can view receipts and balances.']
+      ]
+    };
   }
-  card.classList.toggle('expanded');
+  return {
+    title: 'Bill Split Guide',
+    copy: 'A sample bill that walks through scanning, assigning items, reviewing totals, and sharing with friends.',
+    previewName: 'Jade Dinner Sample',
+    previewMeta: '3 people · itemized receipt · ready to share',
+    previewTotal: '$42.00',
+    primaryLabel: 'Try a Bill',
+    primaryAction: 'showCreateBill',
+    steps: [
+      ['Tap the Scan tab', 'Start from the green scan button or the Bills tab New Bill action.'],
+      ['Enter the bill name', 'Name it something easy to recognize, like Dinner at Jade.'],
+      ['Scan or enter manually', 'Add a receipt photo, or skip the photo and type the items yourself.'],
+      ['Add people', 'Add friends, guests, or people from your trip.'],
+      ['Assign each item', 'Tap items to choose who ordered them and split shared items evenly.'],
+      ['Review and share', 'Confirm totals, save the bill, then share it with friends.']
+    ]
+  };
+}
+
+function openSampleGuide(type, event) {
+  if (event) event.stopPropagation();
+  const guide = getSampleGuide(type);
+  let modal = document.getElementById('sample-guide-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'sample-guide-modal';
+    modal.className = 'sample-guide-modal';
+    modal.onclick = function(e){ if (e.target === modal) closeSampleGuide(); };
+    document.body.appendChild(modal);
+  }
+  const action = guide.primaryAction === 'openCreateTrip'
+    ? 'closeSampleGuide();openCreateTrip();'
+    : 'closeSampleGuide();showPage(&quot;create-bill&quot;);setMobNav(&quot;mob-create&quot;);';
+  modal.innerHTML = '<div class="sample-guide-panel">'
+    + '<button class="sample-guide-close" type="button" onclick="closeSampleGuide()">×</button>'
+    + '<div class="tutorial-sample-kicker">' + (type === 'trip' ? 'Sample Trip' : 'Sample Bill') + '</div>'
+    + '<div class="sample-guide-title">' + guide.title + '</div>'
+    + '<p class="sample-guide-copy">' + guide.copy + '</p>'
+    + '<div class="sample-guide-preview"><div class="sample-guide-preview-row"><div><div class="sample-guide-preview-name">' + guide.previewName + '</div><div class="sample-guide-preview-meta">' + guide.previewMeta + '</div></div><div class="sample-guide-preview-total">' + guide.previewTotal + '</div></div></div>'
+    + '<div class="tutorial-steps" style="display:grid;margin:0 0 2px">' + guide.steps.map(function(step, index){ return '<div class="tutorial-step"><div class="tutorial-step-num">' + (index + 1) + '</div><div><strong>' + step[0] + '</strong><span>' + step[1] + '</span></div></div>'; }).join('') + '</div>'
+    + '<div class="sample-guide-action-row"><button class="primary" type="button" onclick="' + action + '">' + guide.primaryLabel + '</button><button type="button" onclick="closeSampleGuide()">Close</button></div>'
+    + '</div>';
+  modal.classList.add('open');
+}
+
+function closeSampleGuide() {
+  const modal = document.getElementById('sample-guide-modal');
+  if (modal) modal.classList.remove('open');
 }
 
 // Shared helper: fetch item_selections and augment bills with QR guest participants
@@ -7822,17 +7977,8 @@ async function loadTrips() {
 }
 
 function renderSampleTripTutorial() {
-  return '<div class="tutorial-sample-card" id="sample-trip-tutorial" onclick="toggleTutorialGuide(event, this)">'
-    + '<div class="tutorial-sample-top"><div><div class="tutorial-sample-kicker">Sample Trip</div><div class="tutorial-sample-title">Trip Hub walkthrough</div><div class="tutorial-sample-copy">Tap to open the guide. This is not included in your balances.</div></div><div class="tutorial-sample-badge">Guide</div></div>'
-    + '<div class="tutorial-steps">'
-    + '<div class="tutorial-step"><div class="tutorial-step-num">1</div><div><strong>Create or open a trip</strong><span>Use New Trip for a vacation, event, house weekend, or shared itinerary.</span></div></div>'
-    + '<div class="tutorial-step"><div class="tutorial-step-num">2</div><div><strong>Add the people going</strong><span>Invite friends, add guests, or include RAVEN friends already in your account.</span></div></div>'
-    + '<div class="tutorial-step"><div class="tutorial-step-num">3</div><div><strong>Add receipts to the trip</strong><span>Tap Receipt from the trip card, scan a receipt, or enter it manually.</span></div></div>'
-    + '<div class="tutorial-step"><div class="tutorial-step-num">4</div><div><strong>Assign items and payers</strong><span>Each receipt keeps the payer, item splits, tax, tip, and who still owes what.</span></div></div>'
-    + '<div class="tutorial-step"><div class="tutorial-step-num">5</div><div><strong>Chat and settle up</strong><span>Use Trip Chat for messages, then mark payments as settled as people pay.</span></div></div>'
-    + '<div class="tutorial-step"><div class="tutorial-step-num">6</div><div><strong>Share the trip</strong><span>Send the trip link so everyone can view receipts and balances.</span></div></div>'
-    + '</div>'
-    + '<div class="tutorial-sample-actions"><button class="primary" type="button" onclick="event.stopPropagation();openCreateTrip()">Try a Trip</button><button type="button" onclick="event.stopPropagation();toggleTutorialGuide(event, document.getElementById(&quot;sample-trip-tutorial&quot;), true)">Close guide</button></div>'
+  return '<div class="tutorial-sample-card" id="sample-trip-tutorial" onclick="openSampleGuide(&quot;trip&quot;, event)">'
+    + '<div class="tutorial-sample-top"><div><div class="tutorial-sample-kicker">Sample Trip</div><div class="tutorial-sample-title">Trip Hub walkthrough</div><div class="tutorial-sample-copy">Tap to open a sample trip and guided steps. This is not included in your balances.</div></div><div class="tutorial-sample-badge">Open</div></div>'
     + '</div>';
 }
 
