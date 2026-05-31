@@ -1,22 +1,6 @@
 name: Trigger Codemagic iOS Build
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - app.html
-      - dashboard.html
-      - onboarding.html
-      - index.html
-      - capacitor.config.json
-      - codemagic.yaml
-      - package.json
-      - package-lock.json
-      - manifest.json
-      - icon-*.png
-      - apple-touch-icon.png
-      - .github/workflows/codemagic-build.yml
   workflow_dispatch:
 
 jobs:
