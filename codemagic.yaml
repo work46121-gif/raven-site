@@ -15,7 +15,7 @@ workflows:
         XCODE_PROJECT: ios/App/App.xcodeproj
         XCODE_WORKSPACE: ios/App/App.xcworkspace
         XCODE_SCHEME: App
-      node: lts
+      node: 20.19.0
       xcode: latest
 
     scripts:
