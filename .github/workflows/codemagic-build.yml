@@ -2,11 +2,22 @@ name: Trigger Codemagic iOS Build
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: codemagic-ios-build-main
+  cancel-in-progress: true
 
 jobs:
   start-codemagic-build:
     runs-on: ubuntu-latest
     steps:
+      - name: Debounce push builds
+        if: github.event_name == 'push'
+        run: sleep 120
+
       - name: Start Codemagic build
         env:
           CODEMAGIC_API_TOKEN: ${{ secrets.CODEMAGIC_API_TOKEN }}
