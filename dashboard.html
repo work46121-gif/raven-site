@@ -8336,9 +8336,7 @@ async function loadTrips() {
       + '<a class="bill-action-btn btn-remind" href="' + tripUrlReceipt + '" data-tripid="' + safeAttrId + '" style="display:inline-flex;align-items:center;text-decoration:none;background:rgba(48,209,88,0.1);color:var(--green);border:1px solid rgba(48,209,88,0.25)"><svg class="bill-action-icon"><use href="#icon-active-bills"></use></svg>Receipt</a>'
       + (isAdmin ? '<button class="bill-action-btn admin-btn" data-tripid="' + t.id + '" style="background:rgba(124,58,237,0.1);color:var(--purple3);border:1px solid rgba(124,58,237,0.2)"><svg class="bill-action-icon"><use href="#icon-roommates"></use></svg>Admin</button>' : '')
       + '<button class="bill-action-btn" type="button" data-chatid="' + safeAttrId + '" style="display:inline-flex;align-items:center;position:relative;background:rgba(124,58,237,0.12);color:var(--purple3);border:1px solid rgba(124,58,237,0.25)" onclick="event.stopPropagation();openTripChat(\'' + safeId + '\')"><svg style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Chat<span class="trip-chat-unread-dot" data-chatbadge="' + safeAttrId + '" style="display:none;position:absolute;top:5px;right:7px;width:8px;height:8px;border-radius:50%;background:#30D158;box-shadow:0 0 10px rgba(48,209,88,0.8)"></span></button>'
-      + (RAVEN_APP_MODE
-        ? '<button class="bill-action-btn btn-view" type="button" data-tripid="' + safeAttrId + '" style="display:inline-flex;align-items:center;text-decoration:none">Open Trip -></button>'
-        : '<a class="bill-action-btn btn-view" data-tripid="' + safeAttrId + '" href="' + tripUrl + '" style="display:inline-flex;align-items:center;text-decoration:none">Open Trip -></a>')
+      + '<button class="bill-action-btn btn-view" type="button" data-tripid="' + safeAttrId + '" data-tripurl="' + tripUrl + '" style="display:inline-flex;align-items:center;text-decoration:none">Open Trip -></button>'
       + '</div></div>';
   }).join('') + renderSampleTripTutorial();
 
@@ -8353,27 +8351,23 @@ async function loadTrips() {
     btn.style.touchAction = 'manipulation';
     btn.style.webkitTapHighlightColor = 'transparent';
     btn.addEventListener('pointerdown', function() {
-      const href = this.getAttribute('href') || '';
-      const match = href.match(/\/trip\/([^?]+)/);
-      if (match) warmTrip(match[1]);
+      const tripId = this.getAttribute('data-tripid') || '';
+      if (!tripId) return;
+      try { warmTrip(tripId); } catch(e) {}
+      const tripName = String(tripDataMap[tripId]?.name || 'Trip Hub').trim();
+      showTripOpenLoader(tripName);
     }, { passive: true });
     btn.addEventListener('click', function(e) {
       e.preventDefault();
       e.stopPropagation();
-      if (RAVEN_APP_MODE) {
-        const appTripId = this.getAttribute('data-tripid');
-        if (appTripId) openTrip(appTripId);
-        return;
-      }
-      const href = this.getAttribute('href') || '';
-      const match = href.match(/\/trip\/([^?]+)/);
-      if (match) openTrip(match[1]);
+      const tripId = this.getAttribute('data-tripid') || '';
+      if (tripId) openTrip(tripId);
     });
   });
   container.querySelectorAll('.trip-open-hit, .btn-view').forEach(el => {
     ['mouseenter', 'focus', 'touchstart'].forEach(evt => {
       el.addEventListener(evt, function() {
-        const href = this.getAttribute('href');
+        const href = this.getAttribute('href') || this.getAttribute('data-tripurl');
         if (href && !warmedTripUrls.has(href)) {
           warmedTripUrls.add(href);
           try {
