@@ -486,15 +486,126 @@ body.app-mode .cb-raven-add-icon { width:18px;height:18px;display:block; }
   margin: 14px 0 4px;
 }
 .sample-guide-stage {
-  min-height: 216px;
+  min-height: 250px;
   border: 1px solid rgba(255,255,255,0.09);
   border-radius: 16px;
   background: radial-gradient(circle at 80% 12%, rgba(124,58,237,0.18), transparent 38%), rgba(5,5,9,0.72);
   padding: 18px;
   display: grid;
-  align-content: center;
+  grid-template-columns: minmax(0, 1fr) 190px;
+  align-items: center;
   gap: 12px;
   overflow: hidden;
+}
+.sample-guide-visual {
+  min-height: 190px;
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: linear-gradient(145deg, rgba(18,18,28,0.94), rgba(6,6,10,0.94));
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.03), 0 16px 38px rgba(0,0,0,0.28);
+  padding: 14px;
+  display: grid;
+  gap: 9px;
+  align-content: center;
+  position: relative;
+}
+.sample-guide-visual::before {
+  content: "";
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  width: 34px;
+  height: 4px;
+  border-radius: 999px;
+  transform: translateX(-50%);
+  background: rgba(255,255,255,0.16);
+}
+.sample-guide-mini-card {
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 12px;
+  background: rgba(255,255,255,0.045);
+  padding: 10px;
+}
+.sample-guide-mini-title {
+  height: 12px;
+  width: 72%;
+  border-radius: 999px;
+  background: rgba(245,242,255,0.9);
+  margin-bottom: 9px;
+}
+.sample-guide-mini-line {
+  height: 8px;
+  width: 92%;
+  border-radius: 999px;
+  background: rgba(142,135,163,0.46);
+  margin-top: 7px;
+}
+.sample-guide-mini-line.short { width: 56%; }
+.sample-guide-mini-row {
+  display: flex;
+  gap: 7px;
+  align-items: center;
+}
+.sample-guide-mini-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--purple), var(--green));
+  flex: 0 0 auto;
+}
+.sample-guide-mini-chip {
+  height: 24px;
+  border-radius: 999px;
+  background: rgba(48,209,88,0.14);
+  border: 1px solid rgba(48,209,88,0.26);
+  color: var(--green);
+  display: inline-flex;
+  align-items: center;
+  padding: 0 9px;
+  font-size: 10px;
+  font-weight: 900;
+}
+.sample-guide-mini-button {
+  height: 34px;
+  border-radius: 10px;
+  background: var(--green);
+  color: #000;
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  font-weight: 900;
+}
+.sample-guide-mini-photo {
+  height: 72px;
+  border-radius: 12px;
+  background: linear-gradient(150deg, rgba(48,209,88,0.28), rgba(124,58,237,0.26)), repeating-linear-gradient(0deg, rgba(255,255,255,0.08) 0 2px, transparent 2px 10px);
+  border: 1px solid rgba(255,255,255,0.08);
+}
+.sample-guide-mini-chat {
+  justify-self: end;
+  max-width: 82%;
+  padding: 9px 11px;
+  border-radius: 14px 14px 4px 14px;
+  background: var(--purple);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+}
+.sample-guide-mini-split {
+  display: grid;
+  grid-template-columns: 28px 1fr auto;
+  gap: 8px;
+  align-items: center;
+}
+.sample-guide-mini-check {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: var(--green);
+  color: #000;
+  display: grid;
+  place-items: center;
+  font-weight: 900;
 }
 .sample-guide-stage-kicker {
   color: var(--green);
@@ -600,7 +711,9 @@ body.app-mode .cb-raven-add-icon { width:18px;height:18px;display:block; }
 }
 @media (max-width: 720px) {
   .sample-guide-panel { padding: 18px; max-height: 88vh; }
-  .sample-guide-demo { grid-template-columns: 1fr; }
+  .sample-guide-demo,
+  .sample-guide-stage { grid-template-columns: 1fr; }
+  .sample-guide-visual { min-height: 150px; }
   .sample-guide-timeline { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .sample-guide-timeline button { grid-template-columns: 24px 1fr; font-size: 12px; }
   .sample-guide-timeline-num { width: 24px; height: 24px; }
@@ -4365,14 +4478,39 @@ function setSampleGuideStep(index) {
   const demo = (guide.demo && guide.demo[next]) || { title: guide.steps[next][0], copy: guide.steps[next][1], pills: [] };
   const stage = document.getElementById('sample-guide-stage');
   if (stage) {
-    stage.innerHTML = '<div class="sample-guide-stage-kicker">Step ' + (next + 1) + ' of ' + (max + 1) + '</div>'
+    stage.innerHTML = '<div>'
+      + '<div class="sample-guide-stage-kicker">Step ' + (next + 1) + ' of ' + (max + 1) + '</div>'
       + '<div class="sample-guide-stage-title">' + demo.title + '</div>'
       + '<div class="sample-guide-stage-copy">' + demo.copy + '</div>'
-      + '<div class="sample-guide-stage-ui">' + (demo.pills || []).map(function(pill, i){ return '<span class="sample-guide-pill ' + (i === 0 ? 'good' : '') + '">' + pill + '</span>'; }).join('') + '</div>';
+      + '<div class="sample-guide-stage-ui">' + (demo.pills || []).map(function(pill, i){ return '<span class="sample-guide-pill ' + (i === 0 ? 'good' : '') + '">' + pill + '</span>'; }).join('') + '</div>'
+      + '</div>'
+      + renderSampleGuideVisual(guide.primaryAction === 'openCreateTrip' ? 'trip' : 'bill', next);
   }
   modal.querySelectorAll('[data-sample-step]').forEach(function(btn) {
     btn.classList.toggle('active', Number(btn.getAttribute('data-sample-step')) === next);
   });
+}
+
+function renderSampleGuideVisual(type, step) {
+  const isTrip = type === 'trip';
+  const tripVisuals = [
+    '<div class="sample-guide-mini-card"><div class="sample-guide-mini-row"><span class="sample-guide-mini-chip">TRIP HUB</span><span class="sample-guide-mini-chip">New Trip</span></div><div class="sample-guide-mini-title" style="margin-top:12px"></div><div class="sample-guide-mini-line"></div></div><div class="sample-guide-mini-button">Open Trip</div>',
+    '<div class="sample-guide-mini-row"><div class="sample-guide-mini-avatar"></div><div class="sample-guide-mini-avatar"></div><div class="sample-guide-mini-avatar"></div><span class="sample-guide-mini-chip">Invite</span></div><div class="sample-guide-mini-card"><div class="sample-guide-mini-title"></div><div class="sample-guide-mini-line"></div><div class="sample-guide-mini-line short"></div></div>',
+    '<div class="sample-guide-mini-photo"></div><div class="sample-guide-mini-card"><div class="sample-guide-mini-title"></div><div class="sample-guide-mini-row"><span class="sample-guide-mini-chip">Receipt</span><span class="sample-guide-mini-chip">Manual</span></div></div>',
+    '<div class="sample-guide-mini-split"><div class="sample-guide-mini-check">✓</div><div><div class="sample-guide-mini-title"></div><div class="sample-guide-mini-line short"></div></div><strong style="color:var(--green)">$24</strong></div><div class="sample-guide-mini-split"><div class="sample-guide-mini-check">✓</div><div><div class="sample-guide-mini-title"></div><div class="sample-guide-mini-line short"></div></div><strong>$18</strong></div>',
+    '<div class="sample-guide-mini-chat">I paid the Uber</div><div class="sample-guide-mini-card"><div class="sample-guide-mini-row"><span class="sample-guide-mini-chip">Chat</span><span class="sample-guide-mini-chip">Reminder</span></div><div class="sample-guide-mini-line"></div></div>',
+    '<div class="sample-guide-mini-card"><div class="sample-guide-mini-title"></div><div class="sample-guide-mini-line"></div></div><div class="sample-guide-mini-button">Share trip link</div>'
+  ];
+  const billVisuals = [
+    '<div class="sample-guide-mini-card"><span class="sample-guide-mini-chip">SCAN</span><div class="sample-guide-mini-title" style="margin-top:12px"></div><div class="sample-guide-mini-line"></div></div><div class="sample-guide-mini-button">Next</div>',
+    '<div class="sample-guide-mini-photo"></div><div class="sample-guide-mini-row"><span class="sample-guide-mini-chip">Camera</span><span class="sample-guide-mini-chip">Manual</span></div>',
+    '<div class="sample-guide-mini-row"><div class="sample-guide-mini-avatar"></div><div class="sample-guide-mini-avatar"></div><div class="sample-guide-mini-avatar"></div></div><div class="sample-guide-mini-card"><div class="sample-guide-mini-title"></div><div class="sample-guide-mini-line short"></div></div>',
+    '<div class="sample-guide-mini-split"><div class="sample-guide-mini-check">✓</div><div><div class="sample-guide-mini-title"></div><div class="sample-guide-mini-line short"></div></div><strong>$12</strong></div><div class="sample-guide-mini-row"><span class="sample-guide-mini-chip">Mel</span><span class="sample-guide-mini-chip">Andrew</span></div>',
+    '<div class="sample-guide-mini-card"><div class="sample-guide-mini-row"><span class="sample-guide-mini-chip">Paid by Mel</span><strong style="margin-left:auto;color:var(--green)">$42.00</strong></div><div class="sample-guide-mini-line"></div><div class="sample-guide-mini-line short"></div></div>',
+    '<div class="sample-guide-mini-chat">Here is the bill</div><div class="sample-guide-mini-row"><span class="sample-guide-mini-chip">Share</span><span class="sample-guide-mini-chip">Comment</span><span class="sample-guide-mini-chip">Paid</span></div>'
+  ];
+  const visuals = isTrip ? tripVisuals : billVisuals;
+  return '<div class="sample-guide-visual">' + (visuals[step] || visuals[0]) + '</div>';
 }
 
 function nextSampleGuideStep() {
@@ -8197,10 +8335,10 @@ async function loadTrips() {
       + '<div class="bill-actions" onclick="event.stopPropagation()">'
       + '<a class="bill-action-btn btn-remind" href="' + tripUrlReceipt + '" data-tripid="' + safeAttrId + '" style="display:inline-flex;align-items:center;text-decoration:none;background:rgba(48,209,88,0.1);color:var(--green);border:1px solid rgba(48,209,88,0.25)"><svg class="bill-action-icon"><use href="#icon-active-bills"></use></svg>Receipt</a>'
       + (isAdmin ? '<button class="bill-action-btn admin-btn" data-tripid="' + t.id + '" style="background:rgba(124,58,237,0.1);color:var(--purple3);border:1px solid rgba(124,58,237,0.2)"><svg class="bill-action-icon"><use href="#icon-roommates"></use></svg>Admin</button>' : '')
+      + '<button class="bill-action-btn" type="button" data-chatid="' + safeAttrId + '" style="display:inline-flex;align-items:center;position:relative;background:rgba(124,58,237,0.12);color:var(--purple3);border:1px solid rgba(124,58,237,0.25)" onclick="event.stopPropagation();openTripChat(\'' + safeId + '\')"><svg style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Chat<span class="trip-chat-unread-dot" data-chatbadge="' + safeAttrId + '" style="display:none;position:absolute;top:5px;right:7px;width:8px;height:8px;border-radius:50%;background:#30D158;box-shadow:0 0 10px rgba(48,209,88,0.8)"></span></button>'
       + (RAVEN_APP_MODE
-        ? '<button class="bill-action-btn" type="button" data-chatid="' + safeAttrId + '" style="display:inline-flex;align-items:center;position:relative;background:rgba(124,58,237,0.12);color:var(--purple3);border:1px solid rgba(124,58,237,0.25)" onclick="event.stopPropagation();openTripChat(\'' + safeId + '\')"><svg style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Chat<span class="trip-chat-unread-dot" data-chatbadge="' + safeAttrId + '" style="display:none;position:absolute;top:5px;right:7px;width:8px;height:8px;border-radius:50%;background:#30D158;box-shadow:0 0 10px rgba(48,209,88,0.8)"></span></button>'
-        + '<button class="bill-action-btn btn-view" type="button" data-tripid="' + safeAttrId + '" style="display:inline-flex;align-items:center;text-decoration:none">Open Trip →</button>'
-        : '<a class="bill-action-btn btn-view" data-tripid="' + safeAttrId + '" href="' + tripUrl + '" style="display:inline-flex;align-items:center;text-decoration:none">Open Trip →</a>')
+        ? '<button class="bill-action-btn btn-view" type="button" data-tripid="' + safeAttrId + '" style="display:inline-flex;align-items:center;text-decoration:none">Open Trip -></button>'
+        : '<a class="bill-action-btn btn-view" data-tripid="' + safeAttrId + '" href="' + tripUrl + '" style="display:inline-flex;align-items:center;text-decoration:none">Open Trip -></a>')
       + '</div></div>';
   }).join('') + renderSampleTripTutorial();
 
