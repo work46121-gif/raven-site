@@ -8489,14 +8489,20 @@ async function createTrip() {
   }
 }
 
-function openTrip(tripId, fallbackUrl) {
-  const url = getTripOpenUrl(tripId, fallbackUrl);
+async function openTrip(tripId, fallbackUrl) {
+  const id = String(tripId || '').trim();
+  const tripName = String(tripDataMap[id]?.name || tripDataMap[tripId]?.name || 'Trip Hub').trim();
+  showTripOpenLoader(tripName);
+  let url = '';
+  try {
+    url = await getTripOpenUrlAsync(id, fallbackUrl);
+  } catch(e) {
+    console.warn('openTrip resolve failed:', e);
+  }
   if (!url) {
     hideTripOpenLoader();
-    if (RAVEN_APP_MODE) {
-      try { showToast('Trip is still loading. Try again in a moment.', 'error'); } catch(e) {}
-      try { loadTrips(); } catch(e) {}
-    }
+    try { showToast('Trip is still loading. Try again in a moment.', 'error'); } catch(e) {}
+    try { loadTrips(); } catch(e) {}
     return;
   }
   if (openTrip._pendingUrl === url) return;
@@ -8504,10 +8510,7 @@ function openTrip(tripId, fallbackUrl) {
   setTimeout(() => {
     if (openTrip._pendingUrl === url) openTrip._pendingUrl = '';
   }, 1500);
-  try { warmTrip(tripId); } catch(e) {}
-  const tripName = String(tripDataMap[tripId]?.name || 'Trip Hub').trim();
-  showTripOpenLoader(tripName);
-  window.location.href = url;
+  window.location.assign(url);
 }
 
 function showTripOpenLoader(tripName) {
@@ -8564,6 +8567,58 @@ function getTripOpenUrl(tripId, fallbackUrl) {
     } catch(inner) {}
     return extras.length ? base + (base.includes('?') ? '&' : '?') + extras.join('&') : base;
   }
+}
+
+async function hydrateTripForAction(tripId) {
+  const id = String(tripId || '').trim();
+  if (!id) return null;
+  let trip = tripDataMap[id] || tripDataMap[tripId] || null;
+  if (trip && (trip.share_token || trip.invite_token)) {
+    if (!tripUrlMap[id]) {
+      const token = trip.share_token || trip.invite_token || '';
+      if (token) tripUrlMap[id] = FRONTEND + '/trip/' + encodeURIComponent(id) + '?t=' + encodeURIComponent(token);
+    }
+    return trip;
+  }
+  try {
+    const { data, error } = await db.from('trips')
+      .select('*')
+      .eq('id', id)
+      .maybeSingle();
+    if (error) throw error;
+    if (data) {
+      trip = { ...(trip || {}), ...data };
+      tripDataMap[id] = trip;
+      const token = trip.share_token || trip.invite_token || '';
+      if (token) tripUrlMap[id] = FRONTEND + '/trip/' + encodeURIComponent(id) + '?t=' + encodeURIComponent(token);
+      return trip;
+    }
+  } catch(e) {
+    console.warn('hydrateTripForAction failed:', e);
+  }
+  return trip;
+}
+
+async function getTripOpenUrlAsync(tripId, fallbackUrl) {
+  const id = String(tripId || '').trim();
+  const trip = await hydrateTripForAction(id);
+  let url = getTripOpenUrl(id, fallbackUrl);
+  if (!url && trip) url = getTripOpenUrl(id);
+  if (!url) return '';
+  try {
+    const parsed = new URL(url, window.location.href);
+    const token = trip?.share_token || trip?.invite_token || '';
+    if (token) parsed.searchParams.set('t', token);
+    parsed.searchParams.set('_r', Date.now().toString());
+    return parsed.href;
+  } catch(e) {
+    return url;
+  }
+}
+
+async function getTripActionToken(tripId) {
+  const trip = await hydrateTripForAction(tripId);
+  return trip?.share_token || trip?.invite_token || '';
 }
 
 const warmedTripUrls = new Set();
@@ -9991,6 +10046,7 @@ async function openTripChat(tripId) {
   currentChatTripId = tripId;
   tripChatMode = 'group';
   markTripChatSeen(tripId);
+  await hydrateTripForAction(tripId);
   const modal = document.getElementById('trip-chat-modal');
   modal.style.display = 'flex';
   setupTripChatScrollLock();
@@ -10037,8 +10093,7 @@ async function loadChatMessages(tripId) {
 
   let renderedFallback = false;
   try {
-    const trip = tripDataMap[tripId] || {};
-    const token = trip.share_token || trip.invite_token || '';
+    const token = await getTripActionToken(tripId);
     if (token) {
       const resp = await fetch(BACKEND + '/trip/' + tripId + '/messages?token=' + encodeURIComponent(token));
       const payload = await resp.json();
@@ -10115,8 +10170,8 @@ function toggleTripConciergeDetails() {
 
 async function loadTripConcierge(tripId) {
   try {
-    const trip = tripDataMap[tripId] || {};
-    const token = trip.share_token || trip.invite_token || '';
+    const token = await getTripActionToken(tripId);
+    if (!token) throw new Error('Missing trip token');
     const resp = await fetch(BACKEND + '/trip/' + tripId + '/concierge?token=' + encodeURIComponent(token));
     const summary = await resp.json();
     renderTripConcierge(summary);
@@ -10423,10 +10478,11 @@ async function sendChatMessage() {
 
   let local = {};
   try { local = JSON.parse(localStorage.getItem('raven_profile') || '{}'); } catch(e) {}
-  if (!currentUser) currentUser = getAppCachedDashboardUser(true) || getAppReturnDashboardUser();
-  let senderName = local.first_name || currentUser.email?.split('@')[0] || 'Someone';
+  if (!currentUser) currentUser = getAppCachedDashboardUser(true) || getAppReturnDashboardUser() || {};
+  const dashboardEmail = getDashboardUserEmail() || local.email || currentUser.email || '';
+  let senderName = local.first_name || (dashboardEmail ? dashboardEmail.split('@')[0] : '') || 'Someone';
   try {
-    if (!currentUser.app_cached) {
+    if (currentUser.id && !currentUser.app_cached) {
       const { data: liveProfile } = await db.from('profiles').select('first_name,raven_id,email,avatar_url').eq('id', currentUser.id).maybeSingle();
       senderName = liveProfile?.first_name || senderName;
       if (liveProfile?.first_name) {
@@ -10437,17 +10493,17 @@ async function sendChatMessage() {
   } catch(e) {}
 
   try {
-    const trip = tripDataMap[currentChatTripId] || {};
-    let token = trip.share_token || trip.invite_token || '';
-    if (!token) {
-      try {
-        const { data: liveTrip } = await db.from('trips').select('share_token,invite_token').eq('id', currentChatTripId).maybeSingle();
-        token = liveTrip?.share_token || liveTrip?.invite_token || '';
-        if (liveTrip) tripDataMap[currentChatTripId] = { ...trip, ...liveTrip };
-      } catch(e) {}
-    }
+    const token = await getTripActionToken(currentChatTripId);
     if (!token) throw new Error('Missing trip token');
-    const chatUserId = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(currentUser.id || '')) ? currentUser.id : null;
+    const chatUserId = String(
+      currentUser.id ||
+      local.user_id ||
+      local.id ||
+      local.raven_id ||
+      dashboardEmail ||
+      senderName ||
+      'dashboard-user'
+    ).trim();
     const resp = await fetch(BACKEND + '/trip/' + currentChatTripId + '/message', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -10474,6 +10530,7 @@ async function sendChatMessage() {
     markTripChatSeen(currentChatTripId);
     clearTripChatGif();
   } catch(e) {
+    console.warn('trip chat send failed:', e);
     showToast('Could not send message', 'error');
     input.value = message;
   }
