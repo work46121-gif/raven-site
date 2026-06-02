@@ -3045,6 +3045,18 @@ async function checkOnboardingAndShow(userId) {
       }
       localStorage.setItem('raven_profile', JSON.stringify(nextProfile));
       if (!nextProfile.onboarding_complete) {
+        // Double-check localStorage before looping — onboarding may have just completed
+        try {
+          const cached = JSON.parse(localStorage.getItem('raven_profile') || '{}');
+          const cachedMatchesUser = cached.user_id === userId || (cached.email && currentUser?.email && String(cached.email).toLowerCase() === String(currentUser.email).toLowerCase());
+          if (cachedMatchesUser && cached.onboarding_complete) {
+            // localStorage says done — trust it and update nextProfile
+            nextProfile.onboarding_complete = true;
+            localStorage.setItem('raven_profile', JSON.stringify({ ...nextProfile, onboarding_complete: true }));
+            showDashboard();
+            return;
+          }
+        } catch(e) {}
         window.location.href = 'onboarding.html?app=1';
         return;
       }
@@ -3079,11 +3091,34 @@ async function checkOnboardingAndShow(userId) {
         const existing = JSON.parse(localStorage.getItem('raven_profile') || '{}');
         localStorage.setItem('raven_profile', JSON.stringify({ ...existing, user_id: userId, onboarding_complete: true, first_name: profile.first_name || existing.first_name || '', raven_id: profile.raven_id || existing.raven_id || '', username: profile.raven_id || existing.username || existing.raven_id || '', avatar_url: profile.avatar_url || existing.avatar_url || '', email: currentUser.email }));
         showDashboard(); return;
-      } else { window.location.href = 'onboarding.html'; return; }
+      } else {
+        // Before looping to onboarding, check if localStorage already marks this user complete
+        try {
+          const cached = JSON.parse(localStorage.getItem('raven_profile') || '{}');
+          const cachedMatchesUser = cached.user_id === userId || (cached.email && currentUser?.email && String(cached.email).toLowerCase() === String(currentUser.email).toLowerCase());
+          if (cachedMatchesUser && cached.onboarding_complete) {
+            const existing = JSON.parse(localStorage.getItem('raven_profile') || '{}');
+            localStorage.setItem('raven_profile', JSON.stringify({ ...existing, user_id: userId, onboarding_complete: true, first_name: profile.first_name || existing.first_name || '', email: currentUser.email }));
+            showDashboard();
+            return;
+          }
+        } catch(e) {}
+        window.location.href = 'onboarding.html'; return;
+      }
     }
   } catch(e) { console.log('Profile check error:', e); }
   const hasLocalData = localStorage.getItem('raven_profile');
-  if (hasLocalData) showDashboard(); else window.location.href = 'onboarding.html';
+  if (hasLocalData) {
+    // If localStorage has onboarding_complete for this user, show dashboard directly
+    try {
+      const cached = JSON.parse(hasLocalData);
+      const cachedMatchesUser = !userId || cached.user_id === userId || (cached.email && currentUser?.email && String(cached.email).toLowerCase() === String(currentUser.email).toLowerCase());
+      if (cachedMatchesUser && cached.onboarding_complete) { showDashboard(); return; }
+    } catch(e) {}
+    showDashboard();
+  } else {
+    window.location.href = 'onboarding.html';
+  }
 }
 
 function switchAuthTab(tab) {
@@ -8489,7 +8524,19 @@ async function createTrip() {
 
 async function openTrip(tripId, fallbackUrl) {
   const id = String(tripId || '').trim();
-  const tripName = String(tripDataMap[id]?.name || tripDataMap[tripId]?.name || 'Trip Hub').trim();
+  // Prefer tripDataMap, fall back to reading the trip card DOM element name
+  let tripName = String(tripDataMap[id]?.name || tripDataMap[tripId]?.name || '').trim();
+  if (!tripName) {
+    try {
+      const card = document.querySelector('[data-tripid="' + id + '"] .bill-name, [data-tripid="' + CSS.escape(id) + '"] .bill-name');
+      if (card) {
+        const clone = card.cloneNode(true);
+        clone.querySelectorAll('.bill-id, svg, .trip-title-icon').forEach(n => n.remove());
+        tripName = clone.textContent.replace(/[<>]/g, '').trim();
+      }
+    } catch(e) {}
+  }
+  if (!tripName) tripName = 'trip';
   showTripOpenLoader(tripName);
   let url = getTripOpenUrl(id, fallbackUrl);
   try {
@@ -10498,7 +10545,6 @@ async function sendChatMessage() {
 
   try {
     const token = await getTripActionToken(currentChatTripId);
-    if (!token) throw new Error('Missing trip token');
     const chatUserId = String(
       currentUser.id ||
       local.user_id ||
@@ -10508,21 +10554,47 @@ async function sendChatMessage() {
       senderName ||
       'dashboard-user'
     ).trim();
-    const resp = await fetch(BACKEND + '/trip/' + currentChatTripId + '/message', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        token,
-        user_id: chatUserId,
+
+    // Try backend endpoint first (enriches with profile data), fall back to direct Supabase
+    let insertedMsg = null;
+    if (token) {
+      try {
+        const resp = await fetch(BACKEND + '/trip/' + currentChatTripId + '/message', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            token,
+            user_id: chatUserId,
+            sender_name: senderName,
+            avatar_url: local.avatar_url || '',
+            message,
+            gif_url: tripChatGifUrl || null
+          })
+        });
+        const payload = await resp.json();
+        if (payload.success) insertedMsg = payload.message || null;
+        else throw new Error(payload.error || 'backend send failed');
+      } catch(backendErr) {
+        console.warn('Chat backend failed, falling back to direct insert:', backendErr);
+        insertedMsg = null;
+      }
+    }
+    if (!insertedMsg) {
+      // Direct Supabase insert fallback
+      const row = {
+        trip_id: currentChatTripId,
+        user_id: chatUserId || null,
         sender_name: senderName,
-        avatar_url: local.avatar_url || '',
-        message,
-        gif_url: tripChatGifUrl || null
-      })
-    });
-    const payload = await resp.json();
-    if (!payload.success) throw new Error(payload.error || 'Could not send message');
-    appendChatMessage(payload.message || {
+        avatar_url: local.avatar_url || null,
+        message: String(message || '').trim(),
+        gif_url: tripChatGifUrl || null,
+        created_at: new Date().toISOString()
+      };
+      const { data: sbInserted, error: sbError } = await db.from('trip_messages').insert(row).select('*').single();
+      if (sbError) throw new Error(sbError.message || 'Could not send message');
+      insertedMsg = sbInserted || row;
+    }
+    appendChatMessage(insertedMsg || {
       trip_id: currentChatTripId,
       user_id: chatUserId,
       sender_name: senderName,
