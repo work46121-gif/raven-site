@@ -2197,12 +2197,26 @@ function clearRavenSignedInCache() {
       if (/supabase|auth-token|sb-/i.test(key)) localStorage.removeItem(key);
       if (/^raven_bill_name_|^raven_bill_claim_as_|^ravenbot_chat_|^raven_trip_|^raven_app_/i.test(key)) localStorage.removeItem(key);
     });
-  } catch(e) {}
+  } catch(e) {
+    try {
+      const local = JSON.parse(localStorage.getItem('raven_profile') || '{}');
+      const rid = local.raven_id || local.username || '';
+      const display = document.getElementById('my-raven-id-display');
+      if (display) display.textContent = rid ? '@' + rid : 'âš ï¸ Set your Raven ID in Settings';
+    } catch(_) {}
+  }
   try {
     Object.keys(sessionStorage).forEach(key => {
       if (/raven_profile|raven_trip_name|supabase|auth-token|sb-/i.test(key)) sessionStorage.removeItem(key);
     });
-  } catch(e) {}
+  } catch(e) {
+    try {
+      const local = JSON.parse(localStorage.getItem('raven_profile') || '{}');
+      const rid = local.raven_id || local.username || '';
+      const display = document.getElementById('my-raven-id-display');
+      if (display) display.textContent = rid ? '@' + rid : 'âš ï¸ Set your Raven ID in Settings';
+    } catch(_) {}
+  }
 }
 
 function markRavenSignedIn() {
@@ -2363,9 +2377,48 @@ function isDashboardAccountEmail(email) {
 function rememberDashboardAccountEmail(email) {
   const value = String(email || '').trim();
   if (isDashboardAccountEmail(value)) {
-    try { localStorage.setItem(APP_DASHBOARD_EMAIL_KEY, value); } catch(e) {}
+    try {
+      const previous = String(localStorage.getItem(APP_DASHBOARD_EMAIL_KEY) || '').trim().toLowerCase();
+      if (previous && previous !== value.toLowerCase()) {
+        const local = JSON.parse(localStorage.getItem('raven_profile') || '{}');
+        if (local && typeof local === 'object') {
+          delete local.joined_trips;
+          delete local.pending_trip_join;
+          local.email = value;
+          localStorage.setItem('raven_profile', JSON.stringify(local));
+        }
+      }
+      localStorage.setItem(APP_DASHBOARD_EMAIL_KEY, value);
+    } catch(e) {}
   }
   return value;
+}
+
+function parseRavenJsonArray(value) {
+  if (Array.isArray(value)) return value;
+  if (!value) return [];
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch(e) {
+    return [];
+  }
+}
+
+function normalizeRavenEmail(value) {
+  return String(value || '').trim().toLowerCase();
+}
+
+function tripHasExactMemberEmail(trip, email) {
+  const target = normalizeRavenEmail(email);
+  if (!target) return false;
+  return parseRavenJsonArray(trip?.member_emails).some(memberEmail => normalizeRavenEmail(memberEmail) === target);
+}
+
+function tripBelongsToDashboardUser(trip, email) {
+  const target = normalizeRavenEmail(email);
+  if (!trip || !target) return false;
+  return normalizeRavenEmail(trip.creator_email) === target || tripHasExactMemberEmail(trip, target);
 }
 
 async function hydrateAppDashboardIdentity() {
@@ -2374,7 +2427,12 @@ async function hydrateAppDashboardIdentity() {
   try {
     const { data: { session } } = await db.auth.getSession();
     if (session?.user) currentUser = session.user;
-  } catch(e) {}
+  } catch(e) {
+    const local = JSON.parse(localStorage.getItem('raven_profile') || '{}');
+    const fallbackRid = local.raven_id || local.username || '';
+    const display = document.getElementById('my-raven-id-display');
+    if (display) display.textContent = fallbackRid ? '@' + fallbackRid : 'Set your Raven ID in Settings';
+  }
 
   let local = {};
   try { local = JSON.parse(localStorage.getItem('raven_profile') || '{}'); } catch(e) { local = {}; }
@@ -3404,7 +3462,9 @@ async function syncTripDisplayName(previousProfile, nextProfile) {
   const { data: createdTrips } = await db.from('trips').select('*').eq('creator_email', currentUser.email);
   (createdTrips || []).forEach(trip => tripMap.set(trip.id, trip));
   const { data: memberTrips } = await db.from('trips').select('*').ilike('member_emails', '%' + emailEscaped + '%');
-  (memberTrips || []).forEach(trip => tripMap.set(trip.id, trip));
+  (memberTrips || []).forEach(trip => {
+    if (tripBelongsToDashboardUser(trip, currentUser.email)) tripMap.set(trip.id, trip);
+  });
 
   for (const trip of tripMap.values()) {
     let people = [];
@@ -5316,10 +5376,21 @@ function activeBillParticipantAvatar(name, profile, size) {
 
 async function loadFriendsPage() {
   startDMPolling(); // load unread counts and keep them fresh
+  if (!currentUser?.id) currentUser = getAppCachedDashboardUser(true) || getAppReturnDashboardUser() || currentUser;
   // Load my Raven ID
   try {
-    const { data: me } = await db.from('profiles').select('raven_id,first_name,username,email').eq('id', currentUser.id).single();
-    const rid = await ensureCurrentUserRavenId(me);
+    const local = JSON.parse(localStorage.getItem('raven_profile') || '{}');
+    let me = null;
+    if (currentUser?.id && !currentUser.app_cached) {
+      const result = await db.from('profiles').select('id,raven_id,first_name,username,email').eq('id', currentUser.id).maybeSingle();
+      me = result?.data || null;
+    }
+    if (!me && currentUser?.email) {
+      const result = await db.from('profiles').select('id,raven_id,first_name,username,email').eq('email', currentUser.email).maybeSingle();
+      me = result?.data || null;
+      if (me?.id && (!currentUser?.id || currentUser.app_cached)) currentUser = { id: me.id, email: me.email || currentUser.email };
+    }
+    const rid = currentUser?.id ? await ensureCurrentUserRavenId(me || local) : (local.raven_id || local.username || '');
     const display = document.getElementById('my-raven-id-display');
     if (display) display.textContent = rid ? '@' + rid : '⚠️ Set your Raven ID in Settings';
   } catch(e) {}
@@ -5535,7 +5606,7 @@ async function syncRavenPhoneContacts() {
   const btn = document.getElementById('sync-contacts-btn');
   if (!currentUser?.id) return renderContactSyncMessage('Sign in first, then sync contacts.', 'error');
   if (!navigator.contacts || typeof navigator.contacts.select !== 'function') {
-    renderContactSyncMessage('Contact matching needs phone contact permission. This browser/app shell does not expose contacts yet, so no recommendations were made.', 'error');
+    renderContactSyncMessage('Phone contact sync is not available in this app build yet. Use exact @RAVEN ID search for now; no contacts were uploaded or recommended.', 'info');
     return;
   }
   try {
@@ -5617,6 +5688,8 @@ async function loadFriendRequests() {
   const list    = document.getElementById('friend-requests-list');
   const count   = document.getElementById('friend-req-count');
   if (!list) return;
+  if (!currentUser?.id) currentUser = getAppCachedDashboardUser(true) || getAppReturnDashboardUser() || currentUser;
+  if (!currentUser?.id) return;
   try {
     const { data: requests } = await db.from('raven_friends')
       .select('id,user_id,status')
@@ -5679,6 +5752,11 @@ async function loadFriendRequests() {
 async function loadFriendsList() {
   const container = document.getElementById('friends-list');
   if (!container) return;
+  if (!currentUser?.id) currentUser = getAppCachedDashboardUser(true) || getAppReturnDashboardUser() || currentUser;
+  if (!currentUser?.id) {
+    container.innerHTML = '<div style="text-align:center;padding:32px;color:var(--muted);font-size:14px"><div style="font-weight:600;margin-bottom:4px">Friends will refresh</div><div>Return to the dashboard and open Friends again.</div></div>';
+    return;
+  }
   container.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
   try {
     const { data: friendships } = await db.from('raven_friends')
@@ -5736,14 +5814,26 @@ async function fetchAddableTrips() {
   try {
     const emailEscaped = email.replace(/"/g, '\\"');
     const { data: memberTrips } = await db.from('trips').select('*').ilike('member_emails', '%' + emailEscaped + '%').neq('type', 'roommates');
-    (memberTrips || []).forEach(t => { if (t?.id && !seen.has(t.id)) { seen.add(t.id); trips.push(t); tripDataMap[t.id] = t; } });
+    (memberTrips || []).forEach(t => {
+      if (t?.id && tripBelongsToDashboardUser(t, email) && !seen.has(t.id)) {
+        seen.add(t.id);
+        trips.push(t);
+        tripDataMap[t.id] = t;
+      }
+    });
   } catch(e) {}
   try {
     const local = JSON.parse(localStorage.getItem('raven_profile') || '{}');
     const joined = Array.isArray(local.joined_trips) ? local.joined_trips : [];
     if (joined.length > 0) {
       const { data: joinedTrips } = await db.from('trips').select('*').in('id', joined).neq('type', 'roommates');
-      (joinedTrips || []).forEach(t => { if (t?.id && !seen.has(t.id)) { seen.add(t.id); trips.push(t); tripDataMap[t.id] = t; } });
+      (joinedTrips || []).forEach(t => {
+        if (t?.id && tripBelongsToDashboardUser(t, email) && !seen.has(t.id)) {
+          seen.add(t.id);
+          trips.push(t);
+          tripDataMap[t.id] = t;
+        }
+      });
     }
   } catch(e) {}
   return trips.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
@@ -6843,7 +6933,12 @@ ALTER TABLE trips ADD COLUMN IF NOT EXISTS recurring_expenses JSONB DEFAULT '[]'
       .ilike('member_emails', '%' + emailEscaped + '%')
       .eq('type', 'roommates')
       .order('created_at', { ascending: false });
-    (member || []).forEach(h => { if (!seen.has(h.id)) { seen.add(h.id); houses.push(h); } });
+    (member || []).forEach(h => {
+      if (tripBelongsToDashboardUser(h, currentUser.email) && !seen.has(h.id)) {
+        seen.add(h.id);
+        houses.push(h);
+      }
+    });
   } catch(e) { console.warn('loadHouses error:', e); }
 
   houses.forEach(h => { houseDataMap[h.id] = h; });
@@ -7837,7 +7932,12 @@ async function loadTrips() {
       .neq('type', 'roommates')
       .order('created_at', { ascending: false });
     if (e2) console.warn('loadTrips member_emails query:', e2.message);
-    (memberTrips || []).forEach(t => { if (!seen.has(t.id)) { seen.add(t.id); trips.push(t); } });
+    (memberTrips || []).forEach(t => {
+      if (tripBelongsToDashboardUser(t, userEmail) && !seen.has(t.id)) {
+        seen.add(t.id);
+        trips.push(t);
+      }
+    });
 
     // 3. Trips stored in localStorage joined_trips (joined via invite link)
     try {
@@ -7846,7 +7946,12 @@ async function loadTrips() {
       const newIds = joinedIds.filter(id => !seen.has(id));
       if (newIds.length > 0) {
         const { data: joinedTrips } = await db.from('trips').select('*').in('id', newIds).neq('type', 'roommates');
-        (joinedTrips || []).forEach(t => { if (!seen.has(t.id)) { seen.add(t.id); trips.push(t); } });
+        (joinedTrips || []).forEach(t => {
+          if (tripBelongsToDashboardUser(t, userEmail) && !seen.has(t.id)) {
+            seen.add(t.id);
+            trips.push(t);
+          }
+        });
       }
     } catch(e) {}
 
@@ -7860,7 +7965,12 @@ async function loadTrips() {
         const extraIds = (dbJoined || []).filter(id => !seen.has(id));
         if (extraIds.length > 0) {
           const { data: extraTrips } = await db.from('trips').select('*').in('id', extraIds).neq('type', 'roommates');
-          (extraTrips || []).forEach(t => { if (!seen.has(t.id)) { seen.add(t.id); trips.push(t); } });
+          (extraTrips || []).forEach(t => {
+            if (tripBelongsToDashboardUser(t, userEmail) && !seen.has(t.id)) {
+              seen.add(t.id);
+              trips.push(t);
+            }
+          });
         }
       }
     } catch(e) {}

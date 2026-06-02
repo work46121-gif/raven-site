@@ -657,11 +657,9 @@ function getAppAuthRedirectTo(){
   return 'https://ravensplit.com/app.html?app=1';
 }
 function getAppPasswordResetRedirectTo(){
-  try {
-    if (isNativeAppMode()) {
-      return 'ravensplit://auth/reset?app=1&reset=1';
-    }
-  } catch(e) {}
+  // Use the HTTPS app page for recovery links. Custom schemes can open as a
+  // blank page on desktop mail clients, while HTTPS works in Safari, PWA, and
+  // can still be handed to the native app by Universal Links later.
   return 'https://ravensplit.com/app.html?app=1&reset=1';
 }
 function getAppConfirmRedirectTo(){
@@ -670,6 +668,7 @@ function getAppConfirmRedirectTo(){
 function handleNativeAuthCallbackUrl(url){
   try {
     try { window.Capacitor?.Plugins?.Browser?.close?.(); } catch(_) {}
+    try { localStorage.removeItem(RAVEN_SIGNED_OUT_KEY); } catch(_) {}
     const incoming = new URL(url);
     const isRavenAuth = incoming.protocol === 'ravensplit:' && incoming.hostname === 'auth';
     if (!isRavenAuth && !/\/app\.html|\/dashboard\.html/.test(incoming.pathname)) return false;
@@ -898,7 +897,7 @@ async function routeAfterAuth(user){
       showAppHome(profile);
       return;
     }
-    if (!profile && !hasFreshAuthStart()) {
+    if (!profile && !hasFreshAuthStart() && !isNativeAppMode()) {
       await enforceAppSignedOut();
       ravenAuthRouting = false;
       showAuthPanel('login');
@@ -928,7 +927,7 @@ async function routeAfterAuth(user){
       showAppHome(profile || cached || {});
       return;
     }
-    if ((cachedMatchesUser && cached) || new URLSearchParams(window.location.search).get('app') === '1') {
+    if ((cachedMatchesUser && cached) || new URLSearchParams(window.location.search).get('app') === '1' || isNativeAppMode()) {
       localStorage.setItem('raven_profile', JSON.stringify({
         ...(cachedMatchesUser ? cached : {}),
         user_id: user.id,

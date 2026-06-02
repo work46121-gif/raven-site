@@ -27,7 +27,7 @@
   --red: #FF4444;
 }
 html, body { min-height: 100vh; width: 100%; font-family: 'Epilogue', sans-serif; background: var(--black); color: var(--white); overflow-x: hidden; -webkit-text-size-adjust: 100%; touch-action: manipulation; }
-html.app-mode, html.app-mode body { height: 100%; overflow: hidden; }
+html.app-mode, html.app-mode body { min-height: 100%; overflow-x: hidden; overflow-y: auto; }
 
 /* Background */
 body::before {
@@ -443,13 +443,12 @@ select.input { font-size: 16px; }
 }
 
 html.app-mode .container {
-  position: fixed;
-  inset: 0;
+  position: relative;
   min-height: 0;
-  height: 100dvh;
-  justify-content: center;
-  padding: calc(env(safe-area-inset-top,0px) + 36px) 16px calc(env(safe-area-inset-bottom,0px) + 74px);
-  overflow: hidden;
+  min-height: 100dvh;
+  justify-content: flex-start;
+  padding: calc(env(safe-area-inset-top,0px) + 36px) 16px calc(env(safe-area-inset-bottom,0px) + 28px);
+  overflow: visible;
 }
 html.app-mode .logo {
   margin-bottom: 14px;
@@ -465,8 +464,8 @@ html.app-mode .logo-sub {
 }
 html.app-mode .card {
   max-width: 430px;
-  max-height: calc(100dvh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px) - 132px);
-  overflow: hidden;
+  max-height: none;
+  overflow: visible;
   padding: 22px 18px;
   border-radius: 20px;
 }
@@ -501,15 +500,7 @@ html.app-mode .agreement-text {
   line-height: 1.45;
 }
 html.app-mode .cancel-onboarding-btn {
-  top: auto;
-  left: 16px;
-  right: 16px;
-  bottom: calc(env(safe-area-inset-bottom,0px) + 12px);
-  z-index: 80;
-  padding: 13px 16px;
-  background: rgba(19,19,26,0.94);
-  border-color: rgba(255,255,255,0.16);
-  color: var(--white);
+  display: none;
 }
 .cancel-onboarding-inline {
   display: none;
