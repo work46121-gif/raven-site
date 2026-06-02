@@ -8279,7 +8279,7 @@ async function loadTrips() {
 
   container.innerHTML = trips.map(t => {
     const people = Array.isArray(t.people) ? t.people : JSON.parse(t.people || '[]');
-    const tripUrl = FRONTEND + '/trip/' + t.id + '?t=' + t.share_token;
+    const tripUrl = FRONTEND + '/trip/' + encodeURIComponent(t.id) + '?t=' + encodeURIComponent(t.share_token || '');
     const tripUrlReceipt = tripUrl + '&action=receipt' + (RAVEN_APP_MODE ? '&app=1' : '');
     tripUrlMap[t.id] = tripUrl;
     // Store full trip data safely — never pass user content through onclick attributes
@@ -8294,6 +8294,7 @@ async function loadTrips() {
     const isAdmin = isCreator || isCoAdmin;
     const safeId = String(t.id || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
     const safeAttrId = String(t.id || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+    const safeAttrTripUrl = String(tripUrl || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
     const isCompletedTrip = (() => {
       const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
       if (t.end_date) return String(t.end_date) <= today;
@@ -8303,7 +8304,7 @@ async function loadTrips() {
     const tripStatusLabel = isCompletedTrip ? 'Completed' : 'Active';
     const adminBadge = isCreator ? ' <span style="font-size:10px;color:#30D158;background:rgba(48,209,88,0.08);border:1px solid rgba(48,209,88,0.2);padding:2px 7px;border-radius:8px">admin</span>' : isCoAdmin ? ' <span style="font-size:10px;color:#A855F7;background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.2);padding:2px 7px;border-radius:8px">co-admin</span>' : ' <span style="font-size:10px;color:#A855F7;background:rgba(124,58,237,0.1);border:1px solid rgba(124,58,237,0.2);padding:2px 7px;border-radius:8px">member</span>';
     return '<div class="bill-card">'
-      + '<div class="trip-open-hit" style="cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent" onpointerdown="warmTrip(\'' + safeId + '\')" onclick="openTrip(\'' + safeId + '\')"><div class="bill-name"><svg class="trip-title-icon"><use href="#icon-trip-hub"></use></svg>' + t.name.replace(/</g,'&lt;') + ' <span class="bill-id">' + t.id + '</span>' + adminBadge + '</div>'
+      + '<div class="trip-open-hit" data-tripid="' + safeAttrId + '" data-tripurl="' + safeAttrTripUrl + '" style="cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent" onpointerdown="warmTrip(\'' + safeId + '\')" onclick="openTrip(\'' + safeId + '\', this.getAttribute(\'data-tripurl\') || \'\')"><div class="bill-name"><svg class="trip-title-icon"><use href="#icon-trip-hub"></use></svg>' + t.name.replace(/</g,'&lt;') + ' <span class="bill-id">' + t.id + '</span>' + adminBadge + '</div>'
       + '<div class="bill-meta"><span>' + people.length + ' people</span><span>' + (t.receipt_count || 0) + ' receipts</span>' + (function() {
           // Use server-computed settled_count/debtor_count when available (accurate)
           // Fall back to settled_people parsing for trips not yet backfilled
@@ -8330,13 +8331,13 @@ async function loadTrips() {
           if (settledPeople >= totalPeople) return '';
           return '<span style="color:#FF9A3C;font-weight:600">' + settledPeople + '/' + totalPeople + ' settled</span>';
         })() + (parseFloat(t.total||0) <= 0 ? '<span style="color:var(--green)">All settled ✓</span>' : '') + '</div></div>'
-      + '<div class="bill-amount trip-open-hit" style="cursor:pointer;color:' + (parseFloat(t.total||0)>0?'#FF9A3C':'var(--green)') + ';touch-action:manipulation;-webkit-tap-highlight-color:transparent" onpointerdown="warmTrip(\'' + safeId + '\')" onclick="openTrip(\'' + safeId + '\')">$' + parseFloat(t.total || 0).toFixed(2) + '</div>'
+      + '<div class="bill-amount trip-open-hit" data-tripid="' + safeAttrId + '" data-tripurl="' + safeAttrTripUrl + '" style="cursor:pointer;color:' + (parseFloat(t.total||0)>0?'#FF9A3C':'var(--green)') + ';touch-action:manipulation;-webkit-tap-highlight-color:transparent" onpointerdown="warmTrip(\'' + safeId + '\')" onclick="openTrip(\'' + safeId + '\', this.getAttribute(\'data-tripurl\') || \'\')">$' + parseFloat(t.total || 0).toFixed(2) + '</div>'
       + '<div class="bill-progress-wrap"><div class="bill-progress-label">' + tripStatusLabel + '</div><div class="bill-progress"><div class="bill-progress-fill" style="width:100%"></div></div></div>'
       + '<div class="bill-actions" onclick="event.stopPropagation()">'
       + '<a class="bill-action-btn btn-remind" href="' + tripUrlReceipt + '" data-tripid="' + safeAttrId + '" style="display:inline-flex;align-items:center;text-decoration:none;background:rgba(48,209,88,0.1);color:var(--green);border:1px solid rgba(48,209,88,0.25)"><svg class="bill-action-icon"><use href="#icon-active-bills"></use></svg>Receipt</a>'
       + (isAdmin ? '<button class="bill-action-btn admin-btn" data-tripid="' + t.id + '" style="background:rgba(124,58,237,0.1);color:var(--purple3);border:1px solid rgba(124,58,237,0.2)"><svg class="bill-action-icon"><use href="#icon-roommates"></use></svg>Admin</button>' : '')
       + '<button class="bill-action-btn" type="button" data-chatid="' + safeAttrId + '" style="display:inline-flex;align-items:center;position:relative;background:rgba(124,58,237,0.12);color:var(--purple3);border:1px solid rgba(124,58,237,0.25)" onclick="event.stopPropagation();openTripChat(\'' + safeId + '\')"><svg style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Chat<span class="trip-chat-unread-dot" data-chatbadge="' + safeAttrId + '" style="display:none;position:absolute;top:5px;right:7px;width:8px;height:8px;border-radius:50%;background:#30D158;box-shadow:0 0 10px rgba(48,209,88,0.8)"></span></button>'
-      + '<button class="bill-action-btn btn-view" type="button" data-tripid="' + safeAttrId + '" data-tripurl="' + tripUrl + '" style="display:inline-flex;align-items:center;text-decoration:none">Open Trip -></button>'
+      + '<button class="bill-action-btn btn-view" type="button" data-tripid="' + safeAttrId + '" data-tripurl="' + safeAttrTripUrl + '" style="display:inline-flex;align-items:center;text-decoration:none">Open Trip -></button>'
       + '</div></div>';
   }).join('') + renderSampleTripTutorial();
 
@@ -8361,7 +8362,7 @@ async function loadTrips() {
       e.preventDefault();
       e.stopPropagation();
       const tripId = this.getAttribute('data-tripid') || '';
-      if (tripId) openTrip(tripId);
+      if (tripId) openTrip(tripId, this.getAttribute('data-tripurl') || '');
     });
   });
   container.querySelectorAll('.trip-open-hit, .btn-view').forEach(el => {
@@ -8488,8 +8489,8 @@ async function createTrip() {
   }
 }
 
-function openTrip(tripId) {
-  const url = getTripOpenUrl(tripId);
+function openTrip(tripId, fallbackUrl) {
+  const url = getTripOpenUrl(tripId, fallbackUrl);
   if (!url) {
     hideTripOpenLoader();
     if (RAVEN_APP_MODE) {
@@ -8534,20 +8535,34 @@ function hideTripOpenLoader() {
 
 window.addEventListener('pageshow', hideTripOpenLoader);
 
-function getTripOpenUrl(tripId) {
-  const base = tripUrlMap[tripId];
+function getTripOpenUrl(tripId, fallbackUrl) {
+  const id = String(tripId || '').trim();
+  const trip = tripDataMap[id] || tripDataMap[tripId] || {};
+  let base = tripUrlMap[id] || tripUrlMap[tripId] || fallbackUrl || '';
+  if (!base && id && trip.share_token) {
+    base = FRONTEND + '/trip/' + encodeURIComponent(id) + '?t=' + encodeURIComponent(trip.share_token);
+  }
   if (!base) return '';
   try {
     const profile = JSON.parse(localStorage.getItem('raven_profile') || '{}');
     const name = (profile.first_name || '').trim();
     const email = getDashboardUserEmail();
-    const appSuffix = (typeof RAVEN_APP_MODE !== 'undefined' && RAVEN_APP_MODE) ? '&app=1' : '';
-    return base
-      + (name ? '&name=' + encodeURIComponent(name) : '')
-      + (email && RAVEN_APP_MODE ? '&acct=' + encodeURIComponent(email) : '')
-      + appSuffix;
+    const url = new URL(base, window.location.href);
+    if (name && !url.searchParams.has('name')) url.searchParams.set('name', name);
+    if (email && RAVEN_APP_MODE && !url.searchParams.has('acct')) url.searchParams.set('acct', email);
+    if (typeof RAVEN_APP_MODE !== 'undefined' && RAVEN_APP_MODE) url.searchParams.set('app', '1');
+    return url.href;
   } catch(e) {
-    return base;
+    const extras = [];
+    try {
+      const profile = JSON.parse(localStorage.getItem('raven_profile') || '{}');
+      const name = (profile.first_name || '').trim();
+      const email = getDashboardUserEmail();
+      if (name && !/[?&]name=/.test(base)) extras.push('name=' + encodeURIComponent(name));
+      if (email && RAVEN_APP_MODE && !/[?&]acct=/.test(base)) extras.push('acct=' + encodeURIComponent(email));
+      if (typeof RAVEN_APP_MODE !== 'undefined' && RAVEN_APP_MODE && !/[?&]app=/.test(base)) extras.push('app=1');
+    } catch(inner) {}
+    return extras.length ? base + (base.includes('?') ? '&' : '?') + extras.join('&') : base;
   }
 }
 

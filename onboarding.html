@@ -553,7 +553,8 @@ try {
       <div class="progress-step active" id="prog-1"></div>
       <div class="progress-step" id="prog-2"></div>
       <div class="progress-step" id="prog-3"></div>
-      <span class="progress-label" id="prog-label">Step 1 of 3</span>
+      <div class="progress-step" id="prog-4"></div>
+      <span class="progress-label" id="prog-label">Step 1 of 4</span>
     </div>
 
     <!-- STEP 1: Personal Info -->
@@ -771,15 +772,28 @@ try {
           <label class="label">Zelle (email or phone)</label>
           <input id="zelle" type="text" class="input" placeholder="email or phone number">
         </div>
+        <div id="error-3" class="error-msg"></div>
+        <button class="btn-next" onclick="submitStep3()">Continue â†’</button>
+        <button class="btn-skip" onclick="skipStep3()">Set up payment later</button>
+      </div>
+    </div>
+
+    <!-- STEP 4: Privacy and terms -->
+    <div id="step-4" class="step-anim" style="display:none">
+      <div class="step-header">
+        <span class="step-tag">Privacy &amp; terms</span>
+        <div class="step-title">Confirm your <span>privacy</span></div>
+        <div class="step-sub">RAVEN uses your profile, bill activity, and payment preferences only to run shared bills, trips, reminders, and account matching.</div>
+      </div>
+      <div class="form">
         <div class="agreement">
           <input type="checkbox" id="terms-agree">
           <div class="agreement-text">
             By checking this box, I agree to RAVEN's <a href="terms.html" target="_blank">Terms of Service</a> and <a href="privacy.html" target="_blank">Privacy Policy</a>.
           </div>
         </div>
-        <div id="error-3" class="error-msg"></div>
-        <button class="btn-next" onclick="submitStep3()">🪶 Enter RAVEN</button>
-        <button class="btn-skip" onclick="skipStep3()">Set up payment later</button>
+        <div id="error-4" class="error-msg"></div>
+        <button class="btn-next" onclick="submitStep4()">🪶 Enter RAVEN</button>
       </div>
     </div>
 
@@ -1057,26 +1071,45 @@ function skipStep2() {
 
 // ── STEP 3: Payments ──
 async function submitStep3() {
-  const agreed = document.getElementById('terms-agree').checked;
-  if (!agreed) { showError('error-3', 'Please agree to the Terms of Service to continue.'); return; }
-
   const venmo = document.getElementById('venmo').value.trim();
   const cashapp = document.getElementById('cashapp').value.trim();
   const zelle = document.getElementById('zelle').value.trim();
 
   showLoading();
-  await ensureGeneratedRavenId();
-  await saveProfile({ venmo, cashapp, zelle, onboarding_complete: true });
-  hideLoading();
-  goToStep('success');
+  try {
+    await saveProfile({ venmo, cashapp, zelle });
+    hideLoading();
+    goToStep(4);
+  } catch(e) {
+    hideLoading();
+    showError('error-3', 'Payment details could not be saved. Try again or set them up later.');
+  }
 }
 
 function skipStep3() {
+  goToStep(4);
+}
+
+// â”€â”€ STEP 4: Privacy and terms â”€â”€
+async function submitStep4() {
+  const agreed = document.getElementById('terms-agree').checked;
+  if (!agreed) { showError('error-4', 'Please agree to the Terms of Service and Privacy Policy to continue.'); return; }
+
   showLoading();
-  ensureGeneratedRavenId().then(() => saveProfile({ onboarding_complete: true })).then(() => {
+  try {
+    await ensureGeneratedRavenId();
+    await saveProfile({
+      onboarding_complete: true,
+      terms_accepted: true,
+      privacy_accepted: true,
+      terms_accepted_at: new Date().toISOString()
+    });
     hideLoading();
     goToStep('success');
-  });
+  } catch(e) {
+    hideLoading();
+    showError('error-4', 'Could not finish setup. Please try again.');
+  }
 }
 
 // ── HELPERS ──
@@ -1100,7 +1133,7 @@ function goToStep(step) {
   if (el) { el.style.display = 'block'; el.classList.remove('step-anim'); void el.offsetWidth; el.classList.add('step-anim'); }
 
   // Update progress
-  const steps = [1,2,3];
+  const steps = [1,2,3,4];
   steps.forEach(s => {
     const bar = document.getElementById(`prog-${s}`);
     if (!bar) return;
@@ -1109,7 +1142,7 @@ function goToStep(step) {
     else { bar.className = 'progress-step'; }
   });
 
-  const labels = {1:'Step 1 of 3', 2:'Step 2 of 3', 3:'Step 3 of 3', success:'All done!'};
+  const labels = {1:'Step 1 of 4', 2:'Step 2 of 4', 3:'Step 3 of 4', 4:'Step 4 of 4', success:'All done!'};
   document.getElementById('prog-label').textContent = labels[step] || '';
   if (step === 'success') {
     launchRavenSignupFlight();
