@@ -8355,8 +8355,6 @@ async function loadTrips() {
       const tripId = this.getAttribute('data-tripid') || '';
       if (!tripId) return;
       try { warmTrip(tripId); } catch(e) {}
-      const tripName = String(tripDataMap[tripId]?.name || 'Trip Hub').trim();
-      showTripOpenLoader(tripName);
     }, { passive: true });
     btn.addEventListener('click', function(e) {
       e.preventDefault();
@@ -8493,9 +8491,14 @@ async function openTrip(tripId, fallbackUrl) {
   const id = String(tripId || '').trim();
   const tripName = String(tripDataMap[id]?.name || tripDataMap[tripId]?.name || 'Trip Hub').trim();
   showTripOpenLoader(tripName);
-  let url = '';
+  let url = getTripOpenUrl(id, fallbackUrl);
   try {
-    url = await getTripOpenUrlAsync(id, fallbackUrl);
+    if (!url || !/[?&]t=/.test(url)) {
+      url = await Promise.race([
+        getTripOpenUrlAsync(id, fallbackUrl),
+        new Promise(resolve => setTimeout(() => resolve(url || ''), 900))
+      ]);
+    }
   } catch(e) {
     console.warn('openTrip resolve failed:', e);
   }
@@ -8510,7 +8513,8 @@ async function openTrip(tripId, fallbackUrl) {
   setTimeout(() => {
     if (openTrip._pendingUrl === url) openTrip._pendingUrl = '';
   }, 1500);
-  window.location.assign(url);
+  try { window.location.assign(url); }
+  catch(e) { window.location.href = url; }
 }
 
 function showTripOpenLoader(tripName) {
