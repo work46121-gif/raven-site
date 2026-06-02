@@ -507,6 +507,12 @@ window.animateScanLogo = window.animateScanLogo || function animateScanLogo(sour
   try { if (navigator.vibrate) navigator.vibrate(18); } catch(e) {}
 };
 window.goScanPage = window.goScanPage || function goScanPage(source){
+  if (isRavenSignedOut() || !hasRavenCachedIdentity()) {
+    showSignedOutHome();
+    showAuthPanel('login');
+    showMessage('error', 'Sign in to scan a receipt.');
+    return false;
+  }
   if (window.goScanPage._navigating) return false;
   window.goScanPage._navigating = true;
   try { localStorage.setItem('raven_native_app','1'); } catch(e) {}
@@ -1089,6 +1095,12 @@ window.scanLogoAction = function scanLogoAction(event){
   if (event) {
     event.preventDefault();
     event.stopPropagation();
+  }
+  if (isRavenSignedOut() || !hasRavenCachedIdentity()) {
+    showSignedOutHome();
+    showAuthPanel('login');
+    showMessage('error', 'Sign in to scan a receipt.');
+    return false;
   }
   return window.goScanPage(event?.currentTarget || event?.target);
 };

@@ -479,6 +479,102 @@ body.app-mode .cb-raven-add-icon { width:18px;height:18px;display:block; }
   color: var(--green);
   letter-spacing: 0.04em;
 }
+.sample-guide-demo {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 250px;
+  gap: 14px;
+  margin: 14px 0 4px;
+}
+.sample-guide-stage {
+  min-height: 216px;
+  border: 1px solid rgba(255,255,255,0.09);
+  border-radius: 16px;
+  background: radial-gradient(circle at 80% 12%, rgba(124,58,237,0.18), transparent 38%), rgba(5,5,9,0.72);
+  padding: 18px;
+  display: grid;
+  align-content: center;
+  gap: 12px;
+  overflow: hidden;
+}
+.sample-guide-stage-kicker {
+  color: var(--green);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.sample-guide-stage-title {
+  font-size: 23px;
+  line-height: 1.1;
+  font-weight: 900;
+  color: var(--white);
+}
+.sample-guide-stage-copy {
+  color: var(--muted2);
+  font-size: 13px;
+  line-height: 1.5;
+  max-width: 520px;
+}
+.sample-guide-stage-ui {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+}
+.sample-guide-pill {
+  padding: 8px 10px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.10);
+  color: var(--muted2);
+  font-size: 12px;
+  font-weight: 800;
+}
+.sample-guide-pill.good {
+  color: var(--green);
+  border-color: rgba(48,209,88,0.28);
+  background: rgba(48,209,88,0.08);
+}
+.sample-guide-timeline {
+  display: grid;
+  gap: 8px;
+}
+.sample-guide-timeline button {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  gap: 9px;
+  align-items: center;
+  text-align: left;
+  min-height: 42px;
+  padding: 9px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.035);
+  color: var(--muted2);
+  cursor: pointer;
+  font-family: 'Epilogue', sans-serif;
+}
+.sample-guide-timeline button.active {
+  border-color: rgba(48,209,88,0.42);
+  background: rgba(48,209,88,0.09);
+  color: var(--white);
+}
+.sample-guide-timeline-num {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: rgba(124,58,237,0.18);
+  color: var(--purple3);
+  font-size: 12px;
+  font-weight: 900;
+}
+.sample-guide-timeline button.active .sample-guide-timeline-num {
+  background: var(--green);
+  color: #000;
+}
 .sample-guide-action-row {
   display: flex;
   gap: 10px;
@@ -501,6 +597,13 @@ body.app-mode .cb-raven-add-icon { width:18px;height:18px;display:block; }
   background: var(--green);
   border-color: var(--green);
   color: #000;
+}
+@media (max-width: 720px) {
+  .sample-guide-panel { padding: 18px; max-height: 88vh; }
+  .sample-guide-demo { grid-template-columns: 1fr; }
+  .sample-guide-timeline { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .sample-guide-timeline button { grid-template-columns: 24px 1fr; font-size: 12px; }
+  .sample-guide-timeline-num { width: 24px; height: 24px; }
 }
 .bill-card { background: var(--dark); border: 1px solid var(--border); border-radius: 14px; padding: 20px 24px; display: grid; grid-template-columns: 1fr auto auto auto; align-items: center; gap: 20px; transition: all 0.2s; cursor: pointer; }
 .bill-card:hover { border-color: var(--border2); background: var(--dark2); transform: translateX(2px); }
@@ -1024,7 +1127,7 @@ body.app-mode .cb-raven-add-icon { width:18px;height:18px;display:block; }
       <div class="trip-open-loader-dot"></div>
     </div>
     <div>
-      <div class="trip-open-loader-title">Opening Trip</div>
+      <div class="trip-open-loader-title">Opening trip...</div>
       <div class="trip-open-loader-sub">Syncing receipts and chat</div>
     </div>
   </div>
@@ -4177,6 +4280,14 @@ function getSampleGuide(type) {
         ['Assign items and payers', 'Each receipt keeps the payer, item splits, tax, tip, and who still owes what.'],
         ['Chat and settle up', 'Use Trip Chat for messages, then mark payments as settled as people pay.'],
         ['Share the trip', 'Send the trip link so everyone can view receipts and balances.']
+      ],
+      demo: [
+        { title: 'Open Trip Hub', copy: 'Start from the Trips tab. Real trips stay at the top, and this sample guide stays separate from balances.', pills: ['Trip Hub', 'New Trip', 'Sample guide'] },
+        { title: 'Invite the group', copy: 'Add RAVEN friends, exact Raven IDs, or guests. The trip only belongs to people who are explicitly invited.', pills: ['4 people', 'Invite', 'Member list'] },
+        { title: 'Add receipts', copy: 'Attach receipts to the trip so each dinner, ride, grocery run, or house cost stays organized.', pills: ['Receipt', 'Scan', 'Manual entry'] },
+        { title: 'Assign and review', copy: 'Each receipt keeps item splits, payer, tax, tip, and who owes what before anyone settles.', pills: ['Items', 'Payer', 'Review totals'] },
+        { title: 'Chat and settle', copy: 'Trip chat keeps the conversation with the money context, then payments can be marked complete.', pills: ['Chat', 'Reminders', 'Fully settled'] },
+        { title: 'Share the trip', copy: 'Send the trip link so everyone can view receipts, balances, and updates from the same place.', pills: ['Share link', 'Open Trip', 'All settled'] }
       ]
     };
   }
@@ -4195,6 +4306,14 @@ function getSampleGuide(type) {
       ['Add people', 'Add friends, guests, or people from your trip.'],
       ['Assign each item', 'Tap items to choose who ordered them and split shared items evenly.'],
       ['Review and share', 'Confirm totals, save the bill, then share it with friends.']
+    ],
+    demo: [
+      { title: 'Start from Scan', copy: 'Tap the Scan tab, then enter a bill name so friends can recognize the split later.', pills: ['Scan tab', 'Bill name', 'Next'] },
+      { title: 'Add receipt details', copy: 'Scan a receipt photo or enter the bill manually when a receipt is not available.', pills: ['Camera', 'Photo library', 'Manual'] },
+      { title: 'Add people', copy: 'Choose friends, guests, or trip members before assigning any items.', pills: ['Friends', 'Guests', 'Trip members'] },
+      { title: 'Assign items', copy: 'Tap each item and choose who ordered it. Shared items can be split between multiple people.', pills: ['Item chips', 'Shared split', 'Tax/tip'] },
+      { title: 'Review totals', copy: 'RAVEN calculates who owes what and shows the payer clearly before saving.', pills: ['Who paid', 'Amounts owed', 'Save'] },
+      { title: 'Share with friends', copy: 'Share the bill link so everyone can view, comment, and mark payments as complete.', pills: ['Share', 'Comments', 'Mark paid'] }
     ]
   };
 }
@@ -4219,15 +4338,51 @@ function openSampleGuide(type, event) {
     + '<div class="sample-guide-title">' + guide.title + '</div>'
     + '<p class="sample-guide-copy">' + guide.copy + '</p>'
     + '<div class="sample-guide-preview"><div class="sample-guide-preview-row"><div><div class="sample-guide-preview-name">' + guide.previewName + '</div><div class="sample-guide-preview-meta">' + guide.previewMeta + '</div></div><div class="sample-guide-preview-total">' + guide.previewTotal + '</div></div></div>'
-    + '<div class="tutorial-steps" style="display:grid;margin:0 0 2px">' + guide.steps.map(function(step, index){ return '<div class="tutorial-step"><div class="tutorial-step-num">' + (index + 1) + '</div><div><strong>' + step[0] + '</strong><span>' + step[1] + '</span></div></div>'; }).join('') + '</div>'
-    + '<div class="sample-guide-action-row"><button class="primary" type="button" onclick="' + action + '">' + guide.primaryLabel + '</button><button type="button" onclick="closeSampleGuide()">Close</button></div>'
+    + '<div class="sample-guide-demo">'
+    + '<div class="sample-guide-stage" id="sample-guide-stage"></div>'
+    + '<div class="sample-guide-timeline">' + guide.steps.map(function(step, index){ return '<button type="button" data-sample-step="' + index + '" onclick="setSampleGuideStep(' + index + ')"><span class="sample-guide-timeline-num">' + (index + 1) + '</span><span>' + step[0] + '</span></button>'; }).join('') + '</div>'
+    + '</div>'
+    + '<div class="sample-guide-action-row"><button type="button" onclick="prevSampleGuideStep()">Back</button><button type="button" onclick="nextSampleGuideStep()">Next</button><button class="primary" type="button" onclick="' + action + '">' + guide.primaryLabel + '</button><button type="button" onclick="closeSampleGuide()">Close</button></div>'
     + '</div>';
+  modal._sampleGuide = guide;
+  modal._sampleStep = 0;
   modal.classList.add('open');
+  setSampleGuideStep(0);
 }
 
 function closeSampleGuide() {
   const modal = document.getElementById('sample-guide-modal');
   if (modal) modal.classList.remove('open');
+}
+
+function setSampleGuideStep(index) {
+  const modal = document.getElementById('sample-guide-modal');
+  const guide = modal && modal._sampleGuide;
+  if (!modal || !guide) return;
+  const max = Math.max(0, (guide.demo || guide.steps || []).length - 1);
+  const next = Math.max(0, Math.min(max, index || 0));
+  modal._sampleStep = next;
+  const demo = (guide.demo && guide.demo[next]) || { title: guide.steps[next][0], copy: guide.steps[next][1], pills: [] };
+  const stage = document.getElementById('sample-guide-stage');
+  if (stage) {
+    stage.innerHTML = '<div class="sample-guide-stage-kicker">Step ' + (next + 1) + ' of ' + (max + 1) + '</div>'
+      + '<div class="sample-guide-stage-title">' + demo.title + '</div>'
+      + '<div class="sample-guide-stage-copy">' + demo.copy + '</div>'
+      + '<div class="sample-guide-stage-ui">' + (demo.pills || []).map(function(pill, i){ return '<span class="sample-guide-pill ' + (i === 0 ? 'good' : '') + '">' + pill + '</span>'; }).join('') + '</div>';
+  }
+  modal.querySelectorAll('[data-sample-step]').forEach(function(btn) {
+    btn.classList.toggle('active', Number(btn.getAttribute('data-sample-step')) === next);
+  });
+}
+
+function nextSampleGuideStep() {
+  const modal = document.getElementById('sample-guide-modal');
+  setSampleGuideStep((modal?._sampleStep || 0) + 1);
+}
+
+function prevSampleGuideStep() {
+  const modal = document.getElementById('sample-guide-modal');
+  setSampleGuideStep((modal?._sampleStep || 0) - 1);
 }
 
 // Shared helper: fetch item_selections and augment bills with QR guest participants
@@ -8226,7 +8381,7 @@ function showTripOpenLoader(tripName) {
   const loader = document.getElementById('trip-open-loader');
   if (!loader) return;
   const title = loader.querySelector('.trip-open-loader-title');
-  if (title) title.textContent = 'Opening ' + (tripName || 'Trip Hub');
+  if (title) title.textContent = 'Opening ' + (tripName || 'trip') + '...';
   loader.style.display = 'flex';
   loader.setAttribute('aria-hidden', 'false');
   requestAnimationFrame(() => loader.classList.add('show'));
