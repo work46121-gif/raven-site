@@ -1096,177 +1096,31 @@ async function submitStep4() {
   if (!agreed) { showError('error-4', 'Please agree to the Terms of Service and Privacy Policy to continue.'); return; }
 
   showLoading();
-  try {
-    await ensureGeneratedRavenId();
-    await saveProfile({
-      onboarding_complete: true,
-      terms_accepted: true,
-      privacy_accepted: true,
-      terms_accepted_at: new Date().toISOString()
-    });
-    hideLoading();
-    goToStep('success');
-  } catch(e) {
-    hideLoading();
-    showError('error-4', 'Could not finish setup. Please try again.');
-  }
-}
 
-// ── HELPERS ──
-async function saveProfile(data) {
-  // Always write locally first so the dashboard cache is warm
-  const existing = JSON.parse(localStorage.getItem('raven_profile') || '{}');
-  localStorage.setItem('raven_profile', JSON.stringify({ ...existing, ...data, user_id: currentUser.id, email: currentUser.email || existing.email || '' }));
+  // Try generating raven_id — never block completion on this
+  try { await ensureGeneratedRavenId(); }
+  catch(idErr) { console.warn('raven_id generation failed (non-blocking):', idErr); }
 
-  const ravenId = await ensureGeneratedRavenId();
-  const payload = { id: currentUser.id, email: currentUser.email, updated_at: new Date().toISOString(), ...(ravenId ? { raven_id: ravenId, username: ravenId } : {}), ...data };
+  const completionData = {
+    onboarding_complete: true,
+    terms_accepted: true,
+    privacy_accepted: true,
+    terms_accepted_at: new Date().toISOString()
+  };
 
-  // Retry upsert up to 3 times so transient errors don't cause an onboarding loop
-  let lastError = null;
-  for (let attempt = 0; attempt < 3; attempt++) {
-    try {
-      const { error } = await db.from('profiles').upsert(payload, { onConflict: 'id' });
-      if (!error) { lastError = null; break; }
-      lastError = error;
-    } catch(e) {
-      lastError = e;
-    }
-    if (attempt < 2) await new Promise(r => setTimeout(r, 600 * (attempt + 1)));
-  }
-  if (lastError) {
-    console.error('saveProfile failed after retries:', lastError);
-    // Only throw if this is the critical onboarding_complete flag
-    if (data.onboarding_complete) throw new Error('Could not save profile: ' + (lastError.message || String(lastError)));
-  }
-}
-
-function goToStep(step) {
-  document.querySelectorAll('[id^="step-"]').forEach(s => s.style.display = 'none');
-  const el = document.getElementById(`step-${step}`);
-  if (el) { el.style.display = 'block'; el.classList.remove('step-anim'); void el.offsetWidth; el.classList.add('step-anim'); }
-
-  // Update progress
-  const steps = [1,2,3,4];
-  steps.forEach(s => {
-    const bar = document.getElementById(`prog-${s}`);
-    if (!bar) return;
-    if (s < step) { bar.className = 'progress-step done'; }
-    else if (s === step) { bar.className = 'progress-step active'; }
-    else { bar.className = 'progress-step'; }
-  });
-
-  const labels = {1:'Step 1 of 4', 2:'Step 2 of 4', 3:'Step 3 of 4', 4:'Step 4 of 4', success:'All done!'};
-  document.getElementById('prog-label').textContent = labels[step] || '';
-  if (step === 'success') {
-    launchRavenSignupFlight();
-    document.querySelectorAll('.progress-step').forEach(b => b.className = 'progress-step done');
-  }
-}
-
-function goToDashboard() {
-  // Ensure the local cache is marked complete so dashboard doesn't loop back
+  // Save locally immediately so the user is never stuck in a loop
   try {
     const existing = JSON.parse(localStorage.getItem('raven_profile') || '{}');
-    if (!existing.onboarding_complete) {
-      existing.onboarding_complete = true;
-      if (currentUser?.id) existing.user_id = currentUser.id;
-      if (currentUser?.email) existing.email = currentUser.email;
-      localStorage.setItem('raven_profile', JSON.stringify(existing));
-    }
-  } catch(e) {}
-  window.location.href = dashboardUrl();
-}
+    localStorage.setItem('raven_profile', JSON.stringify({
+      ...existing, ...completionData,
+      user_id: currentUser?.id || existing.user_id || ''
+    }));
+  } catch(localErr) { console.warn('Local profile save failed:', localErr); }
 
-function isAppOnboardingMode() {
-  try {
-    const params = new URLSearchParams(window.location.search);
-    const isNativeCapacitor = !!(window.Capacitor?.isNativePlatform && window.Capacitor.isNativePlatform());
-    return params.get('app') === '1' || isNativeCapacitor;
-  } catch(e) {
-    return false;
-  }
-}
+  // Try Supabase — swallow errors, local save is the fallback
+  try { await saveProfile(completionData); }
+  catch(dbErr) { console.warn('Supabase save failed (non-blocking):', dbErr); }
 
-function clearOnboardingAuthCache(keepAppMode) {
-  try { localStorage.setItem('raven_signed_out', '1'); } catch(e) {}
-  const explicitKeys = [
-    'raven_profile',
-    'raven_app_dashboard_email',
-    'raven_google_auth_in_progress',
-    'raven_pending_auth_email',
-    'raven_pending_confirmation_email',
-    'raven_trip_name',
-    'raven_selected_trip_id'
-  ];
-  if (!keepAppMode) explicitKeys.push('raven_native_app');
-  explicitKeys.forEach(key => {
-    try { localStorage.removeItem(key); } catch(e) {}
-    try { sessionStorage.removeItem(key); } catch(e) {}
-  });
-  try {
-    Object.keys(localStorage).forEach(key => {
-      if (/^(sb-|supabase|raven_app_|raven_trip_|raven_bill_|ravenbot_chat_)/i.test(key)) {
-        if (keepAppMode && key === 'raven_native_app') return;
-        localStorage.removeItem(key);
-      }
-    });
-  } catch(e) {}
-  try {
-    Object.keys(sessionStorage).forEach(key => {
-      if (/^(sb-|supabase|raven_app_|raven_trip_|raven_bill_|ravenbot_chat_)/i.test(key)) {
-        sessionStorage.removeItem(key);
-      }
-    });
-  } catch(e) {}
+  hideLoading();
+  goToStep('success');
 }
-
-async function cancelOnboarding() {
-  const isApp = isAppOnboardingMode();
-  const buttons = document.querySelectorAll('.cancel-onboarding-btn,.cancel-onboarding-inline');
-  buttons.forEach(btn => {
-    btn.disabled = true;
-    btn.textContent = 'Signing out...';
-  });
-  try {
-    const text = document.querySelector('.loading-text');
-    if (text) text.textContent = 'Signing out...';
-    showLoading();
-  } catch(e) {}
-  try {
-    await db.auth.signOut({ scope: 'global' });
-  } catch(e) {
-    try { await db.auth.signOut(); } catch(_) {}
-  }
-  clearOnboardingAuthCache(isApp);
-  if (isApp) {
-    try { localStorage.setItem('raven_native_app', '1'); } catch(e) {}
-    window.location.replace('app.html?app=1&signed_out=1');
-  } else {
-    window.location.replace('dashboard.html?signed_out=1');
-  }
-}
-
-function showError(id, msg) {
-  const el = document.getElementById(id);
-  el.textContent = msg;
-  el.style.display = 'block';
-}
-function hideError(id) {
-  document.getElementById(id).style.display = 'none';
-}
-function showLoading() { document.getElementById('loading-overlay').classList.add('show'); }
-function hideLoading() { document.getElementById('loading-overlay').classList.remove('show'); }
-
-function formatPhone(input) {
-  let v = input.value.replace(/\D/g, '').slice(0,10);
-  if (v.length >= 6) v = `(${v.slice(0,3)}) ${v.slice(3,6)}-${v.slice(6)}`;
-  else if (v.length >= 3) v = `(${v.slice(0,3)}) ${v.slice(3)}`;
-  input.value = v;
-  updatePhonePreview();
-}
-
-// ── START ──
-init();
-</script>
-</body>
-</html>
