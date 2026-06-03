@@ -873,9 +873,10 @@ body.app-mode .cb-raven-add-icon { width:18px;height:18px;display:block; }
 .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(8px); z-index: 500; display: none; align-items: center; justify-content: center; padding: 20px; }
 .modal-overlay.open { display: flex; }
 .trip-open-loader { position: fixed; inset: 0; z-index: 1800; display: none; align-items: center; justify-content: center; background: radial-gradient(circle at 50% 38%, rgba(124,58,237,0.24), rgba(5,5,9,0.94) 54%, rgba(5,5,9,0.98)); backdrop-filter: blur(12px); opacity: 0; transition: opacity 0.18s ease; }
-/* Trip inline frame panel — offset by sidebar width on desktop */
+/* Trip inline panel — offset by sidebar on desktop, full-width on mobile/app */
 #trip-frame-panel { left: 240px; }
 body.app-mode #trip-frame-panel { left: 0; }
+@media(max-width: 768px) { #trip-frame-panel { left: 0 !important; } }
 .trip-open-loader.show { display: flex; opacity: 1; }
 .trip-open-loader-inner { display: flex; flex-direction: column; align-items: center; gap: 18px; transform: translateY(-10px); }
 .trip-open-loader-mark { position: relative; width: 118px; height: 118px; border-radius: 32px; display: flex; align-items: center; justify-content: center; background: linear-gradient(145deg, rgba(20,20,32,0.96), rgba(7,7,12,0.96)); border: 1px solid rgba(255,255,255,0.12); box-shadow: 0 20px 70px rgba(124,58,237,0.38), inset 0 -20px 38px rgba(48,209,88,0.08); animation: ravenTripFloat 1.4s ease-in-out infinite; }
@@ -944,7 +945,6 @@ body.app-mode #trip-frame-panel { left: 0; }
 @media(max-width: 768px) {
   .sidebar { display: none !important; }
   .main { margin-left: 0 !important; padding: 16px 16px 120px !important; }
-  #trip-frame-panel { left: 0 !important; }
   .stats-row { grid-template-columns: 1fr 1fr !important; gap: 10px !important; }
   .stat-value { font-size: 26px !important; }
   .stat-card { padding: 16px !important; }
@@ -1250,17 +1250,17 @@ body.app-mode #trip-frame-panel { left: 0; }
   </div>
 </div>
 
-<!-- ── TRIP INLINE PANEL (desktop + mobile PWA) ── -->
-<div id="trip-frame-panel" style="display:none;position:fixed;inset:0;z-index:900;background:var(--black);flex-direction:column">
-  <div id="trip-frame-bar" style="display:flex;align-items:center;gap:10px;padding:0 16px;height:52px;background:rgba(6,6,10,0.97);border-bottom:1px solid var(--border);flex-shrink:0;z-index:1">
-    <button id="trip-frame-back" onclick="closeTripFramePanel()" style="display:flex;align-items:center;gap:6px;padding:6px 14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:20px;color:var(--muted2);font-family:'Epilogue',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.15s" onmouseover="this.style.color='var(--white)';this.style.borderColor='rgba(255,255,255,0.22)'" onmouseout="this.style.color='var(--muted2)';this.style.borderColor='rgba(255,255,255,0.1)'">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+<!-- ── TRIP INLINE PANEL ── -->
+<div id="trip-frame-panel" style="display:none;position:fixed;top:0;right:0;bottom:0;z-index:900;background:#06060A;flex-direction:column">
+  <div style="display:flex;align-items:center;gap:10px;padding:0 16px;height:52px;background:rgba(6,6,10,0.97);border-bottom:1px solid rgba(255,255,255,0.07);flex-shrink:0">
+    <button onclick="closeTripFramePanel()" style="display:flex;align-items:center;gap:6px;padding:6px 14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:20px;color:#9896A8;font-family:'Epilogue',sans-serif;font-size:13px;font-weight:600;cursor:pointer">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
       Trip Hub
     </button>
-    <div id="trip-frame-title" style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:0.12em;color:var(--white);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></div>
-    <button onclick="openTripFrameExternal()" style="padding:5px 12px;background:rgba(124,58,237,0.1);border:1px solid rgba(124,58,237,0.22);border-radius:8px;color:var(--purple3);font-family:'Epilogue',sans-serif;font-size:11px;font-weight:700;cursor:pointer" title="Open in new tab">↗ External</button>
+    <div id="trip-frame-title" style="font-family:'Bebas Neue',sans-serif;font-size:17px;letter-spacing:0.12em;color:#F0EEF8;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></div>
+    <button onclick="openTripFrameExternal()" style="padding:5px 12px;background:rgba(124,58,237,0.1);border:1px solid rgba(124,58,237,0.22);border-radius:8px;color:#C084FC;font-family:'Epilogue',sans-serif;font-size:11px;font-weight:700;cursor:pointer" title="Open in new tab">↗</button>
   </div>
-  <iframe id="trip-frame-iframe" src="" style="flex:1;border:none;width:100%;background:var(--black)" loading="lazy" allow="camera;clipboard-write"></iframe>
+  <iframe id="trip-frame-iframe" src="" style="flex:1;border:none;width:100%;background:#06060A" allow="camera;clipboard-write"></iframe>
 </div>
 
 <!-- MOBILE HEADER -->
@@ -2385,7 +2385,9 @@ let db;
 try {
   db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     auth: {
-      flowType: 'implicit',
+      // PKCE is required for Google OAuth on web/PWA — implicit flow causes a redirect loop
+      // Native Capacitor uses deep-link callback so it also works with PKCE
+      flowType: 'pkce',
       detectSessionInUrl: true,
       persistSession: true,
       autoRefreshToken: true
@@ -2515,7 +2517,11 @@ function isNativeAppMode() {
 }
 
 function getDashboardAuthRedirectTo() {
-  return isNativeAppMode() ? 'ravensplit://auth/callback' : 'https://ravensplit.com/dashboard.html';
+  if (isNativeAppMode()) return 'ravensplit://auth/callback';
+  // Include ?app=1 when in PWA/mobile mode so dashboard stays in app-mode after OAuth return
+  return RAVEN_APP_MODE
+    ? 'https://ravensplit.com/dashboard.html?app=1'
+    : 'https://ravensplit.com/dashboard.html';
 }
 
 function getDashboardPasswordResetRedirectTo() {
@@ -2933,7 +2939,9 @@ async function init() {
       try {
         const { data, error } = await db.auth.exchangeCodeForSession(params.get('code'));
         if (error) throw error;
-        history.replaceState(null, '', window.location.pathname + (RAVEN_APP_MODE ? '?app=1' : ''));
+        // Preserve ?app=1 after code exchange so PWA stays in app mode
+        const cleanUrl = window.location.pathname + (RAVEN_APP_MODE ? '?app=1' : '');
+        history.replaceState(null, '', cleanUrl);
         if (data?.session?.user) {
           markRavenSignedIn();
           currentUser = data.session.user;
@@ -2941,7 +2949,8 @@ async function init() {
           return;
         }
       } catch(e) {
-        history.replaceState(null, '', window.location.pathname + (RAVEN_APP_MODE ? '?app=1' : ''));
+        const cleanUrl = window.location.pathname + (RAVEN_APP_MODE ? '?app=1' : '');
+        history.replaceState(null, '', cleanUrl);
         currentUser = null;
         showAuth();
         showAuthError('Google sign-in did not finish. Please try again.');
@@ -3041,8 +3050,6 @@ async function checkOnboardingAndShow(userId) {
       const existingId = String(existing.user_id || existing.id || '').trim();
       const targetId = String(userId || currentUser?.id || '').trim();
       const existingMatchesUser = (targetId && existingId === targetId) || (realEmail && existingEmail === realEmail.toLowerCase());
-      // If localStorage already marks onboarding complete for this user, trust it — don't let a slow/failed DB write send them back
-      const localAlreadyComplete = existingMatchesUser && !!existing.onboarding_complete;
       let nextProfile = existingMatchesUser
         ? { ...existing, user_id: targetId || existingId, email: realEmail || existing.email || '' }
         : { user_id: targetId, email: realEmail };
@@ -3057,14 +3064,13 @@ async function checkOnboardingAndShow(userId) {
               user_id: userId,
               email: isDashboardAccountEmail(profile.email) ? profile.email : (realEmail || ''),
               username: profile.username || profile.raven_id || nextProfile.username || '',
-              // Only set onboarding_complete from DB if it's true, or if we don't already have it locally
-              onboarding_complete: !!profile.onboarding_complete || localAlreadyComplete
+              onboarding_complete: !!profile.onboarding_complete
             };
           }
         } catch(e) {}
       }
       localStorage.setItem('raven_profile', JSON.stringify(nextProfile));
-      if (!nextProfile.onboarding_complete && !localAlreadyComplete) {
+      if (!nextProfile.onboarding_complete) {
         window.location.href = 'onboarding.html?app=1';
         return;
       }
@@ -3099,14 +3105,7 @@ async function checkOnboardingAndShow(userId) {
         const existing = JSON.parse(localStorage.getItem('raven_profile') || '{}');
         localStorage.setItem('raven_profile', JSON.stringify({ ...existing, user_id: userId, onboarding_complete: true, first_name: profile.first_name || existing.first_name || '', raven_id: profile.raven_id || existing.raven_id || '', username: profile.raven_id || existing.username || existing.raven_id || '', avatar_url: profile.avatar_url || existing.avatar_url || '', email: currentUser.email }));
         showDashboard(); return;
-      } else {
-        // Check localStorage before redirecting — user may have completed onboarding but DB write was slow
-        const localFallback = JSON.parse(localStorage.getItem('raven_profile') || '{}');
-        if (localFallback.user_id === userId && localFallback.onboarding_complete) {
-          showDashboard(); return;
-        }
-        window.location.href = 'onboarding.html'; return;
-      }
+      } else { window.location.href = 'onboarding.html'; return; }
     }
   } catch(e) { console.log('Profile check error:', e); }
   const hasLocalData = localStorage.getItem('raven_profile');
@@ -8535,49 +8534,52 @@ async function openTrip(tripId, fallbackUrl) {
     try { loadTrips(); } catch(e) {}
     return;
   }
-  hideTripOpenLoader();
-  // Native app (Capacitor iOS/Android) → navigate away as before
-  if (typeof RAVEN_APP_MODE !== 'undefined' && RAVEN_APP_MODE &&
-      (window.Capacitor?.isNativePlatform?.() || localStorage.getItem('raven_native_app') === '1')) {
-    if (openTrip._pendingUrl === url) return;
+  // Native Capacitor app → navigate away (original behaviour)
+  const isNative = window.Capacitor?.isNativePlatform?.() || localStorage.getItem('raven_native_app') === '1';
+  if (isNative) {
+    if (openTrip._pendingUrl === url) { hideTripOpenLoader(); return; }
     openTrip._pendingUrl = url;
     setTimeout(() => { if (openTrip._pendingUrl === url) openTrip._pendingUrl = ''; }, 1500);
     try { window.location.assign(url); } catch(e) { window.location.href = url; }
     return;
   }
-  // Desktop + mobile PWA → open inline iframe panel
+  // Desktop + mobile PWA → inline iframe panel
   openTripFramePanel(url, tripName);
+  // Loader hides once the iframe actually loads
 }
 
-// ── Trip Frame Panel helpers ──────────────────────────────────────
 let _tripFrameCurrentUrl = '';
 
 function openTripFramePanel(url, tripName) {
-  const panel = document.getElementById('trip-frame-panel');
+  const panel  = document.getElementById('trip-frame-panel');
   const iframe = document.getElementById('trip-frame-iframe');
   const title  = document.getElementById('trip-frame-title');
-  if (!panel || !iframe) { window.open(url, '_blank'); return; }
+  if (!panel || !iframe) { window.open(url, '_blank'); hideTripOpenLoader(); return; }
   _tripFrameCurrentUrl = url;
   if (title) title.textContent = tripName || 'Trip';
-  iframe.src = url;
   panel.style.display = 'flex';
   document.body.style.overflow = 'hidden';
-  // Update sidebar active state
-  try {
-    document.querySelectorAll('.sidebar-nav a, .sidebar-nav button').forEach(el => el.classList.remove('active'));
-    const tripLink = document.querySelector('.sidebar-nav [data-page="trip-hub"]') || document.querySelector('.sidebar-nav a[href*="trip"]');
-    if (tripLink) tripLink.classList.add('active');
-  } catch(e) {}
+  // Replace src to load the trip — loader hides on iframe load
+  iframe.src = '';
+  iframe.onload = function() {
+    hideTripOpenLoader();
+    iframe.onload = null;
+  };
+  // Safety fallback in case onload doesn't fire (cross-origin timing)
+  clearTimeout(openTripFramePanel._fallback);
+  openTripFramePanel._fallback = setTimeout(hideTripOpenLoader, 6000);
+  iframe.src = url;
 }
 
 function closeTripFramePanel() {
-  const panel = document.getElementById('trip-frame-panel');
+  const panel  = document.getElementById('trip-frame-panel');
   const iframe = document.getElementById('trip-frame-iframe');
-  if (panel) panel.style.display = 'none';
-  if (iframe) { iframe.src = ''; }
+  if (panel)  panel.style.display = 'none';
+  if (iframe) { iframe.src = ''; iframe.onload = null; }
   document.body.style.overflow = '';
   _tripFrameCurrentUrl = '';
-  // Return to trip hub page
+  clearTimeout(openTripFramePanel._fallback);
+  hideTripOpenLoader();
   try { showPage('trip-hub'); setMobNav('mob-trips'); } catch(e) {}
 }
 
@@ -8610,8 +8612,8 @@ function hideTripOpenLoader() {
 
 window.addEventListener('pageshow', function(e) {
   hideTripOpenLoader();
-  // Clear pending URL so the same trip can be re-opened after returning via back button / bfcache
-  if (openTrip && openTrip._pendingUrl) openTrip._pendingUrl = '';
+  // Clear dedup lock so the same trip can be re-opened after back-navigation (bfcache)
+  if (typeof openTrip !== 'undefined' && openTrip._pendingUrl) openTrip._pendingUrl = '';
 });
 
 function getTripOpenUrl(tripId, fallbackUrl) {
@@ -10312,62 +10314,52 @@ function appendRavenbotMessage(msg, persist = true) {
   }
 }
 
-async function buildRavenbotReply(question) {
-  const summary = tripRavenbotSummary || {};
-  const debtors  = (summary.debtors || []).slice(0, 10).map(d => d.name + ' owes $' + Number(d.amount || 0).toFixed(2)).join(', ') || 'No outstanding balances';
-  const insights = (Array.isArray(summary.insights) ? summary.insights : []).slice(0, 6).join('\n') || 'No insights yet';
-  const events   = (Array.isArray(summary.events) ? summary.events : []).slice(0, 5).map(ev => (ev.title || '') + (ev.detail ? ': ' + ev.detail : '')).join('\n') || 'No recent events';
-  const systemPrompt =
-    'You are RAVENbot, the concierge AI for a RAVEN trip group. ' +
-    'Answer questions about this trip\'s finances, receipts, and balances. ' +
-    'Be concise (2-4 sentences max), friendly, and direct. Use bullet points only when listing 3+ items. ' +
-    'Never make up numbers — only use what is in the trip context below. ' +
-    'If asked something outside trip finances, politely redirect.\n\n' +
-    'TRIP CONTEXT:\n' +
-    'Total receipts: ' + (summary.receipt_count || 0) + '\n' +
-    'Total spent: $' + Number(summary.total_spent || 0).toFixed(2) + '\n' +
-    'Balances: ' + debtors + '\n' +
-    'Insights:\n' + insights + '\n' +
-    'Recent events:\n' + events;
-  try {
-    const resp = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        system: systemPrompt,
-        messages: [{ role: 'user', content: question || 'Give me a quick trip summary.' }]
-      })
-    });
-    const data = await resp.json();
-    const text = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('');
-    return text || 'I\'m having trouble right now — try again in a moment.';
-  } catch(e) {
-    return buildRavenbotReplyLocal(question);
-  }
-}
-
-function buildRavenbotReplyLocal(question) {
+function buildRavenbotReply(question) {
   const summary = tripRavenbotSummary || {};
   const debtors = summary.debtors || [];
   const lower = String(question || '').toLowerCase();
   const insights = Array.isArray(summary.insights) ? summary.insights : [];
+  const events = Array.isArray(summary.events) ? summary.events : [];
   const receiptCount = summary.receipt_count || 0;
   const totalSpent = Number(summary.total_spent || 0);
+  const starters = [
+    'Here is what I see:',
+    'Quick read:',
+    'RAVEN take:',
+    'Money map:'
+  ];
+  const starter = starters[Math.abs(lower.split('').reduce((n, ch) => n + ch.charCodeAt(0), 0)) % starters.length];
   if (lower.includes('owe') || lower.includes('settle') || lower.includes('paid')) {
     return debtors.length
-      ? 'Balances:\n' + debtors.slice(0, 5).map(d => '- ' + d.name + ' owes $' + Number(d.amount || 0).toFixed(2)).join('\n')
-      : 'Everyone is settled — outstanding balance is $0.00.';
+      ? starter + '\\n' + debtors.slice(0, 5).map(d => '- ' + d.name + ' owes $' + Number(d.amount || 0).toFixed(2)).join('\\n') + '\\n\\nBest next move: ping the biggest balance first, then mark people paid as they settle.'
+      : 'Everyone is settled right now. Outstanding balance is $0.00. If someone says they paid outside RAVEN, use the receipt/payment details to double-check.';
+  }
+  if (lower.includes('biggest') || lower.includes('largest') || lower.includes('expensive')) {
+    const biggest = insights.find(x => x.indexOf('Biggest receipt:') === 0);
+    return biggest ? biggest + '\\n\\nThat is the one I would audit first if totals feel off.' : 'I do not have a clear biggest receipt yet. Add or scan receipts and I can rank them.';
+  }
+  if (lower.includes('latest') || lower.includes('recent') || lower.includes('activity') || lower.includes('new')) {
+    if (events.length) {
+      return starter + '\\n' + events.slice(0, 4).map(ev => '- ' + (ev.title || 'Trip activity') + (ev.detail ? ': ' + ev.detail : '')).join('\\n');
+    }
+    const latest = insights.find(x => x.indexOf('Latest activity:') === 0);
+    return latest || 'No recent trip activity is showing yet.';
   }
   if (lower.includes('receipt') || lower.includes('spend') || lower.includes('total') || lower.includes('summary')) {
-    return receiptCount + ' receipts · $' + totalSpent.toFixed(2) + ' total spent.\n\nAsk me "who owes?" for individual balances.';
+    const biggest = insights.find(x => x.indexOf('Biggest receipt:') === 0);
+    return starter + '\\n' + receiptCount + ' receipts logged.\\n$' + totalSpent.toFixed(2) + ' total spend.' + (biggest ? '\\n' + biggest : '') + '\\n\\nAsk me “who owes?” or “latest activity?” for a narrower answer.';
   }
   if (lower.includes('help') || lower.includes('what can') || lower.includes('?')) {
-    return 'Try asking me:\n- Who owes money?\n- What was the biggest receipt?\n- What changed recently?\n- Is everyone settled?\n- Give me a trip summary';
+    return 'Try asking me:\\n- Who owes money?\\n- What was the biggest receipt?\\n- What changed recently?\\n- Is everyone settled?\\n- Give me a trip summary';
   }
-  return insights.length ? insights.slice(0, 3).join('\n') : 'Ask me about balances, receipts, or recent activity.';
+  const rotating = [
+    'I can answer that best if you ask about balances, receipts, totals, or recent activity.',
+    'I am watching the trip ledger. Ask “who owes?” for balances or “biggest receipt?” for spend details.',
+    'I have the trip summary loaded. Try “latest activity” or “is everyone settled?”'
+  ];
+  return insights.length ? starter + '\\n' + insights.slice(0, 3).join('\\n') + '\\n\\n' + rotating[Math.floor(Math.random() * rotating.length)] : rotating[Math.floor(Math.random() * rotating.length)];
 }
+
 function getChatDateKey(value) {
   const dt = new Date(value);
   if (isNaN(dt.getTime())) return '';
@@ -10554,27 +10546,11 @@ async function sendChatMessage() {
 
   if (tripChatMode === 'ravenbot') {
     appendRavenbotMessage({ role: 'user', text: message || '[attachment]', created_at: new Date().toISOString() }, true);
-    // Show typing indicator
-    const typingId = 'ravenbot-typing-' + Date.now();
-    appendRavenbotMessage({ role: 'bot', text: '...', created_at: new Date().toISOString(), _typingId: typingId }, false);
-    const typingEl = document.querySelector('[data-ravenbot-typing]');
-    scrollChatToBottom();
-    try {
-      const reply = await buildRavenbotReply(message);
-      // Remove typing indicator
-      const container = document.getElementById('chat-messages');
-      if (container) {
-        const last = container.lastElementChild;
-        // Remove the typing bubble (last appended)
-        if (last && last.querySelector && last.querySelector('div') && last.querySelector('div').textContent === '...') {
-          last.remove();
-        }
-      }
-      appendRavenbotMessage({ role: 'bot', text: reply, created_at: new Date().toISOString() }, true);
+    setTimeout(() => {
+      appendRavenbotMessage({ role: 'bot', text: buildRavenbotReply(message), created_at: new Date().toISOString() }, true);
       scrollChatToBottom();
-    } catch(e) {
-      appendRavenbotMessage({ role: 'bot', text: 'Sorry, I ran into an issue. Try again.', created_at: new Date().toISOString() }, false);
-    }
+    }, 180);
+    scrollChatToBottom();
     return;
   }
 
