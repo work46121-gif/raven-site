@@ -983,25 +983,25 @@ async function init() {
 
   const { data: { session } } = await db.auth.getSession();
   if (!session?.user) {
-    window.location.href = dashboardUrl();
+    // No session — send to sign-in. Add signin=1 so dashboard shows login tab.
+    const base = dashboardUrl();
+    const sep = base.includes('?') ? '&' : '?';
+    window.location.href = base + sep + 'signin=1';
     return;
   }
 
   currentUser = session.user;
 
-  // Check localStorage first (fast path)
+  // Check localStorage first (fast)
   const localProfile = JSON.parse(localStorage.getItem('raven_profile') || '{}');
-  const localUserId  = String(localProfile.user_id || localProfile.id || '');
-  const localEmail   = String(localProfile.email || '').toLowerCase();
+  const localUserId = String(localProfile.user_id || localProfile.id || '');
+  const localEmail = String(localProfile.email || '').toLowerCase();
   const sessionEmail = String(currentUser.email || '').toLowerCase();
   const localMatchesSession = (localUserId && localUserId === currentUser.id) || (localEmail && sessionEmail && localEmail === sessionEmail);
-
-  // If local already marks complete for this user — go straight to dashboard, no DB round-trip needed
   if (localMatchesSession && localProfile.onboarding_complete) {
     window.location.href = dashboardUrl();
     return;
   }
-
   if (!localMatchesSession && (localProfile.user_id || localProfile.id || localProfile.email || localProfile.first_name || localProfile.raven_id || localProfile.username || localProfile.avatar_url)) {
     localStorage.setItem('raven_profile', JSON.stringify({
       user_id: currentUser.id,
@@ -1010,47 +1010,46 @@ async function init() {
     }));
   }
 
-  // Try Supabase — but only redirect to dashboard if DB confirms complete
-  // Never let DB onboarding_complete: false overwrite local true
+  // Try Supabase
   try {
     const { data: profile, error } = await db.from('profiles').select('*').eq('id', currentUser.id).single();
-    if (!error && profile) {
-      const dbComplete = !!profile.onboarding_complete;
-      // If DB says complete, trust it; if local already says complete, also trust it
-      if (dbComplete || (localMatchesSession && localProfile.onboarding_complete)) {
-        localStorage.setItem('raven_profile', JSON.stringify({ ...profile, user_id: currentUser.id, onboarding_complete: true }));
-        window.location.href = dashboardUrl();
-        return;
-      }
-      // Pre-fill form fields from saved profile
-      if (profile.first_name) document.getElementById('first-name').value = profile.first_name;
-      if (profile.last_name)  document.getElementById('last-name').value  = profile.last_name;
-      if (profile.phone)      document.getElementById('phone-number').value = profile.phone;
-      if (profile.venmo)      document.getElementById('venmo').value    = profile.venmo;
-      if (profile.cashapp)    document.getElementById('cashapp').value  = profile.cashapp;
-      if (profile.zelle)      document.getElementById('zelle').value    = profile.zelle;
+    if (!error && profile?.onboarding_complete) {
+      localStorage.setItem('raven_profile', JSON.stringify({ ...profile, user_id: currentUser.id }));
+      window.location.href = dashboardUrl();
+      return;
     }
-  } catch(e) { console.log('Profile check failed:', e); }
+    if (profile && !error) {
+      if (profile.first_name) document.getElementById('first-name').value = profile.first_name;
+      if (profile.last_name) document.getElementById('last-name').value = profile.last_name;
+      if (profile.phone) document.getElementById('phone-number').value = profile.phone;
+      if (profile.venmo) document.getElementById('venmo').value = profile.venmo;
+      if (profile.cashapp) document.getElementById('cashapp').value = profile.cashapp;
+      if (profile.zelle) document.getElementById('zelle').value = profile.zelle;
+    }
+  } catch(e) {
+    console.log('Profile check failed:', e);
+  }
   updatePhonePreview();
 }
 
 // ── STEP 1: Personal Info ──
 async function submitStep1() {
   const firstName = document.getElementById('first-name').value.trim();
-  const lastName  = document.getElementById('last-name').value.trim();
+  const lastName = document.getElementById('last-name').value.trim();
   const month = document.getElementById('dob-month').value;
-  const day   = document.getElementById('dob-day').value;
-  const year  = document.getElementById('dob-year').value;
+  const day = document.getElementById('dob-day').value;
+  const year = document.getElementById('dob-year').value;
+  const err = document.getElementById('error-1');
 
   if (!firstName || !lastName) { showError('error-1', 'Please enter your first and last name.'); return; }
   if (!month || !day || !year) { showError('error-1', 'Please enter your full date of birth.'); return; }
 
-  const dob = `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+  const dob = `${year}-${month}-${day}`;
   hideError('error-1');
   profileData = { ...profileData, first_name: firstName, last_name: lastName, date_of_birth: dob };
 
-  // Fire-and-forget — never block step advance on network
-  saveProfile({ first_name: firstName, last_name: lastName, date_of_birth: dob }).catch(e => console.warn('Step1 save:', e));
+  // Save to Supabase
+  await saveProfile({ first_name: firstName, last_name: lastName, date_of_birth: dob });
 
   document.getElementById('welcome-name').textContent = firstName + '!';
   goToStep(2);
@@ -1065,7 +1064,7 @@ async function submitStep2() {
   const phone = `+1${raw.slice(-10)}`;
   hideError('error-2');
   profileData = { ...profileData, phone };
-  saveProfile({ phone }).catch(e => console.warn('Step2 save:', e));
+  await saveProfile({ phone });
   goToStep(3);
 }
 
@@ -1080,9 +1079,14 @@ async function submitStep3() {
   const zelle = document.getElementById('zelle').value.trim();
 
   showLoading();
-  saveProfile({ venmo, cashapp, zelle }).catch(e => console.warn('Step3 save:', e));
-  hideLoading();
-  goToStep(4);
+  try {
+    await saveProfile({ venmo, cashapp, zelle });
+    hideLoading();
+    goToStep(4);
+  } catch(e) {
+    hideLoading();
+    showError('error-3', 'Payment details could not be saved. Try again or set them up later.');
+  }
 }
 
 function skipStep3() {
@@ -1095,41 +1099,45 @@ async function submitStep4() {
   if (!agreed) { showError('error-4', 'Please agree to the Terms of Service and Privacy Policy to continue.'); return; }
 
   showLoading();
-
-  // raven_id generation is best-effort — never block completion
-  try { await ensureGeneratedRavenId(); } catch(e) { console.warn('raven_id gen (non-blocking):', e); }
-
-  const completionData = {
-    onboarding_complete: true,
-    terms_accepted: true,
-    privacy_accepted: true,
-    terms_accepted_at: new Date().toISOString()
-  };
-
-  // saveProfile writes localStorage FIRST — so even if Supabase fails, local marks complete
-  await saveProfile(completionData);
-
-  hideLoading();
-  goToStep('success');
+  try {
+    await ensureGeneratedRavenId();
+    await saveProfile({
+      onboarding_complete: true,
+      terms_accepted: true,
+      privacy_accepted: true,
+      terms_accepted_at: new Date().toISOString()
+    });
+    // Explicitly mark onboarding complete so dashboard never re-routes here
+    try {
+      const existing = JSON.parse(localStorage.getItem('raven_profile') || '{}');
+      existing.onboarding_complete = true;
+      existing.user_id = currentUser.id;
+      localStorage.setItem('raven_profile', JSON.stringify(existing));
+      sessionStorage.setItem('raven_onboarding_just_done', '1');
+    } catch(e) {}
+    hideLoading();
+    goToStep('success');
+    // Auto-redirect after a short celebration moment
+    setTimeout(() => { goToDashboard(); }, 2800);
+  } catch(e) {
+    hideLoading();
+    showError('error-4', 'Could not finish setup. Please try again.');
+  }
 }
 
 // ── HELPERS ──
 async function saveProfile(data) {
-  // Always write locally first — this is the source of truth for onboarding state
   try {
-    const existing = JSON.parse(localStorage.getItem('raven_profile') || '{}');
-    const uid = currentUser?.id || existing.user_id || '';
-    localStorage.setItem('raven_profile', JSON.stringify({ ...existing, ...data, ...(uid ? { user_id: uid } : {}) }));
-  } catch(le) { console.warn('Local profile save failed:', le); }
-
-  // Then try Supabase — swallow all errors, never block the user
-  try {
-    if (!currentUser?.id) throw new Error('No currentUser');
     const ravenId = await ensureGeneratedRavenId();
-    const payload = { id: currentUser.id, email: currentUser.email || '', updated_at: new Date().toISOString(), ...(ravenId ? { raven_id: ravenId, username: ravenId } : {}), ...data };
+    const payload = { id: currentUser.id, email: currentUser.email, updated_at: new Date().toISOString(), ...(ravenId ? { raven_id: ravenId, username: ravenId } : {}), ...data };
     const { error } = await db.from('profiles').upsert(payload, { onConflict: 'id' });
     if (error) console.error('Supabase save error:', error);
-  } catch(e) { console.warn('saveProfile DB write failed (non-blocking):', e); }
+  } catch(e) {
+    console.error('saveProfile failed:', e);
+  }
+  // Always save locally as backup
+  const existing = JSON.parse(localStorage.getItem('raven_profile') || '{}');
+  localStorage.setItem('raven_profile', JSON.stringify({ ...existing, ...data, user_id: currentUser.id }));
 }
 
 function goToStep(step) {
