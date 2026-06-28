@@ -263,10 +263,14 @@ workflows:
           IPA_PATH=$(find build/ios/ipa -name "*.ipa" | head -1)
           echo "Uploading: $IPA_PATH"
 
-          # Write the API key .p8 from env var (base64-encoded)
+          # Decode the base64-encoded .p8 key and write it to the expected location
+          # macOS base64 uses -D (capital D) for decode; GNU uses -d
           mkdir -p ~/.appstoreconnect/private_keys
-          echo "$APP_STORE_CONNECT_PRIVATE_KEY" | base64 --decode \
-            > ~/.appstoreconnect/private_keys/AuthKey_${APP_STORE_CONNECT_KEY_IDENTIFIER}.p8
+          KEY_PATH=~/.appstoreconnect/private_keys/AuthKey_${APP_STORE_CONNECT_KEY_IDENTIFIER}.p8
+          printf '%s' "$APP_STORE_CONNECT_PRIVATE_KEY" | base64 -D > "$KEY_PATH" 2>/dev/null ||             printf '%s' "$APP_STORE_CONNECT_PRIVATE_KEY" | base64 -d > "$KEY_PATH"
+
+          echo "Key file size: $(wc -c < $KEY_PATH) bytes"
+          echo "Key first line: $(head -1 $KEY_PATH)"
 
           xcrun altool --upload-app \
             --type ios \
