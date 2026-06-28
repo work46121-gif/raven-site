@@ -16,7 +16,7 @@ workflows:
         XCODE_WORKSPACE: ios/App/App.xcworkspace
         XCODE_SCHEME: App
       node: 20.19.0
-      xcode: latest
+      xcode: 15.4
 
     scripts:
       - name: Install Node & npm dependencies
@@ -255,6 +255,25 @@ workflows:
               find /tmp/xcodebuild_logs -type f -maxdepth 1 -print -exec tail -n 220 {} \; 2>/dev/null || true
               exit 1
             }
+        working_directory: .
+
+      - name: Upload to TestFlight via xcrun altool
+        script: |
+          set -e
+          IPA_PATH=$(find build/ios/ipa -name "*.ipa" | head -1)
+          echo "Uploading: $IPA_PATH"
+
+          # Write the API key .p8 from env var (base64-encoded)
+          mkdir -p ~/.appstoreconnect/private_keys
+          echo "$APP_STORE_CONNECT_PRIVATE_KEY" | base64 --decode \
+            > ~/.appstoreconnect/private_keys/AuthKey_${APP_STORE_CONNECT_KEY_IDENTIFIER}.p8
+
+          xcrun altool --upload-app \
+            --type ios \
+            --file "$IPA_PATH" \
+            --apiKey "$APP_STORE_CONNECT_KEY_IDENTIFIER" \
+            --apiIssuer "$APP_STORE_CONNECT_ISSUER_ID" \
+            --verbose
         working_directory: .
 
     artifacts:
