@@ -1,1262 +1,286 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1, user-scalable=no">
-<title>RAVEN — Welcome</title>
-<link rel="icon" type="image/x-icon" href="favicon.ico">
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Epilogue:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<style>
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-:root {
-  --black: #06060A;
-  --dark: #0C0C12;
-  --dark2: #13131A;
-  --dark3: #1A1A24;
-  --border: rgba(255,255,255,0.07);
-  --border2: rgba(255,255,255,0.12);
-  --white: #F0EEF8;
-  --muted: #6E6B80;
-  --muted2: #9896A8;
-  --purple: #7C3AED;
-  --purple2: #A855F7;
-  --purple3: #C084FC;
-  --green: #30D158;
-  --green-glow: rgba(48,209,88,0.2);
-  --red: #FF4444;
-}
-html, body { min-height: 100vh; width: 100%; font-family: 'Epilogue', sans-serif; background: var(--black); color: var(--white); overflow-x: hidden; -webkit-text-size-adjust: 100%; touch-action: manipulation; }
-html.app-mode, html.app-mode body { min-height: 100%; overflow-x: hidden; overflow-y: auto; }
-
-/* Background */
-body::before {
-  content: '';
-  position: fixed;
-  top: -200px; left: 50%; transform: translateX(-50%);
-  width: 900px; height: 700px;
-  background: radial-gradient(ellipse, rgba(124,58,237,0.12) 0%, transparent 65%);
-  pointer-events: none;
-  z-index: 0;
-}
-body::after {
-  content: '';
-  position: fixed;
-  bottom: -100px; right: -200px;
-  width: 600px; height: 500px;
-  background: radial-gradient(ellipse, rgba(48,209,88,0.07) 0%, transparent 65%);
-  pointer-events: none;
-  z-index: 0;
-}
-.grid-bg {
-  position: fixed; inset: 0; z-index: 0;
-  background-image: linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
-                    linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
-  background-size: 60px 60px;
-  mask-image: radial-gradient(ellipse 80% 80% at 50% 20%, black 20%, transparent 100%);
-}
-
-/* Layout */
-.container {
-  position: relative;
-  z-index: 1;
-  min-height: 100vh;
-  min-height: 100dvh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: calc(env(safe-area-inset-top,0px) + 28px) 20px calc(env(safe-area-inset-bottom,0px) + 28px);
-}
-
-.cancel-onboarding-btn {
-  position: fixed;
-  top: calc(env(safe-area-inset-top,0px) + 16px);
-  right: 16px;
-  z-index: 20;
-  border: 1px solid var(--border2);
-  background: rgba(19,19,26,0.82);
-  color: var(--muted2);
-  border-radius: 999px;
-  padding: 10px 16px;
-  font: 700 12px/1 'Epilogue', sans-serif;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  cursor: pointer;
-  box-shadow: 0 12px 28px rgba(0,0,0,0.24);
-  backdrop-filter: blur(12px);
-  transition: color 0.18s ease, border-color 0.18s ease, transform 0.18s ease, background 0.18s ease;
-}
-.cancel-onboarding-btn:hover {
-  color: var(--white);
-  border-color: rgba(255,255,255,0.22);
-  background: rgba(26,26,36,0.92);
-  transform: translateY(-1px);
-}
-.cancel-onboarding-btn:disabled {
-  cursor: wait;
-  opacity: 0.7;
-  transform: none;
-}
-
-/* Logo */
-.logo {
-  text-align: center;
-  margin-bottom: 40px;
-  animation: fadeUp 0.6s ease both;
-}
-.logo-icon { font-size: 36px; display: block; margin-bottom: 8px; filter: drop-shadow(0 0 20px rgba(124,58,237,0.6)); }
-.logo-name {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 38px;
-  letter-spacing: 0.18em;
-  background: linear-gradient(135deg, var(--white) 30%, var(--purple3));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-.logo-sub { font-size: 12px; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; margin-top: 3px; }
-
-/* Card */
-.card {
-  width: 100%;
-  max-width: 480px;
-  background: var(--dark);
-  border: 1px solid var(--border2);
-  border-radius: 24px;
-  padding: 40px;
-  box-shadow: 0 40px 100px rgba(0,0,0,0.5), 0 0 0 1px rgba(124,58,237,0.08);
-  animation: fadeUp 0.6s 0.1s ease both;
-  opacity: 0;
-  animation-fill-mode: forwards;
-}
-
-/* Progress */
-.progress-wrap {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 32px;
-}
-.progress-step {
-  flex: 1;
-  height: 3px;
-  background: var(--dark3);
-  border-radius: 2px;
-  overflow: hidden;
-  transition: background 0.3s;
-}
-.progress-step.done { background: var(--green); }
-.progress-step.active { background: linear-gradient(90deg, var(--purple), var(--green)); }
-.progress-label {
-  font-size: 11px;
-  color: var(--muted);
-  letter-spacing: 0.08em;
-  white-space: nowrap;
-}
-
-/* Step header */
-.step-header { margin-bottom: 28px; }
-.step-tag {
-  font-size: 10px;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--purple3);
-  display: block;
-  margin-bottom: 8px;
-}
-.step-title {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 32px;
-  letter-spacing: 0.05em;
-  line-height: 1;
-  margin-bottom: 6px;
-}
-.step-title span { color: var(--green); }
-.step-sub { font-size: 13px; color: var(--muted); line-height: 1.6; }
-
-/* Form */
-.form { display: flex; flex-direction: column; gap: 16px; }
-.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.field { display: flex; flex-direction: column; gap: 6px; }
-.label {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--muted2);
-}
-.input {
-  padding: 13px 16px;
-  background: var(--dark2);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  color: var(--white);
-  font-family: 'Epilogue', sans-serif;
-  font-size: 16px;
-  outline: none;
-  transition: border-color 0.2s, box-shadow 0.2s;
-  width: 100%;
-}
-.input:focus {
-  border-color: var(--purple);
-  box-shadow: 0 0 0 3px rgba(124,58,237,0.12);
-}
-.input::placeholder { color: var(--muted); }
-.input-hint { font-size: 11px; color: var(--muted); margin-top: 2px; }
-
-/* Phone input with flag */
-.phone-wrap {
-  display: flex;
-  align-items: stretch;
-  gap: 10px;
-  padding: 10px;
-  background: linear-gradient(135deg, rgba(255,255,255,0.03), rgba(124,58,237,0.05));
-  border: 1px solid rgba(255,255,255,0.09);
-  border-radius: 16px;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
-}
-.phone-wrap:focus-within {
-  border-color: rgba(124,58,237,0.45);
-  box-shadow: 0 0 0 3px rgba(124,58,237,0.12), inset 0 1px 0 rgba(255,255,255,0.05);
-}
-.phone-prefix {
-  min-width: 104px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 0 14px;
-  border-radius: 12px;
-  background: rgba(10,10,16,0.9);
-  border: 1px solid rgba(255,255,255,0.08);
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--white);
-  letter-spacing: 0.02em;
-  flex-shrink: 0;
-}
-.phone-prefix small {
-  color: var(--muted2);
-  font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-.input-phone {
-  flex: 1;
-  min-width: 0;
-  border: none;
-  background: transparent;
-  padding: 12px 6px 12px 2px;
-  font-size: 19px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  color: var(--white);
-  box-shadow: none;
-}
-select.input { font-size: 16px; }
-.input-phone:focus { border: none; box-shadow: none; }
-.phone-meta {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-top: 10px;
-}
-.phone-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  padding: 6px 10px;
-  border-radius: 999px;
-  background: rgba(48,209,88,0.09);
-  border: 1px solid rgba(48,209,88,0.18);
-  color: var(--green);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-.phone-chip::before {
-  content: '';
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--green);
-  box-shadow: 0 0 10px rgba(48,209,88,0.55);
-}
-.phone-preview {
-  font-size: 12px;
-  color: var(--muted2);
-  font-weight: 500;
-}
-
-/* DOB */
-.dob-row { display: grid; grid-template-columns: 2fr 2fr 3fr; gap: 8px; }
-.select {
-  padding: 13px 12px;
-  background: var(--dark2);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  color: var(--white);
-  font-family: 'Epilogue', sans-serif;
-  font-size: 14px;
-  outline: none;
-  transition: border-color 0.2s;
-  cursor: pointer;
-  appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%236E6B80'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 12px center;
-}
-.select:focus { border-color: var(--purple); }
-
-/* Agreement */
-.agreement {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  padding: 14px;
-  background: var(--dark2);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  cursor: pointer;
-}
-.agreement input[type="checkbox"] { margin-top: 2px; accent-color: var(--green); width: 15px; height: 15px; flex-shrink: 0; cursor: pointer; }
-.agreement-text { font-size: 12px; color: var(--muted); line-height: 1.6; }
-.agreement-text a { color: var(--purple3); text-decoration: none; }
-.agreement-text a:hover { text-decoration: underline; }
-.sms-consent-card { margin-top: 14px; border-color: rgba(48,209,88,0.18); background: linear-gradient(180deg, rgba(48,209,88,0.08), rgba(19,19,26,0.96)); }
-.sms-consent-title { display: block; margin-bottom: 6px; font-size: 10px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--green); }
-.sms-consent-copy { display: block; color: var(--white); line-height: 1.7; }
-
-/* Buttons */
-.btn-next {
-  width: 100%;
-  padding: 15px;
-  background: var(--green);
-  color: #000;
-  border: none;
-  border-radius: 10px;
-  font-family: 'Epilogue', sans-serif;
-  font-size: 15px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s;
-  box-shadow: 0 4px 20px var(--green-glow);
-  margin-top: 4px;
-  letter-spacing: 0.02em;
-}
-.btn-next:hover { background: #3ddd68; transform: translateY(-1px); box-shadow: 0 8px 32px var(--green-glow); }
-.btn-next:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
-.btn-skip {
-  width: 100%;
-  padding: 11px;
-  background: none;
-  border: none;
-  color: var(--muted);
-  font-family: 'Epilogue', sans-serif;
-  font-size: 13px;
-  cursor: pointer;
-  transition: color 0.2s;
-  margin-top: 2px;
-}
-.btn-skip:hover { color: var(--muted2); }
-
-/* Error */
-.error-msg {
-  background: rgba(255,68,68,0.1);
-  border: 1px solid rgba(255,68,68,0.25);
-  border-radius: 8px;
-  padding: 10px 14px;
-  font-size: 13px;
-  color: #FF8888;
-  display: none;
-}
-
-/* Step 2 — phone verification */
-.otp-inputs {
-  display: flex;
-  gap: 10px;
-  justify-content: center;
-  margin: 8px 0;
-}
-.otp-input {
-  width: 52px; height: 58px;
-  text-align: center;
-  font-size: 22px;
-  font-weight: 700;
-  background: var(--dark2);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  color: var(--white);
-  outline: none;
-  transition: border-color 0.2s, box-shadow 0.2s;
-  font-family: 'Epilogue', sans-serif;
-}
-.otp-input:focus {
-  border-color: var(--green);
-  box-shadow: 0 0 0 3px rgba(48,209,88,0.12);
-}
-
-/* Success step */
-.success-wrap { text-align: center; padding: 10px 0; }
-.success-icon { font-size: 52px; display: block; margin-bottom: 20px; animation: popIn 0.5s cubic-bezier(0.34,1.56,0.64,1); }
-@keyframes popIn { from{transform:scale(0);opacity:0} to{transform:scale(1);opacity:1} }
-.success-title { font-family: 'Bebas Neue', sans-serif; font-size: 36px; letter-spacing: 0.05em; margin-bottom: 10px; }
-.success-sub { color: var(--muted); font-size: 14px; line-height: 1.7; margin-bottom: 28px; }
-
-/* Animations */
-@keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
-.step-anim { animation: fadeUp 0.3s ease both; }
-
-/* Loading overlay */
-.loading-overlay {
-  position: fixed; inset: 0;
-  background: rgba(6,6,10,0.85);
-  backdrop-filter: blur(8px);
-  display: none;
-  align-items: center;
-  justify-content: center;
-  z-index: 999;
-  flex-direction: column;
-  gap: 16px;
-}
-.loading-overlay.show { display: flex; }
-.spinner { width: 36px; height: 36px; border: 3px solid var(--border2); border-top-color: var(--purple); border-radius: 50%; animation: spin 0.8s linear infinite; }
-@keyframes spin { to{transform:rotate(360deg)} }
-.loading-text { font-size: 14px; color: var(--muted); }
-@media (max-width: 560px) {
-  .cancel-onboarding-btn {
-    top: calc(env(safe-area-inset-top,0px) + 10px);
-    right: 12px;
-    padding: 9px 12px;
-    font-size: 11px;
-    letter-spacing: 0.06em;
-  }
-  .card { padding: 28px 20px; border-radius: 20px; }
-  .step-title { font-size: 28px; }
-  .phone-wrap { flex-direction: column; gap: 8px; padding: 10px; }
-  .phone-prefix { min-width: 0; justify-content: flex-start; padding: 12px 14px; }
-  .input-phone { padding: 10px 4px 6px; font-size: 18px; }
-  .phone-meta { flex-direction: column; align-items: flex-start; }
-}
-
-html.app-mode .container {
-  position: relative;
-  min-height: 0;
-  min-height: 100dvh;
-  justify-content: flex-start;
-  padding: calc(env(safe-area-inset-top,0px) + 36px) 16px calc(env(safe-area-inset-bottom,0px) + 28px);
-  overflow: visible;
-}
-html.app-mode .logo {
-  margin-bottom: 14px;
-}
-html.app-mode .logo-icon {
-  display: none;
-}
-html.app-mode .logo-name {
-  font-size: 30px;
-}
-html.app-mode .logo-sub {
-  font-size: 10px;
-}
-html.app-mode .card {
-  max-width: 430px;
-  max-height: none;
-  overflow: visible;
-  padding: 22px 18px;
-  border-radius: 20px;
-}
-html.app-mode .progress-wrap {
-  margin-bottom: 18px;
-}
-html.app-mode .step-header {
-  margin-bottom: 16px;
-}
-html.app-mode .step-title {
-  font-size: 27px;
-}
-html.app-mode .step-sub {
-  font-size: 12px;
-  line-height: 1.45;
-}
-html.app-mode .form {
-  gap: 10px;
-}
-html.app-mode .input,
-html.app-mode .select {
-  padding: 11px 13px;
-}
-html.app-mode .btn-next {
-  padding: 13px;
-}
-html.app-mode .agreement {
-  padding: 11px;
-}
-html.app-mode .agreement-text {
-  font-size: 11px;
-  line-height: 1.45;
-}
-html.app-mode .cancel-onboarding-btn {
-  display: none;
-}
-.cancel-onboarding-inline {
-  display: none;
-  width: 100%;
-  margin: 0 0 14px;
-  padding: 11px 14px;
-  border-radius: 12px;
-  border: 1px solid rgba(255,255,255,0.12);
-  background: rgba(255,255,255,0.04);
-  color: var(--muted2);
-  font-family: 'Epilogue', sans-serif;
-  font-size: 13px;
-  font-weight: 800;
-  cursor: pointer;
-}
-html.app-mode .cancel-onboarding-inline { display: block; }
-</style>
-</head>
-<body>
-
-<script>
-try {
-  const params = new URLSearchParams(window.location.search);
-  const isNativeCapacitor = !!(window.Capacitor?.isNativePlatform && window.Capacitor.isNativePlatform());
-  if (params.get('app') === '1' || isNativeCapacitor) {
-    document.documentElement.classList.add('app-mode');
-  }
-} catch(e) {}
-</script>
-<div class="grid-bg"></div>
-<button type="button" class="cancel-onboarding-btn" onclick="cancelOnboarding()">Cancel setup</button>
-
-<div class="loading-overlay" id="loading-overlay">
-  <div class="spinner"></div>
-  <div class="loading-text">Setting up your account...</div>
-</div>
-
-<div class="container">
-  <div class="logo">
-    <span class="logo-icon">🪶</span>
-    <div class="logo-name">RAVEN</div>
-    <div class="logo-sub">Let's set up your account</div>
-  </div>
-
-  <div class="card" id="main-card">
-    <button type="button" class="cancel-onboarding-inline" onclick="cancelOnboarding()">Cancel setup</button>
-
-    <!-- PROGRESS BAR -->
-    <div class="progress-wrap">
-      <div class="progress-step active" id="prog-1"></div>
-      <div class="progress-step" id="prog-2"></div>
-      <div class="progress-step" id="prog-3"></div>
-      <div class="progress-step" id="prog-4"></div>
-      <span class="progress-label" id="prog-label">Step 1 of 4</span>
-    </div>
-
-    <!-- STEP 1: Personal Info -->
-    <div id="step-1" class="step-anim">
-      <div class="step-header">
-        <span class="step-tag">Your profile</span>
-        <div class="step-title">Tell us about <span>yourself</span></div>
-        <div class="step-sub">This helps RAVEN personalize your experience and identify you in group bills.</div>
-      </div>
-      <div class="form">
-        <div class="form-row">
-          <div class="field">
-            <label class="label">First Name</label>
-            <input id="first-name" type="text" class="input" placeholder="John" autocomplete="given-name">
-          </div>
-          <div class="field">
-            <label class="label">Last Name</label>
-            <input id="last-name" type="text" class="input" placeholder="Smith" autocomplete="family-name">
-          </div>
-        </div>
-        <div class="field">
-          <label class="label">Date of Birth</label>
-          <div class="dob-row">
-            <select id="dob-month" class="select">
-              <option value="">Month</option>
-              <option value="01">January</option>
-              <option value="02">February</option>
-              <option value="03">March</option>
-              <option value="04">April</option>
-              <option value="05">May</option>
-              <option value="06">June</option>
-              <option value="07">July</option>
-              <option value="08">August</option>
-              <option value="09">September</option>
-              <option value="10">October</option>
-              <option value="11">November</option>
-              <option value="12">December</option>
-            </select>
-            <select id="dob-day" class="select">
-              <option value="">Day</option>
-              <option value="01">1</option>
-              <option value="02">2</option>
-              <option value="03">3</option>
-              <option value="04">4</option>
-              <option value="05">5</option>
-              <option value="06">6</option>
-              <option value="07">7</option>
-              <option value="08">8</option>
-              <option value="09">9</option>
-              <option value="10">10</option>
-              <option value="11">11</option>
-              <option value="12">12</option>
-              <option value="13">13</option>
-              <option value="14">14</option>
-              <option value="15">15</option>
-              <option value="16">16</option>
-              <option value="17">17</option>
-              <option value="18">18</option>
-              <option value="19">19</option>
-              <option value="20">20</option>
-              <option value="21">21</option>
-              <option value="22">22</option>
-              <option value="23">23</option>
-              <option value="24">24</option>
-              <option value="25">25</option>
-              <option value="26">26</option>
-              <option value="27">27</option>
-              <option value="28">28</option>
-              <option value="29">29</option>
-              <option value="30">30</option>
-              <option value="31">31</option>
-            </select>
-            <select id="dob-year" class="select">
-              <option value="">Year</option>
-              <option value="2006">2006</option>
-              <option value="2005">2005</option>
-              <option value="2004">2004</option>
-              <option value="2003">2003</option>
-              <option value="2002">2002</option>
-              <option value="2001">2001</option>
-              <option value="2000">2000</option>
-              <option value="1999">1999</option>
-              <option value="1998">1998</option>
-              <option value="1997">1997</option>
-              <option value="1996">1996</option>
-              <option value="1995">1995</option>
-              <option value="1994">1994</option>
-              <option value="1993">1993</option>
-              <option value="1992">1992</option>
-              <option value="1991">1991</option>
-              <option value="1990">1990</option>
-              <option value="1989">1989</option>
-              <option value="1988">1988</option>
-              <option value="1987">1987</option>
-              <option value="1986">1986</option>
-              <option value="1985">1985</option>
-              <option value="1984">1984</option>
-              <option value="1983">1983</option>
-              <option value="1982">1982</option>
-              <option value="1981">1981</option>
-              <option value="1980">1980</option>
-              <option value="1979">1979</option>
-              <option value="1978">1978</option>
-              <option value="1977">1977</option>
-              <option value="1976">1976</option>
-              <option value="1975">1975</option>
-              <option value="1974">1974</option>
-              <option value="1973">1973</option>
-              <option value="1972">1972</option>
-              <option value="1971">1971</option>
-              <option value="1970">1970</option>
-              <option value="1969">1969</option>
-              <option value="1968">1968</option>
-              <option value="1967">1967</option>
-              <option value="1966">1966</option>
-              <option value="1965">1965</option>
-              <option value="1964">1964</option>
-              <option value="1963">1963</option>
-              <option value="1962">1962</option>
-              <option value="1961">1961</option>
-              <option value="1960">1960</option>
-              <option value="1959">1959</option>
-              <option value="1958">1958</option>
-              <option value="1957">1957</option>
-              <option value="1956">1956</option>
-              <option value="1955">1955</option>
-              <option value="1954">1954</option>
-              <option value="1953">1953</option>
-              <option value="1952">1952</option>
-              <option value="1951">1951</option>
-              <option value="1950">1950</option>
-              <option value="1949">1949</option>
-              <option value="1948">1948</option>
-              <option value="1947">1947</option>
-              <option value="1946">1946</option>
-              <option value="1945">1945</option>
-              <option value="1944">1944</option>
-              <option value="1943">1943</option>
-              <option value="1942">1942</option>
-              <option value="1941">1941</option>
-              <option value="1940">1940</option>
-              <option value="1939">1939</option>
-              <option value="1938">1938</option>
-              <option value="1937">1937</option>
-              <option value="1936">1936</option>
-              <option value="1935">1935</option>
-              <option value="1934">1934</option>
-              <option value="1933">1933</option>
-              <option value="1932">1932</option>
-              <option value="1931">1931</option>
-              <option value="1930">1930</option>
-              <option value="1929">1929</option>
-              <option value="1928">1928</option>
-              <option value="1927">1927</option>
-              <option value="1926">1926</option>
-            </select>
-          </div>
-          
-        </div>
-        <div id="error-1" class="error-msg"></div>
-        <button class="btn-next" onclick="submitStep1()">Continue</button>
-      </div>
-    </div>
-
-    <!-- STEP 2: Phone Number -->
-    <div id="step-2" class="step-anim" style="display:none">
-      <div class="step-header">
-        <span class="step-tag">Contact info</span>
-        <div class="step-title">Your <span>phone</span> number</div>
-        <div class="step-sub">RAVEN uses your number to tag you in group bills when others text SPLIT.</div>
-      </div>
-      <div class="form">
-        <div class="field">
-          <label class="label">Mobile Number</label>
-          <div class="phone-wrap">
-            <span class="phone-prefix"><span>🇺🇸 +1</span><small>US</small></span>
-            <input id="phone-number" type="tel" class="input input-phone" placeholder="(555) 867-5309" maxlength="14" oninput="formatPhone(this)" autocomplete="tel">
-          </div>
-          <div class="phone-meta">
-            <div class="phone-chip">Used for group bill matching</div>
-            <div id="phone-preview" class="phone-preview">No number added yet</div>
-          </div>
-          <div class="input-hint">US numbers only. This helps RAVEN tag you cleanly when friends text in receipts or shared splits.</div>
-          <div class="agreement sms-consent-card">
-            <input type="checkbox" id="sms-consent">
-            <div class="agreement-text">
-              <span class="sms-consent-title">SMS Consent</span>
-              <span class="sms-consent-copy">I agree to receive transactional SMS from RAVEN about bills, payment reminders, and account activity. Msg &amp; data rates may apply. Message frequency varies. Reply STOP to opt out, HELP for help. Consent is not required to purchase.</span>
-            </div>
-          </div>
-        </div>
-        <div id="error-2" class="error-msg"></div>
-        <button class="btn-next" onclick="submitStep2()">Continue</button>
-        <button class="btn-skip" onclick="skipStep2()">Skip for now</button>
-      </div>
-    </div>
-
-    <!-- STEP 3: Payment preferences -->
-    <div id="step-3" class="step-anim" style="display:none">
-      <div class="step-header">
-        <span class="step-tag">Get paid</span>
-        <div class="step-title">How do you <span>get paid?</span></div>
-        <div class="step-sub">Add your payment handles so people can pay you directly from the bill. You can always add these later.</div>
-      </div>
-      <div class="form">
-        <div class="field">
-          <label class="label">Venmo Username</label>
-          <input id="venmo" type="text" class="input" placeholder="@your-venmo">
-        </div>
-        <div class="field">
-          <label class="label">Cash App $Cashtag</label>
-          <input id="cashapp" type="text" class="input" placeholder="$YourCashtag">
-        </div>
-        <div class="field">
-          <label class="label">Zelle (email or phone)</label>
-          <input id="zelle" type="text" class="input" placeholder="email or phone number">
-        </div>
-        <div id="error-3" class="error-msg"></div>
-        <button class="btn-next" onclick="submitStep3()">Continue</button>
-        <button class="btn-skip" onclick="skipStep3()">Set up payment later</button>
-      </div>
-    </div>
-
-    <!-- STEP 4: Privacy and terms -->
-    <div id="step-4" class="step-anim" style="display:none">
-      <div class="step-header">
-        <span class="step-tag">Privacy &amp; terms</span>
-        <div class="step-title">Confirm your <span>privacy</span></div>
-        <div class="step-sub">RAVEN uses your profile, bill activity, and payment preferences only to run shared bills, trips, reminders, and account matching.</div>
-      </div>
-      <div class="form">
-        <div class="agreement">
-          <input type="checkbox" id="terms-agree">
-          <div class="agreement-text">
-            By checking this box, I agree to RAVEN's <a href="terms.html" target="_blank">Terms of Service</a> and <a href="privacy.html" target="_blank">Privacy Policy</a>.
-          </div>
-        </div>
-        <div id="error-4" class="error-msg"></div>
-        <button class="btn-next" onclick="submitStep4()">🪶 Enter RAVEN</button>
-      </div>
-    </div>
-
-    <!-- SUCCESS -->
-    <div id="step-success" class="step-anim" style="display:none">
-      <div class="success-wrap">
-        <span class="success-icon">🪶</span>
-        <div class="success-title">You're in, <span id="welcome-name">friend</span>!</div>
-        <div class="success-sub">Your RAVEN account is ready. Start splitting bills instantly — no one needs to download anything.</div>
-        <button class="btn-next" onclick="goToDashboard()" style="max-width:280px;margin:0 auto;display:block">Open Dashboard</button>
-      </div>
-    </div>
-
-  </div>
-</div>
-
-<script>
-// ── SUPABASE ──
-const SUPABASE_URL = 'https://ffjpzkpdumdcwnakpaje.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZmanB6a3BkdW1kY3duYWtwYWplIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5ODc4OTcsImV4cCI6MjA4ODU2Mzg5N30.JtDLVu4K1TJ8emcN_mvSHBu6e0y8-jPQv-ypoc9p0RU';
-const { createClient } = supabase;
-const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-let currentUser = null;
-let profileData = {};
-
-function dashboardUrl() {
-  try {
-    const params = new URLSearchParams(window.location.search);
-    const isNativeCapacitor = !!(window.Capacitor?.isNativePlatform && window.Capacitor.isNativePlatform());
-    const isApp = params.get('app') === '1' || isNativeCapacitor;
-    return 'dashboard.html' + (isApp ? '?app=1' : '');
-  } catch(e) {
-    return 'dashboard.html';
-  }
-}
-
-function sanitizeRavenBase(base) {
-  return (String(base || '').trim().split(/\s+/)[0] || '').toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 16) || 'raven';
-}
-
-function shouldRefreshAutoRavenId(existingRavenId, firstName, email) {
-  const rid = String(existingRavenId || '').toLowerCase().trim();
-  const first = sanitizeRavenBase(firstName || '');
-  const emailBase = sanitizeRavenBase(String(email || '').split('@')[0] || '');
-  if (!rid) return true;
-  if (/^raven\d{3,}$/.test(rid) && first && first !== 'raven') return true;
-  if (/^ravensplit\d{3,}$/.test(rid)) return true;
-  if (emailBase && rid === emailBase && first && first !== emailBase) return true;
-  if (emailBase && new RegExp('^' + emailBase + '\\d{3,}$').test(rid) && first && first !== emailBase) return true;
-  return false;
-}
-
-async function generateUniqueRavenId(base, excludeUserId) {
-  const clean = sanitizeRavenBase(base);
-  for (let i = 0; i < 40; i++) {
-    const digits = String(Math.floor(Math.random() * 900) + 100);
-    const candidate = (clean + digits).slice(0, 20);
-    let query = db.from('profiles').select('id').eq('raven_id', candidate);
-    if (excludeUserId) query = query.neq('id', excludeUserId);
-    const { data: exists } = await query.maybeSingle();
-    if (!exists) return candidate;
-  }
-  return (clean + Date.now().toString().slice(-3)).slice(0, 20);
-}
-
-async function ensureGeneratedRavenId() {
-  if (!currentUser?.id) return '';
-  try {
-    const { data: profile } = await db.from('profiles').select('first_name,raven_id').eq('id', currentUser.id).maybeSingle();
-    if (profile?.raven_id && !shouldRefreshAutoRavenId(profile.raven_id, profile?.first_name || profileData.first_name, currentUser.email)) return profile.raven_id;
-    const base = profile?.first_name || profileData.first_name || currentUser.user_metadata?.first_name || 'raven';
-    const ravenId = await generateUniqueRavenId(base, currentUser.id);
-    await db.from('profiles').upsert({
-      id: currentUser.id,
-      email: currentUser.email,
-      raven_id: ravenId,
-      username: ravenId,
-      updated_at: new Date().toISOString()
-    }, { onConflict: 'id' });
-    const existing = JSON.parse(localStorage.getItem('raven_profile') || '{}');
-    localStorage.setItem('raven_profile', JSON.stringify({ ...existing, user_id: currentUser.id, raven_id: ravenId, username: ravenId }));
-    return ravenId;
-  } catch(e) {
-    console.warn('ensureGeneratedRavenId failed:', e);
-    return '';
-  }
-}
-
-function updatePhonePreview() {
-  const input = document.getElementById('phone-number');
-  const preview = document.getElementById('phone-preview');
-  if (!input || !preview) return;
-  const digits = input.value.replace(/\D/g, '');
-  preview.textContent = digits.length ? `RAVEN will save: +1 ${input.value}` : 'No number added yet';
-}
-
-function launchRavenSignupFlight() {
-  const canvas = document.createElement('canvas');
-  canvas.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:9999';
-  document.body.appendChild(canvas);
-  const ctx = canvas.getContext('2d');
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-
-  class Bird {
-    constructor(color, side, delay) {
-      this.color = color;
-      this.delay = delay;
-      this.t = -delay;
-      this.side = side;
-      this.x = side === 'left' ? -50 : canvas.width + 50;
-      this.y = 90 + Math.random() * Math.max(180, canvas.height - 180);
-      this.vx = side === 'left' ? 2.8 + Math.random() * 2.4 : -(2.8 + Math.random() * 2.4);
-      this.vy = (Math.random() - 0.5) * 1.1;
-      this.wingPhase = Math.random() * Math.PI * 2;
-      this.wingSpeed = 0.13 + Math.random() * 0.08;
-      this.size = 14 + Math.random() * 10;
-      this.alpha = 0;
-      this.alive = true;
-    }
-    update() {
-      this.t++;
-      if (this.t < 0) return;
-      if (this.alpha < 1) this.alpha = Math.min(1, this.alpha + 0.08);
-      this.x += this.vx;
-      this.y += this.vy;
-      this.vy += (Math.random() - 0.5) * 0.12;
-      this.vy *= 0.97;
-      this.wingPhase += this.wingSpeed;
-      if (this.x < -120 || this.x > canvas.width + 120 || this.y < -80 || this.y > canvas.height + 80) this.alive = false;
-    }
-    draw() {
-      if (this.t < 0 || !this.alive) return;
-      ctx.save();
-      ctx.globalAlpha = this.alpha;
-      ctx.translate(this.x, this.y);
-      if (this.vx < 0) ctx.scale(-1, 1);
-      const s = this.size;
-      const wing = Math.sin(this.wingPhase) * 0.6;
-      ctx.fillStyle = this.color;
-      ctx.beginPath(); ctx.ellipse(0, 0, s * 0.72, s * 0.28, 0, 0, Math.PI * 2); ctx.fill();
-      ctx.beginPath(); ctx.arc(s * 0.6, -s * 0.04, s * 0.2, 0, Math.PI * 2); ctx.fill();
-      ctx.beginPath();
-      ctx.moveTo(s * 0.12, -s * 0.08);
-      ctx.bezierCurveTo(-s * 0.2, -s * (0.52 + wing), -s * 0.72, -s * (0.62 + wing), -s * 0.95, -s * (0.12 + wing * 0.35));
-      ctx.bezierCurveTo(-s * 0.52, -s * 0.1, -s * 0.12, -s * 0.04, s * 0.12, -s * 0.08);
-      ctx.closePath();
-      ctx.fill();
-      ctx.lineWidth = 1.7;
-      ctx.strokeStyle = this.color;
-      ctx.beginPath();
-      ctx.moveTo(-s * 0.64, 0); ctx.lineTo(-s * 1.12, -s * 0.21);
-      ctx.moveTo(-s * 0.64, 0); ctx.lineTo(-s * 1.16, s * 0.03);
-      ctx.moveTo(-s * 0.64, 0); ctx.lineTo(-s * 1.06, s * 0.22);
-      ctx.stroke();
-      ctx.restore();
-    }
-  }
-
-  const birds = [];
-  const colors = ['#30D158', '#A855F7', '#F0EEF8'];
-  let id = 0;
-  for (let i = 0; i < 7; i++) { birds.push(new Bird(colors[id % colors.length], 'left', i * 9)); id++; }
-  for (let i = 0; i < 7; i++) { birds.push(new Bird(colors[id % colors.length], 'right', i * 9 + 4)); id++; }
-
-  function loop() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    for (let i = birds.length - 1; i >= 0; i--) {
-      birds[i].update();
-      birds[i].draw();
-      if (!birds[i].alive && birds[i].t >= 0) birds.splice(i, 1);
-    }
-    if (birds.length) requestAnimationFrame(loop);
-    else canvas.remove();
-  }
-  loop();
-}
-
-// ── INIT ──
-async function init() {
-  const hash = window.location.hash;
-  if (hash && hash.includes('access_token')) {
-    await db.auth.getSession();
-    if (window.location.hash) history.replaceState(null, '', window.location.pathname);
-  }
-
-  const { data: { session } } = await db.auth.getSession();
-  if (!session?.user) {
-    // No session — send to sign-in. Add signin=1 so dashboard shows login tab.
-    const base = dashboardUrl();
-    const sep = base.includes('?') ? '&' : '?';
-    window.location.href = base + sep + 'signin=1';
-    return;
-  }
-
-  currentUser = session.user;
-
-  // Check localStorage first (fast)
-  const localProfile = JSON.parse(localStorage.getItem('raven_profile') || '{}');
-  const localUserId = String(localProfile.user_id || localProfile.id || '');
-  const localEmail = String(localProfile.email || '').toLowerCase();
-  const sessionEmail = String(currentUser.email || '').toLowerCase();
-  const localMatchesSession = (localUserId && localUserId === currentUser.id) || (localEmail && sessionEmail && localEmail === sessionEmail);
-  if (localMatchesSession && localProfile.onboarding_complete) {
-    window.location.href = dashboardUrl();
-    return;
-  }
-  if (!localMatchesSession && (localProfile.user_id || localProfile.id || localProfile.email || localProfile.first_name || localProfile.raven_id || localProfile.username || localProfile.avatar_url)) {
-    localStorage.setItem('raven_profile', JSON.stringify({
-      user_id: currentUser.id,
-      email: currentUser.email || '',
-      onboarding_complete: false
-    }));
-  }
-
-  // Try Supabase
-  try {
-    const { data: profile, error } = await db.from('profiles').select('*').eq('id', currentUser.id).single();
-    if (!error && profile?.onboarding_complete) {
-      localStorage.setItem('raven_profile', JSON.stringify({ ...profile, user_id: currentUser.id }));
-      window.location.href = dashboardUrl();
-      return;
-    }
-    if (profile && !error) {
-      if (profile.first_name) document.getElementById('first-name').value = profile.first_name;
-      if (profile.last_name) document.getElementById('last-name').value = profile.last_name;
-      if (profile.phone) document.getElementById('phone-number').value = profile.phone;
-      if (profile.venmo) document.getElementById('venmo').value = profile.venmo;
-      if (profile.cashapp) document.getElementById('cashapp').value = profile.cashapp;
-      if (profile.zelle) document.getElementById('zelle').value = profile.zelle;
-    }
-  } catch(e) {
-    console.log('Profile check failed:', e);
-  }
-  updatePhonePreview();
-}
-
-// ── STEP 1: Personal Info ──
-async function submitStep1() {
-  const firstName = document.getElementById('first-name').value.trim();
-  const lastName = document.getElementById('last-name').value.trim();
-  const month = document.getElementById('dob-month').value;
-  const day = document.getElementById('dob-day').value;
-  const year = document.getElementById('dob-year').value;
-  const err = document.getElementById('error-1');
-
-  if (!firstName || !lastName) { showError('error-1', 'Please enter your first and last name.'); return; }
-  if (!month || !day || !year) { showError('error-1', 'Please enter your full date of birth.'); return; }
-
-  const dob = `${year}-${month}-${day}`;
-  hideError('error-1');
-  profileData = { ...profileData, first_name: firstName, last_name: lastName, date_of_birth: dob };
-
-  // Save to Supabase
-  await saveProfile({ first_name: firstName, last_name: lastName, date_of_birth: dob });
-
-  document.getElementById('welcome-name').textContent = firstName + '!';
-  goToStep(2);
-}
-
-// ── STEP 2: Phone ──
-async function submitStep2() {
-  const raw = document.getElementById('phone-number').value.replace(/\D/g, '');
-  if (raw.length < 10) { showError('error-2', 'Please enter a valid 10-digit US phone number.'); return; }
-  if (!document.getElementById('sms-consent').checked) { showError('error-2', 'Please check the SMS consent box to continue with text notifications.'); return; }
-
-  const phone = `+1${raw.slice(-10)}`;
-  hideError('error-2');
-  profileData = { ...profileData, phone };
-  await saveProfile({ phone });
-  goToStep(3);
-}
-
-function skipStep2() {
-  goToStep(3);
-}
-
-// ── STEP 3: Payments ──
-async function submitStep3() {
-  const venmo = document.getElementById('venmo').value.trim();
-  const cashapp = document.getElementById('cashapp').value.trim();
-  const zelle = document.getElementById('zelle').value.trim();
-
-  showLoading();
-  try {
-    await saveProfile({ venmo, cashapp, zelle });
-    hideLoading();
-    goToStep(4);
-  } catch(e) {
-    hideLoading();
-    showError('error-3', 'Payment details could not be saved. Try again or set them up later.');
-  }
-}
-
-function skipStep3() {
-  goToStep(4);
-}
-
-// â”€â”€ STEP 4: Privacy and terms â”€â”€
-async function submitStep4() {
-  const agreed = document.getElementById('terms-agree').checked;
-  if (!agreed) { showError('error-4', 'Please agree to the Terms of Service and Privacy Policy to continue.'); return; }
-
-  showLoading();
-  try {
-    await ensureGeneratedRavenId();
-    await saveProfile({
-      onboarding_complete: true,
-      terms_accepted: true,
-      privacy_accepted: true,
-      terms_accepted_at: new Date().toISOString()
-    });
-    // Explicitly mark onboarding complete so dashboard never re-routes here
-    try {
-      const existing = JSON.parse(localStorage.getItem('raven_profile') || '{}');
-      existing.onboarding_complete = true;
-      existing.user_id = currentUser.id;
-      localStorage.setItem('raven_profile', JSON.stringify(existing));
-      sessionStorage.setItem('raven_onboarding_just_done', '1');
-    } catch(e) {}
-    hideLoading();
-    goToStep('success');
-    // Auto-redirect after a short celebration moment
-    setTimeout(() => { goToDashboard(); }, 2800);
-  } catch(e) {
-    hideLoading();
-    showError('error-4', 'Could not finish setup. Please try again.');
-  }
-}
-
-// ── HELPERS ──
-async function saveProfile(data) {
-  try {
-    const ravenId = await ensureGeneratedRavenId();
-    const payload = { id: currentUser.id, email: currentUser.email, updated_at: new Date().toISOString(), ...(ravenId ? { raven_id: ravenId, username: ravenId } : {}), ...data };
-    const { error } = await db.from('profiles').upsert(payload, { onConflict: 'id' });
-    if (error) console.error('Supabase save error:', error);
-  } catch(e) {
-    console.error('saveProfile failed:', e);
-  }
-  // Always save locally as backup
-  const existing = JSON.parse(localStorage.getItem('raven_profile') || '{}');
-  localStorage.setItem('raven_profile', JSON.stringify({ ...existing, ...data, user_id: currentUser.id }));
-}
-
-function goToStep(step) {
-  document.querySelectorAll('[id^="step-"]').forEach(s => s.style.display = 'none');
-  const el = document.getElementById(`step-${step}`);
-  if (el) { el.style.display = 'block'; el.classList.remove('step-anim'); void el.offsetWidth; el.classList.add('step-anim'); }
-
-  // Update progress
-  const steps = [1,2,3,4];
-  steps.forEach(s => {
-    const bar = document.getElementById(`prog-${s}`);
-    if (!bar) return;
-    if (s < step) { bar.className = 'progress-step done'; }
-    else if (s === step) { bar.className = 'progress-step active'; }
-    else { bar.className = 'progress-step'; }
-  });
-
-  const labels = {1:'Step 1 of 4', 2:'Step 2 of 4', 3:'Step 3 of 4', 4:'Step 4 of 4', success:'All done!'};
-  document.getElementById('prog-label').textContent = labels[step] || '';
-  if (step === 'success') {
-    launchRavenSignupFlight();
-    document.querySelectorAll('.progress-step').forEach(b => b.className = 'progress-step done');
-  }
-}
-
-function goToDashboard() {
-  window.location.href = dashboardUrl();
-}
-
-function isAppOnboardingMode() {
-  try {
-    const params = new URLSearchParams(window.location.search);
-    const isNativeCapacitor = !!(window.Capacitor?.isNativePlatform && window.Capacitor.isNativePlatform());
-    return params.get('app') === '1' || isNativeCapacitor;
-  } catch(e) {
-    return false;
-  }
-}
-
-function clearOnboardingAuthCache(keepAppMode) {
-  try { localStorage.setItem('raven_signed_out', '1'); } catch(e) {}
-  const explicitKeys = [
-    'raven_profile',
-    'raven_app_dashboard_email',
-    'raven_google_auth_in_progress',
-    'raven_pending_auth_email',
-    'raven_pending_confirmation_email',
-    'raven_trip_name',
-    'raven_selected_trip_id'
-  ];
-  if (!keepAppMode) explicitKeys.push('raven_native_app');
-  explicitKeys.forEach(key => {
-    try { localStorage.removeItem(key); } catch(e) {}
-    try { sessionStorage.removeItem(key); } catch(e) {}
-  });
-  try {
-    Object.keys(localStorage).forEach(key => {
-      if (/^(sb-|supabase|raven_app_|raven_trip_|raven_bill_|ravenbot_chat_)/i.test(key)) {
-        if (keepAppMode && key === 'raven_native_app') return;
-        localStorage.removeItem(key);
-      }
-    });
-  } catch(e) {}
-  try {
-    Object.keys(sessionStorage).forEach(key => {
-      if (/^(sb-|supabase|raven_app_|raven_trip_|raven_bill_|ravenbot_chat_)/i.test(key)) {
-        sessionStorage.removeItem(key);
-      }
-    });
-  } catch(e) {}
-}
-
-async function cancelOnboarding() {
-  const isApp = isAppOnboardingMode();
-  const buttons = document.querySelectorAll('.cancel-onboarding-btn,.cancel-onboarding-inline');
-  buttons.forEach(btn => {
-    btn.disabled = true;
-    btn.textContent = 'Signing out...';
-  });
-  try {
-    const text = document.querySelector('.loading-text');
-    if (text) text.textContent = 'Signing out...';
-    showLoading();
-  } catch(e) {}
-  try {
-    await db.auth.signOut({ scope: 'global' });
-  } catch(e) {
-    try { await db.auth.signOut(); } catch(_) {}
-  }
-  clearOnboardingAuthCache(isApp);
-  if (isApp) {
-    try { localStorage.setItem('raven_native_app', '1'); } catch(e) {}
-    window.location.replace('app.html?app=1&signed_out=1');
-  } else {
-    window.location.replace('dashboard.html?signed_out=1');
-  }
-}
-
-function showError(id, msg) {
-  const el = document.getElementById(id);
-  el.textContent = msg;
-  el.style.display = 'block';
-}
-function hideError(id) {
-  document.getElementById(id).style.display = 'none';
-}
-function showLoading() { document.getElementById('loading-overlay').classList.add('show'); }
-function hideLoading() { document.getElementById('loading-overlay').classList.remove('show'); }
-
-function formatPhone(input) {
-  let v = input.value.replace(/\D/g, '').slice(0,10);
-  if (v.length >= 6) v = `(${v.slice(0,3)}) ${v.slice(3,6)}-${v.slice(6)}`;
-  else if (v.length >= 3) v = `(${v.slice(0,3)}) ${v.slice(3)}`;
-  input.value = v;
-  updatePhonePreview();
-}
-
-// ── START ──
-init();
-</script>
-</body>
-</html>
+workflows:
+  raven-ios:
+    name: RAVEN iOS App Store Build
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    environment:
+      groups:
+        - raven-ios
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.ravensplit.app
+      vars:
+        APP_ID: com.ravensplit.app
+        APP_NAME: RAVEN
+        XCODE_PROJECT: ios/App/App.xcodeproj
+        XCODE_WORKSPACE: ios/App/App.xcworkspace
+        XCODE_SCHEME: App
+      node: 20.19.0
+      xcode: latest
+
+    scripts:
+      - name: Install Node & npm dependencies
+        script: |
+          set -e
+          echo "PWD: $(pwd)"
+          ls -la
+          node -v
+          npm -v
+          cat package.json
+          npm install
+        working_directory: .
+
+      - name: Stage web assets for Capacitor
+        script: |
+          set -e
+          rm -rf dist
+          mkdir -p dist
+          rsync -a ./ dist/ \
+            --exclude dist \
+            --exclude ios \
+            --exclude node_modules \
+            --exclude .git \
+            --exclude codemagic \
+            --exclude "package*.json" \
+            --exclude "proxy*.js" \
+            --exclude "server*.js" \
+            --exclude README.md
+          cp app.html dist/index.html
+          ls -la dist
+        working_directory: .
+
+      - name: Initialize Capacitor iOS
+        script: |
+          set -e
+          echo "PWD: $(pwd)"
+          ls -la
+          node -v
+          npm -v
+          npx cap add ios || true
+          npx cap sync ios
+        working_directory: .
+
+      - name: Configure iOS deep links
+        script: |
+          set -e
+          INFO_PLIST="ios/App/App/Info.plist"
+          ENTITLEMENTS_PATH="ios/App/App/App.entitlements"
+          PBXPROJ_PATH="ios/App/App.xcodeproj/project.pbxproj"
+
+          /usr/libexec/PlistBuddy -c "Delete :CFBundleURLTypes" "$INFO_PLIST" 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes array" "$INFO_PLIST"
+          /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0 dict" "$INFO_PLIST"
+          /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0:CFBundleURLName string com.ravensplit.app" "$INFO_PLIST"
+          /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0:CFBundleURLSchemes array" "$INFO_PLIST"
+          /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0:CFBundleURLSchemes:0 string ravensplit" "$INFO_PLIST"
+          /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0:CFBundleURLSchemes:1 string com.ravensplit.app" "$INFO_PLIST"
+
+          if [ "${ENABLE_ASSOCIATED_DOMAINS:-0}" != "1" ]; then
+            echo "Skipping Associated Domains entitlement. Set ENABLE_ASSOCIATED_DOMAINS=1 after the Apple App ID and provisioning profile include Associated Domains."
+            rm -f "$ENTITLEMENTS_PATH"
+            ruby - "$PBXPROJ_PATH" <<'RUBY'
+          path = ARGV.fetch(0)
+          text = File.read(path)
+          text.gsub!(/\n\s*CODE_SIGN_ENTITLEMENTS = App\/App\.entitlements;/, '')
+          File.write(path, text)
+          RUBY
+            plutil -lint "$INFO_PLIST"
+            exit 0
+          fi
+
+          mkdir -p "$(dirname "$ENTITLEMENTS_PATH")"
+          cat > "$ENTITLEMENTS_PATH" <<'PLIST'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>com.apple.developer.associated-domains</key>
+            <array>
+              <string>applinks:ravensplit.com</string>
+              <string>applinks:www.ravensplit.com</string>
+            </array>
+          </dict>
+          </plist>
+          PLIST
+
+          ruby - "$PBXPROJ_PATH" <<'RUBY'
+          path = ARGV.fetch(0)
+          text = File.read(path)
+          text.gsub!(/CODE_SIGN_ENTITLEMENTS = [^;]+;/, 'CODE_SIGN_ENTITLEMENTS = App/App.entitlements;')
+          unless text.include?('CODE_SIGN_ENTITLEMENTS = App/App.entitlements;')
+            text.gsub!(/(PRODUCT_BUNDLE_IDENTIFIER = com\.ravensplit\.app;\n)/, "\\1\t\t\t\tCODE_SIGN_ENTITLEMENTS = App/App.entitlements;\n")
+          end
+          File.write(path, text)
+          RUBY
+
+          grep -n "CODE_SIGN_ENTITLEMENTS" "$PBXPROJ_PATH"
+          plutil -lint "$ENTITLEMENTS_PATH"
+        working_directory: .
+
+      - name: Generate iOS app icons
+        script: |
+          set -e
+
+          ICON_SOURCE="$CM_BUILD_DIR/icon-1024.png"
+          ICON_SET="$CM_BUILD_DIR/ios/App/App/Assets.xcassets/AppIcon.appiconset"
+
+          if [ ! -f "$ICON_SOURCE" ]; then
+            echo "Missing app icon source: $ICON_SOURCE"
+            exit 1
+          fi
+
+          mkdir -p "$ICON_SET"
+
+          create_icon() {
+            local size="$1"
+            local filename="$2"
+            sips -z "$size" "$size" "$ICON_SOURCE" --out "$ICON_SET/$filename"
+          }
+
+          create_icon 20 AppIcon-20.png
+          create_icon 40 AppIcon-20@2x.png
+          create_icon 60 AppIcon-20@3x.png
+          create_icon 29 AppIcon-29.png
+          create_icon 58 AppIcon-29@2x.png
+          create_icon 87 AppIcon-29@3x.png
+          create_icon 40 AppIcon-40.png
+          create_icon 80 AppIcon-40@2x.png
+          create_icon 120 AppIcon-40@3x.png
+          create_icon 120 AppIcon-60@2x.png
+          create_icon 180 AppIcon-60@3x.png
+          create_icon 76 AppIcon-76.png
+          create_icon 152 AppIcon-76@2x.png
+          create_icon 167 AppIcon-83.5@2x.png
+          create_icon 1024 AppIcon-1024.png
+
+          cat > "$ICON_SET/Contents.json" <<'JSON'
+          {
+            "images": [
+              { "size": "20x20", "idiom": "iphone", "filename": "AppIcon-20@2x.png", "scale": "2x" },
+              { "size": "20x20", "idiom": "iphone", "filename": "AppIcon-20@3x.png", "scale": "3x" },
+              { "size": "29x29", "idiom": "iphone", "filename": "AppIcon-29@2x.png", "scale": "2x" },
+              { "size": "29x29", "idiom": "iphone", "filename": "AppIcon-29@3x.png", "scale": "3x" },
+              { "size": "40x40", "idiom": "iphone", "filename": "AppIcon-40@2x.png", "scale": "2x" },
+              { "size": "40x40", "idiom": "iphone", "filename": "AppIcon-40@3x.png", "scale": "3x" },
+              { "size": "60x60", "idiom": "iphone", "filename": "AppIcon-60@2x.png", "scale": "2x" },
+              { "size": "60x60", "idiom": "iphone", "filename": "AppIcon-60@3x.png", "scale": "3x" },
+              { "size": "20x20", "idiom": "ipad", "filename": "AppIcon-20.png", "scale": "1x" },
+              { "size": "20x20", "idiom": "ipad", "filename": "AppIcon-20@2x.png", "scale": "2x" },
+              { "size": "29x29", "idiom": "ipad", "filename": "AppIcon-29.png", "scale": "1x" },
+              { "size": "29x29", "idiom": "ipad", "filename": "AppIcon-29@2x.png", "scale": "2x" },
+              { "size": "40x40", "idiom": "ipad", "filename": "AppIcon-40.png", "scale": "1x" },
+              { "size": "40x40", "idiom": "ipad", "filename": "AppIcon-40@2x.png", "scale": "2x" },
+              { "size": "76x76", "idiom": "ipad", "filename": "AppIcon-76.png", "scale": "1x" },
+              { "size": "76x76", "idiom": "ipad", "filename": "AppIcon-76@2x.png", "scale": "2x" },
+              { "size": "83.5x83.5", "idiom": "ipad", "filename": "AppIcon-83.5@2x.png", "scale": "2x" },
+              { "size": "1024x1024", "idiom": "ios-marketing", "filename": "AppIcon-1024.png", "scale": "1x" }
+            ],
+            "info": {
+              "version": 1,
+              "author": "xcode"
+            }
+          }
+          JSON
+
+          ls -la "$ICON_SET"
+        working_directory: .
+
+      - name: Install CocoaPods dependencies
+        script: |
+          set -e
+          pod install
+          ls -la
+        working_directory: ios/App
+
+      - name: Set up code signing settings on Xcode project
+        script: |
+          set -e
+          xcode-project use-profiles --project "$XCODE_PROJECT"
+          ls -la /Users/builder
+        working_directory: .
+
+      - name: Set app version
+        script: |
+          set -e
+
+          ASC_LATEST_BUILD=$(app-store-connect get-latest-build-number "$APP_ID" 2>/dev/null || true)
+          if ! [[ "$ASC_LATEST_BUILD" =~ ^[0-9]+$ ]]; then
+            ASC_LATEST_BUILD=0
+          fi
+
+          CI_BUILD_NUMBER="${BUILD_NUMBER:-1}"
+          if ! [[ "$CI_BUILD_NUMBER" =~ ^[0-9]+$ ]]; then
+            CI_BUILD_NUMBER=1
+          fi
+
+          IOS_BUILD_OFFSET="${IOS_BUILD_OFFSET:-232}"
+          if ! [[ "$IOS_BUILD_OFFSET" =~ ^[0-9]+$ ]]; then
+            IOS_BUILD_OFFSET=232
+          fi
+
+          APP_BUILD_NUMBER=$((ASC_LATEST_BUILD + 1))
+          OFFSET_BUILD_NUMBER=$((IOS_BUILD_OFFSET + CI_BUILD_NUMBER))
+          if [ "$CI_BUILD_NUMBER" -gt "$APP_BUILD_NUMBER" ]; then
+            APP_BUILD_NUMBER="$CI_BUILD_NUMBER"
+          fi
+          if [ "$OFFSET_BUILD_NUMBER" -gt "$APP_BUILD_NUMBER" ]; then
+            APP_BUILD_NUMBER="$OFFSET_BUILD_NUMBER"
+          fi
+
+          echo "App Store latest build number: $ASC_LATEST_BUILD"
+          echo "Codemagic build number: $CI_BUILD_NUMBER"
+          echo "iOS build offset: $IOS_BUILD_OFFSET"
+          echo "Using iOS build number: $APP_BUILD_NUMBER"
+
+          agvtool new-version -all "$APP_BUILD_NUMBER"
+          agvtool new-marketing-version 1.0.0
+          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $APP_BUILD_NUMBER" App/Info.plist
+          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString 1.0.0" App/Info.plist
+          /usr/libexec/PlistBuddy -c "Set :ITSAppUsesNonExemptEncryption false" App/Info.plist 2>/dev/null || \
+            /usr/libexec/PlistBuddy -c "Add :ITSAppUsesNonExemptEncryption bool false" App/Info.plist
+          /usr/libexec/PlistBuddy -c "Set :NSCameraUsageDescription RAVEN uses your camera to scan receipt photos." App/Info.plist 2>/dev/null || \
+            /usr/libexec/PlistBuddy -c "Add :NSCameraUsageDescription string RAVEN uses your camera to scan receipt photos." App/Info.plist
+          /usr/libexec/PlistBuddy -c "Set :NSPhotoLibraryUsageDescription RAVEN uses your photo library so you can choose receipt photos." App/Info.plist 2>/dev/null || \
+            /usr/libexec/PlistBuddy -c "Add :NSPhotoLibraryUsageDescription string RAVEN uses your photo library so you can choose receipt photos." App/Info.plist
+        working_directory: ios/App
+
+      - name: Build iOS IPA
+        script: |
+          set -o pipefail
+          xcode-project build-ipa \
+            --workspace "$XCODE_WORKSPACE" \
+            --scheme "$XCODE_SCHEME" \
+            --export-options-plist /Users/builder/export_options.plist || {
+              echo "xcode-project build-ipa failed. Recent xcodebuild logs:"
+              find /tmp/xcodebuild_logs -type f -maxdepth 1 -print -exec tail -n 220 {} \; 2>/dev/null || true
+              exit 1
+            }
+        working_directory: .
+
+      - name: Upload to TestFlight via app-store-connect CLI
+        script: |
+          set -e
+          IPA_PATH=$(find build/ios/ipa -name "*.ipa" | head -1)
+          echo "Uploading: $IPA_PATH"
+
+          # Use Codemagic's app-store-connect CLI — supports Xcode 26 SDK requirement
+          app-store-connect publish \
+            --path "$IPA_PATH" \
+            --key-id "$APP_STORE_CONNECT_KEY_IDENTIFIER" \
+            --issuer-id "$APP_STORE_CONNECT_ISSUER_ID" \
+            --private-key "@env:APP_STORE_CONNECT_PRIVATE_KEY" \
+            --max-find-build-wait 10 \
+            --testflight
+        working_directory: .
+
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+      - $HOME/Library/Developer/Xcode/DerivedData/**/Build/**/*.dSYM
+
+    publishing:
+      app_store_connect:
+        api_key: $APP_STORE_CONNECT_PRIVATE_KEY
+        key_id: $APP_STORE_CONNECT_KEY_IDENTIFIER
+        issuer_id: $APP_STORE_CONNECT_ISSUER_ID
+        submit_to_testflight: true
