@@ -60,6 +60,29 @@ workflows:
           npx cap sync ios
         working_directory: .
 
+      - name: Force iOS 26 SDK deployment target
+        script: |
+          set -e
+          PBXPROJ="ios/App/App.xcodeproj/project.pbxproj"
+
+          echo "=== Current deployment targets ==="
+          grep "IPHONEOS_DEPLOYMENT_TARGET" "$PBXPROJ" | head -10
+
+          # Force all deployment targets to 26.0
+          sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = [0-9][0-9.]*/IPHONEOS_DEPLOYMENT_TARGET = 26.0/g' "$PBXPROJ"
+
+          echo "=== Updated deployment targets ==="
+          grep "IPHONEOS_DEPLOYMENT_TARGET" "$PBXPROJ" | head -10
+
+          # Also ensure swift version and build settings are correct
+          # Update Podfile deployment target if present
+          if [ -f "ios/App/Podfile" ]; then
+            sed -i '' "s/platform :ios, '[0-9][0-9.]*'/platform :ios, '26.0'/g" ios/App/Podfile
+            echo "=== Updated Podfile ==="
+            grep "platform :ios" ios/App/Podfile || true
+          fi
+        working_directory: .
+
       - name: Configure iOS deep links
         script: |
           set -e
@@ -257,28 +280,7 @@ workflows:
             }
         working_directory: .
 
-      - name: Upload to TestFlight via xcrun altool
-        script: |
-          set -e
-          IPA_PATH=$(find build/ios/ipa -name "*.ipa" | head -1)
-          echo "Uploading: $IPA_PATH"
 
-          # Decode the base64-encoded .p8 key and write it to the expected location
-          # macOS base64 uses -D (capital D) for decode; GNU uses -d
-          mkdir -p ~/.appstoreconnect/private_keys
-          KEY_PATH=~/.appstoreconnect/private_keys/AuthKey_${APP_STORE_CONNECT_KEY_IDENTIFIER}.p8
-          printf '%s' "$APP_STORE_CONNECT_PRIVATE_KEY" | base64 -D > "$KEY_PATH" 2>/dev/null ||             printf '%s' "$APP_STORE_CONNECT_PRIVATE_KEY" | base64 -d > "$KEY_PATH"
-
-          echo "Key file size: $(wc -c < $KEY_PATH) bytes"
-          echo "Key first line: $(head -1 $KEY_PATH)"
-
-          xcrun altool --upload-app \
-            --type ios \
-            --file "$IPA_PATH" \
-            --apiKey "$APP_STORE_CONNECT_KEY_IDENTIFIER" \
-            --apiIssuer "$APP_STORE_CONNECT_ISSUER_ID" \
-            --verbose
-        working_directory: .
 
     artifacts:
       - build/ios/ipa/*.ipa
