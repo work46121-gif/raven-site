@@ -885,15 +885,6 @@ body.app-mode .cb-raven-add-icon { width:18px;height:18px;display:block; }
 @keyframes ravenTripFloat { 0%,100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-7px) scale(1.02); } }
 @keyframes ravenTripRing { 0% { transform: scale(0.72); opacity: 0.85; } 100% { transform: scale(1.14); opacity: 0; } }
 @keyframes ravenTripDot { from { transform: scale(0.82); } to { transform: scale(1.14); } }
-/* ── Trip inline panel ── */
-#trip-frame-panel { display:none; position:fixed; top:0; left:240px; right:0; bottom:0; z-index:850; background:#06060A; flex-direction:column; }
-body.app-mode #trip-frame-panel { left:0; }
-@media(max-width:768px) { #trip-frame-panel { left:0 !important; } }
-#trip-frame-bar { display:flex; align-items:center; gap:8px; padding:0 12px; height:50px; background:rgba(6,6,10,0.98); border-bottom:1px solid rgba(255,255,255,0.07); flex-shrink:0; }
-#trip-frame-back { display:flex; align-items:center; gap:5px; padding:6px 13px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); border-radius:20px; color:#9896A8; font-family:'Epilogue',sans-serif; font-size:13px; font-weight:600; cursor:pointer; white-space:nowrap; flex-shrink:0; -webkit-tap-highlight-color:transparent; }
-#trip-frame-back:active { background:rgba(255,255,255,0.1); }
-#trip-frame-ext { padding:5px 11px; background:rgba(124,58,237,0.1); border:1px solid rgba(124,58,237,0.22); border-radius:8px; color:#C084FC; font-family:'Epilogue',sans-serif; font-size:12px; font-weight:700; cursor:pointer; flex-shrink:0; -webkit-tap-highlight-color:transparent; }
-#trip-frame-iframe { flex:1; border:none; width:100%; background:#06060A; display:block; }
 .modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); z-index: 600; display: none; align-items: center; justify-content: center; padding: 20px; }
 .modal-bg.open { display: flex; }
 .modal { background: var(--dark); border: 1px solid var(--border2); border-radius: 20px; padding: 32px; width: 100%; max-width: 520px; max-height: 85vh; overflow-y: auto; position: relative; }
@@ -1253,18 +1244,6 @@ body.app-mode #trip-frame-panel { left:0; }
       <div class="trip-open-loader-sub">Syncing receipts and chat</div>
     </div>
   </div>
-</div>
-
-<!-- ── TRIP INLINE PANEL ── -->
-<div id="trip-frame-panel">
-  <div id="trip-frame-bar">
-    <button id="trip-frame-back" onclick="closeTripFramePanel()">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
-      Trip Hub
-    </button>
-    <button id="trip-frame-ext" onclick="openTripFrameExternal()" title="Open in new tab">↗ Open</button>
-  </div>
-  <iframe id="trip-frame-iframe" src="" allow="camera;clipboard-write" allowfullscreen></iframe>
 </div>
 
 <!-- MOBILE HEADER -->
@@ -2389,7 +2368,7 @@ let db;
 try {
   db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     auth: {
-      flowType: 'pkce',        // PKCE required for Google OAuth on web/PWA — implicit causes redirect loop
+      flowType: 'implicit',
       detectSessionInUrl: true,
       persistSession: true,
       autoRefreshToken: true
@@ -2471,40 +2450,18 @@ function hasRavenCachedIdentity() {
 }
 
 function getAppReturnDashboardUser() {
-  const params = new URLSearchParams(window.location.search);
-  let local = {};
-  try { local = JSON.parse(localStorage.getItem('raven_profile') || '{}'); } catch(e) { local = {}; }
-  const urlEmail = String(params.get('acct') || params.get('email') || '').trim();
-  const appEmail = String(localStorage.getItem(APP_DASHBOARD_EMAIL_KEY) || '').trim();
-  const remembered = String(localStorage.getItem('raven_remembered_email') || '').trim();
-  const email = isDashboardAccountEmail(urlEmail) ? urlEmail
-    : isDashboardAccountEmail(local.email) ? local.email
-    : isDashboardAccountEmail(appEmail) ? appEmail
-    : isDashboardAccountEmail(remembered) ? remembered
-    : '';
-  const firstName = String(params.get('name') || local.first_name || '').trim();
-  const id = String(local.user_id || local.id || local.raven_id || local.username || email || firstName || 'raven-app-user').trim();
-  const nextLocal = {
-    ...local,
-    user_id: id || 'raven-app-user',
-    email: email || local.email || '',
-    first_name: firstName || local.first_name || '',
-    raven_id: local.raven_id || local.username || '',
-    username: local.username || local.raven_id || '',
-    onboarding_complete: true
-  };
-  try { localStorage.setItem('raven_profile', JSON.stringify(nextLocal)); } catch(e) {}
-  if (email) rememberDashboardAccountEmail(email);
-  return {
-    id: id || 'raven-app-user',
-    email: email || String(firstName || local.raven_id || local.username || 'app-user').replace(/\s+/g, '').toLowerCase() + '@raven.app',
-    app_cached: true
-  };
+  return getAppCachedDashboardUser(true);
 }
 
 async function enterAppDashboardReturnMode() {
+  const { data: { session } } = await db.auth.getSession();
+  if (!session?.user) {
+    currentUser = null;
+    showAuth();
+    return;
+  }
   markRavenSignedIn();
-  currentUser = getAppCachedDashboardUser(true) || getAppReturnDashboardUser();
+  currentUser = session.user;
   await checkOnboardingAndShow(currentUser.id);
 }
 
@@ -2519,11 +2476,7 @@ function isNativeAppMode() {
 }
 
 function getDashboardAuthRedirectTo() {
-  if (isNativeAppMode()) return 'ravensplit://auth/callback';
-  // Keep ?app=1 when in PWA mode so dashboard stays in app-mode after OAuth return
-  return RAVEN_APP_MODE
-    ? 'https://ravensplit.com/dashboard.html?app=1'
-    : 'https://ravensplit.com/dashboard.html';
+  return isNativeAppMode() ? 'ravensplit://auth/callback' : 'https://ravensplit.com/dashboard.html';
 }
 
 function getDashboardPasswordResetRedirectTo() {
@@ -2914,9 +2867,6 @@ async function init() {
       clearRavenSignedInCache();
       try { history.replaceState(null, '', window.location.pathname + (RAVEN_APP_MODE ? '?app=1' : '')); } catch(e) {}
     }
-    if (RAVEN_APP_MODE && params.get('signed_out') !== '1') {
-      markRavenSignedIn();
-    }
     if (params.get('error')) {
       console.warn('OAuth error:', params.get('error_description'));
       history.replaceState(null, '', window.location.pathname);
@@ -2969,16 +2919,8 @@ async function init() {
       markRavenSignedIn();
       currentUser = session.user;
       await checkOnboardingAndShow(currentUser.id);
-    } else if (RAVEN_APP_MODE) {
-      const cachedUser = getAppCachedDashboardUser(true) || getAppReturnDashboardUser();
-      if (cachedUser) {
-        markRavenSignedIn();
-        currentUser = cachedUser;
-        await checkOnboardingAndShow(cachedUser.id);
-      } else {
-        showAuth();
-      }
     } else {
+      currentUser = null;
       showAuth();
     }
     db.auth.onAuthStateChange(async (event, session) => {
@@ -2989,11 +2931,14 @@ async function init() {
           return;
         }
         if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session?.user && !ravenPasswordRecoveryMode) {
+          // Skip if init() already handled this session to prevent double-routing
+          if (currentUser && currentUser.id === session.user.id && event === 'SIGNED_IN') return;
           markRavenSignedIn();
           currentUser = session.user;
           if (window.location.hash) history.replaceState(null, '', window.location.pathname);
           await checkOnboardingAndShow(session.user.id);
         } else if (event === 'SIGNED_OUT') {
+          clearRavenSignedInCache();
           currentUser = null;
           showAuth();
         }
@@ -3042,6 +2987,7 @@ async function checkOnboardingAndShow(userId) {
   if (redirected) return;
 
   if (RAVEN_APP_MODE) {
+    let nextProfile = null;
     try {
       const existing = JSON.parse(localStorage.getItem('raven_profile') || '{}');
       const realEmail = isDashboardAccountEmail(currentUser?.email) ? currentUser.email : '';
@@ -3049,7 +2995,7 @@ async function checkOnboardingAndShow(userId) {
       const existingId = String(existing.user_id || existing.id || '').trim();
       const targetId = String(userId || currentUser?.id || '').trim();
       const existingMatchesUser = (targetId && existingId === targetId) || (realEmail && existingEmail === realEmail.toLowerCase());
-      let nextProfile = existingMatchesUser
+      nextProfile = existingMatchesUser
         ? { ...existing, user_id: targetId || existingId, email: realEmail || existing.email || '' }
         : { user_id: targetId, email: realEmail };
       if (realEmail) nextProfile.email = realEmail;
@@ -3073,10 +3019,25 @@ async function checkOnboardingAndShow(userId) {
         window.location.href = 'onboarding.html?app=1';
         return;
       }
-    } catch(e) {}
+    } catch(e) {
+      console.warn('app profile check failed:', e);
+    }
+    if (!nextProfile?.onboarding_complete) {
+      window.location.href = 'onboarding.html?app=1';
+      return;
+    }
     showDashboard();
     return;
   }
+
+  // If onboarding just completed in this tab, trust localStorage and skip Supabase re-check
+  try {
+    if (sessionStorage.getItem('raven_onboarding_just_done') === '1') {
+      sessionStorage.removeItem('raven_onboarding_just_done');
+      const local = JSON.parse(localStorage.getItem('raven_profile') || '{}');
+      if (local.onboarding_complete) { showDashboard(); return; }
+    }
+  } catch(e) {}
 
   try {
     const local = JSON.parse(localStorage.getItem('raven_profile') || '{}');
@@ -3107,8 +3068,12 @@ async function checkOnboardingAndShow(userId) {
       } else { window.location.href = 'onboarding.html'; return; }
     }
   } catch(e) { console.log('Profile check error:', e); }
-  const hasLocalData = localStorage.getItem('raven_profile');
-  if (hasLocalData) showDashboard(); else window.location.href = 'onboarding.html';
+  // Fallback: only redirect to onboarding if localStorage doesn't show complete
+  try {
+    const local = JSON.parse(localStorage.getItem('raven_profile') || '{}');
+    if (local.user_id === userId && local.onboarding_complete) { showDashboard(); return; }
+  } catch(e) {}
+  window.location.href = 'onboarding.html';
 }
 
 function switchAuthTab(tab) {
@@ -3286,7 +3251,7 @@ async function handleSignup() {
   if (error) { showAuthError(error.message); btn.textContent = 'Create Account →'; btn.disabled = false; return; }
 
   // Always auto-generate Raven ID on signup — firstName + 3-4 random digits (e.g. mel8472)
-  if (data?.user) {
+  if (data?.session?.user) {
     markRavenSignedIn();
     try {
       ravenId = ravenId || null;
@@ -3296,23 +3261,23 @@ async function handleSignup() {
         const { data: existing } = await db.from('profiles').select('id').eq('raven_id', candidate).maybeSingle();
         if (!existing) { ravenId = candidate; break; }
       }
-      if (!ravenId) ravenId = await generateUniqueRavenId(sanitizeRavenBase(firstName || 'raven'), data.user.id);
+      if (!ravenId) ravenId = await generateUniqueRavenId(sanitizeRavenBase(firstName || 'raven'), data.session.user.id);
       let profileUpsertFailed = false;
       try {
         const { error: profileErr } = await db.from('profiles').upsert({
-          id: data.user.id, email, first_name: firstName || '',
-          raven_id: ravenId, username: ravenId, onboarding_complete: false, updated_at: new Date().toISOString()
-        }, { onConflict: 'id' });
+        id: data.session.user.id, email, first_name: firstName || '',
+        raven_id: ravenId, username: ravenId, onboarding_complete: false, updated_at: new Date().toISOString()
+      }, { onConflict: 'id' });
         profileUpsertFailed = !!profileErr;
       } catch(e) { profileUpsertFailed = true; }
       if (profileUpsertFailed) {
         await db.from('profiles').upsert({
-          id: data.user.id, email, first_name: firstName || '',
+          id: data.session.user.id, email, first_name: firstName || '',
           raven_id: ravenId, onboarding_complete: false, updated_at: new Date().toISOString()
         }, { onConflict: 'id' });
       }
       const existingLocal = JSON.parse(localStorage.getItem('raven_profile') || '{}');
-      localStorage.setItem('raven_profile', JSON.stringify({ ...existingLocal, first_name: firstName || '', raven_id: ravenId, username: ravenId, user_id: data.user.id }));
+      localStorage.setItem('raven_profile', JSON.stringify({ ...existingLocal, first_name: firstName || '', raven_id: ravenId, username: ravenId, user_id: data.session.user.id }));
     } catch(e) { console.warn('raven_id generation error:', e); }
   }
 
@@ -3336,11 +3301,11 @@ async function handleSignup() {
   celebrateBillCreated();
 
   // If there's a pending join, handle it now before routing to onboarding
-  if (data?.user) {
-    currentUser = data.user;
+  if (data?.session?.user) {
+    currentUser = data.session.user;
     const pending = await getPendingJoin();
     if (pending) {
-      const redirected = await handlePendingJoinIfAny(data.user.id, email, firstName || email.split('@')[0]);
+      const redirected = await handlePendingJoinIfAny(data.session.user.id, email, firstName || email.split('@')[0]);
       if (redirected) return;
     }
   }
@@ -8524,62 +8489,22 @@ async function openTrip(tripId, fallbackUrl) {
         new Promise(resolve => setTimeout(() => resolve(url || ''), 900))
       ]);
     }
-  } catch(e) { console.warn('openTrip resolve failed:', e); }
+  } catch(e) {
+    console.warn('openTrip resolve failed:', e);
+  }
   if (!url) {
     hideTripOpenLoader();
     try { showToast('Trip is still loading. Try again in a moment.', 'error'); } catch(e) {}
     try { loadTrips(); } catch(e) {}
     return;
   }
-  // Native Capacitor → navigate away
-  const isNative = !!(window.Capacitor?.isNativePlatform?.() || localStorage.getItem('raven_native_app') === '1');
-  if (isNative) {
-    if (openTrip._pendingUrl === url) { hideTripOpenLoader(); return; }
-    openTrip._pendingUrl = url;
-    setTimeout(() => { if (openTrip._pendingUrl === url) openTrip._pendingUrl = ''; }, 1500);
-    try { window.location.assign(url); } catch(e) { window.location.href = url; }
-    return;
-  }
-  // Desktop + PWA → open inline
-  // Add embedded flag so server.js knows to hide its own top header bar
-  try {
-    const u = new URL(url);
-    u.searchParams.set('embedded', '1');
-    url = u.href;
-  } catch(e) {}
-  openTripFramePanel(url, tripName);
-}
-
-let _tripFrameCurrentUrl = '';
-
-function openTripFramePanel(url, tripName) {
-  const panel  = document.getElementById('trip-frame-panel');
-  const iframe = document.getElementById('trip-frame-iframe');
-  if (!panel || !iframe) { window.open(url, '_blank'); hideTripOpenLoader(); return; }
-  _tripFrameCurrentUrl = url;
-  panel.style.display = 'flex';
-  document.body.style.overflow = 'hidden';
-  iframe.src = '';
-  iframe.onload = function() { hideTripOpenLoader(); iframe.onload = null; };
-  clearTimeout(openTripFramePanel._t);
-  openTripFramePanel._t = setTimeout(hideTripOpenLoader, 7000);
-  iframe.src = url;
-}
-
-function closeTripFramePanel() {
-  const panel  = document.getElementById('trip-frame-panel');
-  const iframe = document.getElementById('trip-frame-iframe');
-  if (panel)  panel.style.display = 'none';
-  if (iframe) { iframe.src = ''; iframe.onload = null; }
-  document.body.style.overflow = '';
-  _tripFrameCurrentUrl = '';
-  clearTimeout(openTripFramePanel._t);
-  hideTripOpenLoader();
-  try { showPage('trip-hub'); setMobNav('mob-trips'); } catch(e) {}
-}
-
-function openTripFrameExternal() {
-  if (_tripFrameCurrentUrl) window.open(_tripFrameCurrentUrl, '_blank');
+  if (openTrip._pendingUrl === url) return;
+  openTrip._pendingUrl = url;
+  setTimeout(() => {
+    if (openTrip._pendingUrl === url) openTrip._pendingUrl = '';
+  }, 1500);
+  try { window.location.assign(url); }
+  catch(e) { window.location.href = url; }
 }
 
 function showTripOpenLoader(tripName) {
@@ -8605,10 +8530,7 @@ function hideTripOpenLoader() {
   }, 200);
 }
 
-window.addEventListener('pageshow', function(e) {
-  hideTripOpenLoader();
-  if (typeof openTrip !== 'undefined' && openTrip._pendingUrl) openTrip._pendingUrl = '';
-});
+window.addEventListener('pageshow', hideTripOpenLoader);
 
 function getTripOpenUrl(tripId, fallbackUrl) {
   const id = String(tripId || '').trim();
