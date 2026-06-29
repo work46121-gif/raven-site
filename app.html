@@ -535,7 +535,7 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const BACKEND = 'https://raven-backend-production-fb1f.up.railway.app';
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
-    flowType: 'implicit',
+    flowType: 'pkce',
     detectSessionInUrl: true,
     persistSession: true,
     autoRefreshToken: true
@@ -669,7 +669,7 @@ function getAppPasswordResetRedirectTo(){
   return 'https://ravensplit.com/app.html?app=1&reset=1';
 }
 function getAppConfirmRedirectTo(){
-  return 'https://ravensplit.com/app.html?app=1';
+  return 'https://ravensplit.com/app.html';
 }
 function handleNativeAuthCallbackUrl(url){
   try {
@@ -1425,9 +1425,6 @@ async function handleSetNewPassword(event){
     clearRavenSignedInCache();
     try { history.replaceState(null, '', window.location.pathname + '?app=1'); } catch(e) {}
   }
-  if (params.get('signed_out') !== '1' && isRavenSignedOut() && hasRavenCachedIdentity()) {
-    markRavenSignedIn();
-  }
   if (params.get('code') || (hash && hash.includes('access_token='))) {
     try { localStorage.removeItem(RAVEN_SIGNED_OUT_KEY); } catch(e) {}
   }
@@ -1525,9 +1522,7 @@ async function handleSetNewPassword(event){
     markRavenSignedIn();
     routeAfterAuth(session.user);
   } else {
-    const cachedProfile = isRavenSignedOut() ? null : getCachedAppProfile();
-    if (cachedProfile) showAppHome(cachedProfile);
-    else showSignedOutHome();
+    showSignedOutHome();
   }
 })();
 
