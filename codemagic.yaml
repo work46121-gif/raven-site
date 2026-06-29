@@ -211,11 +211,11 @@ workflows:
           set -e
 
           ASC_LATEST_BUILD=$(app-store-connect get-latest-build-number "$APP_ID" 2>/dev/null || true)
-          if ! [[ "$ASC_LATEST_BUILD" =~ ^[0-9]+$ ]] || [ "$ASC_LATEST_BUILD" -lt 281 ]; then
-            ASC_LATEST_BUILD=281
+          if ! [[ "$ASC_LATEST_BUILD" =~ ^[0-9]+$ ]] || [ "$ASC_LATEST_BUILD" -lt 282 ]; then
+            ASC_LATEST_BUILD=282
           fi
 
-          # Always use ASC latest + 1 so we never collide
+          # Always use ASC latest + 1 so we never collide with an existing build
           APP_BUILD_NUMBER=$((ASC_LATEST_BUILD + 1))
 
           echo "App Store latest build number: $ASC_LATEST_BUILD"
