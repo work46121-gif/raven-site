@@ -213,9 +213,9 @@ workflows:
             CI_BUILD_NUMBER=1
           fi
 
-          IOS_BUILD_OFFSET="${IOS_BUILD_OFFSET:-278}"
+          IOS_BUILD_OFFSET="${IOS_BUILD_OFFSET:-285}"
           if ! [[ "$IOS_BUILD_OFFSET" =~ ^[0-9]+$ ]]; then
-            IOS_BUILD_OFFSET=278
+            IOS_BUILD_OFFSET=232
           fi
 
           APP_BUILD_NUMBER=$((ASC_LATEST_BUILD + 1))
