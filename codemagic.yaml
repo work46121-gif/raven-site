@@ -36,16 +36,23 @@ workflows:
           rm -rf dist
           mkdir -p dist
           rsync -a ./ dist/ \
-            --exclude dist \
-            --exclude ios \
-            --exclude node_modules \
-            --exclude .git \
-            --exclude codemagic \
-            --exclude "package*.json" \
-            --exclude "proxy*.js" \
-            --exclude "server*.js" \
-            --exclude README.md
+            --exclude dist/ \
+            --exclude ios/ \
+            --exclude node_modules/ \
+            --exclude .git/ \
+            --exclude "codemagic.yaml" \
+            --exclude "codemagic.yml" \
+            --exclude "package.json" \
+            --exclude "package-lock.json" \
+            --exclude "capacitor.config.json" \
+            --exclude "proxy.js" \
+            --exclude "server.js" \
+            --exclude "README.md" \
+            --exclude "*.yaml" \
+            --exclude "*.yml" \
+            --exclude "*.sh"
           cp app.html dist/index.html
+          echo "=== dist contents ==="
           ls -la dist
         working_directory: .
 
@@ -205,13 +212,31 @@ workflows:
 
           ASC_LATEST_BUILD=$(app-store-connect get-latest-build-number "$APP_ID" 2>/dev/null || true)
           if ! [[ "$ASC_LATEST_BUILD" =~ ^[0-9]+$ ]]; then
-            ASC_LATEST_BUILD=280
+            ASC_LATEST_BUILD=0
           fi
 
-          # Always use ASC latest + 1 so we never collide with an existing build
+          CI_BUILD_NUMBER="${BUILD_NUMBER:-1}"
+          if ! [[ "$CI_BUILD_NUMBER" =~ ^[0-9]+$ ]]; then
+            CI_BUILD_NUMBER=1
+          fi
+
+          IOS_BUILD_OFFSET="${IOS_BUILD_OFFSET:-232}"
+          if ! [[ "$IOS_BUILD_OFFSET" =~ ^[0-9]+$ ]]; then
+            IOS_BUILD_OFFSET=232
+          fi
+
           APP_BUILD_NUMBER=$((ASC_LATEST_BUILD + 1))
+          OFFSET_BUILD_NUMBER=$((IOS_BUILD_OFFSET + CI_BUILD_NUMBER))
+          if [ "$CI_BUILD_NUMBER" -gt "$APP_BUILD_NUMBER" ]; then
+            APP_BUILD_NUMBER="$CI_BUILD_NUMBER"
+          fi
+          if [ "$OFFSET_BUILD_NUMBER" -gt "$APP_BUILD_NUMBER" ]; then
+            APP_BUILD_NUMBER="$OFFSET_BUILD_NUMBER"
+          fi
 
           echo "App Store latest build number: $ASC_LATEST_BUILD"
+          echo "Codemagic build number: $CI_BUILD_NUMBER"
+          echo "iOS build offset: $IOS_BUILD_OFFSET"
           echo "Using iOS build number: $APP_BUILD_NUMBER"
 
           agvtool new-version -all "$APP_BUILD_NUMBER"
