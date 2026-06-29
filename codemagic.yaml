@@ -16,7 +16,7 @@ workflows:
         XCODE_WORKSPACE: ios/App/App.xcworkspace
         XCODE_SCHEME: App
       node: 20.19.0
-      xcode: 16.4
+      xcode: 26.0
 
     scripts:
       - name: Install Node & npm dependencies
@@ -213,7 +213,7 @@ workflows:
             CI_BUILD_NUMBER=1
           fi
 
-          IOS_BUILD_OFFSET="${IOS_BUILD_OFFSET:-285}"
+          IOS_BUILD_OFFSET="${IOS_BUILD_OFFSET:-232}"
           if ! [[ "$IOS_BUILD_OFFSET" =~ ^[0-9]+$ ]]; then
             IOS_BUILD_OFFSET=232
           fi
