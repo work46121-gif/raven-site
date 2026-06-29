@@ -16,7 +16,7 @@ workflows:
         XCODE_WORKSPACE: ios/App/App.xcworkspace
         XCODE_SCHEME: App
       node: 20.19.0
-      xcode: 26.0
+      xcode: 16.4
 
     scripts:
       - name: Install Node & npm dependencies
@@ -205,31 +205,13 @@ workflows:
 
           ASC_LATEST_BUILD=$(app-store-connect get-latest-build-number "$APP_ID" 2>/dev/null || true)
           if ! [[ "$ASC_LATEST_BUILD" =~ ^[0-9]+$ ]]; then
-            ASC_LATEST_BUILD=0
+            ASC_LATEST_BUILD=280
           fi
 
-          CI_BUILD_NUMBER="${BUILD_NUMBER:-1}"
-          if ! [[ "$CI_BUILD_NUMBER" =~ ^[0-9]+$ ]]; then
-            CI_BUILD_NUMBER=1
-          fi
-
-          IOS_BUILD_OFFSET="${IOS_BUILD_OFFSET:-232}"
-          if ! [[ "$IOS_BUILD_OFFSET" =~ ^[0-9]+$ ]]; then
-            IOS_BUILD_OFFSET=232
-          fi
-
+          # Always use ASC latest + 1 so we never collide with an existing build
           APP_BUILD_NUMBER=$((ASC_LATEST_BUILD + 1))
-          OFFSET_BUILD_NUMBER=$((IOS_BUILD_OFFSET + CI_BUILD_NUMBER))
-          if [ "$CI_BUILD_NUMBER" -gt "$APP_BUILD_NUMBER" ]; then
-            APP_BUILD_NUMBER="$CI_BUILD_NUMBER"
-          fi
-          if [ "$OFFSET_BUILD_NUMBER" -gt "$APP_BUILD_NUMBER" ]; then
-            APP_BUILD_NUMBER="$OFFSET_BUILD_NUMBER"
-          fi
 
           echo "App Store latest build number: $ASC_LATEST_BUILD"
-          echo "Codemagic build number: $CI_BUILD_NUMBER"
-          echo "iOS build offset: $IOS_BUILD_OFFSET"
           echo "Using iOS build number: $APP_BUILD_NUMBER"
 
           agvtool new-version -all "$APP_BUILD_NUMBER"
