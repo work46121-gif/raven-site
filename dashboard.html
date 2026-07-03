@@ -3070,17 +3070,43 @@ function showAuthError(msg) { const el = document.getElementById('auth-error'); 
 function hideAuthError() { document.getElementById('auth-error').style.display = 'none'; }
 
 async function handleGoogleAuth() {
+  if (handleGoogleAuth._busy) return;
+  handleGoogleAuth._busy = true;
+  hideAuthError();
   try {
     const redirectTo = getDashboardAuthRedirectTo();
-    const { error } = await db.auth.signInWithOAuth({
+    try { localStorage.removeItem(RAVEN_SIGNED_OUT_KEY); } catch(e) {}
+    // skipBrowserRedirect + opening the URL ourselves is required: Google blocks
+    // sign-in when it detects the request is coming from an embedded app WebView
+    // (the default behavior when this page runs inside the Capacitor app). Opening
+    // it in the system browser (or a plain web navigation outside the app) avoids
+    // Google's "disallowed_useragent" block.
+    const { data, error } = await db.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo
+        redirectTo,
+        skipBrowserRedirect: true,
+        queryParams: { prompt: 'select_account' }
       }
     });
-    if (error) showAuthError(error.message);
+    if (error) {
+      showAuthError(error.message);
+      return;
+    }
+    if (data?.url) {
+      const capBrowser = window.Capacitor?.Plugins?.Browser;
+      if (capBrowser?.open) {
+        await capBrowser.open({ url: data.url, presentationStyle: 'fullscreen' });
+      } else {
+        window.location.href = data.url;
+      }
+      return;
+    }
+    showAuthError('Google sign-in did not open. Please try again.');
   } catch(e) {
     showAuthError('Google sign-in failed. Please try email/password.');
+  } finally {
+    setTimeout(() => { handleGoogleAuth._busy = false; }, 1200);
   }
 }
 
