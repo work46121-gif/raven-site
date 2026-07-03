@@ -2931,8 +2931,6 @@ async function init() {
           return;
         }
         if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session?.user && !ravenPasswordRecoveryMode) {
-          // Skip if init() already handled this session to prevent double-routing
-          if (currentUser && currentUser.id === session.user.id && event === 'SIGNED_IN') return;
           markRavenSignedIn();
           currentUser = session.user;
           if (window.location.hash) history.replaceState(null, '', window.location.pathname);
@@ -3030,15 +3028,6 @@ async function checkOnboardingAndShow(userId) {
     return;
   }
 
-  // If onboarding just completed in this tab, trust localStorage and skip Supabase re-check
-  try {
-    if (sessionStorage.getItem('raven_onboarding_just_done') === '1') {
-      sessionStorage.removeItem('raven_onboarding_just_done');
-      const local = JSON.parse(localStorage.getItem('raven_profile') || '{}');
-      if (local.onboarding_complete) { showDashboard(); return; }
-    }
-  } catch(e) {}
-
   try {
     const local = JSON.parse(localStorage.getItem('raven_profile') || '{}');
     if (RAVEN_APP_MODE && (local.email || local.user_id || local.id || local.first_name || local.raven_id || local.username || local.avatar_url)) {
@@ -3068,11 +3057,6 @@ async function checkOnboardingAndShow(userId) {
       } else { window.location.href = 'onboarding.html'; return; }
     }
   } catch(e) { console.log('Profile check error:', e); }
-  // Fallback: only redirect to onboarding if localStorage doesn't show complete
-  try {
-    const local = JSON.parse(localStorage.getItem('raven_profile') || '{}');
-    if (local.user_id === userId && local.onboarding_complete) { showDashboard(); return; }
-  } catch(e) {}
   window.location.href = 'onboarding.html';
 }
 
@@ -3232,53 +3216,29 @@ async function handleSignup() {
   if (password.length < 6) return showAuthError('Password must be at least 6 characters.');
   const btn = document.querySelector('#signup-form .auth-btn');
   btn.textContent = 'Creating account...'; btn.disabled = true;
-  let ravenId = '';
-  try {
-    ravenId = await generateUniqueRavenId(sanitizeRavenBase(firstName || 'raven'));
-  } catch(e) { console.warn('raven_id pre-generation error:', e); }
-  const { data, error } = await db.auth.signUp({
-    email,
-    password,
-    options: {
-      emailRedirectTo: getDashboardConfirmRedirectTo(),
-      data: {
-        first_name: firstName || '',
-        username: ravenId || '',
-        raven_id: ravenId || ''
-      }
-    }
-  });
-  if (error) { showAuthError(error.message); btn.textContent = 'Create Account →'; btn.disabled = false; return; }
 
-  // Always auto-generate Raven ID on signup — firstName + 3-4 random digits (e.g. mel8472)
-  if (data?.session?.user) {
-    markRavenSignedIn();
-    try {
-      ravenId = ravenId || null;
-      for (let attempt = 0; attempt < 12 && !ravenId; attempt++) {
-        const digits = String(Math.floor(Math.random() * 900) + 100);
-        const candidate = (sanitizeRavenBase(firstName || 'raven') + digits).slice(0, 20);
-        const { data: existing } = await db.from('profiles').select('id').eq('raven_id', candidate).maybeSingle();
-        if (!existing) { ravenId = candidate; break; }
-      }
-      if (!ravenId) ravenId = await generateUniqueRavenId(sanitizeRavenBase(firstName || 'raven'), data.session.user.id);
-      let profileUpsertFailed = false;
-      try {
-        const { error: profileErr } = await db.from('profiles').upsert({
-        id: data.session.user.id, email, first_name: firstName || '',
-        raven_id: ravenId, username: ravenId, onboarding_complete: false, updated_at: new Date().toISOString()
-      }, { onConflict: 'id' });
-        profileUpsertFailed = !!profileErr;
-      } catch(e) { profileUpsertFailed = true; }
-      if (profileUpsertFailed) {
-        await db.from('profiles').upsert({
-          id: data.session.user.id, email, first_name: firstName || '',
-          raven_id: ravenId, onboarding_complete: false, updated_at: new Date().toISOString()
-        }, { onConflict: 'id' });
-      }
-      const existingLocal = JSON.parse(localStorage.getItem('raven_profile') || '{}');
-      localStorage.setItem('raven_profile', JSON.stringify({ ...existingLocal, first_name: firstName || '', raven_id: ravenId, username: ravenId, user_id: data.session.user.id }));
-    } catch(e) { console.warn('raven_id generation error:', e); }
+  // Create the account through the backend so the confirmation email is sent via
+  // Resend (reliable) instead of Supabase's built-in mailer, which is rate-limited
+  // and was not delivering confirmation emails for web/dashboard signups. The backend
+  // also generates and saves the raven_id/profile row, so no client-side upsert needed.
+  let payload;
+  try {
+    const response = await fetch(BACKEND + '/auth/app-signup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        firstName,
+        email,
+        password,
+        redirectTo: getDashboardConfirmRedirectTo()
+      })
+    });
+    payload = await response.json().catch(() => ({}));
+    if (!response.ok || !payload.success) throw new Error(payload.error || 'Could not create account.');
+  } catch (e) {
+    showAuthError(e.message || 'Could not send confirmation email. Please try again.');
+    btn.textContent = 'Create Account →'; btn.disabled = false;
+    return;
   }
 
   btn.textContent = 'Create Account →'; btn.disabled = false;
@@ -3299,16 +3259,6 @@ async function handleSignup() {
   if (card) card.appendChild(confirmDiv);
   // 🪶 Celebrate new account with flying ravens!
   celebrateBillCreated();
-
-  // If there's a pending join, handle it now before routing to onboarding
-  if (data?.session?.user) {
-    currentUser = data.session.user;
-    const pending = await getPendingJoin();
-    if (pending) {
-      const redirected = await handlePendingJoinIfAny(data.session.user.id, email, firstName || email.split('@')[0]);
-      if (redirected) return;
-    }
-  }
 }
 
 let payModalParticipantId = null;
