@@ -16,7 +16,7 @@ workflows:
         XCODE_WORKSPACE: ios/App/App.xcworkspace
         XCODE_SCHEME: App
       node: 20.19.0
-      xcode: 26.0
+      xcode: 16.4
 
     scripts:
       - name: Install Node & npm dependencies
@@ -208,20 +208,23 @@ workflows:
             ASC_LATEST_BUILD=0
           fi
 
-          # Timestamp-based build number (UTC, minute resolution): this always increases
-          # from one build to the next, so it can't collide even when Codemagic reuses the
-          # same $BUILD_NUMBER on a rebuild/retry, or when the App Store Connect API hasn't
-          # yet indexed the previous upload (both caused "Redundant Binary Upload" errors
-          # with the old offset-based scheme). ASC_LATEST_BUILD+1 is kept only as a floor.
-          TIMESTAMP_BUILD_NUMBER=$(date -u +%Y%m%d%H%M%S)
+          CI_BUILD_NUMBER="${BUILD_NUMBER:-${CM_BUILD_NUMBER:-1}}"
+          if ! [[ "$CI_BUILD_NUMBER" =~ ^[0-9]+$ ]]; then
+            CI_BUILD_NUMBER=1
+          fi
 
           APP_BUILD_NUMBER=$((ASC_LATEST_BUILD + 1))
-          if [ "$TIMESTAMP_BUILD_NUMBER" -gt "$APP_BUILD_NUMBER" ]; then
-            APP_BUILD_NUMBER="$TIMESTAMP_BUILD_NUMBER"
+          TS_BUILD_NUMBER="$(date -u +%Y%m%d%H%M%S)$(printf "%03d" "$CI_BUILD_NUMBER")"
+          if [ "$CI_BUILD_NUMBER" -gt "$APP_BUILD_NUMBER" ]; then
+            APP_BUILD_NUMBER="$CI_BUILD_NUMBER"
+          fi
+          if [ "$TS_BUILD_NUMBER" -gt "$APP_BUILD_NUMBER" ]; then
+            APP_BUILD_NUMBER="$TS_BUILD_NUMBER"
           fi
 
           echo "App Store latest build number: $ASC_LATEST_BUILD"
-          echo "Timestamp build number: $TIMESTAMP_BUILD_NUMBER"
+          echo "Codemagic build number: $CI_BUILD_NUMBER"
+          echo "Timestamp build candidate: $TS_BUILD_NUMBER"
           echo "Using iOS build number: $APP_BUILD_NUMBER"
 
           agvtool new-version -all "$APP_BUILD_NUMBER"
