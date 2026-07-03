@@ -1083,13 +1083,54 @@ function navigateWithRavens(url){
   launchRavenFlight();
   setTimeout(() => navigateWithFade(url), 380);
 }
-function goDashboard(){
-  if (isRavenSignedOut()) {
-    showAuthPanel('login');
-    return;
-  }
+async function goDashboard(){
   localStorage.setItem('raven_native_app','1');
-  navigateWithRavens('dashboard.html?app=1&page=overview');
+  if (isRavenSignedOut()) {
+    showSignedOutHome();
+    showAuthPanel('login');
+    showMessage('error', 'Please sign in to open your dashboard.');
+    return false;
+  }
+  showLoading(true);
+  try {
+    const { data: { session } } = await db.auth.getSession();
+    if (!session?.user) {
+      showLoading(false);
+      showSignedOutHome();
+      showAuthPanel('login');
+      showMessage('error', 'Please sign in to open your dashboard.');
+      return false;
+    }
+    markRavenSignedIn();
+    try { if (session.user.email) localStorage.setItem(APP_DASHBOARD_EMAIL_KEY, session.user.email); } catch(e) {}
+    const { data: profile } = await db.from('profiles').select('onboarding_complete,first_name,last_name,email,raven_id,username,avatar_url').eq('id', session.user.id).maybeSingle();
+    const cached = getCachedAppProfile();
+    const cachedMatches = cached && (
+      cached.user_id === session.user.id ||
+      cached.id === session.user.id ||
+      (cached.email && session.user.email && String(cached.email).toLowerCase() === String(session.user.email).toLowerCase())
+    );
+    if (profile?.onboarding_complete || (cachedMatches && cached.onboarding_complete)) {
+      localStorage.setItem('raven_profile', JSON.stringify({
+        ...(cachedMatches ? cached : {}),
+        ...(profile || {}),
+        user_id: session.user.id,
+        email: profile?.email || session.user.email || cached?.email || '',
+        username: profile?.username || profile?.raven_id || cached?.username || cached?.raven_id || '',
+        onboarding_complete: true
+      }));
+      navigateWithRavens('dashboard.html?app=1&page=overview');
+      return false;
+    }
+    showLoading(false);
+    window.location.href = 'onboarding.html?app=1';
+    return false;
+  } catch(e) {
+    showLoading(false);
+    showAuthPanel('login');
+    showMessage('error', 'Could not verify your session. Please sign in again.');
+    return false;
+  }
 }
 window.scanLogoAction = function scanLogoAction(event){
   if (event) {
@@ -1234,53 +1275,93 @@ async function handleSignup(event){
   btn.disabled = true;
   btn.textContent = 'Creating...';
   markFreshAuthStart(RAVEN_SIGNUP_AUTH_KEY);
-  // Always create the account through the backend so the confirmation email is sent
-  // via Resend (reliable, same path for native app and web/PWA) instead of Supabase's
-  // built-in mailer, which is rate-limited and was not delivering for web signups.
-  try {
-    const response = await fetch(BACKEND + '/auth/app-signup', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        firstName: first,
-        email,
-        password,
-        redirectTo: getAppConfirmRedirectTo()
-      })
-    });
-    const payload = await response.json().catch(() => ({}));
-    if (!response.ok || !payload.success) throw new Error(payload.error || 'Could not create account.');
-    btn.disabled = false;
-    btn.textContent = 'Create account';
-    pendingConfirmEmail = email;
-    el('login-email').value = email;
-    if (payload.confirmed) {
-      btn.disabled = true;
-      btn.textContent = 'Signing in...';
-      const { data: loginData, error: loginError } = await db.auth.signInWithPassword({ email, password });
+  let ravenId = '';
+  try { ravenId = await generateUniqueRavenId(first || 'raven'); } catch(e) {}
+  if (isNativeAppMode()) {
+    try {
+      const response = await fetch(BACKEND + '/auth/app-signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          firstName: first,
+          email,
+          password,
+          redirectTo: getAppConfirmRedirectTo()
+        })
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok || !payload.success) throw new Error(payload.error || 'Could not create account.');
       btn.disabled = false;
       btn.textContent = 'Create account';
-      if (loginError) throw loginError;
-      markRavenSignedIn();
-      localStorage.setItem('raven_app_dashboard_email', email);
-      if (loginData?.user) {
-        routeAfterAuth(loginData.user);
-        return;
+      pendingConfirmEmail = email;
+      el('login-email').value = email;
+      if (payload.confirmed) {
+        btn.disabled = true;
+        btn.textContent = 'Signing in...';
+        const { data: loginData, error: loginError } = await db.auth.signInWithPassword({ email, password });
+        btn.disabled = false;
+        btn.textContent = 'Create account';
+        if (loginError) throw loginError;
+        markRavenSignedIn();
+        localStorage.setItem('raven_app_dashboard_email', email);
+        if (loginData?.user) {
+          routeAfterAuth(loginData.user);
+          return;
+        }
       }
+      showEmailConfirmationPanel(email);
+      return;
+      } catch(e) {
+      clearFreshAuthStart();
+      btn.disabled = false;
+      btn.textContent = 'Create account';
+      return showMessage('error', e.message || 'Could not send confirmation email. Please try again.');
     }
-    showEmailConfirmationPanel(email);
-    return;
-  } catch(e) {
+  }
+  const { data, error } = await db.auth.signUp({
+    email,
+    password,
+    options: {
+      emailRedirectTo: getAppConfirmRedirectTo(),
+      data: { first_name: first, raven_id: ravenId, username: ravenId }
+    }
+  });
+  if (error) {
     clearFreshAuthStart();
     btn.disabled = false;
     btn.textContent = 'Create account';
-    if ((e.message || '').toLowerCase().includes('registered') || (e.message || '').toLowerCase().includes('already has an account')) {
+    if ((error.message || '').toLowerCase().includes('registered')) {
       pendingConfirmEmail = email;
       el('login-email').value = email;
       toggleResendConfirm(true);
     }
-    return showMessage('error', e.message || 'Could not send confirmation email. Please try again.');
+    return showMessage('error', error.message);
   }
+  if (data?.user) {
+    markRavenSignedIn();
+    try {
+      await db.from('profiles').upsert({
+        id: data.user.id,
+        email,
+        first_name: first,
+        raven_id: ravenId || await generateUniqueRavenId(first || 'raven', data.user.id),
+        username: ravenId,
+        onboarding_complete: false,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'id' });
+    } catch(e) {}
+  }
+  btn.disabled = false;
+  btn.textContent = 'Create account';
+  if (data?.session?.user) {
+    routeAfterAuth(data.session.user);
+    return;
+  }
+  pendingConfirmEmail = email;
+  showTab('login');
+  el('login-email').value = email;
+  toggleResendConfirm(true);
+  showMessage('success','Account created. Check your email to confirm, then sign in here.');
 }
 async function handleReset(event){
   event.preventDefault();
