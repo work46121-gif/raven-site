@@ -213,7 +213,7 @@ workflows:
           # same $BUILD_NUMBER on a rebuild/retry, or when the App Store Connect API hasn't
           # yet indexed the previous upload (both caused "Redundant Binary Upload" errors
           # with the old offset-based scheme). ASC_LATEST_BUILD+1 is kept only as a floor.
-          TIMESTAMP_BUILD_NUMBER=$(date -u +%Y%m%d%H%M)
+          TIMESTAMP_BUILD_NUMBER=$(date -u +%Y%m%d%H%M%S)
 
           APP_BUILD_NUMBER=$((ASC_LATEST_BUILD + 1))
           if [ "$TIMESTAMP_BUILD_NUMBER" -gt "$APP_BUILD_NUMBER" ]; then
