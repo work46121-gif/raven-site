@@ -16,7 +16,7 @@ workflows:
         XCODE_WORKSPACE: ios/App/App.xcworkspace
         XCODE_SCHEME: App
       node: 20.19.0
-      xcode: 26.0
+      xcode: 16.4
 
     scripts:
       - name: Install Node & npm dependencies
@@ -36,23 +36,16 @@ workflows:
           rm -rf dist
           mkdir -p dist
           rsync -a ./ dist/ \
-            --exclude dist/ \
-            --exclude ios/ \
-            --exclude node_modules/ \
-            --exclude .git/ \
-            --exclude "codemagic.yaml" \
-            --exclude "codemagic.yml" \
-            --exclude "package.json" \
-            --exclude "package-lock.json" \
-            --exclude "capacitor.config.json" \
-            --exclude "proxy.js" \
-            --exclude "server.js" \
-            --exclude "README.md" \
-            --exclude "*.yaml" \
-            --exclude "*.yml" \
-            --exclude "*.sh"
+            --exclude dist \
+            --exclude ios \
+            --exclude node_modules \
+            --exclude .git \
+            --exclude codemagic \
+            --exclude "package*.json" \
+            --exclude "proxy*.js" \
+            --exclude "server*.js" \
+            --exclude README.md
           cp app.html dist/index.html
-          echo "=== dist contents ==="
           ls -la dist
         working_directory: .
 
@@ -211,14 +204,24 @@ workflows:
           set -e
 
           ASC_LATEST_BUILD=$(app-store-connect get-latest-build-number "$APP_ID" 2>/dev/null || true)
-          if ! [[ "$ASC_LATEST_BUILD" =~ ^[0-9]+$ ]] || [ "$ASC_LATEST_BUILD" -lt 282 ]; then
-            ASC_LATEST_BUILD=282
+          if ! [[ "$ASC_LATEST_BUILD" =~ ^[0-9]+$ ]]; then
+            ASC_LATEST_BUILD=0
           fi
 
-          # Always use ASC latest + 1 so we never collide with an existing build
+          # Timestamp-based build number (UTC, minute resolution): this always increases
+          # from one build to the next, so it can't collide even when Codemagic reuses the
+          # same $BUILD_NUMBER on a rebuild/retry, or when the App Store Connect API hasn't
+          # yet indexed the previous upload (both caused "Redundant Binary Upload" errors
+          # with the old offset-based scheme). ASC_LATEST_BUILD+1 is kept only as a floor.
+          TIMESTAMP_BUILD_NUMBER=$(date -u +%Y%m%d%H%M)
+
           APP_BUILD_NUMBER=$((ASC_LATEST_BUILD + 1))
+          if [ "$TIMESTAMP_BUILD_NUMBER" -gt "$APP_BUILD_NUMBER" ]; then
+            APP_BUILD_NUMBER="$TIMESTAMP_BUILD_NUMBER"
+          fi
 
           echo "App Store latest build number: $ASC_LATEST_BUILD"
+          echo "Timestamp build number: $TIMESTAMP_BUILD_NUMBER"
           echo "Using iOS build number: $APP_BUILD_NUMBER"
 
           agvtool new-version -all "$APP_BUILD_NUMBER"
