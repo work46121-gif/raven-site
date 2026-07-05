@@ -15,8 +15,9 @@ workflows:
         XCODE_PROJECT: ios/App/App.xcodeproj
         XCODE_WORKSPACE: ios/App/App.xcworkspace
         XCODE_SCHEME: App
+        DEVELOPER_DIR: /Applications/Xcode-26.4.app/Contents/Developer
       node: 20.19.0
-      xcode: 16.4
+      xcode: 26.4
 
     scripts:
       - name: Install Node & npm dependencies
@@ -242,6 +243,15 @@ workflows:
       - name: Build iOS IPA
         script: |
           set -o pipefail
+          export DEVELOPER_DIR="${DEVELOPER_DIR:-/Applications/Xcode-26.4.app/Contents/Developer}"
+          if [ ! -d "$DEVELOPER_DIR" ]; then
+            echo "Required Xcode not found at $DEVELOPER_DIR"
+            echo "Available Xcode installs:"
+            ls -1 /Applications | grep -E '^Xcode' || true
+            exit 1
+          fi
+          xcodebuild -version
+          xcrun --sdk iphoneos --show-sdk-version
           xcode-project build-ipa \
             --workspace "$XCODE_WORKSPACE" \
             --scheme "$XCODE_SCHEME" \
