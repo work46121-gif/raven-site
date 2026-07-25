@@ -15,9 +15,8 @@ workflows:
         XCODE_PROJECT: ios/App/App.xcodeproj
         XCODE_WORKSPACE: ios/App/App.xcworkspace
         XCODE_SCHEME: App
-        DEVELOPER_DIR: /Applications/Xcode-26.4.app/Contents/Developer
       node: 20.19.0
-      xcode: 26.4
+      xcode: 16.4
 
     scripts:
       - name: Install Node & npm dependencies
@@ -59,6 +58,18 @@ workflows:
           npm -v
           npx cap add ios || true
           npx cap sync ios
+        working_directory: .
+
+      - name: Force iOS 26 SDK deployment target
+        script: |
+          set -e
+          PBXPROJ="ios/App/App.xcodeproj/project.pbxproj"
+          sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = [0-9][0-9.]*/IPHONEOS_DEPLOYMENT_TARGET = 26.0/g' "$PBXPROJ"
+          echo "Deployment targets after fix:"
+          grep "IPHONEOS_DEPLOYMENT_TARGET" "$PBXPROJ" | sort -u
+          if [ -f "ios/App/Podfile" ]; then
+            sed -i '' "s/platform :ios, '[0-9][0-9.]*'/platform :ios, '26.0'/g" ios/App/Podfile
+          fi
         working_directory: .
 
       - name: Configure iOS deep links
@@ -209,23 +220,28 @@ workflows:
             ASC_LATEST_BUILD=0
           fi
 
-          CI_BUILD_NUMBER="${BUILD_NUMBER:-${CM_BUILD_NUMBER:-1}}"
+          CI_BUILD_NUMBER="${BUILD_NUMBER:-1}"
           if ! [[ "$CI_BUILD_NUMBER" =~ ^[0-9]+$ ]]; then
             CI_BUILD_NUMBER=1
           fi
 
+          IOS_BUILD_OFFSET="${IOS_BUILD_OFFSET:-300}"
+          if ! [[ "$IOS_BUILD_OFFSET" =~ ^[0-9]+$ ]]; then
+            IOS_BUILD_OFFSET=300
+          fi
+
           APP_BUILD_NUMBER=$((ASC_LATEST_BUILD + 1))
-          TS_BUILD_NUMBER="$(date -u +%Y%m%d%H%M%S)$(printf "%03d" "$CI_BUILD_NUMBER")"
+          OFFSET_BUILD_NUMBER=$((IOS_BUILD_OFFSET + CI_BUILD_NUMBER))
           if [ "$CI_BUILD_NUMBER" -gt "$APP_BUILD_NUMBER" ]; then
             APP_BUILD_NUMBER="$CI_BUILD_NUMBER"
           fi
-          if [ "$TS_BUILD_NUMBER" -gt "$APP_BUILD_NUMBER" ]; then
-            APP_BUILD_NUMBER="$TS_BUILD_NUMBER"
+          if [ "$OFFSET_BUILD_NUMBER" -gt "$APP_BUILD_NUMBER" ]; then
+            APP_BUILD_NUMBER="$OFFSET_BUILD_NUMBER"
           fi
 
           echo "App Store latest build number: $ASC_LATEST_BUILD"
           echo "Codemagic build number: $CI_BUILD_NUMBER"
-          echo "Timestamp build candidate: $TS_BUILD_NUMBER"
+          echo "iOS build offset: $IOS_BUILD_OFFSET"
           echo "Using iOS build number: $APP_BUILD_NUMBER"
 
           agvtool new-version -all "$APP_BUILD_NUMBER"
@@ -243,15 +259,6 @@ workflows:
       - name: Build iOS IPA
         script: |
           set -o pipefail
-          export DEVELOPER_DIR="${DEVELOPER_DIR:-/Applications/Xcode-26.4.app/Contents/Developer}"
-          if [ ! -d "$DEVELOPER_DIR" ]; then
-            echo "Required Xcode not found at $DEVELOPER_DIR"
-            echo "Available Xcode installs:"
-            ls -1 /Applications | grep -E '^Xcode' || true
-            exit 1
-          fi
-          xcodebuild -version
-          xcrun --sdk iphoneos --show-sdk-version
           xcode-project build-ipa \
             --workspace "$XCODE_WORKSPACE" \
             --scheme "$XCODE_SCHEME" \
@@ -262,24 +269,7 @@ workflows:
             }
         working_directory: .
 
-      - name: Upload to TestFlight via xcrun altool
-        script: |
-          set -e
-          IPA_PATH=$(find build/ios/ipa -name "*.ipa" | head -1)
-          echo "Uploading: $IPA_PATH"
 
-          # Write the API key .p8 from env var (base64-encoded)
-          mkdir -p ~/.appstoreconnect/private_keys
-          echo "$APP_STORE_CONNECT_PRIVATE_KEY" | base64 --decode \
-            > ~/.appstoreconnect/private_keys/AuthKey_${APP_STORE_CONNECT_KEY_IDENTIFIER}.p8
-
-          xcrun altool --upload-app \
-            --type ios \
-            --file "$IPA_PATH" \
-            --apiKey "$APP_STORE_CONNECT_KEY_IDENTIFIER" \
-            --apiIssuer "$APP_STORE_CONNECT_ISSUER_ID" \
-            --verbose
-        working_directory: .
 
     artifacts:
       - build/ios/ipa/*.ipa
