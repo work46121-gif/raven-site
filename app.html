@@ -652,14 +652,8 @@ function isNativeAppMode(){
   }
 }
 function getAppAuthRedirectTo(){
-  try {
-    if (isNativeAppMode()) {
-      return 'ravensplit://auth/callback';
-    }
-    const origin = window.location.origin || '';
-    if (/^https?:\/\//i.test(origin)) return origin + window.location.pathname + '?app=1';
-  } catch(e) {}
-  // Capacitor uses a capacitor:// or file:// origin — fall back to the web URL for OAuth redirects only
+  // OAuth redirects always go through the system browser, so ravensplit:// custom schemes
+  // don't work. Always use the production HTTPS URL.
   return 'https://ravensplit.com/app.html?app=1';
 }
 function getAppPasswordResetRedirectTo(){
@@ -903,60 +897,43 @@ async function routeAfterAuth(user){
       showAppHome(profile);
       return;
     }
-    if (!profile && !hasFreshAuthStart() && !isNativeAppMode()) {
-      await enforceAppSignedOut();
-      ravenAuthRouting = false;
-      showAuthPanel('login');
-      showMessage('error', 'That account was removed or setup was canceled. Please create the account again.');
-      return;
+    // Always show the app home — new users fill in details from Settings.
+    // Silently patch onboarding_complete to true so the dashboard never redirects them away.
+    if (profile && !profile.onboarding_complete) {
+      try { await db.from('profiles').update({ onboarding_complete: true }).eq('id', user.id); } catch(e) {}
     }
     const cached = getCachedAppProfile();
     const cachedMatchesUser = cached && (
       (cached.user_id && cached.user_id === user.id) ||
       (cached.email && user.email && String(cached.email).toLowerCase() === String(user.email).toLowerCase())
     );
-    if (cachedMatchesUser && cached?.onboarding_complete) {
-      try { if (user.email) localStorage.setItem('raven_app_dashboard_email', user.email); } catch(e) {}
-      localStorage.setItem('raven_profile', JSON.stringify({
-        ...cached,
-        user_id: cached.user_id || user.id,
-        email: cached.email || user.email || '',
-        first_name: cached.first_name || profile?.first_name || '',
-        raven_id: cached.raven_id || profile?.raven_id || profile?.username || '',
-        username: cached.username || profile?.username || profile?.raven_id || '',
-        avatar_url: cached.avatar_url || profile?.avatar_url || '',
-        onboarding_complete: true
-      }));
-      showLoading(false);
-      ravenAuthRouting = false;
-      clearFreshAuthStart();
-      showAppHome(profile || cached || {});
-      return;
-    }
-    if ((cachedMatchesUser && cached) || new URLSearchParams(window.location.search).get('app') === '1' || isNativeAppMode()) {
-      localStorage.setItem('raven_profile', JSON.stringify({
-        ...(cachedMatchesUser ? cached : {}),
-        user_id: user.id,
-        email: user.email || '',
-        first_name: cachedMatchesUser ? (cached?.first_name || profile?.first_name || '') : (profile?.first_name || ''),
-        raven_id: cachedMatchesUser ? (cached?.raven_id || profile?.raven_id || profile?.username || '') : (profile?.raven_id || profile?.username || ''),
-        username: cachedMatchesUser ? (cached?.username || profile?.username || profile?.raven_id || '') : (profile?.username || profile?.raven_id || ''),
-        avatar_url: cachedMatchesUser ? (cached?.avatar_url || profile?.avatar_url || '') : (profile?.avatar_url || ''),
-        onboarding_complete: false
-      }));
-    }
+    try { if (user.email) localStorage.setItem('raven_app_dashboard_email', user.email); } catch(e) {}
+    localStorage.setItem('raven_profile', JSON.stringify({
+      ...(cachedMatchesUser ? cached : {}),
+      user_id: user.id,
+      email: user.email || '',
+      first_name: profile?.first_name || (cachedMatchesUser ? cached?.first_name : '') || '',
+      raven_id: profile?.raven_id || profile?.username || (cachedMatchesUser ? cached?.raven_id : '') || '',
+      username: profile?.username || profile?.raven_id || (cachedMatchesUser ? cached?.username : '') || '',
+      avatar_url: profile?.avatar_url || (cachedMatchesUser ? cached?.avatar_url : '') || '',
+      onboarding_complete: true
+    }));
     showLoading(false);
     ravenAuthRouting = false;
-    window.location.href = 'onboarding.html' + (new URLSearchParams(window.location.search).get('app') === '1' ? '?app=1' : '');
+    clearFreshAuthStart();
+    showAppHome(profile || cached || {});
   } catch(e) {
     showLoading(false);
     ravenAuthRouting = false;
+    // Best-effort: show app home even on error
+    const cached = getCachedAppProfile();
     localStorage.setItem('raven_profile', JSON.stringify({
+      ...(cached || {}),
       user_id: user.id,
       email: user.email || '',
-      onboarding_complete: false
+      onboarding_complete: true
     }));
-    window.location.href = 'onboarding.html' + (new URLSearchParams(window.location.search).get('app') === '1' ? '?app=1' : '');
+    showAppHome(cached || {});
   }
 }
 function getCachedAppProfile(){
@@ -1110,20 +1087,19 @@ async function goDashboard(){
       cached.id === session.user.id ||
       (cached.email && session.user.email && String(cached.email).toLowerCase() === String(session.user.email).toLowerCase())
     );
-    if (profile?.onboarding_complete || (cachedMatches && cached.onboarding_complete)) {
-      localStorage.setItem('raven_profile', JSON.stringify({
-        ...(cachedMatches ? cached : {}),
-        ...(profile || {}),
-        user_id: session.user.id,
-        email: profile?.email || session.user.email || cached?.email || '',
-        username: profile?.username || profile?.raven_id || cached?.username || cached?.raven_id || '',
-        onboarding_complete: true
-      }));
-      navigateWithRavens('dashboard.html?app=1&page=overview');
-      return false;
+    // Always go to dashboard — patch onboarding_complete if needed so it doesn't redirect back
+    if (profile && !profile.onboarding_complete) {
+      try { await db.from('profiles').update({ onboarding_complete: true }).eq('id', session.user.id); } catch(e) {}
     }
-    showLoading(false);
-    window.location.href = 'onboarding.html?app=1';
+    localStorage.setItem('raven_profile', JSON.stringify({
+      ...(cachedMatches ? cached : {}),
+      ...(profile || {}),
+      user_id: session.user.id,
+      email: profile?.email || session.user.email || cached?.email || '',
+      username: profile?.username || profile?.raven_id || cached?.username || cached?.raven_id || '',
+      onboarding_complete: true
+    }));
+    navigateWithRavens('dashboard.html?app=1&page=overview');
     return false;
   } catch(e) {
     showLoading(false);
@@ -1346,7 +1322,7 @@ async function handleSignup(event){
         first_name: first,
         raven_id: ravenId || await generateUniqueRavenId(first || 'raven', data.user.id),
         username: ravenId,
-        onboarding_complete: false,
+        onboarding_complete: true,
         updated_at: new Date().toISOString()
       }, { onConflict: 'id' });
     } catch(e) {}
@@ -1582,3 +1558,4 @@ setTimeout(() => {
 </script>
 </body>
 </html>
+
