@@ -1821,6 +1821,39 @@ body.app-mode .cb-raven-add-icon { width:18px;height:18px;display:block; }
 
 
 
+      <!-- CHANGE PASSWORD SECTION -->
+      <div id="change-password-section" style="max-width:520px;margin-bottom:20px">
+        <div class="form-card" style="padding:24px">
+          <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted2);margin-bottom:16px">Security</div>
+          <div id="change-password-collapsed">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+              <div>
+                <div style="font-size:14px;font-weight:600;color:var(--white);margin-bottom:3px">Password</div>
+                <div style="font-size:12px;color:var(--muted)">Update your account password</div>
+              </div>
+              <button onclick="showChangePasswordForm()" style="padding:9px 18px;background:rgba(124,58,237,0.12);border:1px solid rgba(124,58,237,0.28);border-radius:10px;color:var(--purple3);font-family:'Epilogue',sans-serif;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0">🔒 Change Password</button>
+            </div>
+          </div>
+          <div id="change-password-form" style="display:none">
+            <div style="font-size:14px;font-weight:600;color:var(--white);margin-bottom:16px">Change Password</div>
+            <div class="form-group">
+              <label class="form-label">New Password</label>
+              <input id="cp-new" type="password" class="form-input" placeholder="At least 6 characters" autocomplete="new-password">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Confirm New Password</label>
+              <input id="cp-confirm" type="password" class="form-input" placeholder="••••••••" autocomplete="new-password">
+            </div>
+            <div id="cp-error" style="display:none;padding:10px 14px;background:rgba(255,68,68,0.08);border:1px solid rgba(255,68,68,0.2);border-radius:9px;font-size:13px;color:#FFB3B3;margin-bottom:12px"></div>
+            <div id="cp-success" style="display:none;padding:10px 14px;background:rgba(48,209,88,0.07);border:1px solid rgba(48,209,88,0.2);border-radius:9px;font-size:13px;color:var(--green);margin-bottom:12px">✅ Password updated!</div>
+            <div style="display:flex;gap:10px">
+              <button onclick="handleChangePassword()" id="cp-save-btn" style="flex:1;padding:12px;background:var(--green);border:none;border-radius:10px;color:#041208;font-family:'Epilogue',sans-serif;font-size:13px;font-weight:800;cursor:pointer">Save Password</button>
+              <button onclick="hideChangePasswordForm()" style="padding:12px 16px;background:transparent;border:1px solid var(--border2);border-radius:10px;color:var(--muted);font-family:'Epilogue',sans-serif;font-size:13px;font-weight:600;cursor:pointer">Cancel</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- PRIVACY SECTION — inline inside Settings page -->
       <div id="privacy-section" style="max-width:520px;margin-top:32px;padding-bottom:40px">
         <div class="form-card" style="padding:24px">
@@ -2476,15 +2509,17 @@ function isNativeAppMode() {
 }
 
 function getDashboardAuthRedirectTo() {
-  return isNativeAppMode() ? 'ravensplit://auth/callback' : 'https://ravensplit.com/dashboard.html';
+  // Always use the production HTTPS URL — OAuth redirects and email links open in the system
+  // browser, so ravensplit:// custom schemes don't work here.
+  return 'https://ravensplit.com/dashboard.html';
 }
 
 function getDashboardPasswordResetRedirectTo() {
-  return isNativeAppMode() ? 'ravensplit://auth/reset?app=1&reset=1' : 'https://ravensplit.com/dashboard.html?reset=1';
+  return 'https://ravensplit.com/dashboard.html?reset=1';
 }
 
 function getDashboardConfirmRedirectTo() {
-  return isNativeAppMode() ? 'ravensplit://auth/callback?app=1' : 'https://ravensplit.com/dashboard.html';
+  return 'https://ravensplit.com/dashboard.html';
 }
 
 function handleNativeAuthCallbackUrl(url) {
@@ -2741,6 +2776,39 @@ function showPasswordResetForm() {
   // Hide the tab buttons — this is a special flow
   const tabs = document.querySelector('.auth-tabs');
   if (tabs) tabs.style.display = 'none';
+}
+
+function showChangePasswordForm() {
+  document.getElementById('change-password-collapsed').style.display = 'none';
+  document.getElementById('change-password-form').style.display = 'block';
+  document.getElementById('cp-new').value = '';
+  document.getElementById('cp-confirm').value = '';
+  document.getElementById('cp-error').style.display = 'none';
+  document.getElementById('cp-success').style.display = 'none';
+  document.getElementById('cp-save-btn').style.display = '';
+  document.getElementById('cp-new').focus();
+}
+function hideChangePasswordForm() {
+  document.getElementById('change-password-collapsed').style.display = '';
+  document.getElementById('change-password-form').style.display = 'none';
+}
+async function handleChangePassword() {
+  const newPass = document.getElementById('cp-new').value;
+  const confirm = document.getElementById('cp-confirm').value;
+  const errEl = document.getElementById('cp-error');
+  const sucEl = document.getElementById('cp-success');
+  errEl.style.display = 'none';
+  sucEl.style.display = 'none';
+  if (!newPass || newPass.length < 6) { errEl.textContent = 'Password must be at least 6 characters.'; errEl.style.display = 'block'; return; }
+  if (newPass !== confirm) { errEl.textContent = "Passwords don't match."; errEl.style.display = 'block'; return; }
+  const btn = document.getElementById('cp-save-btn');
+  btn.textContent = 'Saving...'; btn.disabled = true;
+  const { error } = await db.auth.updateUser({ password: newPass });
+  btn.textContent = 'Save Password'; btn.disabled = false;
+  if (error) { errEl.textContent = error.message; errEl.style.display = 'block'; return; }
+  sucEl.style.display = 'block';
+  btn.style.display = 'none';
+  setTimeout(() => hideChangePasswordForm(), 2000);
 }
 
 async function handlePasswordReset() {
@@ -3287,18 +3355,18 @@ async function handleSignup() {
       try {
         const { error: profileErr } = await db.from('profiles').upsert({
         id: data.session.user.id, email, first_name: firstName || '',
-        raven_id: ravenId, username: ravenId, onboarding_complete: false, updated_at: new Date().toISOString()
+        raven_id: ravenId, username: ravenId, onboarding_complete: true, updated_at: new Date().toISOString()
       }, { onConflict: 'id' });
         profileUpsertFailed = !!profileErr;
       } catch(e) { profileUpsertFailed = true; }
       if (profileUpsertFailed) {
         await db.from('profiles').upsert({
           id: data.session.user.id, email, first_name: firstName || '',
-          raven_id: ravenId, onboarding_complete: false, updated_at: new Date().toISOString()
+          raven_id: ravenId, onboarding_complete: true, updated_at: new Date().toISOString()
         }, { onConflict: 'id' });
       }
       const existingLocal = JSON.parse(localStorage.getItem('raven_profile') || '{}');
-      localStorage.setItem('raven_profile', JSON.stringify({ ...existingLocal, first_name: firstName || '', raven_id: ravenId, username: ravenId, user_id: data.session.user.id }));
+      localStorage.setItem('raven_profile', JSON.stringify({ ...existingLocal, first_name: firstName || '', raven_id: ravenId, username: ravenId, user_id: data.session.user.id, onboarding_complete: true }));
     } catch(e) { console.warn('raven_id generation error:', e); }
   }
 
