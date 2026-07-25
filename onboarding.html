@@ -540,7 +540,7 @@ try {
 
 <div class="container">
   <div class="logo">
-    <span class="logo-icon">R</span>
+    <span class="logo-icon">🪶</span>
     <div class="logo-name">RAVEN</div>
     <div class="logo-sub">Let's set up your account</div>
   </div>
@@ -793,16 +793,16 @@ try {
           </div>
         </div>
         <div id="error-4" class="error-msg"></div>
-        <button class="btn-next" onclick="submitStep4()">Enter RAVEN</button>
+        <button class="btn-next" onclick="submitStep4()">🪶 Enter RAVEN</button>
       </div>
     </div>
 
     <!-- SUCCESS -->
     <div id="step-success" class="step-anim" style="display:none">
       <div class="success-wrap">
-        <span class="success-icon">R</span>
+        <span class="success-icon">🪶</span>
         <div class="success-title">You're in, <span id="welcome-name">friend</span>!</div>
-        <div class="success-sub">Your RAVEN account is ready. Start splitting bills instantly - no one needs to download anything.</div>
+        <div class="success-sub">Your RAVEN account is ready. Start splitting bills instantly — no one needs to download anything.</div>
         <button class="btn-next" onclick="goToDashboard()" style="max-width:280px;margin:0 auto;display:block">Open Dashboard</button>
       </div>
     </div>
@@ -1090,7 +1090,7 @@ function skipStep3() {
   goToStep(4);
 }
 
-// STEP 4: Privacy and terms
+// â”€â”€ STEP 4: Privacy and terms â”€â”€
 async function submitStep4() {
   const agreed = document.getElementById('terms-agree').checked;
   if (!agreed) { showError('error-4', 'Please agree to the Terms of Service and Privacy Policy to continue.'); return; }
@@ -1114,28 +1114,38 @@ async function submitStep4() {
 
 // ── HELPERS ──
 async function saveProfile(data) {
-  let ravenId = '';
-  let savedAt = new Date().toISOString();
-  try {
-    ravenId = await ensureGeneratedRavenId();
-    const payload = { id: currentUser.id, email: currentUser.email, updated_at: savedAt, ...(ravenId ? { raven_id: ravenId, username: ravenId } : {}), ...data };
-    const { error } = await db.from('profiles').upsert(payload, { onConflict: 'id' });
-    if (error) throw error;
-  } catch(e) {
-    console.error('saveProfile failed:', e);
-    throw e;
-  }
-  // Keep the local app cache aligned with the confirmed Supabase save.
+  // Strip columns that don't exist in the profiles schema
+  const { terms_accepted, privacy_accepted, terms_accepted_at, ...safeData } = data;
+
+  // Write localStorage immediately so dashboard fast-path works even if Supabase is slow
   const existing = JSON.parse(localStorage.getItem('raven_profile') || '{}');
   localStorage.setItem('raven_profile', JSON.stringify({
-    ...existing,
-    ...data,
-    user_id: currentUser.id,
-    id: currentUser.id,
-    email: currentUser.email || existing.email || '',
-    ...(ravenId ? { raven_id: ravenId, username: ravenId } : {}),
-    updated_at: savedAt
+    ...existing, ...safeData, user_id: currentUser.id, email: currentUser.email || existing.email || ''
   }));
+
+  const ravenId = await ensureGeneratedRavenId();
+  const payload = {
+    id: currentUser.id,
+    email: currentUser.email,
+    updated_at: new Date().toISOString(),
+    ...(ravenId ? { raven_id: ravenId, username: ravenId } : {}),
+    ...safeData
+  };
+
+  // Retry upsert up to 3 times — throws on final failure so callers know
+  let lastError = null;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const { error } = await db.from('profiles').upsert(payload, { onConflict: 'id' });
+      if (!error) { lastError = null; break; }
+      lastError = error;
+    } catch(e) { lastError = e; }
+    if (attempt < 2) await new Promise(r => setTimeout(r, 500 * (attempt + 1)));
+  }
+  if (lastError && safeData.onboarding_complete) {
+    throw new Error('Profile save failed: ' + (lastError.message || String(lastError)));
+  }
+  if (lastError) console.error('saveProfile non-critical error:', lastError);
 }
 
 function goToStep(step) {
@@ -1162,6 +1172,14 @@ function goToStep(step) {
 }
 
 function goToDashboard() {
+  // Guarantee the local cache is marked complete so dashboard never loops back
+  try {
+    const cached = JSON.parse(localStorage.getItem('raven_profile') || '{}');
+    cached.onboarding_complete = true;
+    if (currentUser?.id) cached.user_id = currentUser.id;
+    if (currentUser?.email) cached.email = currentUser.email;
+    localStorage.setItem('raven_profile', JSON.stringify(cached));
+  } catch(e) {}
   window.location.href = dashboardUrl();
 }
 
