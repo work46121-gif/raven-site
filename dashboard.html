@@ -2801,6 +2801,17 @@ async function handleChangePassword() {
   sucEl.style.display = 'none';
   if (!newPass || newPass.length < 6) { errEl.textContent = 'Password must be at least 6 characters.'; errEl.style.display = 'block'; return; }
   if (newPass !== confirm) { errEl.textContent = "Passwords don't match."; errEl.style.display = 'block'; return; }
+  // Google OAuth accounts have no password — updateUser will fail. Detect and explain.
+  try {
+    const { data: { user } } = await db.auth.getUser();
+    const identities = user?.identities || [];
+    const isGoogleOnly = identities.length > 0 && identities.every(i => i.provider === 'google');
+    if (isGoogleOnly) {
+      errEl.textContent = 'Your account uses Google sign-in and doesn\'t have a password. Sign in with Google instead.';
+      errEl.style.display = 'block';
+      return;
+    }
+  } catch(e) {}
   const btn = document.getElementById('cp-save-btn');
   btn.textContent = 'Saving...'; btn.disabled = true;
   const { error } = await db.auth.updateUser({ password: newPass });
