@@ -3769,9 +3769,25 @@ async function saveChangedPassword() {
   }
   try {
     if (btn) { btn.disabled = true; btn.textContent = 'Saving...'; }
-    const { data: { session } } = await db.auth.getSession();
+    let { data: { session } } = await db.auth.getSession();
+    if (!session?.user) {
+      // getSession() can return a stale/expired cached session, especially on
+      // mobile after the app has been backgrounded — try an explicit refresh
+      // before giving up.
+      const { data: refreshed } = await db.auth.refreshSession().catch(() => ({ data: null }));
+      session = refreshed?.session;
+    }
     if (!session?.user) throw new Error('Please sign in again before changing your password.');
-    const { error: updateError } = await db.auth.updateUser({ password: next });
+    let { error: updateError } = await db.auth.updateUser({ password: next });
+    if (updateError && /session/i.test(updateError.message || '')) {
+      // The cached session looked valid but the token had actually expired —
+      // refresh once and retry the update before failing.
+      const { data: refreshed2, error: refreshErr } = await db.auth.refreshSession();
+      if (refreshErr || !refreshed2?.session) {
+        throw new Error('Your session expired. Please sign out and sign back in, then try again.');
+      }
+      ({ error: updateError } = await db.auth.updateUser({ password: next }));
+    }
     if (updateError) throw updateError;
     if (success) { success.textContent = 'Password updated.'; success.style.display = 'block'; }
     setTimeout(closeChangePasswordModal, 900);
