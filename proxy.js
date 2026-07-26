@@ -162,7 +162,7 @@ const server = http.createServer(async (req, res) => {
   }
 
   // API routes → proxy to backend
-  const PROXY_PATHS = ['/sms', '/waitlist', '/remind', '/ping', '/demo/', '/demo/scan', '/gif-search', '/trip-info'];
+  const PROXY_PATHS = ['/sms', '/waitlist', '/remind', '/ping', '/demo/', '/demo/scan', '/gif-search', '/trip-info', '/lifestyle-coach'];
   if (PROXY_PATHS.some(p => urlPath.startsWith(p))) return proxyToBackend(req, res);
 
   // Static files
