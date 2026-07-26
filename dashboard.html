@@ -48,6 +48,9 @@
   --green-glow: rgba(48,209,88,0.2);
   --red: #FF4444;
   --orange: #FF6B35;
+  --gold: #F2C14E;
+  --gold2: #FFE8A3;
+  --gold-glow: rgba(242,193,78,0.28);
 }
 html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(--black); color: var(--white); overflow-x: hidden; }
 /* IMPORTANT: keep website dashboard visible by default */
@@ -1095,6 +1098,11 @@ body.app-mode .cb-raven-add-icon { width:18px;height:18px;display:block; }
     <rect x="7.05" y="10.1" width="3.9" height="4.8" rx="0.8" fill="url(#ravenGradientSoft)" opacity="0.72"></rect>
     <circle cx="13.9" cy="13.9" r="1.35" fill="#30D158"></circle>
   </symbol>
+  <symbol id="icon-lifestyle" viewBox="0 0 18 18">
+    <path d="M9 15.2C9 15.2 3.4 12.3 3.4 7.1C3.4 4.1 5.6 2.1 8.1 2.1C8.5 2.1 8.8 2.4 8.8 3V11.4" fill="none" stroke="url(#ravenGradient)" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"></path>
+    <path d="M9 15.2C9 15.2 14.6 12.3 14.6 7.1C14.6 4.1 12.4 2.1 9.9 2.1C9.5 2.1 9.2 2.4 9.2 3V11.4" fill="none" stroke="url(#ravenGradientSoft)" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"></path>
+    <circle cx="12.9" cy="13.9" r="1.35" fill="#30D158"></circle>
+  </symbol>
   <symbol id="icon-friends" viewBox="0 0 18 18">
     <circle cx="6.2" cy="5.25" r="2.45" fill="none" stroke="url(#ravenGradient)" stroke-width="1.3"></circle>
     <path d="M2 14C2 11.51 3.88 9.55 6.2 9.55C8.52 9.55 10.4 11.51 10.4 14" fill="none" stroke="url(#ravenGradient)" stroke-width="1.3" stroke-linecap="round"></path>
@@ -1268,6 +1276,7 @@ body.app-mode .cb-raven-add-icon { width:18px;height:18px;display:block; }
       <button class="nav-item" onclick="showPage('create-bill')"><span class="ni"><svg class="raven-icon"><use href="#icon-create-bill"></use></svg></span> Create Bill</button>
       <button class="nav-item" onclick="showPage('trip-hub')"><span class="ni"><svg class="raven-icon"><use href="#icon-trip-hub"></use></svg></span> Trip Hub</button>
       <button class="nav-item" onclick="showPage('roommates')"><span class="ni"><svg class="raven-icon"><use href="#icon-roommates"></use></svg></span> Roommates <span style="font-size:9px;font-weight:700;padding:1px 6px;background:rgba(48,209,88,0.15);border:1px solid rgba(48,209,88,0.3);border-radius:6px;color:var(--green);margin-left:4px;vertical-align:middle">BETA</span></button>
+      <button class="nav-item" onclick="showPage('lifestyle')"><span class="ni"><svg class="raven-icon"><use href="#icon-lifestyle"></use></svg></span> Raven Lifestyle <span style="font-size:9px;font-weight:700;padding:1px 6px;background:rgba(242,193,78,0.15);border:1px solid rgba(242,193,78,0.3);border-radius:6px;color:var(--gold);margin-left:4px;vertical-align:middle">PILOT</span></button>
       <button class="nav-item" onclick="showPage('friends')" style="position:relative"><span class="ni"><svg class="raven-icon"><use href="#icon-friends"></use></svg></span> Friends <span id="friends-dm-badge" style="display:none;position:absolute;top:6px;right:8px;min-width:16px;height:16px;padding:0 4px;background:var(--purple);border-radius:8px;font-size:10px;font-weight:700;color:#fff;align-items:center;justify-content:center"></span></button>
       <button class="nav-item" onclick="showPage('history')"><span class="ni"><svg class="raven-icon"><use href="#icon-history"></use></svg></span> History</button>
       <div style="flex:1"></div>
@@ -1715,12 +1724,132 @@ body.app-mode .cb-raven-add-icon { width:18px;height:18px;display:block; }
       </div>
     </div>
 
+    <!-- RAVEN LIFESTYLE PAGE -->
+    <div id="page-lifestyle" class="page">
+      <div class="page-header">
+        <h1 class="page-title">Raven <span>Lifestyle</span></h1>
+        <span style="font-size:10px;font-weight:800;letter-spacing:0.1em;color:var(--purple3);border:1px solid rgba(124,58,237,0.4);background:rgba(124,58,237,0.1);padding:6px 11px;border-radius:20px">PILOT</span>
+      </div>
+      <div style="max-width:900px">
+        <div class="rl-score-hero" id="rl-score-hero">
+          <div class="rl-score-eyebrow">Raven Score</div>
+          <div class="rl-score-month" id="rl-score-month"></div>
+          <div class="rl-gauge-stage">
+            <svg class="rl-gauge-svg" id="rl-gauge-svg" viewBox="0 0 320 260">
+              <defs>
+                <linearGradient id="rlWingGrad" x1="0" y1="1" x2="1" y2="0">
+                  <stop offset="0%" stop-color="#6D28D9"></stop>
+                  <stop offset="100%" stop-color="#C084FC"></stop>
+                </linearGradient>
+                <linearGradient id="rlWingGradGold" x1="0" y1="1" x2="1" y2="0">
+                  <stop offset="0%" stop-color="#B8862E"></stop>
+                  <stop offset="100%" stop-color="#FFE8A3"></stop>
+                </linearGradient>
+                <linearGradient id="rlWingGradLow" x1="0" y1="1" x2="1" y2="0">
+                  <stop offset="0%" stop-color="#3A3846"></stop>
+                  <stop offset="100%" stop-color="#6E6B80"></stop>
+                </linearGradient>
+              </defs>
+              <line x1="55" y1="150" x2="265" y2="150" stroke="rgba(255,255,255,0.08)" stroke-width="1.5" stroke-dasharray="2 5"></line>
+              <g id="rl-wing-left"></g>
+              <g id="rl-wing-right"></g>
+              <circle cx="160" cy="150" r="5" fill="var(--dark4)" stroke="rgba(255,255,255,0.15)" stroke-width="1"></circle>
+            </svg>
+            <div class="rl-gauge-center">
+              <div class="rl-gauge-number" id="rl-gauge-number">—</div>
+              <div class="rl-gauge-status" id="rl-gauge-status">NO FLIGHT DATA YET</div>
+              <div class="rl-gauge-caption" id="rl-gauge-caption">Log a paycheck, a bill, or an investment below to get your first score.</div>
+            </div>
+          </div>
+          <div class="rl-chip-row">
+            <div class="rl-chip">
+              <div class="rl-chip-top"><span class="rl-chip-label">Spending</span><span class="rl-chip-value" id="rl-chip-spend">—</span></div>
+              <div class="rl-chip-track"><div class="rl-chip-fill" id="rl-chip-spend-fill" style="width:0%"></div></div>
+              <div class="rl-chip-note">Bills paid vs. income earned this month</div>
+            </div>
+            <div class="rl-chip">
+              <div class="rl-chip-top"><span class="rl-chip-label">Timeliness</span><span class="rl-chip-value" id="rl-chip-time">—</span></div>
+              <div class="rl-chip-track"><div class="rl-chip-fill" id="rl-chip-time-fill" style="width:0%"></div></div>
+              <div class="rl-chip-note">Share of bills paid on or before the due date</div>
+            </div>
+            <div class="rl-chip">
+              <div class="rl-chip-top"><span class="rl-chip-label">Investing</span><span class="rl-chip-value" id="rl-chip-invest">—</span></div>
+              <div class="rl-chip-track"><div class="rl-chip-fill" id="rl-chip-invest-fill" style="width:0%"></div></div>
+              <div class="rl-chip-note">Money set aside vs. a 15% target of income</div>
+            </div>
+          </div>
+          <span class="rl-info-toggle" id="rl-info-toggle">How is this calculated?</span>
+          <div class="rl-info-panel" id="rl-info-panel">
+            Your <b>Raven Score</b> blends three habits from the current month: <b>spending discipline</b> (40%) rewards keeping bills under ~60% of income, <b>bill timeliness</b> (35%) tracks what's paid on or before its due date, and <b>investing consistency</b> (25%) measures contributions against a 15%-of-income target. Score <b>90+</b> for the whole month and a medal joins your roost.
+          </div>
+        </div>
+
+        <div class="rl-section-head">
+          <div>
+            <div class="rl-section-title">The Roost</div>
+            <div class="rl-section-sub">Score 90+ in a month, a medal comes home to roost.</div>
+          </div>
+        </div>
+        <div class="rl-roost" id="rl-roost"></div>
+
+        <div class="rl-section-head" style="margin-bottom:0">
+          <div>
+            <div class="rl-section-title">Tracked This Month</div>
+            <div class="rl-section-sub">Paychecks, bills, and investments feed your score.</div>
+          </div>
+        </div>
+        <div class="rl-tabbar">
+          <button class="rl-tab active" data-rltab="paychecks" onclick="rlSwitchTab('paychecks')">💵 Paychecks</button>
+          <button class="rl-tab" data-rltab="bills" onclick="rlSwitchTab('bills')">🧾 Bills</button>
+          <button class="rl-tab" data-rltab="investments" onclick="rlSwitchTab('investments')">📈 Investments</button>
+        </div>
+
+        <div class="rl-panel active" id="rl-panel-paychecks">
+          <div class="rl-panel-summary">
+            <div><div class="rl-panel-total-label">Income this month</div><div class="rl-panel-total-value" id="rl-total-paychecks">$0.00</div></div>
+            <button class="rl-add-btn" onclick="rlOpenModal('paycheck')">+ Add Paycheck</button>
+          </div>
+          <div class="rl-entry-list" id="rl-list-paychecks"></div>
+        </div>
+
+        <div class="rl-panel" id="rl-panel-bills">
+          <div class="rl-panel-summary">
+            <div><div class="rl-panel-total-label">Due this month</div><div class="rl-panel-total-value" id="rl-total-bills">$0.00</div></div>
+            <button class="rl-add-btn" onclick="rlOpenModal('bill')">+ Add Bill</button>
+          </div>
+          <div class="rl-entry-list" id="rl-list-bills"></div>
+        </div>
+
+        <div class="rl-panel" id="rl-panel-investments">
+          <div class="rl-panel-summary">
+            <div><div class="rl-panel-total-label">Invested this month</div><div class="rl-panel-total-value" id="rl-total-investments">$0.00</div></div>
+            <button class="rl-add-btn" onclick="rlOpenModal('investment')">+ Add Investment</button>
+          </div>
+          <div class="rl-entry-list" id="rl-list-investments"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="rl-modal-backdrop" id="rl-modal-backdrop">
+      <div class="rl-modal">
+        <div class="rl-modal-title" id="rl-modal-title">Add Paycheck</div>
+        <div id="rl-modal-fields"></div>
+        <div class="rl-modal-actions">
+          <button class="rl-btn-cancel" onclick="rlCloseModal()">Cancel</button>
+          <button class="rl-btn-save" onclick="rlSaveEntry()">Save</button>
+        </div>
+      </div>
+    </div>
+
 
 
 <div id="page-settings" class="page">
       <div class="page-header"><h1 class="page-title">Account <span>Settings</span></h1></div>
       <div id="mob-quick-nav" style="display:none;margin-bottom:20px">
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:20px">
+          <button onclick="showPage('lifestyle');setMobNav('mob-settings')" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:14px 8px;background:var(--dark);border:1px solid var(--border);border-radius:14px;cursor:pointer;-webkit-tap-highlight-color:transparent;text-align:center;position:relative">
+            <span class="mob-quick-glyph"><svg class="raven-icon xl"><use href="#icon-lifestyle"></use></svg></span><span style="font-size:11px;font-weight:600;color:var(--white)">Lifestyle</span><span style="position:absolute;top:6px;right:6px;font-size:8px;font-weight:700;padding:1px 4px;background:rgba(242,193,78,0.18);border-radius:4px;color:var(--gold)">PILOT</span>
+          </button>
           <button onclick="showPage('friends');setMobNav('mob-settings')" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:14px 8px;background:var(--dark);border:1px solid var(--border);border-radius:14px;cursor:pointer;-webkit-tap-highlight-color:transparent;text-align:center;position:relative">
             <span class="mob-quick-glyph"><svg class="raven-icon xl"><use href="#icon-friends"></use></svg></span><span style="font-size:11px;font-weight:600;color:var(--white)">Friends</span>
             <span id="mob-friends-badge" style="display:none;position:absolute;top:8px;right:8px;background:#A855F7;color:#fff;border-radius:10px;font-size:9px;font-weight:700;padding:1px 5px">!</span>
@@ -2883,13 +3012,6 @@ async function init() {
         return;
       }
       history.replaceState(null, '', window.location.pathname + (RAVEN_APP_MODE ? '?app=1' : ''));
-      const { data: { session: hashSession } } = await db.auth.getSession();
-      if (hashSession?.user) {
-        markRavenSignedIn();
-        currentUser = hashSession.user;
-        await checkOnboardingAndShow(currentUser.id);
-        return;
-      }
     }
     if (isPasswordRecovery) {
       try { await db.auth.getSession(); } catch(e) {}
@@ -3769,25 +3891,9 @@ async function saveChangedPassword() {
   }
   try {
     if (btn) { btn.disabled = true; btn.textContent = 'Saving...'; }
-    let { data: { session } } = await db.auth.getSession();
-    if (!session?.user) {
-      // getSession() can return a stale/expired cached session, especially on
-      // mobile after the app has been backgrounded — try an explicit refresh
-      // before giving up.
-      const { data: refreshed } = await db.auth.refreshSession().catch(() => ({ data: null }));
-      session = refreshed?.session;
-    }
+    const { data: { session } } = await db.auth.getSession();
     if (!session?.user) throw new Error('Please sign in again before changing your password.');
-    let { error: updateError } = await db.auth.updateUser({ password: next });
-    if (updateError && /session/i.test(updateError.message || '')) {
-      // The cached session looked valid but the token had actually expired —
-      // refresh once and retry the update before failing.
-      const { data: refreshed2, error: refreshErr } = await db.auth.refreshSession();
-      if (refreshErr || !refreshed2?.session) {
-        throw new Error('Your session expired. Please sign out and sign back in, then try again.');
-      }
-      ({ error: updateError } = await db.auth.updateUser({ password: next }));
-    }
+    const { error: updateError } = await db.auth.updateUser({ password: next });
     if (updateError) throw updateError;
     if (success) { success.textContent = 'Password updated.'; success.style.display = 'block'; }
     setTimeout(closeChangePasswordModal, 900);
@@ -4263,6 +4369,7 @@ function showPage(page) {
     'settings':     'mob-settings',
     'roommates':    'mob-settings',
     'friends':      'mob-settings',
+    'lifestyle':    'mob-settings',
     'history':      'mob-settings',
     'notifications':'mob-settings',
     'invite':       'mob-settings'
@@ -4279,6 +4386,7 @@ function showPage(page) {
   if (page === 'trip-hub')      loadTrips();
   if (page === 'roommates')     loadHouses();
   if (page === 'friends')       loadFriendsPage();
+  if (page === 'lifestyle')     renderLifestylePage();
 }
 
 async function loadAllData() {
@@ -10615,6 +10723,339 @@ async function sendChatMessage() {
   }
 }
 
+// ── RAVEN LIFESTYLE ──
+function rlStorageKey() {
+  const local = JSON.parse(localStorage.getItem('raven_profile') || '{}');
+  const uid = (typeof currentUser !== 'undefined' && currentUser?.id) || local.user_id || local.email || 'local';
+  return 'raven_lifestyle_v1_' + uid;
+}
+function rlLoadData() {
+  try {
+    const d = JSON.parse(localStorage.getItem(rlStorageKey()) || '{}');
+    return { paychecks: d.paychecks || [], bills: d.bills || [], investments: d.investments || [] };
+  } catch(e) { return { paychecks: [], bills: [], investments: [] }; }
+}
+function rlSaveData(d) { localStorage.setItem(rlStorageKey(), JSON.stringify(d)); }
+let RL_DATA = null;
+
+function rlUid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+function rlMonthKey(dateStr) { return (dateStr || '').slice(0,7); }
+function rlFmtMoney(n) { return '$' + Number(n||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function rlFmtDate(dateStr) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr + 'T12:00:00');
+  return d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+}
+function rlTodayISO() { return new Date().toISOString().slice(0,10); }
+function rlCurrentMonthKey() { return rlTodayISO().slice(0,7); }
+
+function rlComputeMonthScore(mKey) {
+  const paychecks = RL_DATA.paychecks.filter(p => rlMonthKey(p.date) === mKey);
+  const bills = RL_DATA.bills.filter(b => rlMonthKey(b.dueDate) === mKey);
+  const investments = RL_DATA.investments.filter(i => rlMonthKey(i.date) === mKey);
+
+  const income = paychecks.reduce((s,p) => s + Number(p.amount||0), 0);
+  const billsTotal = bills.reduce((s,b) => s + Number(b.amount||0), 0);
+  const investTotal = investments.reduce((s,i) => s + Number(i.amount||0), 0);
+
+  let spending = null;
+  if (income > 0) {
+    const ratio = billsTotal / income;
+    spending = rlClamp(100 - Math.max(0, ratio - 0.6) * 250, 0, 100);
+  }
+  let timeliness = null;
+  const decided = bills.filter(b => b.paidDate);
+  if (decided.length > 0) {
+    const onTime = decided.filter(b => b.paidDate <= b.dueDate).length;
+    timeliness = (onTime / decided.length) * 100;
+  }
+  let investing = null;
+  if (income > 0) {
+    investing = rlClamp((investTotal / income) / 0.15 * 100, 0, 100);
+  } else if (investTotal > 0) {
+    investing = 100;
+  }
+  const parts = [
+    { v: spending, w: 0.40 },
+    { v: timeliness, w: 0.35 },
+    { v: investing, w: 0.25 }
+  ].filter(p => p.v !== null);
+  let overall = null;
+  if (parts.length > 0) {
+    const totalW = parts.reduce((s,p)=>s+p.w,0);
+    overall = parts.reduce((s,p)=> s + p.v * (p.w/totalW), 0);
+  }
+  return {
+    income, billsTotal, investTotal, spending, timeliness, investing,
+    overall: overall !== null ? Math.round(overall) : null,
+    hasAnyData: paychecks.length > 0 || bills.length > 0 || investments.length > 0
+  };
+}
+function rlClamp(v,min,max) { return Math.max(min, Math.min(max, v)); }
+function rlStatusFor(score) {
+  if (score === null) return { label: 'NO FLIGHT DATA YET', cls: 'rl-status-none' };
+  if (score >= 90) return { label: 'SOARING', cls: 'rl-status-soaring' };
+  if (score >= 65) return { label: 'CRUISING', cls: 'rl-status-cruising' };
+  if (score >= 40) return { label: 'TAXIING', cls: 'rl-status-taxiing' };
+  return { label: 'GROUNDED', cls: 'rl-status-grounded' };
+}
+
+const RL_FEATHER_PATH = 'M0,0 C -18,-10 -52,-19 -92,-14 C -114,-11 -122,-3 -110,3 C -104,6 -96,8 -86,8.5 C -54,10 -22,4 0,0 Z';
+const RL_FEATHER_BARBS = ['M-22,-3 L-30,-14', 'M-42,-1 L-52,-13', 'M-62,2 L-73,-9', 'M-80,5 L-91,-5'];
+let rlWingsBuilt = false;
+function rlBuildFeatherGroup(id, mirror) {
+  const g = document.getElementById(id);
+  if (!g) return;
+  const scaleX = mirror ? -1 : 1;
+  g.setAttribute('transform', `translate(160,150) scale(${scaleX},1)`);
+  let inner = `<g id="${id}-rot"><path d="${RL_FEATHER_PATH}" fill="url(#rlWingGrad)" class="rl-feather-fill" stroke="rgba(0,0,0,0.15)" stroke-width="0.5"></path>`;
+  RL_FEATHER_BARBS.forEach(d => { inner += `<path d="${d}" stroke="rgba(255,255,255,0.22)" stroke-width="1" stroke-linecap="round" fill="none"></path>`; });
+  inner += `</g>`;
+  g.innerHTML = inner;
+}
+function rlSetWingAngle(score, tier) {
+  const s = score === null ? 8 : score;
+  const angle = 48 - (98 * (s/100));
+  const fillId = tier === 'gold' ? 'url(#rlWingGradGold)' : (score === null ? 'url(#rlWingGradLow)' : 'url(#rlWingGrad)');
+  ['rl-wing-left-rot','rl-wing-right-rot'].forEach((id) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.setAttribute('transform', `rotate(${-angle})`);
+    const fillEl = el.querySelector('.rl-feather-fill');
+    if (fillEl) fillEl.setAttribute('fill', fillId);
+  });
+}
+
+function renderLifestylePage() {
+  RL_DATA = rlLoadData();
+  if (!rlWingsBuilt) {
+    rlBuildFeatherGroup('rl-wing-left', false);
+    rlBuildFeatherGroup('rl-wing-right', true);
+    rlWingsBuilt = true;
+  }
+  rlRenderScoreHero();
+  rlRenderRoost();
+  rlRenderTrackers();
+  const infoToggle = document.getElementById('rl-info-toggle');
+  if (infoToggle && !infoToggle.dataset.wired) {
+    infoToggle.dataset.wired = '1';
+    infoToggle.addEventListener('click', () => document.getElementById('rl-info-panel').classList.toggle('rl-open'));
+  }
+  const backdrop = document.getElementById('rl-modal-backdrop');
+  if (backdrop && !backdrop.dataset.wired) {
+    backdrop.dataset.wired = '1';
+    backdrop.addEventListener('click', (e) => { if (e.target.id === 'rl-modal-backdrop') rlCloseModal(); });
+  }
+}
+function rlRenderScoreHero() {
+  const mKey = rlCurrentMonthKey();
+  const res = rlComputeMonthScore(mKey);
+  const status = rlStatusFor(res.overall);
+  const hero = document.getElementById('rl-score-hero');
+  const tier = res.overall !== null && res.overall >= 90 ? 'gold' : 'normal';
+  hero.classList.toggle('rl-soaring', tier === 'gold');
+  document.getElementById('rl-score-month').textContent = new Date(mKey + '-01T12:00:00').toLocaleDateString('en-US',{month:'long',year:'numeric'}) + ' · updates as you log activity';
+  const numEl = document.getElementById('rl-gauge-number');
+  numEl.textContent = res.overall === null ? '—' : res.overall;
+  numEl.classList.toggle('rl-na', res.overall === null);
+  const statusEl = document.getElementById('rl-gauge-status');
+  statusEl.textContent = status.label;
+  statusEl.className = 'rl-gauge-status ' + status.cls;
+  document.getElementById('rl-gauge-caption').textContent = res.overall === null
+    ? 'Log a paycheck, a bill, or an investment below to get your first score.'
+    : (res.overall >= 90 ? 'Full spread. Keep this up through month-end to lock the medal.' : 'Every logged paycheck, bill, and investment adjusts this live.');
+  rlSetChip('spend', res.spending);
+  rlSetChip('time', res.timeliness);
+  rlSetChip('invest', res.investing);
+  rlSetWingAngle(res.overall, tier);
+}
+function rlSetChip(key, val) {
+  const valEl = document.getElementById('rl-chip-' + key);
+  const fillEl = document.getElementById('rl-chip-' + key + '-fill');
+  if (!valEl || !fillEl) return;
+  valEl.textContent = val === null ? '—' : Math.round(val);
+  fillEl.style.width = (val === null ? 0 : val) + '%';
+  fillEl.style.background = val !== null && val >= 90 ? 'linear-gradient(90deg,#B8862E,#FFE8A3)' : 'linear-gradient(90deg,var(--purple),var(--purple3))';
+}
+function rlRenderRoost() {
+  const roost = document.getElementById('rl-roost');
+  if (!roost) return;
+  const now = new Date();
+  const months = [];
+  for (let i = 7; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    months.push(d.toISOString().slice(0,7));
+  }
+  const curKey = rlCurrentMonthKey();
+  roost.innerHTML = months.map(mKey => {
+    const res = rlComputeMonthScore(mKey);
+    const label = new Date(mKey + '-01T12:00:00').toLocaleDateString('en-US',{month:'short'});
+    const isCurrent = mKey === curKey;
+    if (isCurrent) {
+      return `<div class="rl-medal">
+        <div class="rl-medal-badge rl-live">${rlFeatherIconSVG('#9896A8')}</div>
+        <div class="rl-medal-score">${res.overall === null ? '—' : res.overall}</div>
+        <div class="rl-medal-month">${label} · live</div>
+      </div>`;
+    }
+    const earned = res.overall !== null && res.overall >= 90;
+    return `<div class="rl-medal">
+      <div class="rl-medal-badge ${earned ? 'rl-earned' : 'rl-missed'}">${rlFeatherIconSVG(earned ? '#3D2B06' : '#4A4858')}</div>
+      <div class="rl-medal-score">${res.overall === null ? '\u2014' : res.overall}</div>
+      <div class="rl-medal-month">${label}</div>
+    </div>`;
+  }).join('');
+}
+function rlFeatherIconSVG(color) {
+  return `<svg viewBox="0 0 24 24" fill="none"><path d="M12 21C12 21 5 17.5 5 10.5C5 6 8 3 12 3C16 3 19 6 19 10.5C19 17.5 12 21 12 21Z" stroke="${color}" stroke-width="1.6" stroke-linejoin="round"/><path d="M12 21V6" stroke="${color}" stroke-width="1.4" stroke-linecap="round"/></svg>`;
+}
+function rlRenderTrackers() {
+  rlRenderPaychecks();
+  rlRenderBills();
+  rlRenderInvestments();
+}
+function rlRenderPaychecks() {
+  const mKey = rlCurrentMonthKey();
+  const items = RL_DATA.paychecks.filter(p => rlMonthKey(p.date) === mKey).sort((a,b)=> b.date.localeCompare(a.date));
+  document.getElementById('rl-total-paychecks').textContent = rlFmtMoney(items.reduce((s,p)=>s+Number(p.amount||0),0));
+  const list = document.getElementById('rl-list-paychecks');
+  if (items.length === 0) { list.innerHTML = rlEmptyState('💵','No paychecks logged yet','Add your first paycheck to start building this month\u2019s score.'); return; }
+  list.innerHTML = items.map(p => `
+    <div class="rl-entry-card">
+      <div class="rl-entry-icon">💵</div>
+      <div class="rl-entry-body"><div class="rl-entry-name">${rlEscHtml(p.source)}</div><div class="rl-entry-meta">${rlFmtDate(p.date)}</div></div>
+      <div class="rl-entry-amount rl-pos">+${rlFmtMoney(p.amount)}</div>
+      <button class="rl-entry-del" onclick="rlDeleteEntry('paychecks','${p.id}')">×</button>
+    </div>`).join('');
+}
+function rlRenderBills() {
+  const mKey = rlCurrentMonthKey();
+  const items = RL_DATA.bills.filter(b => rlMonthKey(b.dueDate) === mKey).sort((a,b)=> a.dueDate.localeCompare(b.dueDate));
+  document.getElementById('rl-total-bills').textContent = rlFmtMoney(items.reduce((s,b)=>s+Number(b.amount||0),0));
+  const list = document.getElementById('rl-list-bills');
+  if (items.length === 0) { list.innerHTML = rlEmptyState('🧾','No bills logged yet','Add what\u2019s due this month to track timeliness.'); return; }
+  list.innerHTML = items.map(b => {
+    let pill;
+    if (b.paidDate && b.paidDate <= b.dueDate) pill = '<span class="rl-pill rl-pill-ontime">Paid on time</span>';
+    else if (b.paidDate) pill = '<span class="rl-pill rl-pill-late">Paid late</span>';
+    else if (b.dueDate < rlTodayISO()) pill = '<span class="rl-pill rl-pill-overdue">Overdue</span>';
+    else pill = '<span class="rl-pill rl-pill-due">Due ' + rlFmtDate(b.dueDate) + '</span>';
+    return `
+    <div class="rl-entry-card">
+      <div class="rl-entry-icon">🧾</div>
+      <div class="rl-entry-body"><div class="rl-entry-name">${rlEscHtml(b.name)}</div><div class="rl-entry-meta">${pill}</div></div>
+      <div class="rl-entry-amount rl-neg">-${rlFmtMoney(b.amount)}</div>
+      <button class="rl-entry-del" onclick="rlMarkPaid('${b.id}')" title="Mark paid" style="${b.paidDate ? 'display:none' : ''}">✓</button>
+      <button class="rl-entry-del" onclick="rlDeleteEntry('bills','${b.id}')">×</button>
+    </div>`;
+  }).join('');
+}
+function rlRenderInvestments() {
+  const mKey = rlCurrentMonthKey();
+  const items = RL_DATA.investments.filter(i => rlMonthKey(i.date) === mKey).sort((a,b)=> b.date.localeCompare(a.date));
+  document.getElementById('rl-total-investments').textContent = rlFmtMoney(items.reduce((s,i)=>s+Number(i.amount||0),0));
+  const list = document.getElementById('rl-list-investments');
+  if (items.length === 0) { list.innerHTML = rlEmptyState('📈','No investments logged yet','Log a contribution to start counting toward your score.'); return; }
+  list.innerHTML = items.map(i => `
+    <div class="rl-entry-card">
+      <div class="rl-entry-icon">📈</div>
+      <div class="rl-entry-body"><div class="rl-entry-name">${rlEscHtml(i.name)}</div><div class="rl-entry-meta">${rlEscHtml(i.type)} · ${rlFmtDate(i.date)}</div></div>
+      <div class="rl-entry-amount rl-pos">+${rlFmtMoney(i.amount)}</div>
+      <button class="rl-entry-del" onclick="rlDeleteEntry('investments','${i.id}')">×</button>
+    </div>`).join('');
+}
+function rlEmptyState(icon, title, copy) {
+  return `<div class="empty-state"><div style="font-size:32px;margin-bottom:10px;opacity:0.7">${icon}</div><div style="font-size:14px;font-weight:700;color:var(--muted2);margin-bottom:4px">${title}</div><div style="font-size:12px;max-width:280px;margin:0 auto;line-height:1.5">${copy}</div></div>`;
+}
+function rlEscHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function rlSwitchTab(name) {
+  document.querySelectorAll('.rl-tab').forEach(t => t.classList.toggle('active', t.dataset.rltab === name));
+  document.querySelectorAll('.rl-panel').forEach(p => p.classList.toggle('active', p.id === 'rl-panel-' + name));
+}
+
+let rlModalType = null;
+function rlOpenModal(type) {
+  rlModalType = type;
+  const titleMap = { paycheck:'Add Paycheck', bill:'Add Bill', investment:'Add Investment' };
+  document.getElementById('rl-modal-title').textContent = titleMap[type];
+  const fields = document.getElementById('rl-modal-fields');
+  if (type === 'paycheck') {
+    fields.innerHTML = `
+      <div class="rl-field"><label>Source</label><input id="rl-f-source" placeholder="e.g. Employer, Freelance"></div>
+      <div class="rl-field"><label>Amount</label><input id="rl-f-amount" type="number" step="0.01" placeholder="0.00"></div>
+      <div class="rl-field"><label>Date</label><input id="rl-f-date" type="date" value="${rlTodayISO()}"></div>`;
+  } else if (type === 'bill') {
+    fields.innerHTML = `
+      <div class="rl-field"><label>Name</label><input id="rl-f-name" placeholder="e.g. Rent, Electric"></div>
+      <div class="rl-field"><label>Amount</label><input id="rl-f-amount" type="number" step="0.01" placeholder="0.00"></div>
+      <div class="rl-field"><label>Due date</label><input id="rl-f-due" type="date" value="${rlTodayISO()}"></div>`;
+  } else {
+    fields.innerHTML = `
+      <div class="rl-field"><label>Name</label><input id="rl-f-name" placeholder="e.g. 401(k), Index fund"></div>
+      <div class="rl-field"><label>Amount</label><input id="rl-f-amount" type="number" step="0.01" placeholder="0.00"></div>
+      <div class="rl-field"><label>Type</label><select id="rl-f-type">
+        <option>Retirement</option><option>Stocks</option><option>Savings</option><option>Crypto</option><option>Other</option>
+      </select></div>
+      <div class="rl-field"><label>Date</label><input id="rl-f-date" type="date" value="${rlTodayISO()}"></div>`;
+  }
+  document.getElementById('rl-modal-backdrop').classList.add('rl-open');
+  setTimeout(() => { const first = fields.querySelector('input'); if (first) first.focus(); }, 50);
+}
+function rlCloseModal() { document.getElementById('rl-modal-backdrop').classList.remove('rl-open'); rlModalType = null; }
+function rlSaveEntry() {
+  const amount = parseFloat(document.getElementById('rl-f-amount').value);
+  if (!amount || amount <= 0) { showToast('Enter an amount greater than $0', 'error'); return; }
+  const prevRes = rlComputeMonthScore(rlCurrentMonthKey());
+  if (rlModalType === 'paycheck') {
+    const source = document.getElementById('rl-f-source').value.trim() || 'Paycheck';
+    const date = document.getElementById('rl-f-date').value || rlTodayISO();
+    RL_DATA.paychecks.push({ id: rlUid(), source, amount, date });
+  } else if (rlModalType === 'bill') {
+    const name = document.getElementById('rl-f-name').value.trim() || 'Bill';
+    const dueDate = document.getElementById('rl-f-due').value || rlTodayISO();
+    RL_DATA.bills.push({ id: rlUid(), name, amount, dueDate, paidDate: null });
+  } else {
+    const name = document.getElementById('rl-f-name').value.trim() || 'Investment';
+    const type = document.getElementById('rl-f-type').value;
+    const date = document.getElementById('rl-f-date').value || rlTodayISO();
+    RL_DATA.investments.push({ id: rlUid(), name, type, amount, date });
+  }
+  rlSaveData(RL_DATA);
+  rlCloseModal();
+  rlRenderScoreHero();
+  rlRenderRoost();
+  rlRenderTrackers();
+  rlCheckMedalMoment(prevRes);
+  showToast('Saved');
+}
+function rlMarkPaid(id) {
+  const bill = RL_DATA.bills.find(b => b.id === id);
+  if (!bill) return;
+  const prevRes = rlComputeMonthScore(rlCurrentMonthKey());
+  bill.paidDate = rlTodayISO();
+  rlSaveData(RL_DATA);
+  rlRenderScoreHero();
+  rlRenderRoost();
+  rlRenderTrackers();
+  rlCheckMedalMoment(prevRes);
+  showToast('Marked paid');
+}
+function rlDeleteEntry(bucket, id) {
+  RL_DATA[bucket] = RL_DATA[bucket].filter(x => x.id !== id);
+  rlSaveData(RL_DATA);
+  rlRenderScoreHero();
+  rlRenderRoost();
+  rlRenderTrackers();
+  showToast('Removed');
+}
+function rlCheckMedalMoment(prevRes) {
+  const res = rlComputeMonthScore(rlCurrentMonthKey());
+  if (prevRes.overall !== null && prevRes.overall < 90 && res.overall !== null && res.overall >= 90) {
+    showToast('🏅 Soaring — this month just earned a medal', 'success');
+  }
+}
+
 </script>
 
 <!-- ── TRIP GROUP CHAT MODAL ── -->
@@ -10702,6 +11143,95 @@ body.app-mode #trip-chat-modal > div:last-child {
 }
 body.app-mode #chat-input {
   font-size: 16px !important;
+}
+
+/* ── RAVEN LIFESTYLE ── */
+.rl-score-hero { position:relative; background:radial-gradient(120% 100% at 50% 0%, rgba(124,58,237,0.16), transparent 60%), var(--dark); border:1px solid var(--border2); border-radius:24px; padding:34px 28px 26px; overflow:hidden; }
+.rl-score-hero.rl-soaring { background:radial-gradient(120% 100% at 50% 0%, rgba(242,193,78,0.18), transparent 60%), var(--dark); border-color:rgba(242,193,78,0.35); }
+.rl-score-eyebrow { text-align:center; font-size:11px; font-weight:700; letter-spacing:0.28em; color:var(--muted2); text-transform:uppercase; margin-bottom:4px; }
+.rl-score-month { text-align:center; font-size:12px; color:var(--muted); margin-bottom:6px; }
+.rl-gauge-stage { position:relative; width:100%; max-width:420px; margin:0 auto; }
+.rl-gauge-svg { width:100%; height:auto; display:block; }
+.rl-gauge-center { position:absolute; left:50%; bottom:38%; transform:translateX(-50%); text-align:center; width:100%; }
+.rl-gauge-number { font-family:'Bebas Neue',sans-serif; font-size:76px; line-height:0.85; letter-spacing:0.02em; color:var(--white); }
+.rl-gauge-number.rl-na { font-size:44px; color:var(--muted); }
+.rl-gauge-status { margin-top:2px; font-size:13px; font-weight:800; letter-spacing:0.18em; text-transform:uppercase; }
+.rl-gauge-caption { margin-top:6px; font-size:11.5px; color:var(--muted); max-width:260px; margin-left:auto; margin-right:auto; line-height:1.4; }
+.rl-status-grounded { color:var(--red); }
+.rl-status-taxiing { color:var(--purple3); }
+.rl-status-cruising { color:var(--green); }
+.rl-status-soaring { color:var(--gold); }
+.rl-status-none { color:var(--muted); }
+.rl-chip-row { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:22px; }
+.rl-chip { background:var(--dark2); border:1px solid var(--border); border-radius:14px; padding:13px 14px; }
+.rl-chip-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+.rl-chip-label { font-size:10px; font-weight:800; letter-spacing:0.08em; color:var(--muted2); text-transform:uppercase; }
+.rl-chip-value { font-family:'Bebas Neue',sans-serif; font-size:20px; color:var(--white); }
+.rl-chip-track { height:5px; border-radius:3px; background:var(--dark4); overflow:hidden; }
+.rl-chip-fill { height:100%; border-radius:3px; background:linear-gradient(90deg,var(--purple),var(--purple3)); transition:width .5s ease; }
+.rl-chip-note { margin-top:7px; font-size:10.5px; color:var(--muted); line-height:1.4; }
+.rl-info-toggle { display:block; text-align:center; margin-top:16px; font-size:11px; color:var(--muted); cursor:pointer; text-decoration:underline; text-underline-offset:2px; }
+.rl-info-panel { display:none; margin-top:12px; padding:14px 16px; background:var(--dark2); border:1px solid var(--border); border-radius:12px; font-size:12px; color:var(--muted2); line-height:1.65; }
+.rl-info-panel.rl-open { display:block; }
+.rl-info-panel b { color:var(--white); }
+.rl-section-head { display:flex; align-items:baseline; justify-content:space-between; margin:34px 0 12px; }
+.rl-section-title { font-family:'Bebas Neue',sans-serif; font-size:22px; letter-spacing:0.06em; color:var(--white); }
+.rl-section-sub { font-size:11.5px; color:var(--muted); }
+.rl-roost { display:flex; gap:10px; overflow-x:auto; padding:4px 2px 10px; }
+.rl-medal { flex-shrink:0; width:64px; display:flex; flex-direction:column; align-items:center; gap:7px; }
+.rl-medal-badge { width:52px; height:52px; border-radius:50%; display:flex; align-items:center; justify-content:center; position:relative; }
+.rl-medal-badge.rl-earned { background:radial-gradient(circle at 35% 30%,var(--gold2),var(--gold) 60%,#B8862E 100%); box-shadow:0 0 0 1px rgba(242,193,78,0.5), 0 6px 18px var(--gold-glow); }
+.rl-medal-badge.rl-missed { background:var(--dark3); border:1px solid var(--border2); }
+.rl-medal-badge.rl-live { background:var(--dark3); border:1.5px dashed var(--purple2); animation:rl-pulse-ring 2s infinite; }
+@keyframes rl-pulse-ring { 0%,100%{ box-shadow:0 0 0 0 rgba(168,85,247,0.35);} 50%{ box-shadow:0 0 0 6px rgba(168,85,247,0);} }
+.rl-medal-badge svg { width:24px; height:24px; }
+.rl-medal-score { font-family:'JetBrains Mono',monospace; font-size:10px; font-weight:700; color:var(--muted2); }
+.rl-medal-month { font-size:9.5px; color:var(--muted); letter-spacing:0.04em; text-transform:uppercase; }
+.rl-tabbar { display:flex; gap:6px; background:var(--dark2); border:1px solid var(--border); border-radius:13px; padding:4px; margin-top:10px; }
+.rl-tab { flex:1; display:flex; align-items:center; justify-content:center; gap:7px; padding:10px 8px; border:none; background:none; color:var(--muted); font-size:13px; font-weight:700; font-family:'Epilogue',sans-serif; border-radius:9px; cursor:pointer; transition:all .15s; }
+.rl-tab.active { background:var(--dark3); color:var(--white); box-shadow:0 2px 10px rgba(0,0,0,0.35); }
+.rl-panel { display:none; margin-top:16px; }
+.rl-panel.active { display:block; }
+.rl-panel-summary { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+.rl-panel-total-label { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:0.1em; font-weight:700; }
+.rl-panel-total-value { font-family:'Bebas Neue',sans-serif; font-size:26px; color:var(--white); }
+.rl-add-btn { display:flex; align-items:center; gap:6px; padding:9px 15px; background:var(--purple); color:#fff; border:none; border-radius:10px; font-size:12.5px; font-weight:800; font-family:'Epilogue',sans-serif; cursor:pointer; transition:all .15s; }
+.rl-add-btn:hover { background:#8b4cf0; transform:translateY(-1px); }
+.rl-entry-list { display:flex; flex-direction:column; gap:8px; }
+.rl-entry-card { display:flex; align-items:center; gap:12px; background:var(--dark2); border:1px solid var(--border); border-radius:12px; padding:12px 14px; }
+.rl-entry-icon { width:36px; height:36px; border-radius:10px; background:var(--dark3); display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:15px; }
+.rl-entry-body { flex:1; min-width:0; }
+.rl-entry-name { font-size:13.5px; font-weight:700; color:var(--white); }
+.rl-entry-meta { font-size:11px; color:var(--muted); margin-top:2px; }
+.rl-entry-amount { font-family:'JetBrains Mono',monospace; font-size:14px; font-weight:700; white-space:nowrap; }
+.rl-entry-amount.rl-neg { color:var(--red); }
+.rl-entry-amount.rl-pos { color:var(--green); }
+.rl-pill { font-size:9.5px; font-weight:800; letter-spacing:0.04em; text-transform:uppercase; padding:3px 8px; border-radius:20px; white-space:nowrap; display:inline-block; }
+.rl-pill-ontime { background:rgba(48,209,88,0.12); color:var(--green); border:1px solid rgba(48,209,88,0.3); }
+.rl-pill-late { background:rgba(255,68,68,0.12); color:var(--red); border:1px solid rgba(255,68,68,0.3); }
+.rl-pill-due { background:rgba(124,58,237,0.12); color:var(--purple3); border:1px solid rgba(124,58,237,0.3); }
+.rl-pill-overdue { background:rgba(255,68,68,0.18); color:var(--red); border:1px solid rgba(255,68,68,0.4); }
+.rl-entry-del { width:26px; height:26px; border-radius:50%; background:transparent; border:1px solid var(--border2); color:var(--muted2); font-size:14px; cursor:pointer; flex-shrink:0; display:flex; align-items:center; justify-content:center; transition:all .15s; margin-left:4px; }
+.rl-entry-del:hover { background:rgba(255,68,68,0.12); border-color:rgba(255,68,68,0.35); color:var(--red); }
+.rl-modal-backdrop { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.72); z-index:2000; align-items:center; justify-content:center; padding:20px; }
+.rl-modal-backdrop.rl-open { display:flex; }
+.rl-modal { width:min(380px,100%); background:var(--dark); border:1px solid var(--border2); border-radius:18px; padding:22px; box-shadow:0 24px 80px rgba(0,0,0,0.6); }
+.rl-modal-title { font-family:'Bebas Neue',sans-serif; font-size:22px; letter-spacing:0.04em; margin-bottom:16px; color:var(--white); }
+.rl-field { margin-bottom:12px; }
+.rl-field label { display:block; font-size:10.5px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--muted2); margin-bottom:6px; }
+.rl-field input, .rl-field select { width:100%; padding:11px 13px; background:var(--dark2); border:1px solid var(--border); border-radius:9px; color:var(--white); font-family:'Epilogue',sans-serif; font-size:13.5px; outline:none; transition:border-color .15s; }
+.rl-field input:focus, .rl-field select:focus { border-color:var(--purple); }
+.rl-modal-actions { display:flex; gap:10px; justify-content:flex-end; margin-top:18px; }
+.rl-btn-cancel { padding:10px 15px; background:transparent; border:1px solid var(--border2); border-radius:10px; color:var(--muted2); font-weight:700; font-size:12.5px; font-family:'Epilogue',sans-serif; cursor:pointer; }
+.rl-btn-save { padding:10px 18px; background:var(--green); border:none; border-radius:10px; color:#000; font-weight:800; font-size:12.5px; font-family:'Epilogue',sans-serif; cursor:pointer; box-shadow:0 4px 16px var(--green-glow); }
+@media (prefers-reduced-motion: reduce) {
+  .rl-medal-badge.rl-live { animation:none; }
+  .rl-chip-fill, .rl-add-btn, .rl-entry-del { transition:none; }
+}
+@media (max-width:560px) {
+  .rl-gauge-number { font-size:58px; }
+  .rl-chip-row { gap:8px; }
+  .rl-chip-label { font-size:9px; }
 }
 </style>
 
