@@ -6,6 +6,7 @@
 <title>RAVEN LIFESTYLE</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Epilogue:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root {
   --black: #06060A;
@@ -81,6 +82,29 @@ button { font-family:'Epilogue',sans-serif; }
 .score-info-panel.open { display:block; }
 .score-info-panel b { color:var(--white); }
 
+/* ── SYNC BAR ── */
+.sync-bar { display:flex; align-items:center; gap:9px; font-size:11.5px; color:var(--muted2); margin-bottom:16px; padding:10px 14px; background:var(--dark2); border:1px solid var(--border); border-radius:11px; }
+.sync-dot { width:7px; height:7px; border-radius:50%; background:var(--muted); flex-shrink:0; transition:background .2s; }
+.sync-dot.on { background:var(--green); box-shadow:0 0 0 3px var(--green-glow); }
+.sync-dot.off { background:var(--gold); box-shadow:0 0 0 3px var(--gold-glow); }
+.sync-link { color:var(--purple3); font-weight:700; text-decoration:underline; text-underline-offset:2px; margin-left:auto; flex-shrink:0; }
+
+/* ── RECURRING ── */
+.freq-pill { font-size:9.5px; font-weight:800; letter-spacing:0.03em; text-transform:uppercase; padding:3px 8px; border-radius:20px; background:rgba(124,58,237,0.12); color:var(--purple3); border:1px solid rgba(124,58,237,0.3); white-space:nowrap; }
+.field-hint { font-size:10.5px; color:var(--muted); line-height:1.45; margin:-6px 0 12px; }
+.entry-stop { font-size:13px; }
+
+/* ── SUGGESTS ── */
+.suggest-list { display:flex; flex-direction:column; gap:10px; }
+.suggest-card { display:flex; gap:12px; background:var(--dark2); border:1px solid var(--border); border-radius:14px; padding:15px 16px; }
+.suggest-card.highlight { border-color:rgba(242,193,78,0.4); background:linear-gradient(180deg,rgba(242,193,78,0.08),var(--dark2)); }
+.suggest-icon { width:34px; height:34px; border-radius:10px; background:var(--dark3); display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:16px; }
+.suggest-body { flex:1; min-width:0; }
+.suggest-title { font-size:13.5px; font-weight:800; margin-bottom:3px; }
+.suggest-copy { font-size:12px; color:var(--muted2); line-height:1.55; }
+.suggest-impact { margin-top:8px; font-size:10px; font-weight:800; letter-spacing:0.05em; text-transform:uppercase; color:var(--purple3); }
+.suggest-note { font-size:11px; color:var(--muted); text-align:center; margin-top:14px; line-height:1.5; }
+
 /* ── ROOST ── */
 .section-head { display:flex; align-items:baseline; justify-content:space-between; margin:34px 0 12px; }
 .section-title { font-family:'Bebas Neue',sans-serif; font-size:22px; letter-spacing:0.06em; }
@@ -117,7 +141,7 @@ button { font-family:'Epilogue',sans-serif; }
 .entry-icon { width:36px; height:36px; border-radius:10px; background:var(--dark3); display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:15px; }
 .entry-body { flex:1; min-width:0; }
 .entry-name { font-size:13.5px; font-weight:700; }
-.entry-meta { font-size:11px; color:var(--muted); margin-top:2px; }
+.entry-meta { display:flex; align-items:center; gap:6px; flex-wrap:wrap; font-size:11px; color:var(--muted); margin-top:3px; }
 .entry-amount { font-family:'JetBrains Mono',monospace; font-size:14px; font-weight:700; white-space:nowrap; }
 .entry-amount.neg { color:var(--red); }
 .entry-amount.pos { color:var(--green); }
@@ -177,6 +201,12 @@ a:focus-visible, button:focus-visible, .tab:focus-visible, input:focus-visible, 
     <div class="pilot-tag">PILOT</div>
   </div>
 
+  <!-- SYNC STATUS -->
+  <div class="sync-bar" id="sync-bar">
+    <span class="sync-dot" id="sync-dot"></span>
+    <span id="sync-text">Checking sync…</span>
+  </div>
+
   <!-- SCORE HERO -->
   <div class="score-hero" id="score-hero">
     <div class="score-eyebrow">Raven Score</div>
@@ -214,23 +244,26 @@ a:focus-visible, button:focus-visible, .tab:focus-visible, input:focus-visible, 
       <div class="chip">
         <div class="chip-top"><span class="chip-label">Spending</span><span class="chip-value" id="chip-spend">—</span></div>
         <div class="chip-track"><div class="chip-fill" id="chip-spend-fill" style="width:0%"></div></div>
-        <div class="chip-note">Bills paid vs. income earned this month</div>
+        <div class="chip-note">Bills vs. income</div>
       </div>
       <div class="chip">
         <div class="chip-top"><span class="chip-label">Timeliness</span><span class="chip-value" id="chip-time">—</span></div>
         <div class="chip-track"><div class="chip-fill" id="chip-time-fill" style="width:0%"></div></div>
-        <div class="chip-note">Share of bills paid on or before the due date</div>
+        <div class="chip-note">Paid on time</div>
       </div>
       <div class="chip">
         <div class="chip-top"><span class="chip-label">Investing</span><span class="chip-value" id="chip-invest">—</span></div>
         <div class="chip-track"><div class="chip-fill" id="chip-invest-fill" style="width:0%"></div></div>
-        <div class="chip-note">Money set aside vs. a 15% target of income</div>
+        <div class="chip-note">Vs. 15% target</div>
       </div>
     </div>
 
     <span class="score-info-toggle" id="info-toggle">How is this calculated?</span>
     <div class="score-info-panel" id="info-panel">
-      Your <b>Raven Score</b> blends three habits from the current month: <b>spending discipline</b> (40%) rewards keeping bills under ~60% of income, <b>bill timeliness</b> (35%) tracks what's paid on or before its due date, and <b>investing consistency</b> (25%) measures contributions against a 15%-of-income target. Score <b>90+</b> for the whole month and a medal joins your roost.
+      <b>Spending</b> (40% of score) — keep bills under ~60% of income.<br>
+      <b>Timeliness</b> (35%) — pay bills on or before the due date.<br>
+      <b>Investing</b> (25%) — put aside 15% of income.<br>
+      Hit <b>90+</b> for the whole month and a medal joins your roost.
     </div>
   </div>
 
@@ -251,9 +284,10 @@ a:focus-visible, button:focus-visible, .tab:focus-visible, input:focus-visible, 
     </div>
   </div>
   <div class="tabbar">
-    <button class="tab active" data-tab="paychecks" onclick="switchTab('paychecks')">💵 Paychecks</button>
-    <button class="tab" data-tab="bills" onclick="switchTab('bills')">🧾 Bills</button>
-    <button class="tab" data-tab="investments" onclick="switchTab('investments')">📈 Investments</button>
+    <button class="tab active" data-tab="paychecks" onclick="switchTab('paychecks')"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.6"/><path d="M12 7.5v9M14.5 9.6c0-1-.9-1.8-2.5-1.8s-2.5.8-2.5 1.8c0 2.4 5 1.1 5 3.5 0 1-1 1.8-2.5 1.8s-2.7-.8-2.7-1.8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg> Paychecks</button>
+    <button class="tab" data-tab="bills" onclick="switchTab('bills')"><svg viewBox="0 0 24 24" fill="none"><path d="M6 3h12v18l-2.5-1.6L13 21l-2.5-1.6L8 21l-2-1.4V3Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M8.5 8h7M8.5 11.5h7M8.5 15h4.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg> Bills</button>
+    <button class="tab" data-tab="investments" onclick="switchTab('investments')"><svg viewBox="0 0 24 24" fill="none"><path d="M4 16l5.2-5.5 3.4 3 6.4-7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M15.6 6.2h3.4v3.4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg> Investments</button>
+    <button class="tab" data-tab="suggests" onclick="switchTab('suggests')"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3.5l1.4 4.4 4.4 1.4-4.4 1.4L12 15.1l-1.4-4.4L6.2 9.3l4.4-1.4L12 3.5Z" fill="currentColor"/><path d="M18.3 14.8l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7.7-2Z" fill="currentColor"/></svg> Raven Suggests</button>
   </div>
 
   <div class="panel active" id="panel-paychecks">
@@ -279,6 +313,11 @@ a:focus-visible, button:focus-visible, .tab:focus-visible, input:focus-visible, 
     </div>
     <div class="entry-list" id="list-investments"></div>
   </div>
+
+  <div class="panel" id="panel-suggests">
+    <div class="suggest-list" id="suggest-list"></div>
+    <div class="suggest-note">Generated from this month's own numbers — not a substitute for financial advice.</div>
+  </div>
 </div>
 
 <!-- MODAL -->
@@ -297,15 +336,124 @@ a:focus-visible, button:focus-visible, .tab:focus-visible, input:focus-visible, 
 
 <script>
 // ── DATA LAYER ──
-const STORAGE_KEY = 'raven_lifestyle_v1';
-function loadData() {
+// Data is cached locally for instant load, and synced to Supabase per-account
+// so it appears on any device signed into the same RAVEN account.
+const STORAGE_KEY = 'raven_lifestyle_v2';
+const SUPABASE_URL = 'https://ffjpzkpdumdcwnakpaje.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZmanB6a3BkdW1kY3duYWtwYWplIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5ODc4OTcsImV4cCI6MjA4ODU2Mzg5N30.JtDLVu4K1TJ8emcN_mvSHBu6e0y8-jPQv-ypoc9p0RU';
+
+let db = null;
+try {
+  const { createClient } = supabase;
+  db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth: { flowType: 'implicit', detectSessionInUrl: true, persistSession: true, autoRefreshToken: true }
+  });
+} catch(e) { console.warn('Supabase unavailable, running local-only:', e && e.message); }
+
+let currentUserId = null;
+
+function loadLocal() {
   try {
-    const d = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
-    return { paychecks: d.paychecks || [], bills: d.bills || [], investments: d.investments || [] };
-  } catch(e) { return { paychecks: [], bills: [], investments: [] }; }
+    const d = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
+    if (d) return { paychecks: d.paychecks || [], bills: d.bills || [], investments: d.investments || [] };
+  } catch(e) {}
+  // migrate older local-only save
+  try {
+    const old = JSON.parse(localStorage.getItem('raven_lifestyle_v1') || 'null');
+    if (old) return { paychecks: old.paychecks || [], bills: old.bills || [], investments: old.investments || [] };
+  } catch(e) {}
+  return { paychecks: [], bills: [], investments: [] };
 }
-function saveData(d) { localStorage.setItem(STORAGE_KEY, JSON.stringify(d)); }
-let DATA = loadData();
+function saveLocal(d) { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(d)); } catch(e) {} }
+let DATA = loadLocal();
+
+function setSyncBadge(state) {
+  const dot = document.getElementById('sync-dot');
+  const text = document.getElementById('sync-text');
+  const bar = document.getElementById('sync-bar');
+  if (!dot || !text || !bar) return;
+  const existingLink = bar.querySelector('.sync-link');
+  if (state === 'synced') {
+    dot.className = 'sync-dot on';
+    text.textContent = 'Synced to your account — up to date on every device';
+    if (existingLink) existingLink.remove();
+  } else {
+    dot.className = 'sync-dot off';
+    text.textContent = 'Saved on this device only';
+    if (!existingLink) {
+      const a = document.createElement('a');
+      a.href = 'dashboard.html';
+      a.className = 'sync-link';
+      a.textContent = 'Sign in to sync →';
+      bar.appendChild(a);
+    }
+  }
+}
+
+function mapRowsToData(rows) {
+  const mapped = { paychecks: [], bills: [], investments: [] };
+  (rows || []).forEach(row => {
+    if (row.kind === 'paycheck') {
+      mapped.paychecks.push({ id: row.id, source: row.name, amount: Number(row.amount || 0), date: row.date, frequency: row.frequency || 'one-time', seriesId: row.series_id || null });
+    } else if (row.kind === 'bill') {
+      mapped.bills.push({ id: row.id, name: row.name, amount: Number(row.amount || 0), dueDate: row.due_date, paidDate: row.paid_date, frequency: row.frequency || 'one-time', seriesId: row.series_id || null });
+    } else if (row.kind === 'investment') {
+      mapped.investments.push({ id: row.id, name: row.name, amount: Number(row.amount || 0), type: row.type, date: row.date });
+    }
+  });
+  return mapped;
+}
+
+async function pullCloud() {
+  if (!db || !currentUserId) return;
+  try {
+    const { data, error } = await db.from('lifestyle_entries').select('*').eq('user_id', currentUserId);
+    if (error) throw error;
+    DATA = mapRowsToData(data);
+    saveLocal(DATA);
+    renderAll();
+  } catch(e) { console.warn('RAVEN Lifestyle: cloud pull failed, showing local cache', e); }
+}
+
+async function persistRows(kind, rows) {
+  if (!db || !currentUserId) return;
+  try {
+    const payload = rows.map(r => ({ ...r, kind, user_id: currentUserId }));
+    const { error } = await db.from('lifestyle_entries').insert(payload);
+    if (error) throw error;
+  } catch(e) { console.warn('RAVEN Lifestyle: cloud save failed, kept locally', e); }
+}
+
+async function initAuthAndData() {
+  renderAll();
+  if (!db) { setSyncBadge('local'); return; }
+  try {
+    const { data: { session } } = await db.auth.getSession();
+    if (session && session.user) {
+      currentUserId = session.user.id;
+      setSyncBadge('synced');
+      await pullCloud();
+    } else {
+      setSyncBadge('local');
+    }
+  } catch(e) { setSyncBadge('local'); }
+
+  try {
+    db.auth.onAuthStateChange((event, session) => {
+      if (session && session.user) {
+        const changed = currentUserId !== session.user.id;
+        currentUserId = session.user.id;
+        setSyncBadge('synced');
+        if (changed) pullCloud();
+      } else {
+        currentUserId = null;
+        setSyncBadge('local');
+      }
+    });
+  } catch(e) {}
+
+  window.addEventListener('focus', () => { if (currentUserId) pullCloud(); });
+}
 
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
 function monthKey(dateStr) { return (dateStr || '').slice(0,7); } // YYYY-MM
@@ -317,6 +465,43 @@ function fmtDate(dateStr) {
 }
 function todayISO() { return new Date().toISOString().slice(0,10); }
 function currentMonthKey() { return todayISO().slice(0,7); }
+
+// ── RECURRENCE ──
+const FREQ_LABELS = { daily: 'Daily', weekly: 'Weekly', biweekly: 'Bi-weekly', monthly: 'Monthly' };
+const FREQ_HORIZON_DAYS = { daily: 45, weekly: 182, biweekly: 182, monthly: 365 };
+function freqLabel(f) { return FREQ_LABELS[f] || ''; }
+function generateOccurrenceDates(anchorISO, frequency) {
+  if (!frequency || frequency === 'one-time' || !FREQ_HORIZON_DAYS[frequency]) return [anchorISO];
+  const dates = [];
+  let d = new Date(anchorISO + 'T12:00:00');
+  const end = new Date(d.getTime() + FREQ_HORIZON_DAYS[frequency] * 86400000);
+  const stepDays = { daily: 1, weekly: 7, biweekly: 14 };
+  while (d <= end) {
+    dates.push(d.toISOString().slice(0,10));
+    if (frequency === 'monthly') d = new Date(d.getFullYear(), d.getMonth() + 1, d.getDate(), 12);
+    else d = new Date(d.getTime() + stepDays[frequency] * 86400000);
+  }
+  return dates;
+}
+function freqHintText(freq) {
+  const map = {
+    'one-time': 'Logged once, on the date above.',
+    daily: 'Repeats daily for about 6 weeks so future months keep counting automatically.',
+    weekly: 'Repeats weekly for about 6 months.',
+    biweekly: 'Repeats every 2 weeks for about 6 months.',
+    monthly: 'Repeats monthly for the next 12 months.'
+  };
+  return map[freq] || '';
+}
+function updateFreqHint() {
+  const sel = document.getElementById('f-frequency');
+  const hint = document.getElementById('freq-hint');
+  if (!sel || !hint) return;
+  hint.textContent = freqHintText(sel.value);
+}
+function freqPillHtml(seriesId, frequency) {
+  return seriesId ? `<span class="freq-pill">🔁 ${freqLabel(frequency)}</span>` : '';
+}
 
 // ── SCORE ENGINE ──
 function computeMonthScore(mKey) {
@@ -486,8 +671,9 @@ function renderPaychecks() {
   list.innerHTML = items.map(p => `
     <div class="entry-card">
       <div class="entry-icon">💵</div>
-      <div class="entry-body"><div class="entry-name">${escHtml(p.source)}</div><div class="entry-meta">${fmtDate(p.date)}</div></div>
+      <div class="entry-body"><div class="entry-name">${escHtml(p.source)}</div><div class="entry-meta"><span>${fmtDate(p.date)}</span>${freqPillHtml(p.seriesId, p.frequency)}</div></div>
       <div class="entry-amount pos">+${fmtMoney(p.amount)}</div>
+      ${p.seriesId ? `<button class="entry-del entry-stop" title="Stop future occurrences" onclick="deleteSeries('paychecks','${p.seriesId}')">⏹</button>` : ''}
       <button class="entry-del" onclick="deleteEntry('paychecks','${p.id}')">×</button>
     </div>`).join('');
 }
@@ -506,9 +692,10 @@ function renderBills() {
     return `
     <div class="entry-card">
       <div class="entry-icon">🧾</div>
-      <div class="entry-body"><div class="entry-name">${escHtml(b.name)}</div><div class="entry-meta">${pill}</div></div>
+      <div class="entry-body"><div class="entry-name">${escHtml(b.name)}</div><div class="entry-meta">${pill}${freqPillHtml(b.seriesId, b.frequency)}</div></div>
       <div class="entry-amount neg">-${fmtMoney(b.amount)}</div>
       <button class="entry-del" onclick="markPaid('${b.id}')" title="Mark paid" style="${b.paidDate ? 'display:none' : ''}">✓</button>
+      ${b.seriesId ? `<button class="entry-del entry-stop" title="Stop future occurrences" onclick="deleteSeries('bills','${b.seriesId}')">⏹</button>` : ''}
       <button class="entry-del" onclick="deleteEntry('bills','${b.id}')">×</button>
     </div>`;
   }).join('');
@@ -536,6 +723,73 @@ function renderAll() {
   renderScoreHero();
   renderRoost();
   renderTrackers();
+  renderSuggests();
+}
+
+// ── RAVEN SUGGESTS ──
+function generateInsights(res) {
+  const insights = [];
+  if (!res.hasAnyData) {
+    insights.push({ icon:'🪶', title:'Log your first activity', copy:'Add a paycheck, a bill, or an investment for this month and Raven Suggests will start coaching you toward a 90+ score.', impact:null });
+    return insights;
+  }
+  if (res.overall !== null && res.overall >= 90) {
+    insights.push({ icon:'🏅', title:'Soaring — you\u2019re at 90+', copy:'Hold spending, timeliness, and investing where they are through month-end to lock in this month\u2019s medal.', impact:null, highlight:true });
+  }
+  if (res.spending === null) {
+    insights.push({ icon:'💵', title:'Log income to unlock spending scoring', copy:'Add this month\u2019s paychecks so Raven can measure your bills against what you actually earned.', impact:'Unlocks 40% of your score' });
+  } else if (res.spending < 100) {
+    const ratio = res.income > 0 ? res.billsTotal / res.income : 0;
+    const over = res.billsTotal - res.income * 0.6;
+    insights.push({
+      icon:'💵',
+      title: over > 0 ? `Bills are ${Math.round(ratio*100)}% of income` : 'Keep bills under 60% of income',
+      copy: over > 0
+        ? `Bringing bills down by about ${fmtMoney(over)} (or adding that much more income) this month maxes out your spending score.`
+        : 'You\u2019re close to the 60% target — a little more income or a little less spend gets you to full marks.',
+      impact: `Spending is 40% of the score · currently ${Math.round(res.spending)}/100`
+    });
+  }
+  if (res.timeliness === null) {
+    insights.push({ icon:'🧾', title:'Mark a bill paid to unlock timeliness', copy:'Once you mark a bill paid, Raven tracks whether it landed on or before the due date.', impact:'Unlocks 35% of your score' });
+  } else if (res.timeliness < 100) {
+    const mKey = currentMonthKey();
+    const bills = DATA.bills.filter(b => monthKey(b.dueDate) === mKey);
+    const lateOrOverdue = bills.filter(b => (b.paidDate && b.paidDate > b.dueDate) || (!b.paidDate && b.dueDate < todayISO()));
+    insights.push({
+      icon:'🧾',
+      title: lateOrOverdue.length ? `${lateOrOverdue.length} bill${lateOrOverdue.length > 1 ? 's' : ''} paid late or overdue` : 'Pay remaining bills on time',
+      copy: 'Paying every remaining bill on or before its due date this month brings timeliness to 100.',
+      impact: `Timeliness is 35% of the score · currently ${Math.round(res.timeliness)}/100`
+    });
+  }
+  if (res.investing === null) {
+    insights.push({ icon:'📈', title:'Log income to unlock investing scoring', copy:'Raven measures contributions against 15% of what you earned this month.', impact:'Unlocks 25% of your score' });
+  } else if (res.investing < 100) {
+    const gap = Math.max(0, res.income * 0.15 - res.investTotal);
+    insights.push({
+      icon:'📈',
+      title: gap > 0 ? `${fmtMoney(gap)} short of your investing target` : 'Keep investing steady',
+      copy: gap > 0 ? `Adding ${fmtMoney(gap)} more toward savings or investments this month hits the 15%-of-income target.` : 'You\u2019re at or above target — keep this pace to hold a perfect investing score.',
+      impact: `Investing is 25% of the score · currently ${Math.round(res.investing)}/100`
+    });
+  }
+  return insights;
+}
+function renderSuggests() {
+  const list = document.getElementById('suggest-list');
+  if (!list) return;
+  const res = computeMonthScore(currentMonthKey());
+  const insights = generateInsights(res);
+  list.innerHTML = insights.map(i => `
+    <div class="suggest-card${i.highlight ? ' highlight' : ''}">
+      <div class="suggest-icon">${i.icon}</div>
+      <div class="suggest-body">
+        <div class="suggest-title">${i.title}</div>
+        <div class="suggest-copy">${i.copy}</div>
+        ${i.impact ? `<div class="suggest-impact">${i.impact}</div>` : ''}
+      </div>
+    </div>`).join('');
 }
 
 // ── TABS ──
@@ -551,15 +805,25 @@ function openModal(type) {
   const titleMap = { paycheck:'Add Paycheck', bill:'Add Bill', investment:'Add Investment' };
   document.getElementById('modal-title').textContent = titleMap[type];
   const fields = document.getElementById('modal-fields');
+  const freqOptions = `
+        <option value="one-time" selected>One-time</option>
+        <option value="daily">Daily</option>
+        <option value="weekly">Weekly</option>
+        <option value="biweekly">Bi-weekly</option>
+        <option value="monthly">Monthly</option>`;
   if (type === 'paycheck') {
     fields.innerHTML = `
       <div class="field"><label>Source</label><input id="f-source" placeholder="e.g. Employer, Freelance"></div>
       <div class="field"><label>Amount</label><input id="f-amount" type="number" step="0.01" placeholder="0.00"></div>
+      <div class="field"><label>Frequency</label><select id="f-frequency" onchange="updateFreqHint()">${freqOptions}</select></div>
+      <div class="field-hint" id="freq-hint">${freqHintText('one-time')}</div>
       <div class="field"><label>Date</label><input id="f-date" type="date" value="${todayISO()}"></div>`;
   } else if (type === 'bill') {
     fields.innerHTML = `
       <div class="field"><label>Name</label><input id="f-name" placeholder="e.g. Rent, Electric"></div>
       <div class="field"><label>Amount</label><input id="f-amount" type="number" step="0.01" placeholder="0.00"></div>
+      <div class="field"><label>Frequency</label><select id="f-frequency" onchange="updateFreqHint()">${freqOptions}</select></div>
+      <div class="field-hint" id="freq-hint">${freqHintText('one-time')}</div>
       <div class="field"><label>Due date</label><input id="f-due" type="date" value="${todayISO()}"></div>`;
   } else {
     fields.innerHTML = `
@@ -575,7 +839,7 @@ function openModal(type) {
 }
 function closeModal() { document.getElementById('modal-backdrop').classList.remove('open'); modalType = null; }
 
-function saveEntry() {
+async function saveEntry() {
   const amount = parseFloat(document.getElementById('f-amount').value);
   if (!amount || amount <= 0) { showToast('Enter an amount greater than $0'); return; }
 
@@ -583,39 +847,71 @@ function saveEntry() {
 
   if (modalType === 'paycheck') {
     const source = document.getElementById('f-source').value.trim() || 'Paycheck';
-    const date = document.getElementById('f-date').value || todayISO();
-    DATA.paychecks.push({ id: uid(), source, amount, date });
+    const anchor = document.getElementById('f-date').value || todayISO();
+    const frequency = document.getElementById('f-frequency').value;
+    const dates = generateOccurrenceDates(anchor, frequency);
+    const seriesId = dates.length > 1 ? uid() : null;
+    const rows = dates.map(date => ({ id: uid(), source, amount, date, frequency, seriesId }));
+    DATA.paychecks.push(...rows);
+    await persistRows('paycheck', rows.map(r => ({ id: r.id, name: r.source, amount: r.amount, date: r.date, frequency: r.frequency, series_id: r.seriesId })));
   } else if (modalType === 'bill') {
     const name = document.getElementById('f-name').value.trim() || 'Bill';
-    const dueDate = document.getElementById('f-due').value || todayISO();
-    DATA.bills.push({ id: uid(), name, amount, dueDate, paidDate: null });
+    const anchor = document.getElementById('f-due').value || todayISO();
+    const frequency = document.getElementById('f-frequency').value;
+    const dates = generateOccurrenceDates(anchor, frequency);
+    const seriesId = dates.length > 1 ? uid() : null;
+    const rows = dates.map(dueDate => ({ id: uid(), name, amount, dueDate, paidDate: null, frequency, seriesId }));
+    DATA.bills.push(...rows);
+    await persistRows('bill', rows.map(r => ({ id: r.id, name: r.name, amount: r.amount, due_date: r.dueDate, paid_date: null, frequency: r.frequency, series_id: r.seriesId })));
   } else {
     const name = document.getElementById('f-name').value.trim() || 'Investment';
     const type = document.getElementById('f-type').value;
     const date = document.getElementById('f-date').value || todayISO();
-    DATA.investments.push({ id: uid(), name, type, amount, date });
+    const row = { id: uid(), name, type, amount, date };
+    DATA.investments.push(row);
+    await persistRows('investment', [{ id: row.id, name: row.name, type: row.type, amount: row.amount, date: row.date }]);
   }
-  saveData(DATA);
+  saveLocal(DATA);
   closeModal();
   renderAll();
   checkMedalMoment(prevRes);
   showToast('Saved');
 }
-function markPaid(id) {
+async function markPaid(id) {
   const bill = DATA.bills.find(b => b.id === id);
   if (!bill) return;
   const prevRes = computeMonthScore(currentMonthKey());
   bill.paidDate = todayISO();
-  saveData(DATA);
+  saveLocal(DATA);
   renderAll();
   checkMedalMoment(prevRes);
   showToast('Marked paid');
+  if (db && currentUserId) {
+    try { await db.from('lifestyle_entries').update({ paid_date: bill.paidDate }).eq('id', id).eq('user_id', currentUserId); } catch(e) {}
+  }
 }
-function deleteEntry(bucket, id) {
+async function deleteEntry(bucket, id) {
   DATA[bucket] = DATA[bucket].filter(x => x.id !== id);
-  saveData(DATA);
+  saveLocal(DATA);
   renderAll();
   showToast('Removed');
+  if (db && currentUserId) {
+    try { await db.from('lifestyle_entries').delete().eq('id', id).eq('user_id', currentUserId); } catch(e) {}
+  }
+}
+async function deleteSeries(bucket, seriesId) {
+  const today = todayISO();
+  const dateOf = x => bucket === 'bills' ? x.dueDate : x.date;
+  DATA[bucket] = DATA[bucket].filter(x => !(x.seriesId === seriesId && dateOf(x) >= today));
+  saveLocal(DATA);
+  renderAll();
+  showToast('Stopped future occurrences');
+  if (db && currentUserId) {
+    try {
+      const dateCol = bucket === 'bills' ? 'due_date' : 'date';
+      await db.from('lifestyle_entries').delete().eq('series_id', seriesId).eq('user_id', currentUserId).gte(dateCol, today);
+    } catch(e) {}
+  }
 }
 function checkMedalMoment(prevRes) {
   const res = computeMonthScore(currentMonthKey());
@@ -641,7 +937,7 @@ document.getElementById('modal-backdrop').addEventListener('click', (e) => { if 
 
 buildFeatherGroup('wing-left', false);
 buildFeatherGroup('wing-right', true);
-renderAll();
+initAuthAndData();
 </script>
 </body>
 </html>
