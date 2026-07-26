@@ -1052,6 +1052,166 @@ body.app-mode .cb-raven-add-icon { width:18px;height:18px;display:block; }
 .trip-title-icon,.bill-action-icon { width:15px; height:15px; display:inline-block; vertical-align:-2px; margin-right:6px; flex-shrink:0; }
 .bill-action-icon { margin-right:5px; }
 .empty-icon.empty-icon-svg { width:auto; height:auto; opacity:1; display:inline-flex; align-items:center; justify-content:center; }
+
+/* ── RAVEN LIFESTYLE (ported from raven-lifestyle.html) ── */
+
+#page-lifestyle .wrap { max-width:900px; margin:0 auto; padding:0 20px 100px; }
+
+/* ── TOP BAR ── */
+#page-lifestyle .topbar { display:flex; align-items:center; justify-content:space-between; padding:22px 0 26px; }
+#page-lifestyle .back-link { display:flex; align-items:center; gap:7px; font-size:13px; font-weight:600; color:var(--muted2); padding:8px 12px; border-radius:9px; transition:all .15s; }
+#page-lifestyle .back-link:hover { color:var(--white); background:var(--dark2); }
+#page-lifestyle .brand { display:flex; flex-direction:column; align-items:center; gap:2px; }
+#page-lifestyle .brand-name { font-family:'Bebas Neue',sans-serif; font-size:26px; letter-spacing:0.14em; background:linear-gradient(135deg,var(--white),var(--purple3)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+#page-lifestyle .brand-sub { font-size:9.5px; letter-spacing:0.32em; color:var(--muted); text-transform:uppercase; }
+#page-lifestyle .pilot-tag { font-size:10px; font-weight:800; letter-spacing:0.1em; color:var(--purple3); border:1px solid rgba(124,58,237,0.4); background:rgba(124,58,237,0.1); padding:6px 11px; border-radius:20px; }
+
+/* ── SCORE HERO ── */
+#page-lifestyle .score-hero { position:relative; background:radial-gradient(120% 100% at 50% 0%, rgba(124,58,237,0.16), transparent 60%), var(--dark); border:1px solid var(--border2); border-radius:24px; padding:34px 28px 26px; overflow:hidden; }
+#page-lifestyle .score-hero.soaring { background:radial-gradient(120% 100% at 50% 0%, rgba(242,193,78,0.18), transparent 60%), var(--dark); border-color:rgba(242,193,78,0.35); }
+#page-lifestyle .score-eyebrow { text-align:center; font-size:11px; font-weight:700; letter-spacing:0.28em; color:var(--muted2); text-transform:uppercase; margin-bottom:4px; }
+#page-lifestyle .score-month { text-align:center; font-size:12px; color:var(--muted); margin-bottom:6px; }
+
+#page-lifestyle .gauge-stage { position:relative; width:100%; max-width:420px; margin:0 auto; }
+#page-lifestyle .gauge-svg { width:100%; height:auto; display:block; }
+#page-lifestyle .gauge-center { position:absolute; left:50%; bottom:38%; transform:translateX(-50%); text-align:center; width:100%; }
+#page-lifestyle .gauge-number { font-family:'Bebas Neue',sans-serif; font-size:76px; line-height:0.85; letter-spacing:0.02em; }
+#page-lifestyle .gauge-number.na { font-size:44px; color:var(--muted); }
+#page-lifestyle .gauge-status { margin-top:2px; font-size:13px; font-weight:800; letter-spacing:0.18em; text-transform:uppercase; }
+#page-lifestyle .gauge-caption { margin-top:6px; font-size:11.5px; color:var(--muted); max-width:260px; margin-left:auto; margin-right:auto; line-height:1.4; }
+
+#page-lifestyle .status-grounded { color:var(--red); }
+#page-lifestyle .status-taxiing { color:var(--purple3); }
+#page-lifestyle .status-cruising { color:var(--green); }
+#page-lifestyle .status-soaring { color:var(--gold); }
+#page-lifestyle .status-none { color:var(--muted); }
+
+#page-lifestyle .chip-row { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:22px; }
+#page-lifestyle .chip { background:var(--dark2); border:1px solid var(--border); border-radius:14px; padding:13px 14px; }
+#page-lifestyle .chip-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+#page-lifestyle .chip-label { font-size:10px; font-weight:800; letter-spacing:0.08em; color:var(--muted2); text-transform:uppercase; }
+#page-lifestyle .chip-value { font-family:'Bebas Neue',sans-serif; font-size:20px; }
+#page-lifestyle .chip-track { height:5px; border-radius:3px; background:var(--dark4); overflow:hidden; }
+#page-lifestyle .chip-fill { height:100%; border-radius:3px; background:linear-gradient(90deg,var(--purple),var(--purple3)); transition:width .5s ease; }
+#page-lifestyle .chip-note { margin-top:7px; font-size:10.5px; color:var(--muted); line-height:1.4; }
+
+#page-lifestyle .score-info-toggle { display:block; text-align:center; margin-top:16px; font-size:11px; color:var(--muted); cursor:pointer; text-decoration:underline; text-underline-offset:2px; }
+#page-lifestyle .score-info-panel { display:none; margin-top:12px; padding:14px 16px; background:var(--dark2); border:1px solid var(--border); border-radius:12px; font-size:12px; color:var(--muted2); line-height:1.65; }
+#page-lifestyle .score-info-panel.open { display:block; }
+#page-lifestyle .score-info-panel b { color:var(--white); }
+
+/* ── SYNC BAR ── */
+#page-lifestyle .sync-bar { display:flex; align-items:center; gap:9px; font-size:11.5px; color:var(--muted2); margin-bottom:16px; padding:10px 14px; background:var(--dark2); border:1px solid var(--border); border-radius:11px; }
+#page-lifestyle .sync-dot { width:7px; height:7px; border-radius:50%; background:var(--muted); flex-shrink:0; transition:background .2s; }
+#page-lifestyle .sync-dot.on { background:var(--green); box-shadow:0 0 0 3px var(--green-glow); }
+#page-lifestyle .sync-dot.off { background:var(--gold); box-shadow:0 0 0 3px var(--gold-glow); }
+#page-lifestyle .sync-link { color:var(--purple3); font-weight:700; text-decoration:underline; text-underline-offset:2px; margin-left:auto; flex-shrink:0; }
+
+/* ── RECURRING ── */
+#page-lifestyle .freq-pill { font-size:9.5px; font-weight:800; letter-spacing:0.03em; text-transform:uppercase; padding:3px 8px; border-radius:20px; background:rgba(124,58,237,0.12); color:var(--purple3); border:1px solid rgba(124,58,237,0.3); white-space:nowrap; }
+#page-lifestyle .field-hint { font-size:10.5px; color:var(--muted); line-height:1.45; margin:-6px 0 12px; }
+#page-lifestyle .entry-stop { font-size:13px; }
+
+/* ── SUGGESTS ── */
+#page-lifestyle .ai-coach-card { position:relative; background:radial-gradient(120% 100% at 50% 0%, rgba(124,58,237,0.14), transparent 60%), var(--dark); border:1px solid var(--border2); border-radius:18px; padding:20px 20px 18px; margin-bottom:18px; }
+#page-lifestyle .ai-coach-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+#page-lifestyle .ai-coach-title { display:flex; align-items:center; gap:8px; font-size:13px; font-weight:800; letter-spacing:0.06em; text-transform:uppercase; color:var(--purple3); }
+#page-lifestyle .ai-coach-title svg { width:15px; height:15px; }
+#page-lifestyle .ai-coach-refresh { background:var(--dark2); border:1px solid var(--border2); color:var(--muted2); font-size:11px; font-weight:700; padding:6px 11px; border-radius:9px; cursor:pointer; transition:all .15s; }
+#page-lifestyle .ai-coach-refresh:hover:not(:disabled) { color:var(--white); background:var(--dark3); }
+#page-lifestyle .ai-coach-refresh:disabled { opacity:0.5; cursor:default; }
+#page-lifestyle .ai-coach-body { font-size:13.5px; line-height:1.7; color:var(--white); white-space:pre-line; }
+#page-lifestyle .ai-coach-body.loading, #page-lifestyle .ai-coach-body.fallback { color:var(--muted2); font-style:italic; }
+#page-lifestyle .suggest-divider { text-align:center; font-size:10.5px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--muted); margin:6px 0 12px; }
+#page-lifestyle .suggest-list { display:flex; flex-direction:column; gap:10px; }
+#page-lifestyle .suggest-card { display:flex; gap:12px; background:var(--dark2); border:1px solid var(--border); border-radius:14px; padding:15px 16px; }
+#page-lifestyle .suggest-card.highlight { border-color:rgba(242,193,78,0.4); background:linear-gradient(180deg,rgba(242,193,78,0.08),var(--dark2)); }
+#page-lifestyle .suggest-icon { width:34px; height:34px; border-radius:10px; background:var(--dark3); display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:16px; }
+#page-lifestyle .suggest-body { flex:1; min-width:0; }
+#page-lifestyle .suggest-title { font-size:13.5px; font-weight:800; margin-bottom:3px; }
+#page-lifestyle .suggest-copy { font-size:12px; color:var(--muted2); line-height:1.55; }
+#page-lifestyle .suggest-impact { margin-top:8px; font-size:10px; font-weight:800; letter-spacing:0.05em; text-transform:uppercase; color:var(--purple3); }
+#page-lifestyle .suggest-note { font-size:11px; color:var(--muted); text-align:center; margin-top:14px; line-height:1.5; }
+
+/* ── ROOST ── */
+#page-lifestyle .section-head { display:flex; align-items:baseline; justify-content:space-between; margin:34px 0 12px; }
+#page-lifestyle .section-title { font-family:'Bebas Neue',sans-serif; font-size:22px; letter-spacing:0.06em; }
+#page-lifestyle .section-sub { font-size:11.5px; color:var(--muted); }
+
+#page-lifestyle .roost { display:flex; gap:10px; overflow-x:auto; padding:4px 2px 10px; }
+#page-lifestyle .medal { flex-shrink:0; width:64px; display:flex; flex-direction:column; align-items:center; gap:7px; }
+#page-lifestyle .medal-badge { width:52px; height:52px; border-radius:50%; display:flex; align-items:center; justify-content:center; position:relative; }
+#page-lifestyle .medal-badge.earned { background:radial-gradient(circle at 35% 30%,var(--gold2),var(--gold) 60%,#B8862E 100%); box-shadow:0 0 0 1px rgba(242,193,78,0.5), 0 6px 18px var(--gold-glow); }
+#page-lifestyle .medal-badge.missed { background:var(--dark3); border:1px solid var(--border2); }
+#page-lifestyle .medal-badge.live { background:var(--dark3); border:1.5px dashed var(--purple2); animation:pulse-ring 2s infinite; }
+@keyframes pulse-ring { 0%,100%{ box-shadow:0 0 0 0 rgba(168,85,247,0.35);} 50%{ box-shadow:0 0 0 6px rgba(168,85,247,0);} }
+#page-lifestyle .medal-badge svg { width:24px; height:24px; }
+#page-lifestyle .medal-score { font-family:'JetBrains Mono',monospace; font-size:10px; font-weight:700; color:var(--muted2); }
+#page-lifestyle .medal-badge.earned + .medal-score { color:var(--gold); }
+#page-lifestyle .medal-month { font-size:9.5px; color:var(--muted); letter-spacing:0.04em; text-transform:uppercase; }
+
+/* ── TABS ── */
+#page-lifestyle .tabbar { display:flex; gap:6px; background:var(--dark2); border:1px solid var(--border); border-radius:13px; padding:4px; margin-top:10px; }
+#page-lifestyle .tab { flex:1; display:flex; align-items:center; justify-content:center; gap:7px; padding:10px 8px; border:none; background:none; color:var(--muted); font-size:13px; font-weight:700; border-radius:9px; cursor:pointer; transition:all .15s; }
+#page-lifestyle .tab.active { background:var(--dark3); color:var(--white); box-shadow:0 2px 10px rgba(0,0,0,0.35); }
+#page-lifestyle .tab svg { width:15px; height:15px; }
+
+#page-lifestyle .panel { display:none; margin-top:16px; }
+#page-lifestyle .panel.active { display:block; }
+#page-lifestyle .panel-summary { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+#page-lifestyle .panel-total-label { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:0.1em; font-weight:700; }
+#page-lifestyle .panel-total-value { font-family:'Bebas Neue',sans-serif; font-size:26px; }
+#page-lifestyle .add-btn { display:flex; align-items:center; gap:6px; padding:9px 15px; background:var(--purple); color:#fff; border:none; border-radius:10px; font-size:12.5px; font-weight:800; cursor:pointer; transition:all .15s; }
+#page-lifestyle .add-btn:hover { background:#8b4cf0; transform:translateY(-1px); }
+
+#page-lifestyle .entry-list { display:flex; flex-direction:column; gap:8px; }
+#page-lifestyle .entry-card { display:flex; align-items:center; gap:12px; background:var(--dark2); border:1px solid var(--border); border-radius:12px; padding:12px 14px; }
+#page-lifestyle .entry-icon { width:36px; height:36px; border-radius:10px; background:var(--dark3); display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:15px; }
+#page-lifestyle .entry-body { flex:1; min-width:0; }
+#page-lifestyle .entry-name { font-size:13.5px; font-weight:700; }
+#page-lifestyle .entry-meta { display:flex; align-items:center; gap:6px; flex-wrap:wrap; font-size:11px; color:var(--muted); margin-top:3px; }
+#page-lifestyle .entry-amount { font-family:'JetBrains Mono',monospace; font-size:14px; font-weight:700; white-space:nowrap; }
+#page-lifestyle .entry-amount.neg { color:var(--red); }
+#page-lifestyle .entry-amount.pos { color:var(--green); }
+#page-lifestyle .pill { font-size:9.5px; font-weight:800; letter-spacing:0.04em; text-transform:uppercase; padding:3px 8px; border-radius:20px; white-space:nowrap; }
+#page-lifestyle .pill-ontime { background:rgba(48,209,88,0.12); color:var(--green); border:1px solid rgba(48,209,88,0.3); }
+#page-lifestyle .pill-late { background:rgba(255,107,107,0.12); color:var(--red); border:1px solid rgba(255,107,107,0.3); }
+#page-lifestyle .pill-due { background:rgba(124,58,237,0.12); color:var(--purple3); border:1px solid rgba(124,58,237,0.3); }
+#page-lifestyle .pill-overdue { background:rgba(255,107,107,0.18); color:var(--red); border:1px solid rgba(255,107,107,0.4); }
+#page-lifestyle .entry-del { width:26px; height:26px; border-radius:50%; background:transparent; border:1px solid var(--border2); color:var(--muted2); font-size:14px; cursor:pointer; flex-shrink:0; display:flex; align-items:center; justify-content:center; transition:all .15s; }
+#page-lifestyle .entry-del:hover { background:rgba(255,107,107,0.12); border-color:rgba(255,107,107,0.35); color:var(--red); }
+
+#page-lifestyle .empty-state { text-align:center; padding:40px 20px; color:var(--muted); }
+#page-lifestyle .empty-state .es-icon { font-size:32px; margin-bottom:10px; opacity:0.7; }
+#page-lifestyle .empty-state .es-title { font-size:14px; font-weight:700; color:var(--muted2); margin-bottom:4px; }
+#page-lifestyle .empty-state .es-copy { font-size:12px; max-width:280px; margin:0 auto; line-height:1.5; }
+
+/* ── MODAL ── */
+#page-lifestyle .modal-backdrop { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.72); z-index:200; align-items:center; justify-content:center; padding:20px; }
+#page-lifestyle .modal-backdrop.open { display:flex; }
+#page-lifestyle .modal { width:min(380px,100%); background:var(--dark); border:1px solid var(--border2); border-radius:18px; padding:22px; box-shadow:0 24px 80px rgba(0,0,0,0.6); }
+#page-lifestyle .modal-title { font-family:'Bebas Neue',sans-serif; font-size:22px; letter-spacing:0.04em; margin-bottom:16px; }
+#page-lifestyle .field { margin-bottom:12px; }
+#page-lifestyle .field label { display:block; font-size:10.5px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--muted2); margin-bottom:6px; }
+#page-lifestyle .field input, #page-lifestyle .field select { width:100%; padding:11px 13px; background:var(--dark2); border:1px solid var(--border); border-radius:9px; color:var(--white); font-family:'Epilogue',sans-serif; font-size:13.5px; outline:none; transition:border-color .15s; }
+#page-lifestyle .field input:focus, #page-lifestyle .field select:focus { border-color:var(--purple); }
+#page-lifestyle .modal-actions { display:flex; gap:10px; justify-content:flex-end; margin-top:18px; }
+#page-lifestyle .btn-cancel { padding:10px 15px; background:transparent; border:1px solid var(--border2); border-radius:10px; color:var(--muted2); font-weight:700; font-size:12.5px; cursor:pointer; }
+#page-lifestyle .btn-save { padding:10px 18px; background:var(--green); border:none; border-radius:10px; color:#000; font-weight:800; font-size:12.5px; cursor:pointer; box-shadow:0 4px 16px var(--green-glow); }
+
+#page-lifestyle a:focus-visible, #page-lifestyle button:focus-visible, #page-lifestyle .tab:focus-visible, #page-lifestyle input:focus-visible, #page-lifestyle select:focus-visible {
+  outline: 2px solid var(--purple2); outline-offset: 2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  #page-lifestyle .medal-badge.live { animation:none; }
+  #page-lifestyle .chip-fill, #page-lifestyle .add-btn, #page-lifestyle .entry-del { transition:none; }
+}
+@media (max-width:560px) {
+  #page-lifestyle .gauge-number { font-size:58px; }
+  #page-lifestyle .chip-row { gap:8px; }
+  #page-lifestyle .chip-label { font-size:9px; }
+}
+
 </style>
 </head>
 <body>
@@ -1092,16 +1252,15 @@ body.app-mode .cb-raven-add-icon { width:18px;height:18px;display:block; }
     <path d="M8.9 8.3L12.1 9" stroke="url(#ravenGradientSoft)" stroke-width="1.2" stroke-linecap="round"></path>
     <circle cx="14.8" cy="12.8" r="1.4" fill="#30D158"></circle>
   </symbol>
+  <symbol id="icon-lifestyle" viewBox="0 0 18 18">
+    <path d="M9 1.5L10.4 6.2L15 7.6L10.4 9L9 13.7L7.6 9L3 7.6L7.6 6.2L9 1.5Z" fill="url(#ravenGradient)"></path>
+    <circle cx="14.5" cy="3.6" r="1.1" fill="#30D158"></circle>
+  </symbol>
   <symbol id="icon-roommates" viewBox="0 0 18 18">
     <path d="M2.4 7.9L9 3L15.6 7.9" fill="none" stroke="url(#ravenGradient)" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"></path>
     <path d="M4.1 7.7H13.9V14.9H4.1V7.7Z" fill="none" stroke="url(#ravenGradient)" stroke-width="1.35" stroke-linejoin="round"></path>
     <rect x="7.05" y="10.1" width="3.9" height="4.8" rx="0.8" fill="url(#ravenGradientSoft)" opacity="0.72"></rect>
     <circle cx="13.9" cy="13.9" r="1.35" fill="#30D158"></circle>
-  </symbol>
-  <symbol id="icon-lifestyle" viewBox="0 0 18 18">
-    <path d="M9 15.2C9 15.2 3.4 12.3 3.4 7.1C3.4 4.1 5.6 2.1 8.1 2.1C8.5 2.1 8.8 2.4 8.8 3V11.4" fill="none" stroke="url(#ravenGradient)" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"></path>
-    <path d="M9 15.2C9 15.2 14.6 12.3 14.6 7.1C14.6 4.1 12.4 2.1 9.9 2.1C9.5 2.1 9.2 2.4 9.2 3V11.4" fill="none" stroke="url(#ravenGradientSoft)" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"></path>
-    <circle cx="12.9" cy="13.9" r="1.35" fill="#30D158"></circle>
   </symbol>
   <symbol id="icon-friends" viewBox="0 0 18 18">
     <circle cx="6.2" cy="5.25" r="2.45" fill="none" stroke="url(#ravenGradient)" stroke-width="1.3"></circle>
@@ -1276,7 +1435,7 @@ body.app-mode .cb-raven-add-icon { width:18px;height:18px;display:block; }
       <button class="nav-item" onclick="showPage('create-bill')"><span class="ni"><svg class="raven-icon"><use href="#icon-create-bill"></use></svg></span> Create Bill</button>
       <button class="nav-item" onclick="showPage('trip-hub')"><span class="ni"><svg class="raven-icon"><use href="#icon-trip-hub"></use></svg></span> Trip Hub</button>
       <button class="nav-item" onclick="showPage('roommates')"><span class="ni"><svg class="raven-icon"><use href="#icon-roommates"></use></svg></span> Roommates <span style="font-size:9px;font-weight:700;padding:1px 6px;background:rgba(48,209,88,0.15);border:1px solid rgba(48,209,88,0.3);border-radius:6px;color:var(--green);margin-left:4px;vertical-align:middle">BETA</span></button>
-      <button class="nav-item" onclick="showPage('lifestyle')"><span class="ni"><svg class="raven-icon"><use href="#icon-lifestyle"></use></svg></span> Raven Lifestyle <span style="font-size:9px;font-weight:700;padding:1px 6px;background:rgba(242,193,78,0.15);border:1px solid rgba(242,193,78,0.3);border-radius:6px;color:var(--gold);margin-left:4px;vertical-align:middle">PILOT</span></button>
+      <button class="nav-item" onclick="showPage('lifestyle')"><span class="ni"><svg class="raven-icon"><use href="#icon-lifestyle"></use></svg></span> Lifestyle <span style="font-size:9px;font-weight:700;padding:1px 6px;background:rgba(124,58,237,0.15);border:1px solid rgba(124,58,237,0.3);border-radius:6px;color:var(--purple3);margin-left:4px;vertical-align:middle">PILOT</span></button>
       <button class="nav-item" onclick="showPage('friends')" style="position:relative"><span class="ni"><svg class="raven-icon"><use href="#icon-friends"></use></svg></span> Friends <span id="friends-dm-badge" style="display:none;position:absolute;top:6px;right:8px;min-width:16px;height:16px;padding:0 4px;background:var(--purple);border-radius:8px;font-size:10px;font-weight:700;color:#fff;align-items:center;justify-content:center"></span></button>
       <button class="nav-item" onclick="showPage('history')"><span class="ni"><svg class="raven-icon"><use href="#icon-history"></use></svg></span> History</button>
       <div style="flex:1"></div>
@@ -1724,132 +1883,12 @@ body.app-mode .cb-raven-add-icon { width:18px;height:18px;display:block; }
       </div>
     </div>
 
-    <!-- RAVEN LIFESTYLE PAGE -->
-    <div id="page-lifestyle" class="page">
-      <div class="page-header">
-        <h1 class="page-title">Raven <span>Lifestyle</span></h1>
-        <span style="font-size:10px;font-weight:800;letter-spacing:0.1em;color:var(--purple3);border:1px solid rgba(124,58,237,0.4);background:rgba(124,58,237,0.1);padding:6px 11px;border-radius:20px">PILOT</span>
-      </div>
-      <div style="max-width:900px">
-        <div class="rl-score-hero" id="rl-score-hero">
-          <div class="rl-score-eyebrow">Raven Score</div>
-          <div class="rl-score-month" id="rl-score-month"></div>
-          <div class="rl-gauge-stage">
-            <svg class="rl-gauge-svg" id="rl-gauge-svg" viewBox="0 0 320 260">
-              <defs>
-                <linearGradient id="rlWingGrad" x1="0" y1="1" x2="1" y2="0">
-                  <stop offset="0%" stop-color="#6D28D9"></stop>
-                  <stop offset="100%" stop-color="#C084FC"></stop>
-                </linearGradient>
-                <linearGradient id="rlWingGradGold" x1="0" y1="1" x2="1" y2="0">
-                  <stop offset="0%" stop-color="#B8862E"></stop>
-                  <stop offset="100%" stop-color="#FFE8A3"></stop>
-                </linearGradient>
-                <linearGradient id="rlWingGradLow" x1="0" y1="1" x2="1" y2="0">
-                  <stop offset="0%" stop-color="#3A3846"></stop>
-                  <stop offset="100%" stop-color="#6E6B80"></stop>
-                </linearGradient>
-              </defs>
-              <line x1="55" y1="150" x2="265" y2="150" stroke="rgba(255,255,255,0.08)" stroke-width="1.5" stroke-dasharray="2 5"></line>
-              <g id="rl-wing-left"></g>
-              <g id="rl-wing-right"></g>
-              <circle cx="160" cy="150" r="5" fill="var(--dark4)" stroke="rgba(255,255,255,0.15)" stroke-width="1"></circle>
-            </svg>
-            <div class="rl-gauge-center">
-              <div class="rl-gauge-number" id="rl-gauge-number">—</div>
-              <div class="rl-gauge-status" id="rl-gauge-status">NO FLIGHT DATA YET</div>
-              <div class="rl-gauge-caption" id="rl-gauge-caption">Log a paycheck, a bill, or an investment below to get your first score.</div>
-            </div>
-          </div>
-          <div class="rl-chip-row">
-            <div class="rl-chip">
-              <div class="rl-chip-top"><span class="rl-chip-label">Spending</span><span class="rl-chip-value" id="rl-chip-spend">—</span></div>
-              <div class="rl-chip-track"><div class="rl-chip-fill" id="rl-chip-spend-fill" style="width:0%"></div></div>
-              <div class="rl-chip-note">Bills paid vs. income earned this month</div>
-            </div>
-            <div class="rl-chip">
-              <div class="rl-chip-top"><span class="rl-chip-label">Timeliness</span><span class="rl-chip-value" id="rl-chip-time">—</span></div>
-              <div class="rl-chip-track"><div class="rl-chip-fill" id="rl-chip-time-fill" style="width:0%"></div></div>
-              <div class="rl-chip-note">Share of bills paid on or before the due date</div>
-            </div>
-            <div class="rl-chip">
-              <div class="rl-chip-top"><span class="rl-chip-label">Investing</span><span class="rl-chip-value" id="rl-chip-invest">—</span></div>
-              <div class="rl-chip-track"><div class="rl-chip-fill" id="rl-chip-invest-fill" style="width:0%"></div></div>
-              <div class="rl-chip-note">Money set aside vs. a 15% target of income</div>
-            </div>
-          </div>
-          <span class="rl-info-toggle" id="rl-info-toggle">How is this calculated?</span>
-          <div class="rl-info-panel" id="rl-info-panel">
-            Your <b>Raven Score</b> blends three habits from the current month: <b>spending discipline</b> (40%) rewards keeping bills under ~60% of income, <b>bill timeliness</b> (35%) tracks what's paid on or before its due date, and <b>investing consistency</b> (25%) measures contributions against a 15%-of-income target. Score <b>90+</b> for the whole month and a medal joins your roost.
-          </div>
-        </div>
-
-        <div class="rl-section-head">
-          <div>
-            <div class="rl-section-title">The Roost</div>
-            <div class="rl-section-sub">Score 90+ in a month, a medal comes home to roost.</div>
-          </div>
-        </div>
-        <div class="rl-roost" id="rl-roost"></div>
-
-        <div class="rl-section-head" style="margin-bottom:0">
-          <div>
-            <div class="rl-section-title">Tracked This Month</div>
-            <div class="rl-section-sub">Paychecks, bills, and investments feed your score.</div>
-          </div>
-        </div>
-        <div class="rl-tabbar">
-          <button class="rl-tab active" data-rltab="paychecks" onclick="rlSwitchTab('paychecks')">💵 Paychecks</button>
-          <button class="rl-tab" data-rltab="bills" onclick="rlSwitchTab('bills')">🧾 Bills</button>
-          <button class="rl-tab" data-rltab="investments" onclick="rlSwitchTab('investments')">📈 Investments</button>
-        </div>
-
-        <div class="rl-panel active" id="rl-panel-paychecks">
-          <div class="rl-panel-summary">
-            <div><div class="rl-panel-total-label">Income this month</div><div class="rl-panel-total-value" id="rl-total-paychecks">$0.00</div></div>
-            <button class="rl-add-btn" onclick="rlOpenModal('paycheck')">+ Add Paycheck</button>
-          </div>
-          <div class="rl-entry-list" id="rl-list-paychecks"></div>
-        </div>
-
-        <div class="rl-panel" id="rl-panel-bills">
-          <div class="rl-panel-summary">
-            <div><div class="rl-panel-total-label">Due this month</div><div class="rl-panel-total-value" id="rl-total-bills">$0.00</div></div>
-            <button class="rl-add-btn" onclick="rlOpenModal('bill')">+ Add Bill</button>
-          </div>
-          <div class="rl-entry-list" id="rl-list-bills"></div>
-        </div>
-
-        <div class="rl-panel" id="rl-panel-investments">
-          <div class="rl-panel-summary">
-            <div><div class="rl-panel-total-label">Invested this month</div><div class="rl-panel-total-value" id="rl-total-investments">$0.00</div></div>
-            <button class="rl-add-btn" onclick="rlOpenModal('investment')">+ Add Investment</button>
-          </div>
-          <div class="rl-entry-list" id="rl-list-investments"></div>
-        </div>
-      </div>
-    </div>
-
-    <div class="rl-modal-backdrop" id="rl-modal-backdrop">
-      <div class="rl-modal">
-        <div class="rl-modal-title" id="rl-modal-title">Add Paycheck</div>
-        <div id="rl-modal-fields"></div>
-        <div class="rl-modal-actions">
-          <button class="rl-btn-cancel" onclick="rlCloseModal()">Cancel</button>
-          <button class="rl-btn-save" onclick="rlSaveEntry()">Save</button>
-        </div>
-      </div>
-    </div>
-
 
 
 <div id="page-settings" class="page">
       <div class="page-header"><h1 class="page-title">Account <span>Settings</span></h1></div>
       <div id="mob-quick-nav" style="display:none;margin-bottom:20px">
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:20px">
-          <button onclick="showPage('lifestyle');setMobNav('mob-settings')" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:14px 8px;background:var(--dark);border:1px solid var(--border);border-radius:14px;cursor:pointer;-webkit-tap-highlight-color:transparent;text-align:center;position:relative">
-            <span class="mob-quick-glyph"><svg class="raven-icon xl"><use href="#icon-lifestyle"></use></svg></span><span style="font-size:11px;font-weight:600;color:var(--white)">Lifestyle</span><span style="position:absolute;top:6px;right:6px;font-size:8px;font-weight:700;padding:1px 4px;background:rgba(242,193,78,0.18);border-radius:4px;color:var(--gold)">PILOT</span>
-          </button>
           <button onclick="showPage('friends');setMobNav('mob-settings')" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:14px 8px;background:var(--dark);border:1px solid var(--border);border-radius:14px;cursor:pointer;-webkit-tap-highlight-color:transparent;text-align:center;position:relative">
             <span class="mob-quick-glyph"><svg class="raven-icon xl"><use href="#icon-friends"></use></svg></span><span style="font-size:11px;font-weight:600;color:var(--white)">Friends</span>
             <span id="mob-friends-badge" style="display:none;position:absolute;top:8px;right:8px;background:#A855F7;color:#fff;border-radius:10px;font-size:9px;font-weight:700;padding:1px 5px">!</span>
@@ -1862,6 +1901,9 @@ body.app-mode .cb-raven-add-icon { width:18px;height:18px;display:block; }
           </button>
           <button onclick="showPage('roommates');setMobNav('mob-settings')" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:14px 8px;background:var(--dark);border:1px solid var(--border);border-radius:14px;cursor:pointer;-webkit-tap-highlight-color:transparent;text-align:center;position:relative">
             <span class="mob-quick-glyph"><svg class="raven-icon xl"><use href="#icon-roommates"></use></svg></span><span style="font-size:11px;font-weight:600;color:var(--white)">Roommates</span><span style="position:absolute;top:6px;right:6px;font-size:8px;font-weight:700;padding:1px 4px;background:rgba(48,209,88,0.2);border-radius:4px;color:var(--green)">β</span>
+          </button>
+          <button onclick="showPage('lifestyle');setMobNav('mob-settings')" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:14px 8px;background:var(--dark);border:1px solid var(--border);border-radius:14px;cursor:pointer;-webkit-tap-highlight-color:transparent;text-align:center;position:relative">
+            <span class="mob-quick-glyph"><svg class="raven-icon xl"><use href="#icon-lifestyle"></use></svg></span><span style="font-size:11px;font-weight:600;color:var(--white)">Lifestyle</span>
           </button>
           <button onclick="showPage('notifications');setMobNav('mob-settings')" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:14px 8px;background:var(--dark);border:1px solid var(--border);border-radius:14px;cursor:pointer;-webkit-tap-highlight-color:transparent;text-align:center;position:relative">
             <span class="mob-quick-glyph"><svg class="raven-icon xl"><use href="#icon-notifications"></use></svg></span><span style="font-size:11px;font-weight:600;color:var(--white)">Notifications</span>
@@ -2061,6 +2103,154 @@ body.app-mode .cb-raven-add-icon { width:18px;height:18px;display:block; }
       </div>
       <div id="houses-list" class="bills-list"><div class="loading"><div class="spinner"></div> Loading...</div></div>
     </div>
+
+    <!-- LIFESTYLE PAGE -->
+    <div id="page-lifestyle" class="page">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Raven <span>Lifestyle</span><span style="font-size:13px;font-weight:700;padding:2px 9px;background:rgba(124,58,237,0.12);border:1px solid rgba(124,58,237,0.35);border-radius:8px;color:var(--purple3);vertical-align:middle;margin-left:8px">PILOT</span></h1>
+          <div style="font-size:13px;color:var(--muted);margin-top:4px">Track paychecks, bills, and investments to build your Raven Score.</div>
+        </div>
+      </div>
+
+      <!-- SYNC STATUS -->
+      <div class="sync-bar" id="sync-bar">
+        <span class="sync-dot" id="sync-dot"></span>
+        <span id="sync-text">Checking sync…</span>
+      </div>
+
+      <!-- SCORE HERO -->
+      <div class="score-hero" id="score-hero">
+        <div class="score-eyebrow">Raven Score</div>
+        <div class="score-month" id="score-month"></div>
+        <div class="gauge-stage">
+          <svg class="gauge-svg" id="gauge-svg" viewBox="0 0 320 260">
+            <defs>
+              <linearGradient id="wingGrad" x1="0" y1="1" x2="1" y2="0">
+                <stop offset="0%" stop-color="#6D28D9"></stop>
+                <stop offset="100%" stop-color="#C084FC"></stop>
+              </linearGradient>
+              <linearGradient id="wingGradGold" x1="0" y1="1" x2="1" y2="0">
+                <stop offset="0%" stop-color="#B8862E"></stop>
+                <stop offset="100%" stop-color="#FFE8A3"></stop>
+              </linearGradient>
+              <linearGradient id="wingGradLow" x1="0" y1="1" x2="1" y2="0">
+                <stop offset="0%" stop-color="#3A3846"></stop>
+                <stop offset="100%" stop-color="#6E6B80"></stop>
+              </linearGradient>
+            </defs>
+            <line x1="55" y1="150" x2="265" y2="150" stroke="rgba(255,255,255,0.08)" stroke-width="1.5" stroke-dasharray="2 5"></line>
+            <g id="wing-left"></g>
+            <g id="wing-right"></g>
+            <circle cx="160" cy="150" r="5" fill="var(--dark4)" stroke="rgba(255,255,255,0.15)" stroke-width="1"></circle>
+          </svg>
+          <div class="gauge-center">
+            <div class="gauge-number" id="gauge-number">—</div>
+            <div class="gauge-status" id="gauge-status">NO FLIGHT DATA YET</div>
+            <div class="gauge-caption" id="gauge-caption">Log a paycheck, a bill, or an investment below to get your first score.</div>
+          </div>
+        </div>
+
+        <div class="chip-row">
+          <div class="chip">
+            <div class="chip-top"><span class="chip-label">Spending</span><span class="chip-value" id="chip-spend">—</span></div>
+            <div class="chip-track"><div class="chip-fill" id="chip-spend-fill" style="width:0%"></div></div>
+            <div class="chip-note">Bills vs. income</div>
+          </div>
+          <div class="chip">
+            <div class="chip-top"><span class="chip-label">Timeliness</span><span class="chip-value" id="chip-time">—</span></div>
+            <div class="chip-track"><div class="chip-fill" id="chip-time-fill" style="width:0%"></div></div>
+            <div class="chip-note">Paid on time</div>
+          </div>
+          <div class="chip">
+            <div class="chip-top"><span class="chip-label">Investing</span><span class="chip-value" id="chip-invest">—</span></div>
+            <div class="chip-track"><div class="chip-fill" id="chip-invest-fill" style="width:0%"></div></div>
+            <div class="chip-note">Vs. 15% target</div>
+          </div>
+        </div>
+
+        <span class="score-info-toggle" id="info-toggle">How is this calculated?</span>
+        <div class="score-info-panel" id="info-panel">
+          <b>Spending</b> (40% of score) — keep bills under ~60% of income.<br>
+          <b>Timeliness</b> (35%) — pay bills on or before the due date.<br>
+          <b>Investing</b> (25%) — put aside 15% of income.<br>
+          Hit <b>90+</b> for the whole month and a medal joins your roost.
+        </div>
+      </div>
+
+      <!-- ROOST -->
+      <div class="section-head">
+        <div>
+          <div class="section-title">The Roost</div>
+          <div class="section-sub">Score 90+ in a month, a medal comes home to roost.</div>
+        </div>
+      </div>
+      <div class="roost" id="roost"></div>
+
+      <!-- TRACKERS -->
+      <div class="section-head" style="margin-bottom:0">
+        <div>
+          <div class="section-title">Tracked This Month</div>
+          <div class="section-sub">Paychecks, bills, and investments feed your score.</div>
+        </div>
+      </div>
+      <div class="tabbar">
+        <button class="tab active" data-tab="paychecks" onclick="switchTab('paychecks')"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.6"/><path d="M12 7.5v9M14.5 9.6c0-1-.9-1.8-2.5-1.8s-2.5.8-2.5 1.8c0 2.4 5 1.1 5 3.5 0 1-1 1.8-2.5 1.8s-2.7-.8-2.7-1.8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg> Paychecks</button>
+        <button class="tab" data-tab="bills" onclick="switchTab('bills')"><svg viewBox="0 0 24 24" fill="none"><path d="M6 3h12v18l-2.5-1.6L13 21l-2.5-1.6L8 21l-2-1.4V3Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M8.5 8h7M8.5 11.5h7M8.5 15h4.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg> Bills</button>
+        <button class="tab" data-tab="investments" onclick="switchTab('investments')"><svg viewBox="0 0 24 24" fill="none"><path d="M4 16l5.2-5.5 3.4 3 6.4-7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M15.6 6.2h3.4v3.4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg> Investments</button>
+        <button class="tab" data-tab="suggests" onclick="switchTab('suggests')"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3.5l1.4 4.4 4.4 1.4-4.4 1.4L12 15.1l-1.4-4.4L6.2 9.3l4.4-1.4L12 3.5Z" fill="currentColor"/><path d="M18.3 14.8l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7.7-2Z" fill="currentColor"/></svg> Raven Suggests</button>
+      </div>
+
+      <div class="panel active" id="panel-paychecks">
+        <div class="panel-summary">
+          <div><div class="panel-total-label">Income this month</div><div class="panel-total-value mono" id="total-paychecks">$0.00</div></div>
+          <button class="add-btn" onclick="openModal('paycheck')">+ Add Paycheck</button>
+        </div>
+        <div class="entry-list" id="list-paychecks"></div>
+      </div>
+
+      <div class="panel" id="panel-bills">
+        <div class="panel-summary">
+          <div><div class="panel-total-label">Due this month</div><div class="panel-total-value mono" id="total-bills">$0.00</div></div>
+          <button class="add-btn" onclick="openModal('bill')">+ Add Bill</button>
+        </div>
+        <div class="entry-list" id="list-bills"></div>
+      </div>
+
+      <div class="panel" id="panel-investments">
+        <div class="panel-summary">
+          <div><div class="panel-total-label">Invested this month</div><div class="panel-total-value mono" id="total-investments">$0.00</div></div>
+          <button class="add-btn" onclick="openModal('investment')">+ Add Investment</button>
+        </div>
+        <div class="entry-list" id="list-investments"></div>
+      </div>
+
+      <div class="panel" id="panel-suggests">
+        <div class="ai-coach-card">
+          <div class="ai-coach-head">
+            <div class="ai-coach-title"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3.5l1.4 4.4 4.4 1.4-4.4 1.4L12 15.1l-1.4-4.4L6.2 9.3l4.4-1.4L12 3.5Z" fill="currentColor"/></svg> Raven AI Coach</div>
+            <button class="ai-coach-refresh" id="ai-coach-refresh" onclick="fetchAICoaching(true)">Refresh</button>
+          </div>
+          <div class="ai-coach-body loading" id="ai-coach-body">Loading your coaching…</div>
+        </div>
+        <div class="suggest-divider">Quick Breakdown</div>
+        <div class="suggest-list" id="suggest-list"></div>
+        <div class="suggest-note">The quick breakdown is generated instantly from this month's numbers. The AI coach above calls an AI model for freeform advice. Neither is a substitute for financial advice.</div>
+      </div>
+    </div>
+
+    <!-- LIFESTYLE MODAL -->
+    <div class="modal-backdrop" id="modal-backdrop">
+      <div class="modal">
+        <div class="modal-title" id="modal-title">Add Paycheck</div>
+        <div id="modal-fields"></div>
+        <div class="modal-actions">
+          <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+          <button class="btn-save" onclick="saveEntry()">Save</button>
+        </div>
+      </div>
+    </div>
+
 
     <!-- NOTIFICATIONS PAGE -->
     <div id="page-notifications" class="page">
@@ -4368,8 +4558,8 @@ function showPage(page) {
     'trip-hub':     'mob-trip',
     'settings':     'mob-settings',
     'roommates':    'mob-settings',
-    'friends':      'mob-settings',
     'lifestyle':    'mob-settings',
+    'friends':      'mob-settings',
     'history':      'mob-settings',
     'notifications':'mob-settings',
     'invite':       'mob-settings'
@@ -4385,8 +4575,8 @@ function showPage(page) {
   if (page === 'invite')        loadInvitePage();
   if (page === 'trip-hub')      loadTrips();
   if (page === 'roommates')     loadHouses();
+  if (page === 'lifestyle' && typeof renderAll === 'function') renderAll();
   if (page === 'friends')       loadFriendsPage();
-  if (page === 'lifestyle')     renderLifestylePage();
 }
 
 async function loadAllData() {
@@ -10133,6 +10323,669 @@ document.addEventListener('visibilitychange', function() {
 });
 </script>
 <script>
+// ── RAVEN LIFESTYLE ──
+// Ported from the standalone raven-lifestyle.html pilot page.
+// Data is cached locally for instant load, and synced to Supabase per-account
+// so it appears on any device signed into the same RAVEN account.
+// Reuses the dashboard's existing `db` (Supabase client) and `BACKEND` globals —
+// no separate client is created here.
+const LIFESTYLE_STORAGE_KEY = 'raven_lifestyle_v2';
+
+let lifestyleCurrentUserId = null;
+
+function loadLocal() {
+  try {
+    const d = JSON.parse(localStorage.getItem(LIFESTYLE_STORAGE_KEY) || 'null');
+    if (d) return { paychecks: d.paychecks || [], bills: d.bills || [], investments: d.investments || [] };
+  } catch(e) {}
+  // migrate older local-only save
+  try {
+    const old = JSON.parse(localStorage.getItem('raven_lifestyle_v1') || 'null');
+    if (old) return { paychecks: old.paychecks || [], bills: old.bills || [], investments: old.investments || [] };
+  } catch(e) {}
+  return { paychecks: [], bills: [], investments: [] };
+}
+function saveLocal(d) { try { localStorage.setItem(LIFESTYLE_STORAGE_KEY, JSON.stringify(d)); } catch(e) {} }
+let DATA = loadLocal();
+
+function setSyncBadge(state) {
+  const dot = document.getElementById('sync-dot');
+  const text = document.getElementById('sync-text');
+  const bar = document.getElementById('sync-bar');
+  if (!dot || !text || !bar) return;
+  const existingLink = bar.querySelector('.sync-link');
+  if (state === 'synced') {
+    dot.className = 'sync-dot on';
+    text.textContent = 'Synced to your account — up to date on every device';
+    if (existingLink) existingLink.remove();
+  } else {
+    dot.className = 'sync-dot off';
+    text.textContent = 'Saved on this device only';
+    if (!existingLink) {
+      const a = document.createElement('a');
+      a.href = 'javascript:void(0)';
+      a.className = 'sync-link';
+      a.textContent = 'Sign in to sync →';
+      a.onclick = () => showPage('settings');
+      bar.appendChild(a);
+    }
+  }
+}
+
+function mapRowsToData(rows) {
+  const mapped = { paychecks: [], bills: [], investments: [] };
+  (rows || []).forEach(row => {
+    if (row.kind === 'paycheck') {
+      mapped.paychecks.push({ id: row.id, source: row.name, amount: Number(row.amount || 0), date: row.date, frequency: row.frequency || 'one-time', seriesId: row.series_id || null });
+    } else if (row.kind === 'bill') {
+      mapped.bills.push({ id: row.id, name: row.name, amount: Number(row.amount || 0), dueDate: row.due_date, paidDate: row.paid_date, frequency: row.frequency || 'one-time', seriesId: row.series_id || null });
+    } else if (row.kind === 'investment') {
+      mapped.investments.push({ id: row.id, name: row.name, amount: Number(row.amount || 0), type: row.type, date: row.date });
+    }
+  });
+  return mapped;
+}
+
+async function pullCloud() {
+  if (!db || !lifestyleCurrentUserId) return;
+  try {
+    const { data, error } = await db.from('lifestyle_entries').select('*').eq('user_id', lifestyleCurrentUserId);
+    if (error) throw error;
+    DATA = mapRowsToData(data);
+    saveLocal(DATA);
+    renderAll();
+  } catch(e) { console.warn('RAVEN Lifestyle: cloud pull failed, showing local cache', e); }
+}
+
+async function persistRows(kind, rows) {
+  if (!db || !lifestyleCurrentUserId) return;
+  try {
+    const payload = rows.map(r => ({ ...r, kind, user_id: lifestyleCurrentUserId }));
+    const { error } = await db.from('lifestyle_entries').insert(payload);
+    if (error) throw error;
+  } catch(e) { console.warn('RAVEN Lifestyle: cloud save failed, kept locally', e); }
+}
+
+async function initLifestyleAuthAndData() {
+  renderAll();
+  if (!db) { setSyncBadge('local'); return; }
+  try {
+    const { data: { session } } = await db.auth.getSession();
+    if (session && session.user) {
+      lifestyleCurrentUserId = session.user.id;
+      setSyncBadge('synced');
+      await pullCloud();
+    } else {
+      setSyncBadge('local');
+    }
+  } catch(e) { setSyncBadge('local'); }
+
+  try {
+    db.auth.onAuthStateChange((event, session) => {
+      if (session && session.user) {
+        const changed = lifestyleCurrentUserId !== session.user.id;
+        lifestyleCurrentUserId = session.user.id;
+        setSyncBadge('synced');
+        if (changed) pullCloud();
+      } else {
+        lifestyleCurrentUserId = null;
+        setSyncBadge('local');
+      }
+    });
+  } catch(e) {}
+
+  window.addEventListener('focus', () => { if (lifestyleCurrentUserId) pullCloud(); });
+}
+
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+function monthKey(dateStr) { return (dateStr || '').slice(0,7); } // YYYY-MM
+function fmtMoney(n) { return '$' + Number(n||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function fmtDate(dateStr) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr + 'T12:00:00');
+  return d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+}
+function todayISO() { return new Date().toISOString().slice(0,10); }
+function currentMonthKey() { return todayISO().slice(0,7); }
+
+// ── RECURRENCE ──
+const FREQ_LABELS = { daily: 'Daily', weekly: 'Weekly', biweekly: 'Bi-weekly', monthly: 'Monthly' };
+const FREQ_HORIZON_DAYS = { daily: 45, weekly: 182, biweekly: 182, monthly: 365 };
+function freqLabel(f) { return FREQ_LABELS[f] || ''; }
+function generateOccurrenceDates(anchorISO, frequency) {
+  if (!frequency || frequency === 'one-time' || !FREQ_HORIZON_DAYS[frequency]) return [anchorISO];
+  const dates = [];
+  let d = new Date(anchorISO + 'T12:00:00');
+  const end = new Date(d.getTime() + FREQ_HORIZON_DAYS[frequency] * 86400000);
+  const stepDays = { daily: 1, weekly: 7, biweekly: 14 };
+  while (d <= end) {
+    dates.push(d.toISOString().slice(0,10));
+    if (frequency === 'monthly') d = new Date(d.getFullYear(), d.getMonth() + 1, d.getDate(), 12);
+    else d = new Date(d.getTime() + stepDays[frequency] * 86400000);
+  }
+  return dates;
+}
+function freqHintText(freq) {
+  const map = {
+    'one-time': 'Logged once, on the date above.',
+    daily: 'Repeats daily for about 6 weeks so future months keep counting automatically.',
+    weekly: 'Repeats weekly for about 6 months.',
+    biweekly: 'Repeats every 2 weeks for about 6 months.',
+    monthly: 'Repeats monthly for the next 12 months.'
+  };
+  return map[freq] || '';
+}
+function updateFreqHint() {
+  const sel = document.getElementById('f-frequency');
+  const hint = document.getElementById('freq-hint');
+  if (!sel || !hint) return;
+  hint.textContent = freqHintText(sel.value);
+}
+function freqPillHtml(seriesId, frequency) {
+  return seriesId ? `<span class="freq-pill">🔁 ${freqLabel(frequency)}</span>` : '';
+}
+
+// ── SCORE ENGINE ──
+function computeMonthScore(mKey) {
+  const paychecks = DATA.paychecks.filter(p => monthKey(p.date) === mKey);
+  const bills = DATA.bills.filter(b => monthKey(b.dueDate) === mKey);
+  const investments = DATA.investments.filter(i => monthKey(i.date) === mKey);
+
+  const income = paychecks.reduce((s,p) => s + Number(p.amount||0), 0);
+  const billsTotal = bills.reduce((s,b) => s + Number(b.amount||0), 0);
+  const investTotal = investments.reduce((s,i) => s + Number(i.amount||0), 0);
+
+  let spending = null;
+  if (income > 0) {
+    const ratio = billsTotal / income;
+    spending = clamp(100 - Math.max(0, ratio - 0.6) * 250, 0, 100);
+  }
+
+  let timeliness = null;
+  const decided = bills.filter(b => b.paidDate);
+  if (decided.length > 0) {
+    const onTime = decided.filter(b => b.paidDate <= b.dueDate).length;
+    timeliness = (onTime / decided.length) * 100;
+  }
+
+  let investing = null;
+  if (income > 0) {
+    investing = clamp((investTotal / income) / 0.15 * 100, 0, 100);
+  } else if (investTotal > 0) {
+    investing = 100;
+  }
+
+  const parts = [
+    { v: spending, w: 0.40 },
+    { v: timeliness, w: 0.35 },
+    { v: investing, w: 0.25 }
+  ].filter(p => p.v !== null);
+
+  let overall = null;
+  if (parts.length > 0) {
+    const totalW = parts.reduce((s,p)=>s+p.w,0);
+    overall = parts.reduce((s,p)=> s + p.v * (p.w/totalW), 0);
+  }
+
+  return {
+    income, billsTotal, investTotal,
+    spending, timeliness, investing,
+    overall: overall !== null ? Math.round(overall) : null,
+    hasAnyData: paychecks.length > 0 || bills.length > 0 || investments.length > 0
+  };
+}
+function clamp(v,min,max) { return Math.max(min, Math.min(max, v)); }
+
+function statusFor(score) {
+  if (score === null) return { label: 'NO FLIGHT DATA YET', cls: 'status-none' };
+  if (score >= 90) return { label: 'SOARING', cls: 'status-soaring' };
+  if (score >= 65) return { label: 'CRUISING', cls: 'status-cruising' };
+  if (score >= 40) return { label: 'TAXIING', cls: 'status-taxiing' };
+  return { label: 'GROUNDED', cls: 'status-grounded' };
+}
+
+// ── WING GAUGE ──
+// Feather silhouette drawn pointing left from a pivot at (160,188); mirrored for the right wing.
+const FEATHER_PATH = 'M0,0 C -18,-10 -52,-19 -92,-14 C -114,-11 -122,-3 -110,3 C -104,6 -96,8 -86,8.5 C -54,10 -22,4 0,0 Z';
+const FEATHER_BARBS = [
+  'M-22,-3 L-30,-14', 'M-42,-1 L-52,-13', 'M-62,2 L-73,-9', 'M-80,5 L-91,-5'
+];
+function buildFeatherGroup(id, mirror) {
+  const g = document.getElementById(id);
+  const scaleX = mirror ? -1 : 1;
+  g.setAttribute('transform', `translate(160,150) scale(${scaleX},1)`);
+  let inner = `<g id="${id}-rot"><path d="${FEATHER_PATH}" fill="url(#wingGrad)" class="feather-fill" stroke="rgba(0,0,0,0.15)" stroke-width="0.5"></path>`;
+  FEATHER_BARBS.forEach(d => { inner += `<path d="${d}" stroke="rgba(255,255,255,0.22)" stroke-width="1" stroke-linecap="round" fill="none"></path>`; });
+  inner += `</g>`;
+  g.innerHTML = inner;
+}
+function setWingAngle(score, tier) {
+  // score 0 -> wings drooped (55deg down); score 100 -> wings raised (-58deg, near-vertical spread)
+  const s = score === null ? 8 : score;
+  const angle = 48 - (98 * (s/100));
+  const fillId = tier === 'gold' ? 'url(#wingGradGold)' : (score === null ? 'url(#wingGradLow)' : 'url(#wingGrad)');
+  ['wing-left-rot','wing-right-rot'].forEach((id, i) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    // left wing rotates negative (counter-clockwise raises tip), mirrored group means same sign visually raises both
+    el.setAttribute('transform', `rotate(${-angle})`);
+    el.querySelector('.feather-fill').setAttribute('fill', fillId);
+  });
+}
+
+// ── RENDER ──
+function renderScoreHero() {
+  const mKey = currentMonthKey();
+  const res = computeMonthScore(mKey);
+  const status = statusFor(res.overall);
+  const hero = document.getElementById('score-hero');
+  const tier = res.overall !== null && res.overall >= 90 ? 'gold' : 'normal';
+  hero.classList.toggle('soaring', tier === 'gold');
+
+  document.getElementById('score-month').textContent = new Date(mKey + '-01T12:00:00').toLocaleDateString('en-US',{month:'long',year:'numeric'}) + ' · updates as you log activity';
+  const numEl = document.getElementById('gauge-number');
+  numEl.textContent = res.overall === null ? '—' : res.overall;
+  numEl.classList.toggle('na', res.overall === null);
+  const statusEl = document.getElementById('gauge-status');
+  statusEl.textContent = status.label;
+  statusEl.className = 'gauge-status ' + status.cls;
+  document.getElementById('gauge-caption').textContent = res.overall === null
+    ? 'Log a paycheck, a bill, or an investment below to get your first score.'
+    : (res.overall >= 90 ? 'Full spread. Keep this up through month-end to lock the medal.' : 'Every logged paycheck, bill, and investment adjusts this live.');
+
+  setChip('spend', res.spending);
+  setChip('time', res.timeliness);
+  setChip('invest', res.investing);
+
+  setWingAngle(res.overall, tier);
+}
+function setChip(key, val) {
+  const valEl = document.getElementById('chip-' + key);
+  const fillEl = document.getElementById('chip-' + key + '-fill');
+  valEl.textContent = val === null ? '—' : Math.round(val);
+  fillEl.style.width = (val === null ? 0 : val) + '%';
+  fillEl.style.background = val !== null && val >= 90 ? 'linear-gradient(90deg,#B8862E,#FFE8A3)' : 'linear-gradient(90deg,var(--purple),var(--purple3))';
+}
+
+function renderRoost() {
+  const roost = document.getElementById('roost');
+  const now = new Date();
+  const months = [];
+  for (let i = 7; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    months.push(d.toISOString().slice(0,7));
+  }
+  const curKey = currentMonthKey();
+  roost.innerHTML = months.map(mKey => {
+    const res = computeMonthScore(mKey);
+    const label = new Date(mKey + '-01T12:00:00').toLocaleDateString('en-US',{month:'short'});
+    const isCurrent = mKey === curKey;
+    if (isCurrent) {
+      return `<div class="medal">
+        <div class="medal-badge live">${featherIconSVG('#9896A8')}</div>
+        <div class="medal-score">${res.overall === null ? '—' : res.overall}</div>
+        <div class="medal-month">${label} · live</div>
+      </div>`;
+    }
+    const earned = res.overall !== null && res.overall >= 90;
+    return `<div class="medal">
+      <div class="medal-badge ${earned ? 'earned' : 'missed'}">${featherIconSVG(earned ? '#3D2B06' : '#4A4858')}</div>
+      <div class="medal-score">${res.overall === null ? '\u2014' : res.overall}</div>
+      <div class="medal-month">${label}</div>
+    </div>`;
+  }).join('');
+}
+function featherIconSVG(color) {
+  return `<svg viewBox="0 0 24 24" fill="none"><path d="M12 21C12 21 5 17.5 5 10.5C5 6 8 3 12 3C16 3 19 6 19 10.5C19 17.5 12 21 12 21Z" stroke="${color}" stroke-width="1.6" stroke-linejoin="round"/><path d="M12 21V6" stroke="${color}" stroke-width="1.4" stroke-linecap="round"/></svg>`;
+}
+
+function renderTrackers() {
+  renderPaychecks();
+  renderBills();
+  renderInvestments();
+}
+function renderPaychecks() {
+  const mKey = currentMonthKey();
+  const items = DATA.paychecks.filter(p => monthKey(p.date) === mKey).sort((a,b)=> b.date.localeCompare(a.date));
+  document.getElementById('total-paychecks').textContent = fmtMoney(items.reduce((s,p)=>s+Number(p.amount||0),0));
+  const list = document.getElementById('list-paychecks');
+  if (items.length === 0) { list.innerHTML = emptyState('💵','No paychecks logged yet','Add your first paycheck to start building this month\u2019s score.'); return; }
+  list.innerHTML = items.map(p => `
+    <div class="entry-card">
+      <div class="entry-icon">💵</div>
+      <div class="entry-body"><div class="entry-name">${escHtml(p.source)}</div><div class="entry-meta"><span>${fmtDate(p.date)}</span>${freqPillHtml(p.seriesId, p.frequency)}</div></div>
+      <div class="entry-amount pos">+${fmtMoney(p.amount)}</div>
+      ${p.seriesId ? `<button class="entry-del entry-stop" title="Stop future occurrences" onclick="deleteSeries('paychecks','${p.seriesId}')">⏹</button>` : ''}
+      <button class="entry-del" onclick="deleteEntry('paychecks','${p.id}')">×</button>
+    </div>`).join('');
+}
+function renderBills() {
+  const mKey = currentMonthKey();
+  const items = DATA.bills.filter(b => monthKey(b.dueDate) === mKey).sort((a,b)=> a.dueDate.localeCompare(b.dueDate));
+  document.getElementById('total-bills').textContent = fmtMoney(items.reduce((s,b)=>s+Number(b.amount||0),0));
+  const list = document.getElementById('list-bills');
+  if (items.length === 0) { list.innerHTML = emptyState('🧾','No bills logged yet','Add what\u2019s due this month to track timeliness.'); return; }
+  list.innerHTML = items.map(b => {
+    let pill;
+    if (b.paidDate && b.paidDate <= b.dueDate) pill = '<span class="pill pill-ontime">Paid on time</span>';
+    else if (b.paidDate) pill = '<span class="pill pill-late">Paid late</span>';
+    else if (b.dueDate < todayISO()) pill = '<span class="pill pill-overdue">Overdue</span>';
+    else pill = '<span class="pill pill-due">Due ' + fmtDate(b.dueDate) + '</span>';
+    return `
+    <div class="entry-card">
+      <div class="entry-icon">🧾</div>
+      <div class="entry-body"><div class="entry-name">${escHtml(b.name)}</div><div class="entry-meta">${pill}${freqPillHtml(b.seriesId, b.frequency)}</div></div>
+      <div class="entry-amount neg">-${fmtMoney(b.amount)}</div>
+      <button class="entry-del" onclick="markLifestyleBillPaid('${b.id}')" title="Mark paid" style="${b.paidDate ? 'display:none' : ''}">✓</button>
+      ${b.seriesId ? `<button class="entry-del entry-stop" title="Stop future occurrences" onclick="deleteSeries('bills','${b.seriesId}')">⏹</button>` : ''}
+      <button class="entry-del" onclick="deleteEntry('bills','${b.id}')">×</button>
+    </div>`;
+  }).join('');
+}
+function renderInvestments() {
+  const mKey = currentMonthKey();
+  const items = DATA.investments.filter(i => monthKey(i.date) === mKey).sort((a,b)=> b.date.localeCompare(a.date));
+  document.getElementById('total-investments').textContent = fmtMoney(items.reduce((s,i)=>s+Number(i.amount||0),0));
+  const list = document.getElementById('list-investments');
+  if (items.length === 0) { list.innerHTML = emptyState('📈','No investments logged yet','Log a contribution to start counting toward your score.'); return; }
+  list.innerHTML = items.map(i => `
+    <div class="entry-card">
+      <div class="entry-icon">📈</div>
+      <div class="entry-body"><div class="entry-name">${escHtml(i.name)}</div><div class="entry-meta">${escHtml(i.type)} · ${fmtDate(i.date)}</div></div>
+      <div class="entry-amount pos">+${fmtMoney(i.amount)}</div>
+      <button class="entry-del" onclick="deleteEntry('investments','${i.id}')">×</button>
+    </div>`).join('');
+}
+function emptyState(icon, title, copy) {
+  return `<div class="empty-state"><div class="es-icon">${icon}</div><div class="es-title">${title}</div><div class="es-copy">${copy}</div></div>`;
+}
+function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function renderAll() {
+  renderScoreHero();
+  renderRoost();
+  renderTrackers();
+  renderSuggests();
+}
+
+// ── RAVEN SUGGESTS ──
+function generateInsights(res) {
+  const insights = [];
+  if (!res.hasAnyData) {
+    insights.push({ icon:'🪶', title:'Log your first activity', copy:'Add a paycheck, a bill, or an investment for this month and Raven Suggests will start coaching you toward a 90+ score.', impact:null });
+    return insights;
+  }
+  if (res.overall !== null && res.overall >= 90) {
+    insights.push({ icon:'🏅', title:'Soaring — you\u2019re at 90+', copy:'Hold spending, timeliness, and investing where they are through month-end to lock in this month\u2019s medal.', impact:null, highlight:true });
+  }
+  if (res.spending === null) {
+    insights.push({ icon:'💵', title:'Log income to unlock spending scoring', copy:'Add this month\u2019s paychecks so Raven can measure your bills against what you actually earned.', impact:'Unlocks 40% of your score' });
+  } else if (res.spending < 100) {
+    const ratio = res.income > 0 ? res.billsTotal / res.income : 0;
+    const over = res.billsTotal - res.income * 0.6;
+    insights.push({
+      icon:'💵',
+      title: over > 0 ? `Bills are ${Math.round(ratio*100)}% of income` : 'Keep bills under 60% of income',
+      copy: over > 0
+        ? `Bringing bills down by about ${fmtMoney(over)} (or adding that much more income) this month maxes out your spending score.`
+        : 'You\u2019re close to the 60% target — a little more income or a little less spend gets you to full marks.',
+      impact: `Spending is 40% of the score · currently ${Math.round(res.spending)}/100`
+    });
+  }
+  if (res.timeliness === null) {
+    insights.push({ icon:'🧾', title:'Mark a bill paid to unlock timeliness', copy:'Once you mark a bill paid, Raven tracks whether it landed on or before the due date.', impact:'Unlocks 35% of your score' });
+  } else if (res.timeliness < 100) {
+    const mKey = currentMonthKey();
+    const bills = DATA.bills.filter(b => monthKey(b.dueDate) === mKey);
+    const lateOrOverdue = bills.filter(b => (b.paidDate && b.paidDate > b.dueDate) || (!b.paidDate && b.dueDate < todayISO()));
+    insights.push({
+      icon:'🧾',
+      title: lateOrOverdue.length ? `${lateOrOverdue.length} bill${lateOrOverdue.length > 1 ? 's' : ''} paid late or overdue` : 'Pay remaining bills on time',
+      copy: 'Paying every remaining bill on or before its due date this month brings timeliness to 100.',
+      impact: `Timeliness is 35% of the score · currently ${Math.round(res.timeliness)}/100`
+    });
+  }
+  if (res.investing === null) {
+    insights.push({ icon:'📈', title:'Log income to unlock investing scoring', copy:'Raven measures contributions against 15% of what you earned this month.', impact:'Unlocks 25% of your score' });
+  } else if (res.investing < 100) {
+    const gap = Math.max(0, res.income * 0.15 - res.investTotal);
+    insights.push({
+      icon:'📈',
+      title: gap > 0 ? `${fmtMoney(gap)} short of your investing target` : 'Keep investing steady',
+      copy: gap > 0 ? `Adding ${fmtMoney(gap)} more toward savings or investments this month hits the 15%-of-income target.` : 'You\u2019re at or above target — keep this pace to hold a perfect investing score.',
+      impact: `Investing is 25% of the score · currently ${Math.round(res.investing)}/100`
+    });
+  }
+  return insights;
+}
+// Reuses the dashboard's existing BACKEND constant (same value).
+let coachFetchedForKey = null;
+async function fetchAICoaching(force) {
+  const box = document.getElementById('ai-coach-body');
+  const btn = document.getElementById('ai-coach-refresh');
+  if (!box) return;
+  const mKey = currentMonthKey();
+  const res = computeMonthScore(mKey);
+
+  if (!res.hasAnyData) {
+    box.textContent = 'Log a paycheck, a bill, or an investment first — then your AI coach will have something to work with.';
+    box.className = 'ai-coach-body fallback';
+    return;
+  }
+
+  const cacheKey = 'raven_lifestyle_coach_' + mKey;
+  if (!force) {
+    try {
+      const cached = JSON.parse(sessionStorage.getItem(cacheKey) || 'null');
+      if (cached && cached.overall === res.overall && cached.text) {
+        box.textContent = cached.text;
+        box.className = 'ai-coach-body';
+        coachFetchedForKey = mKey + ':' + res.overall;
+        return;
+      }
+    } catch(e) {}
+  }
+
+  box.textContent = 'Thinking through your numbers…';
+  box.className = 'ai-coach-body loading';
+  if (btn) btn.disabled = true;
+
+  try {
+    const bills = DATA.bills.filter(b => monthKey(b.dueDate) === mKey);
+    const lateOrOverdue = bills.filter(b => (b.paidDate && b.paidDate > b.dueDate) || (!b.paidDate && b.dueDate < todayISO()));
+    const payload = {
+      month: mKey,
+      income: res.income, billsTotal: res.billsTotal, investTotal: res.investTotal,
+      spending: res.spending, timeliness: res.timeliness, investing: res.investing, overall: res.overall,
+      billCount: bills.length, lateOrOverdueCount: lateOrOverdue.length,
+      paycheckCount: DATA.paychecks.filter(p => monthKey(p.date) === mKey).length,
+      investmentCount: DATA.investments.filter(i => monthKey(i.date) === mKey).length
+    };
+    const r = await fetch(BACKEND + '/api/lifestyle-coach', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await r.json();
+    if (data.success && data.coaching) {
+      box.textContent = data.coaching;
+      box.className = 'ai-coach-body';
+      coachFetchedForKey = mKey + ':' + res.overall;
+      try { sessionStorage.setItem(cacheKey, JSON.stringify({ overall: res.overall, text: data.coaching })); } catch(e) {}
+    } else {
+      box.textContent = (data.error ? data.error + ' — ' : '') + 'Couldn\u2019t reach the AI coach right now. The quick breakdown below still has you covered.';
+      box.className = 'ai-coach-body fallback';
+    }
+  } catch(e) {
+    box.textContent = 'Couldn\u2019t reach the AI coach right now. The quick breakdown below still has you covered.';
+    box.className = 'ai-coach-body fallback';
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+function renderSuggests() {
+  const list = document.getElementById('suggest-list');
+  if (!list) return;
+  const res = computeMonthScore(currentMonthKey());
+  const insights = generateInsights(res);
+  list.innerHTML = insights.map(i => `
+    <div class="suggest-card${i.highlight ? ' highlight' : ''}">
+      <div class="suggest-icon">${i.icon}</div>
+      <div class="suggest-body">
+        <div class="suggest-title">${i.title}</div>
+        <div class="suggest-copy">${i.copy}</div>
+        ${i.impact ? `<div class="suggest-impact">${i.impact}</div>` : ''}
+      </div>
+    </div>`).join('');
+}
+
+// ── TABS ──
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+  document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.id === 'panel-' + name));
+  if (name === 'suggests') {
+    const res = computeMonthScore(currentMonthKey());
+    const key = currentMonthKey() + ':' + res.overall;
+    if (coachFetchedForKey !== key) fetchAICoaching(false);
+  }
+}
+
+// ── MODAL ──
+let modalType = null;
+function openModal(type) {
+  modalType = type;
+  const titleMap = { paycheck:'Add Paycheck', bill:'Add Bill', investment:'Add Investment' };
+  document.getElementById('modal-title').textContent = titleMap[type];
+  const fields = document.getElementById('modal-fields');
+  const freqOptions = `
+        <option value="one-time" selected>One-time</option>
+        <option value="daily">Daily</option>
+        <option value="weekly">Weekly</option>
+        <option value="biweekly">Bi-weekly</option>
+        <option value="monthly">Monthly</option>`;
+  if (type === 'paycheck') {
+    fields.innerHTML = `
+      <div class="field"><label>Source</label><input id="f-source" placeholder="e.g. Employer, Freelance"></div>
+      <div class="field"><label>Amount</label><input id="f-amount" type="number" step="0.01" placeholder="0.00"></div>
+      <div class="field"><label>Frequency</label><select id="f-frequency" onchange="updateFreqHint()">${freqOptions}</select></div>
+      <div class="field-hint" id="freq-hint">${freqHintText('one-time')}</div>
+      <div class="field"><label>Date</label><input id="f-date" type="date" value="${todayISO()}"></div>`;
+  } else if (type === 'bill') {
+    fields.innerHTML = `
+      <div class="field"><label>Name</label><input id="f-name" placeholder="e.g. Rent, Electric"></div>
+      <div class="field"><label>Amount</label><input id="f-amount" type="number" step="0.01" placeholder="0.00"></div>
+      <div class="field"><label>Frequency</label><select id="f-frequency" onchange="updateFreqHint()">${freqOptions}</select></div>
+      <div class="field-hint" id="freq-hint">${freqHintText('one-time')}</div>
+      <div class="field"><label>Due date</label><input id="f-due" type="date" value="${todayISO()}"></div>`;
+  } else {
+    fields.innerHTML = `
+      <div class="field"><label>Name</label><input id="f-name" placeholder="e.g. 401(k), Index fund"></div>
+      <div class="field"><label>Amount</label><input id="f-amount" type="number" step="0.01" placeholder="0.00"></div>
+      <div class="field"><label>Type</label><select id="f-type">
+        <option>Retirement</option><option>Stocks</option><option>Savings</option><option>Crypto</option><option>Other</option>
+      </select></div>
+      <div class="field"><label>Date</label><input id="f-date" type="date" value="${todayISO()}"></div>`;
+  }
+  document.getElementById('modal-backdrop').classList.add('open');
+  setTimeout(() => { const first = fields.querySelector('input'); if (first) first.focus(); }, 50);
+}
+function closeModal() { document.getElementById('modal-backdrop').classList.remove('open'); modalType = null; }
+
+async function saveEntry() {
+  const amount = parseFloat(document.getElementById('f-amount').value);
+  if (!amount || amount <= 0) { showToast('Enter an amount greater than $0'); return; }
+
+  const prevRes = computeMonthScore(currentMonthKey());
+
+  if (modalType === 'paycheck') {
+    const source = document.getElementById('f-source').value.trim() || 'Paycheck';
+    const anchor = document.getElementById('f-date').value || todayISO();
+    const frequency = document.getElementById('f-frequency').value;
+    const dates = generateOccurrenceDates(anchor, frequency);
+    const seriesId = dates.length > 1 ? uid() : null;
+    const rows = dates.map(date => ({ id: uid(), source, amount, date, frequency, seriesId }));
+    DATA.paychecks.push(...rows);
+    await persistRows('paycheck', rows.map(r => ({ id: r.id, name: r.source, amount: r.amount, date: r.date, frequency: r.frequency, series_id: r.seriesId })));
+  } else if (modalType === 'bill') {
+    const name = document.getElementById('f-name').value.trim() || 'Bill';
+    const anchor = document.getElementById('f-due').value || todayISO();
+    const frequency = document.getElementById('f-frequency').value;
+    const dates = generateOccurrenceDates(anchor, frequency);
+    const seriesId = dates.length > 1 ? uid() : null;
+    const rows = dates.map(dueDate => ({ id: uid(), name, amount, dueDate, paidDate: null, frequency, seriesId }));
+    DATA.bills.push(...rows);
+    await persistRows('bill', rows.map(r => ({ id: r.id, name: r.name, amount: r.amount, due_date: r.dueDate, paid_date: null, frequency: r.frequency, series_id: r.seriesId })));
+  } else {
+    const name = document.getElementById('f-name').value.trim() || 'Investment';
+    const type = document.getElementById('f-type').value;
+    const date = document.getElementById('f-date').value || todayISO();
+    const row = { id: uid(), name, type, amount, date };
+    DATA.investments.push(row);
+    await persistRows('investment', [{ id: row.id, name: row.name, type: row.type, amount: row.amount, date: row.date }]);
+  }
+  saveLocal(DATA);
+  closeModal();
+  renderAll();
+  checkMedalMoment(prevRes);
+  showToast('Saved');
+}
+async function markLifestyleBillPaid(id) {
+  const bill = DATA.bills.find(b => b.id === id);
+  if (!bill) return;
+  const prevRes = computeMonthScore(currentMonthKey());
+  bill.paidDate = todayISO();
+  saveLocal(DATA);
+  renderAll();
+  checkMedalMoment(prevRes);
+  showToast('Marked paid');
+  if (db && lifestyleCurrentUserId) {
+    try { await db.from('lifestyle_entries').update({ paid_date: bill.paidDate }).eq('id', id).eq('user_id', lifestyleCurrentUserId); } catch(e) {}
+  }
+}
+async function deleteEntry(bucket, id) {
+  DATA[bucket] = DATA[bucket].filter(x => x.id !== id);
+  saveLocal(DATA);
+  renderAll();
+  showToast('Removed');
+  if (db && lifestyleCurrentUserId) {
+    try { await db.from('lifestyle_entries').delete().eq('id', id).eq('user_id', lifestyleCurrentUserId); } catch(e) {}
+  }
+}
+async function deleteSeries(bucket, seriesId) {
+  const today = todayISO();
+  const dateOf = x => bucket === 'bills' ? x.dueDate : x.date;
+  DATA[bucket] = DATA[bucket].filter(x => !(x.seriesId === seriesId && dateOf(x) >= today));
+  saveLocal(DATA);
+  renderAll();
+  showToast('Stopped future occurrences');
+  if (db && lifestyleCurrentUserId) {
+    try {
+      const dateCol = bucket === 'bills' ? 'due_date' : 'date';
+      await db.from('lifestyle_entries').delete().eq('series_id', seriesId).eq('user_id', lifestyleCurrentUserId).gte(dateCol, today);
+    } catch(e) {}
+  }
+}
+function checkMedalMoment(prevRes) {
+  const res = computeMonthScore(currentMonthKey());
+  if (prevRes.overall !== null && prevRes.overall < 90 && res.overall !== null && res.overall >= 90) {
+    showToast('🏅 Soaring — this month just earned a medal');
+  }
+}
+
+// showToast() is reused from the dashboard's global toast (#toast).
+
+document.getElementById('info-toggle').addEventListener('click', () => {
+  document.getElementById('info-panel').classList.toggle('open');
+});
+document.getElementById('modal-backdrop').addEventListener('click', (e) => { if (e.target.id === 'modal-backdrop') closeModal(); });
+
+buildFeatherGroup('wing-left', false);
+buildFeatherGroup('wing-right', true);
+initLifestyleAuthAndData();
+
+</script>
+<script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js')
@@ -10723,339 +11576,6 @@ async function sendChatMessage() {
   }
 }
 
-// ── RAVEN LIFESTYLE ──
-function rlStorageKey() {
-  const local = JSON.parse(localStorage.getItem('raven_profile') || '{}');
-  const uid = (typeof currentUser !== 'undefined' && currentUser?.id) || local.user_id || local.email || 'local';
-  return 'raven_lifestyle_v1_' + uid;
-}
-function rlLoadData() {
-  try {
-    const d = JSON.parse(localStorage.getItem(rlStorageKey()) || '{}');
-    return { paychecks: d.paychecks || [], bills: d.bills || [], investments: d.investments || [] };
-  } catch(e) { return { paychecks: [], bills: [], investments: [] }; }
-}
-function rlSaveData(d) { localStorage.setItem(rlStorageKey(), JSON.stringify(d)); }
-let RL_DATA = null;
-
-function rlUid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
-function rlMonthKey(dateStr) { return (dateStr || '').slice(0,7); }
-function rlFmtMoney(n) { return '$' + Number(n||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}); }
-function rlFmtDate(dateStr) {
-  if (!dateStr) return '';
-  const d = new Date(dateStr + 'T12:00:00');
-  return d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
-}
-function rlTodayISO() { return new Date().toISOString().slice(0,10); }
-function rlCurrentMonthKey() { return rlTodayISO().slice(0,7); }
-
-function rlComputeMonthScore(mKey) {
-  const paychecks = RL_DATA.paychecks.filter(p => rlMonthKey(p.date) === mKey);
-  const bills = RL_DATA.bills.filter(b => rlMonthKey(b.dueDate) === mKey);
-  const investments = RL_DATA.investments.filter(i => rlMonthKey(i.date) === mKey);
-
-  const income = paychecks.reduce((s,p) => s + Number(p.amount||0), 0);
-  const billsTotal = bills.reduce((s,b) => s + Number(b.amount||0), 0);
-  const investTotal = investments.reduce((s,i) => s + Number(i.amount||0), 0);
-
-  let spending = null;
-  if (income > 0) {
-    const ratio = billsTotal / income;
-    spending = rlClamp(100 - Math.max(0, ratio - 0.6) * 250, 0, 100);
-  }
-  let timeliness = null;
-  const decided = bills.filter(b => b.paidDate);
-  if (decided.length > 0) {
-    const onTime = decided.filter(b => b.paidDate <= b.dueDate).length;
-    timeliness = (onTime / decided.length) * 100;
-  }
-  let investing = null;
-  if (income > 0) {
-    investing = rlClamp((investTotal / income) / 0.15 * 100, 0, 100);
-  } else if (investTotal > 0) {
-    investing = 100;
-  }
-  const parts = [
-    { v: spending, w: 0.40 },
-    { v: timeliness, w: 0.35 },
-    { v: investing, w: 0.25 }
-  ].filter(p => p.v !== null);
-  let overall = null;
-  if (parts.length > 0) {
-    const totalW = parts.reduce((s,p)=>s+p.w,0);
-    overall = parts.reduce((s,p)=> s + p.v * (p.w/totalW), 0);
-  }
-  return {
-    income, billsTotal, investTotal, spending, timeliness, investing,
-    overall: overall !== null ? Math.round(overall) : null,
-    hasAnyData: paychecks.length > 0 || bills.length > 0 || investments.length > 0
-  };
-}
-function rlClamp(v,min,max) { return Math.max(min, Math.min(max, v)); }
-function rlStatusFor(score) {
-  if (score === null) return { label: 'NO FLIGHT DATA YET', cls: 'rl-status-none' };
-  if (score >= 90) return { label: 'SOARING', cls: 'rl-status-soaring' };
-  if (score >= 65) return { label: 'CRUISING', cls: 'rl-status-cruising' };
-  if (score >= 40) return { label: 'TAXIING', cls: 'rl-status-taxiing' };
-  return { label: 'GROUNDED', cls: 'rl-status-grounded' };
-}
-
-const RL_FEATHER_PATH = 'M0,0 C -18,-10 -52,-19 -92,-14 C -114,-11 -122,-3 -110,3 C -104,6 -96,8 -86,8.5 C -54,10 -22,4 0,0 Z';
-const RL_FEATHER_BARBS = ['M-22,-3 L-30,-14', 'M-42,-1 L-52,-13', 'M-62,2 L-73,-9', 'M-80,5 L-91,-5'];
-let rlWingsBuilt = false;
-function rlBuildFeatherGroup(id, mirror) {
-  const g = document.getElementById(id);
-  if (!g) return;
-  const scaleX = mirror ? -1 : 1;
-  g.setAttribute('transform', `translate(160,150) scale(${scaleX},1)`);
-  let inner = `<g id="${id}-rot"><path d="${RL_FEATHER_PATH}" fill="url(#rlWingGrad)" class="rl-feather-fill" stroke="rgba(0,0,0,0.15)" stroke-width="0.5"></path>`;
-  RL_FEATHER_BARBS.forEach(d => { inner += `<path d="${d}" stroke="rgba(255,255,255,0.22)" stroke-width="1" stroke-linecap="round" fill="none"></path>`; });
-  inner += `</g>`;
-  g.innerHTML = inner;
-}
-function rlSetWingAngle(score, tier) {
-  const s = score === null ? 8 : score;
-  const angle = 48 - (98 * (s/100));
-  const fillId = tier === 'gold' ? 'url(#rlWingGradGold)' : (score === null ? 'url(#rlWingGradLow)' : 'url(#rlWingGrad)');
-  ['rl-wing-left-rot','rl-wing-right-rot'].forEach((id) => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.setAttribute('transform', `rotate(${-angle})`);
-    const fillEl = el.querySelector('.rl-feather-fill');
-    if (fillEl) fillEl.setAttribute('fill', fillId);
-  });
-}
-
-function renderLifestylePage() {
-  RL_DATA = rlLoadData();
-  if (!rlWingsBuilt) {
-    rlBuildFeatherGroup('rl-wing-left', false);
-    rlBuildFeatherGroup('rl-wing-right', true);
-    rlWingsBuilt = true;
-  }
-  rlRenderScoreHero();
-  rlRenderRoost();
-  rlRenderTrackers();
-  const infoToggle = document.getElementById('rl-info-toggle');
-  if (infoToggle && !infoToggle.dataset.wired) {
-    infoToggle.dataset.wired = '1';
-    infoToggle.addEventListener('click', () => document.getElementById('rl-info-panel').classList.toggle('rl-open'));
-  }
-  const backdrop = document.getElementById('rl-modal-backdrop');
-  if (backdrop && !backdrop.dataset.wired) {
-    backdrop.dataset.wired = '1';
-    backdrop.addEventListener('click', (e) => { if (e.target.id === 'rl-modal-backdrop') rlCloseModal(); });
-  }
-}
-function rlRenderScoreHero() {
-  const mKey = rlCurrentMonthKey();
-  const res = rlComputeMonthScore(mKey);
-  const status = rlStatusFor(res.overall);
-  const hero = document.getElementById('rl-score-hero');
-  const tier = res.overall !== null && res.overall >= 90 ? 'gold' : 'normal';
-  hero.classList.toggle('rl-soaring', tier === 'gold');
-  document.getElementById('rl-score-month').textContent = new Date(mKey + '-01T12:00:00').toLocaleDateString('en-US',{month:'long',year:'numeric'}) + ' · updates as you log activity';
-  const numEl = document.getElementById('rl-gauge-number');
-  numEl.textContent = res.overall === null ? '—' : res.overall;
-  numEl.classList.toggle('rl-na', res.overall === null);
-  const statusEl = document.getElementById('rl-gauge-status');
-  statusEl.textContent = status.label;
-  statusEl.className = 'rl-gauge-status ' + status.cls;
-  document.getElementById('rl-gauge-caption').textContent = res.overall === null
-    ? 'Log a paycheck, a bill, or an investment below to get your first score.'
-    : (res.overall >= 90 ? 'Full spread. Keep this up through month-end to lock the medal.' : 'Every logged paycheck, bill, and investment adjusts this live.');
-  rlSetChip('spend', res.spending);
-  rlSetChip('time', res.timeliness);
-  rlSetChip('invest', res.investing);
-  rlSetWingAngle(res.overall, tier);
-}
-function rlSetChip(key, val) {
-  const valEl = document.getElementById('rl-chip-' + key);
-  const fillEl = document.getElementById('rl-chip-' + key + '-fill');
-  if (!valEl || !fillEl) return;
-  valEl.textContent = val === null ? '—' : Math.round(val);
-  fillEl.style.width = (val === null ? 0 : val) + '%';
-  fillEl.style.background = val !== null && val >= 90 ? 'linear-gradient(90deg,#B8862E,#FFE8A3)' : 'linear-gradient(90deg,var(--purple),var(--purple3))';
-}
-function rlRenderRoost() {
-  const roost = document.getElementById('rl-roost');
-  if (!roost) return;
-  const now = new Date();
-  const months = [];
-  for (let i = 7; i >= 0; i--) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    months.push(d.toISOString().slice(0,7));
-  }
-  const curKey = rlCurrentMonthKey();
-  roost.innerHTML = months.map(mKey => {
-    const res = rlComputeMonthScore(mKey);
-    const label = new Date(mKey + '-01T12:00:00').toLocaleDateString('en-US',{month:'short'});
-    const isCurrent = mKey === curKey;
-    if (isCurrent) {
-      return `<div class="rl-medal">
-        <div class="rl-medal-badge rl-live">${rlFeatherIconSVG('#9896A8')}</div>
-        <div class="rl-medal-score">${res.overall === null ? '—' : res.overall}</div>
-        <div class="rl-medal-month">${label} · live</div>
-      </div>`;
-    }
-    const earned = res.overall !== null && res.overall >= 90;
-    return `<div class="rl-medal">
-      <div class="rl-medal-badge ${earned ? 'rl-earned' : 'rl-missed'}">${rlFeatherIconSVG(earned ? '#3D2B06' : '#4A4858')}</div>
-      <div class="rl-medal-score">${res.overall === null ? '\u2014' : res.overall}</div>
-      <div class="rl-medal-month">${label}</div>
-    </div>`;
-  }).join('');
-}
-function rlFeatherIconSVG(color) {
-  return `<svg viewBox="0 0 24 24" fill="none"><path d="M12 21C12 21 5 17.5 5 10.5C5 6 8 3 12 3C16 3 19 6 19 10.5C19 17.5 12 21 12 21Z" stroke="${color}" stroke-width="1.6" stroke-linejoin="round"/><path d="M12 21V6" stroke="${color}" stroke-width="1.4" stroke-linecap="round"/></svg>`;
-}
-function rlRenderTrackers() {
-  rlRenderPaychecks();
-  rlRenderBills();
-  rlRenderInvestments();
-}
-function rlRenderPaychecks() {
-  const mKey = rlCurrentMonthKey();
-  const items = RL_DATA.paychecks.filter(p => rlMonthKey(p.date) === mKey).sort((a,b)=> b.date.localeCompare(a.date));
-  document.getElementById('rl-total-paychecks').textContent = rlFmtMoney(items.reduce((s,p)=>s+Number(p.amount||0),0));
-  const list = document.getElementById('rl-list-paychecks');
-  if (items.length === 0) { list.innerHTML = rlEmptyState('💵','No paychecks logged yet','Add your first paycheck to start building this month\u2019s score.'); return; }
-  list.innerHTML = items.map(p => `
-    <div class="rl-entry-card">
-      <div class="rl-entry-icon">💵</div>
-      <div class="rl-entry-body"><div class="rl-entry-name">${rlEscHtml(p.source)}</div><div class="rl-entry-meta">${rlFmtDate(p.date)}</div></div>
-      <div class="rl-entry-amount rl-pos">+${rlFmtMoney(p.amount)}</div>
-      <button class="rl-entry-del" onclick="rlDeleteEntry('paychecks','${p.id}')">×</button>
-    </div>`).join('');
-}
-function rlRenderBills() {
-  const mKey = rlCurrentMonthKey();
-  const items = RL_DATA.bills.filter(b => rlMonthKey(b.dueDate) === mKey).sort((a,b)=> a.dueDate.localeCompare(b.dueDate));
-  document.getElementById('rl-total-bills').textContent = rlFmtMoney(items.reduce((s,b)=>s+Number(b.amount||0),0));
-  const list = document.getElementById('rl-list-bills');
-  if (items.length === 0) { list.innerHTML = rlEmptyState('🧾','No bills logged yet','Add what\u2019s due this month to track timeliness.'); return; }
-  list.innerHTML = items.map(b => {
-    let pill;
-    if (b.paidDate && b.paidDate <= b.dueDate) pill = '<span class="rl-pill rl-pill-ontime">Paid on time</span>';
-    else if (b.paidDate) pill = '<span class="rl-pill rl-pill-late">Paid late</span>';
-    else if (b.dueDate < rlTodayISO()) pill = '<span class="rl-pill rl-pill-overdue">Overdue</span>';
-    else pill = '<span class="rl-pill rl-pill-due">Due ' + rlFmtDate(b.dueDate) + '</span>';
-    return `
-    <div class="rl-entry-card">
-      <div class="rl-entry-icon">🧾</div>
-      <div class="rl-entry-body"><div class="rl-entry-name">${rlEscHtml(b.name)}</div><div class="rl-entry-meta">${pill}</div></div>
-      <div class="rl-entry-amount rl-neg">-${rlFmtMoney(b.amount)}</div>
-      <button class="rl-entry-del" onclick="rlMarkPaid('${b.id}')" title="Mark paid" style="${b.paidDate ? 'display:none' : ''}">✓</button>
-      <button class="rl-entry-del" onclick="rlDeleteEntry('bills','${b.id}')">×</button>
-    </div>`;
-  }).join('');
-}
-function rlRenderInvestments() {
-  const mKey = rlCurrentMonthKey();
-  const items = RL_DATA.investments.filter(i => rlMonthKey(i.date) === mKey).sort((a,b)=> b.date.localeCompare(a.date));
-  document.getElementById('rl-total-investments').textContent = rlFmtMoney(items.reduce((s,i)=>s+Number(i.amount||0),0));
-  const list = document.getElementById('rl-list-investments');
-  if (items.length === 0) { list.innerHTML = rlEmptyState('📈','No investments logged yet','Log a contribution to start counting toward your score.'); return; }
-  list.innerHTML = items.map(i => `
-    <div class="rl-entry-card">
-      <div class="rl-entry-icon">📈</div>
-      <div class="rl-entry-body"><div class="rl-entry-name">${rlEscHtml(i.name)}</div><div class="rl-entry-meta">${rlEscHtml(i.type)} · ${rlFmtDate(i.date)}</div></div>
-      <div class="rl-entry-amount rl-pos">+${rlFmtMoney(i.amount)}</div>
-      <button class="rl-entry-del" onclick="rlDeleteEntry('investments','${i.id}')">×</button>
-    </div>`).join('');
-}
-function rlEmptyState(icon, title, copy) {
-  return `<div class="empty-state"><div style="font-size:32px;margin-bottom:10px;opacity:0.7">${icon}</div><div style="font-size:14px;font-weight:700;color:var(--muted2);margin-bottom:4px">${title}</div><div style="font-size:12px;max-width:280px;margin:0 auto;line-height:1.5">${copy}</div></div>`;
-}
-function rlEscHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-
-function rlSwitchTab(name) {
-  document.querySelectorAll('.rl-tab').forEach(t => t.classList.toggle('active', t.dataset.rltab === name));
-  document.querySelectorAll('.rl-panel').forEach(p => p.classList.toggle('active', p.id === 'rl-panel-' + name));
-}
-
-let rlModalType = null;
-function rlOpenModal(type) {
-  rlModalType = type;
-  const titleMap = { paycheck:'Add Paycheck', bill:'Add Bill', investment:'Add Investment' };
-  document.getElementById('rl-modal-title').textContent = titleMap[type];
-  const fields = document.getElementById('rl-modal-fields');
-  if (type === 'paycheck') {
-    fields.innerHTML = `
-      <div class="rl-field"><label>Source</label><input id="rl-f-source" placeholder="e.g. Employer, Freelance"></div>
-      <div class="rl-field"><label>Amount</label><input id="rl-f-amount" type="number" step="0.01" placeholder="0.00"></div>
-      <div class="rl-field"><label>Date</label><input id="rl-f-date" type="date" value="${rlTodayISO()}"></div>`;
-  } else if (type === 'bill') {
-    fields.innerHTML = `
-      <div class="rl-field"><label>Name</label><input id="rl-f-name" placeholder="e.g. Rent, Electric"></div>
-      <div class="rl-field"><label>Amount</label><input id="rl-f-amount" type="number" step="0.01" placeholder="0.00"></div>
-      <div class="rl-field"><label>Due date</label><input id="rl-f-due" type="date" value="${rlTodayISO()}"></div>`;
-  } else {
-    fields.innerHTML = `
-      <div class="rl-field"><label>Name</label><input id="rl-f-name" placeholder="e.g. 401(k), Index fund"></div>
-      <div class="rl-field"><label>Amount</label><input id="rl-f-amount" type="number" step="0.01" placeholder="0.00"></div>
-      <div class="rl-field"><label>Type</label><select id="rl-f-type">
-        <option>Retirement</option><option>Stocks</option><option>Savings</option><option>Crypto</option><option>Other</option>
-      </select></div>
-      <div class="rl-field"><label>Date</label><input id="rl-f-date" type="date" value="${rlTodayISO()}"></div>`;
-  }
-  document.getElementById('rl-modal-backdrop').classList.add('rl-open');
-  setTimeout(() => { const first = fields.querySelector('input'); if (first) first.focus(); }, 50);
-}
-function rlCloseModal() { document.getElementById('rl-modal-backdrop').classList.remove('rl-open'); rlModalType = null; }
-function rlSaveEntry() {
-  const amount = parseFloat(document.getElementById('rl-f-amount').value);
-  if (!amount || amount <= 0) { showToast('Enter an amount greater than $0', 'error'); return; }
-  const prevRes = rlComputeMonthScore(rlCurrentMonthKey());
-  if (rlModalType === 'paycheck') {
-    const source = document.getElementById('rl-f-source').value.trim() || 'Paycheck';
-    const date = document.getElementById('rl-f-date').value || rlTodayISO();
-    RL_DATA.paychecks.push({ id: rlUid(), source, amount, date });
-  } else if (rlModalType === 'bill') {
-    const name = document.getElementById('rl-f-name').value.trim() || 'Bill';
-    const dueDate = document.getElementById('rl-f-due').value || rlTodayISO();
-    RL_DATA.bills.push({ id: rlUid(), name, amount, dueDate, paidDate: null });
-  } else {
-    const name = document.getElementById('rl-f-name').value.trim() || 'Investment';
-    const type = document.getElementById('rl-f-type').value;
-    const date = document.getElementById('rl-f-date').value || rlTodayISO();
-    RL_DATA.investments.push({ id: rlUid(), name, type, amount, date });
-  }
-  rlSaveData(RL_DATA);
-  rlCloseModal();
-  rlRenderScoreHero();
-  rlRenderRoost();
-  rlRenderTrackers();
-  rlCheckMedalMoment(prevRes);
-  showToast('Saved');
-}
-function rlMarkPaid(id) {
-  const bill = RL_DATA.bills.find(b => b.id === id);
-  if (!bill) return;
-  const prevRes = rlComputeMonthScore(rlCurrentMonthKey());
-  bill.paidDate = rlTodayISO();
-  rlSaveData(RL_DATA);
-  rlRenderScoreHero();
-  rlRenderRoost();
-  rlRenderTrackers();
-  rlCheckMedalMoment(prevRes);
-  showToast('Marked paid');
-}
-function rlDeleteEntry(bucket, id) {
-  RL_DATA[bucket] = RL_DATA[bucket].filter(x => x.id !== id);
-  rlSaveData(RL_DATA);
-  rlRenderScoreHero();
-  rlRenderRoost();
-  rlRenderTrackers();
-  showToast('Removed');
-}
-function rlCheckMedalMoment(prevRes) {
-  const res = rlComputeMonthScore(rlCurrentMonthKey());
-  if (prevRes.overall !== null && prevRes.overall < 90 && res.overall !== null && res.overall >= 90) {
-    showToast('🏅 Soaring — this month just earned a medal', 'success');
-  }
-}
-
 </script>
 
 <!-- ── TRIP GROUP CHAT MODAL ── -->
@@ -11143,95 +11663,6 @@ body.app-mode #trip-chat-modal > div:last-child {
 }
 body.app-mode #chat-input {
   font-size: 16px !important;
-}
-
-/* ── RAVEN LIFESTYLE ── */
-.rl-score-hero { position:relative; background:radial-gradient(120% 100% at 50% 0%, rgba(124,58,237,0.16), transparent 60%), var(--dark); border:1px solid var(--border2); border-radius:24px; padding:34px 28px 26px; overflow:hidden; }
-.rl-score-hero.rl-soaring { background:radial-gradient(120% 100% at 50% 0%, rgba(242,193,78,0.18), transparent 60%), var(--dark); border-color:rgba(242,193,78,0.35); }
-.rl-score-eyebrow { text-align:center; font-size:11px; font-weight:700; letter-spacing:0.28em; color:var(--muted2); text-transform:uppercase; margin-bottom:4px; }
-.rl-score-month { text-align:center; font-size:12px; color:var(--muted); margin-bottom:6px; }
-.rl-gauge-stage { position:relative; width:100%; max-width:420px; margin:0 auto; }
-.rl-gauge-svg { width:100%; height:auto; display:block; }
-.rl-gauge-center { position:absolute; left:50%; bottom:38%; transform:translateX(-50%); text-align:center; width:100%; }
-.rl-gauge-number { font-family:'Bebas Neue',sans-serif; font-size:76px; line-height:0.85; letter-spacing:0.02em; color:var(--white); }
-.rl-gauge-number.rl-na { font-size:44px; color:var(--muted); }
-.rl-gauge-status { margin-top:2px; font-size:13px; font-weight:800; letter-spacing:0.18em; text-transform:uppercase; }
-.rl-gauge-caption { margin-top:6px; font-size:11.5px; color:var(--muted); max-width:260px; margin-left:auto; margin-right:auto; line-height:1.4; }
-.rl-status-grounded { color:var(--red); }
-.rl-status-taxiing { color:var(--purple3); }
-.rl-status-cruising { color:var(--green); }
-.rl-status-soaring { color:var(--gold); }
-.rl-status-none { color:var(--muted); }
-.rl-chip-row { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:22px; }
-.rl-chip { background:var(--dark2); border:1px solid var(--border); border-radius:14px; padding:13px 14px; }
-.rl-chip-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
-.rl-chip-label { font-size:10px; font-weight:800; letter-spacing:0.08em; color:var(--muted2); text-transform:uppercase; }
-.rl-chip-value { font-family:'Bebas Neue',sans-serif; font-size:20px; color:var(--white); }
-.rl-chip-track { height:5px; border-radius:3px; background:var(--dark4); overflow:hidden; }
-.rl-chip-fill { height:100%; border-radius:3px; background:linear-gradient(90deg,var(--purple),var(--purple3)); transition:width .5s ease; }
-.rl-chip-note { margin-top:7px; font-size:10.5px; color:var(--muted); line-height:1.4; }
-.rl-info-toggle { display:block; text-align:center; margin-top:16px; font-size:11px; color:var(--muted); cursor:pointer; text-decoration:underline; text-underline-offset:2px; }
-.rl-info-panel { display:none; margin-top:12px; padding:14px 16px; background:var(--dark2); border:1px solid var(--border); border-radius:12px; font-size:12px; color:var(--muted2); line-height:1.65; }
-.rl-info-panel.rl-open { display:block; }
-.rl-info-panel b { color:var(--white); }
-.rl-section-head { display:flex; align-items:baseline; justify-content:space-between; margin:34px 0 12px; }
-.rl-section-title { font-family:'Bebas Neue',sans-serif; font-size:22px; letter-spacing:0.06em; color:var(--white); }
-.rl-section-sub { font-size:11.5px; color:var(--muted); }
-.rl-roost { display:flex; gap:10px; overflow-x:auto; padding:4px 2px 10px; }
-.rl-medal { flex-shrink:0; width:64px; display:flex; flex-direction:column; align-items:center; gap:7px; }
-.rl-medal-badge { width:52px; height:52px; border-radius:50%; display:flex; align-items:center; justify-content:center; position:relative; }
-.rl-medal-badge.rl-earned { background:radial-gradient(circle at 35% 30%,var(--gold2),var(--gold) 60%,#B8862E 100%); box-shadow:0 0 0 1px rgba(242,193,78,0.5), 0 6px 18px var(--gold-glow); }
-.rl-medal-badge.rl-missed { background:var(--dark3); border:1px solid var(--border2); }
-.rl-medal-badge.rl-live { background:var(--dark3); border:1.5px dashed var(--purple2); animation:rl-pulse-ring 2s infinite; }
-@keyframes rl-pulse-ring { 0%,100%{ box-shadow:0 0 0 0 rgba(168,85,247,0.35);} 50%{ box-shadow:0 0 0 6px rgba(168,85,247,0);} }
-.rl-medal-badge svg { width:24px; height:24px; }
-.rl-medal-score { font-family:'JetBrains Mono',monospace; font-size:10px; font-weight:700; color:var(--muted2); }
-.rl-medal-month { font-size:9.5px; color:var(--muted); letter-spacing:0.04em; text-transform:uppercase; }
-.rl-tabbar { display:flex; gap:6px; background:var(--dark2); border:1px solid var(--border); border-radius:13px; padding:4px; margin-top:10px; }
-.rl-tab { flex:1; display:flex; align-items:center; justify-content:center; gap:7px; padding:10px 8px; border:none; background:none; color:var(--muted); font-size:13px; font-weight:700; font-family:'Epilogue',sans-serif; border-radius:9px; cursor:pointer; transition:all .15s; }
-.rl-tab.active { background:var(--dark3); color:var(--white); box-shadow:0 2px 10px rgba(0,0,0,0.35); }
-.rl-panel { display:none; margin-top:16px; }
-.rl-panel.active { display:block; }
-.rl-panel-summary { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
-.rl-panel-total-label { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:0.1em; font-weight:700; }
-.rl-panel-total-value { font-family:'Bebas Neue',sans-serif; font-size:26px; color:var(--white); }
-.rl-add-btn { display:flex; align-items:center; gap:6px; padding:9px 15px; background:var(--purple); color:#fff; border:none; border-radius:10px; font-size:12.5px; font-weight:800; font-family:'Epilogue',sans-serif; cursor:pointer; transition:all .15s; }
-.rl-add-btn:hover { background:#8b4cf0; transform:translateY(-1px); }
-.rl-entry-list { display:flex; flex-direction:column; gap:8px; }
-.rl-entry-card { display:flex; align-items:center; gap:12px; background:var(--dark2); border:1px solid var(--border); border-radius:12px; padding:12px 14px; }
-.rl-entry-icon { width:36px; height:36px; border-radius:10px; background:var(--dark3); display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:15px; }
-.rl-entry-body { flex:1; min-width:0; }
-.rl-entry-name { font-size:13.5px; font-weight:700; color:var(--white); }
-.rl-entry-meta { font-size:11px; color:var(--muted); margin-top:2px; }
-.rl-entry-amount { font-family:'JetBrains Mono',monospace; font-size:14px; font-weight:700; white-space:nowrap; }
-.rl-entry-amount.rl-neg { color:var(--red); }
-.rl-entry-amount.rl-pos { color:var(--green); }
-.rl-pill { font-size:9.5px; font-weight:800; letter-spacing:0.04em; text-transform:uppercase; padding:3px 8px; border-radius:20px; white-space:nowrap; display:inline-block; }
-.rl-pill-ontime { background:rgba(48,209,88,0.12); color:var(--green); border:1px solid rgba(48,209,88,0.3); }
-.rl-pill-late { background:rgba(255,68,68,0.12); color:var(--red); border:1px solid rgba(255,68,68,0.3); }
-.rl-pill-due { background:rgba(124,58,237,0.12); color:var(--purple3); border:1px solid rgba(124,58,237,0.3); }
-.rl-pill-overdue { background:rgba(255,68,68,0.18); color:var(--red); border:1px solid rgba(255,68,68,0.4); }
-.rl-entry-del { width:26px; height:26px; border-radius:50%; background:transparent; border:1px solid var(--border2); color:var(--muted2); font-size:14px; cursor:pointer; flex-shrink:0; display:flex; align-items:center; justify-content:center; transition:all .15s; margin-left:4px; }
-.rl-entry-del:hover { background:rgba(255,68,68,0.12); border-color:rgba(255,68,68,0.35); color:var(--red); }
-.rl-modal-backdrop { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.72); z-index:2000; align-items:center; justify-content:center; padding:20px; }
-.rl-modal-backdrop.rl-open { display:flex; }
-.rl-modal { width:min(380px,100%); background:var(--dark); border:1px solid var(--border2); border-radius:18px; padding:22px; box-shadow:0 24px 80px rgba(0,0,0,0.6); }
-.rl-modal-title { font-family:'Bebas Neue',sans-serif; font-size:22px; letter-spacing:0.04em; margin-bottom:16px; color:var(--white); }
-.rl-field { margin-bottom:12px; }
-.rl-field label { display:block; font-size:10.5px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--muted2); margin-bottom:6px; }
-.rl-field input, .rl-field select { width:100%; padding:11px 13px; background:var(--dark2); border:1px solid var(--border); border-radius:9px; color:var(--white); font-family:'Epilogue',sans-serif; font-size:13.5px; outline:none; transition:border-color .15s; }
-.rl-field input:focus, .rl-field select:focus { border-color:var(--purple); }
-.rl-modal-actions { display:flex; gap:10px; justify-content:flex-end; margin-top:18px; }
-.rl-btn-cancel { padding:10px 15px; background:transparent; border:1px solid var(--border2); border-radius:10px; color:var(--muted2); font-weight:700; font-size:12.5px; font-family:'Epilogue',sans-serif; cursor:pointer; }
-.rl-btn-save { padding:10px 18px; background:var(--green); border:none; border-radius:10px; color:#000; font-weight:800; font-size:12.5px; font-family:'Epilogue',sans-serif; cursor:pointer; box-shadow:0 4px 16px var(--green-glow); }
-@media (prefers-reduced-motion: reduce) {
-  .rl-medal-badge.rl-live { animation:none; }
-  .rl-chip-fill, .rl-add-btn, .rl-entry-del { transition:none; }
-}
-@media (max-width:560px) {
-  .rl-gauge-number { font-size:58px; }
-  .rl-chip-row { gap:8px; }
-  .rl-chip-label { font-size:9px; }
 }
 </style>
 
