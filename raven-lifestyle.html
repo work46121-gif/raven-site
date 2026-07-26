@@ -6,6 +6,7 @@
 <title>RAVEN LIFESTYLE</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Epilogue:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root {
   --black: #06060A;
@@ -409,6 +410,18 @@ a:focus-visible, button:focus-visible, .tab:focus-visible, input:focus-visible, 
 <div class="toast" id="toast"></div>
 
 <script>
+// Same project as dashboard.html — persistSession keeps the logged-in session
+// available here too, since it's the same site/localStorage.
+const SUPABASE_URL = 'https://ffjpzkpdumdcwnakpaje.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZmanB6a3BkdW1kY3duYWtwYWplIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5ODc4OTcsImV4cCI6MjA4ODU2Mzg5N30.JtDLVu4K1TJ8emcN_mvSHBu6e0y8-jPQv-ypoc9p0RU';
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: { flowType: 'implicit', detectSessionInUrl: true, persistSession: true, autoRefreshToken: true }
+});
+async function getAuthToken() {
+  const { data } = await supabase.auth.getSession();
+  return data && data.session ? data.session.access_token : null;
+}
+
 // ── DATA LAYER ──
 const STORAGE_KEY = 'raven_lifestyle_v1';
 const DEFAULT_SETTINGS = { investTargetPct: 15, retireGoal: null, vacationGoal: null };
@@ -820,15 +833,22 @@ async function requestCoaching() {
   document.getElementById('coach-body').style.display = 'none';
   document.getElementById('coach-loading').style.display = 'flex';
   const res = computeMonthScore(currentMonthKey());
+  const token = await getAuthToken();
+  if (!token) {
+    document.getElementById('coach-loading').style.display = 'none';
+    document.getElementById('coach-empty').style.display = 'block';
+    document.getElementById('coach-empty').textContent = 'Sign in to get personalized coaching.';
+    btn.disabled = false;
+    return;
+  }
   try {
-    // NOTE: this hits the backend, not the model directly \u2014 no API key ships to the client.
-    // The backend endpoint is responsible for the *authoritative* per-user daily rate limit
-    // (this client-side counter is just UX; enforce the real limit server-side, e.g. a
-    // `coach_usage(user_id, date, count)` row in Supabase, incremented atomically per call,
-    // using a small/cheap model since this is a short, low-stakes coaching note).
+    // NOTE: this hits the backend, not the model directly — no API key ships to the client.
+    // The backend verifies the Bearer token above and enforces the *authoritative* per-user
+    // daily rate limit server-side (see increment_coach_usage in Supabase) — this client-side
+    // counter below is just UX, not the real gate.
     const resp = await fetch('/lifestyle-coach', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
       body: JSON.stringify({
         income: res.income, billsTotal: res.billsTotal, investTotal: res.investTotal,
         spending: res.spending, timeliness: res.timeliness, investing: res.investing,
