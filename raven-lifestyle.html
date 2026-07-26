@@ -6,7 +6,6 @@
 <title>RAVEN LIFESTYLE</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Epilogue:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root {
   --black: #06060A;
@@ -46,7 +45,7 @@ button { font-family:'Epilogue',sans-serif; }
 .brand { display:flex; flex-direction:column; align-items:center; gap:2px; }
 .brand-name { font-family:'Bebas Neue',sans-serif; font-size:26px; letter-spacing:0.14em; background:linear-gradient(135deg,var(--white),var(--purple3)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
 .brand-sub { font-size:9.5px; letter-spacing:0.32em; color:var(--muted); text-transform:uppercase; }
-.pilot-tag { font-size:10px; font-weight:800; letter-spacing:0.1em; color:var(--purple3); border:1px solid rgba(124,58,237,0.4); background:rgba(124,58,237,0.1); padding:6px 11px; border-radius:20px; }
+.pilot-tag { font-size:10px; font-weight:800; letter-spacing:0.1em; color:var(--gold); border:1px solid rgba(242,193,78,0.4); background:rgba(242,193,78,0.1); padding:6px 11px; border-radius:20px; }
 
 /* ── SCORE HERO ── */
 .score-hero { position:relative; background:radial-gradient(120% 100% at 50% 0%, rgba(124,58,237,0.16), transparent 60%), var(--dark); border:1px solid var(--border2); border-radius:24px; padding:34px 28px 26px; overflow:hidden; }
@@ -81,39 +80,6 @@ button { font-family:'Epilogue',sans-serif; }
 .score-info-panel { display:none; margin-top:12px; padding:14px 16px; background:var(--dark2); border:1px solid var(--border); border-radius:12px; font-size:12px; color:var(--muted2); line-height:1.65; }
 .score-info-panel.open { display:block; }
 .score-info-panel b { color:var(--white); }
-
-/* ── SYNC BAR ── */
-.sync-bar { display:flex; align-items:center; gap:9px; font-size:11.5px; color:var(--muted2); margin-bottom:16px; padding:10px 14px; background:var(--dark2); border:1px solid var(--border); border-radius:11px; }
-.sync-dot { width:7px; height:7px; border-radius:50%; background:var(--muted); flex-shrink:0; transition:background .2s; }
-.sync-dot.on { background:var(--green); box-shadow:0 0 0 3px var(--green-glow); }
-.sync-dot.off { background:var(--gold); box-shadow:0 0 0 3px var(--gold-glow); }
-.sync-link { color:var(--purple3); font-weight:700; text-decoration:underline; text-underline-offset:2px; margin-left:auto; flex-shrink:0; }
-
-/* ── RECURRING ── */
-.freq-pill { font-size:9.5px; font-weight:800; letter-spacing:0.03em; text-transform:uppercase; padding:3px 8px; border-radius:20px; background:rgba(124,58,237,0.12); color:var(--purple3); border:1px solid rgba(124,58,237,0.3); white-space:nowrap; }
-.field-hint { font-size:10.5px; color:var(--muted); line-height:1.45; margin:-6px 0 12px; }
-.entry-stop { font-size:13px; }
-
-/* ── SUGGESTS ── */
-.ai-coach-card { position:relative; background:radial-gradient(120% 100% at 50% 0%, rgba(124,58,237,0.14), transparent 60%), var(--dark); border:1px solid var(--border2); border-radius:18px; padding:20px 20px 18px; margin-bottom:18px; }
-.ai-coach-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
-.ai-coach-title { display:flex; align-items:center; gap:8px; font-size:13px; font-weight:800; letter-spacing:0.06em; text-transform:uppercase; color:var(--purple3); }
-.ai-coach-title svg { width:15px; height:15px; }
-.ai-coach-refresh { background:var(--dark2); border:1px solid var(--border2); color:var(--muted2); font-size:11px; font-weight:700; padding:6px 11px; border-radius:9px; cursor:pointer; transition:all .15s; }
-.ai-coach-refresh:hover:not(:disabled) { color:var(--white); background:var(--dark3); }
-.ai-coach-refresh:disabled { opacity:0.5; cursor:default; }
-.ai-coach-body { font-size:13.5px; line-height:1.7; color:var(--white); white-space:pre-line; }
-.ai-coach-body.loading, .ai-coach-body.fallback { color:var(--muted2); font-style:italic; }
-.suggest-divider { text-align:center; font-size:10.5px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--muted); margin:6px 0 12px; }
-.suggest-list { display:flex; flex-direction:column; gap:10px; }
-.suggest-card { display:flex; gap:12px; background:var(--dark2); border:1px solid var(--border); border-radius:14px; padding:15px 16px; }
-.suggest-card.highlight { border-color:rgba(242,193,78,0.4); background:linear-gradient(180deg,rgba(242,193,78,0.08),var(--dark2)); }
-.suggest-icon { width:34px; height:34px; border-radius:10px; background:var(--dark3); display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:16px; }
-.suggest-body { flex:1; min-width:0; }
-.suggest-title { font-size:13.5px; font-weight:800; margin-bottom:3px; }
-.suggest-copy { font-size:12px; color:var(--muted2); line-height:1.55; }
-.suggest-impact { margin-top:8px; font-size:10px; font-weight:800; letter-spacing:0.05em; text-transform:uppercase; color:var(--purple3); }
-.suggest-note { font-size:11px; color:var(--muted); text-align:center; margin-top:14px; line-height:1.5; }
 
 /* ── ROOST ── */
 .section-head { display:flex; align-items:baseline; justify-content:space-between; margin:34px 0 12px; }
@@ -151,7 +117,7 @@ button { font-family:'Epilogue',sans-serif; }
 .entry-icon { width:36px; height:36px; border-radius:10px; background:var(--dark3); display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:15px; }
 .entry-body { flex:1; min-width:0; }
 .entry-name { font-size:13.5px; font-weight:700; }
-.entry-meta { display:flex; align-items:center; gap:6px; flex-wrap:wrap; font-size:11px; color:var(--muted); margin-top:3px; }
+.entry-meta { font-size:11px; color:var(--muted); margin-top:2px; }
 .entry-amount { font-family:'JetBrains Mono',monospace; font-size:14px; font-weight:700; white-space:nowrap; }
 .entry-amount.neg { color:var(--red); }
 .entry-amount.pos { color:var(--green); }
@@ -162,6 +128,49 @@ button { font-family:'Epilogue',sans-serif; }
 .pill-overdue { background:rgba(255,107,107,0.18); color:var(--red); border:1px solid rgba(255,107,107,0.4); }
 .entry-del { width:26px; height:26px; border-radius:50%; background:transparent; border:1px solid var(--border2); color:var(--muted2); font-size:14px; cursor:pointer; flex-shrink:0; display:flex; align-items:center; justify-content:center; transition:all .15s; }
 .entry-del:hover { background:rgba(255,107,107,0.12); border-color:rgba(255,107,107,0.35); color:var(--red); }
+
+/* ── AI COACH & GOALS ── */
+.coach-card { background:linear-gradient(180deg,var(--dark2),var(--dark)); border:1px solid rgba(124,58,237,0.35); border-radius:16px; padding:18px 20px; margin-bottom:14px; }
+.coach-head { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:4px; }
+.coach-title { font-size:13px; font-weight:800; letter-spacing:0.08em; color:var(--purple3); text-transform:uppercase; display:flex; align-items:center; gap:7px; }
+.coach-body { font-size:13.5px; color:var(--muted2); line-height:1.6; margin-top:10px; white-space:pre-wrap; }
+.coach-empty { font-size:12.5px; color:var(--muted); line-height:1.55; margin-top:8px; }
+.coach-btn { display:flex; align-items:center; gap:7px; padding:9px 15px; background:var(--purple); color:#fff; border:none; border-radius:10px; font-size:12.5px; font-weight:800; cursor:pointer; transition:all .15s; white-space:nowrap; }
+.coach-btn:hover:not(:disabled) { background:#8b4cf0; transform:translateY(-1px); }
+.coach-btn:disabled { background:var(--dark4); color:var(--muted); cursor:not-allowed; transform:none; }
+.coach-quota { font-size:10.5px; color:var(--muted); margin-top:9px; }
+.coach-loading { display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--muted2); margin-top:10px; }
+.spinner { width:13px; height:13px; border-radius:50%; border:2px solid var(--dark4); border-top-color:var(--purple2); animation:spin .7s linear infinite; }
+@keyframes spin { to { transform:rotate(360deg); } }
+
+.breakdown-card { display:flex; align-items:center; gap:12px; padding:14px 16px; border:1px solid var(--border); border-radius:14px; background:var(--dark2); margin-bottom:18px; }
+.breakdown-card.tier-gold { border-color:rgba(242,193,78,0.4); background:rgba(242,193,78,0.06); }
+.breakdown-card.tier-cruise { border-color:rgba(48,209,88,0.35); background:rgba(48,209,88,0.05); }
+.breakdown-card.tier-taxi { border-color:rgba(168,85,247,0.3); }
+.breakdown-card.tier-ground { border-color:rgba(255,107,107,0.3); background:rgba(255,107,107,0.05); }
+.breakdown-icon { font-size:20px; flex-shrink:0; }
+.breakdown-title { font-size:12.5px; font-weight:800; }
+.breakdown-copy { font-size:11.5px; color:var(--muted); margin-top:2px; line-height:1.4; }
+.breakdown-note { text-align:center; font-size:10.5px; color:var(--muted); margin:2px 0 22px; }
+
+.goals-title { font-size:12px; font-weight:800; letter-spacing:0.08em; color:var(--muted2); text-transform:uppercase; margin:22px 0 10px; }
+.goal-card { background:var(--dark2); border:1px solid var(--border); border-radius:14px; padding:16px 18px; margin-bottom:12px; }
+.goal-row { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px; }
+.goal-row:last-child { margin-bottom:0; }
+.goal-label { font-size:12.5px; font-weight:700; }
+.goal-sub { font-size:11px; color:var(--muted); margin-top:2px; }
+.target-input-row { display:flex; align-items:center; gap:8px; }
+.target-input-row input[type=range] { width:120px; accent-color:var(--purple2); }
+.target-input-row input[type=number] { width:56px; padding:6px 7px; background:var(--dark3); border:1px solid var(--border); border-radius:7px; color:var(--white); font-family:'JetBrains Mono',monospace; font-size:12.5px; text-align:center; }
+.goal-fields { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:4px; }
+.goal-fields .field { margin-bottom:0; }
+.goal-fields .field.full { grid-column:1 / -1; }
+.goal-result { margin-top:12px; padding:12px 14px; background:var(--dark3); border-radius:11px; font-size:12.5px; color:var(--muted2); line-height:1.55; }
+.goal-result b { color:var(--white); }
+.goal-result.ok { border-left:3px solid var(--green); }
+.goal-result.warn { border-left:3px solid var(--red); }
+.goal-track { height:6px; border-radius:3px; background:var(--dark4); overflow:hidden; margin-top:8px; }
+.goal-track-fill { height:100%; border-radius:3px; background:linear-gradient(90deg,var(--purple),var(--purple3)); }
 
 .empty-state { text-align:center; padding:40px 20px; color:var(--muted); }
 .empty-state .es-icon { font-size:32px; margin-bottom:10px; opacity:0.7; }
@@ -211,12 +220,6 @@ a:focus-visible, button:focus-visible, .tab:focus-visible, input:focus-visible, 
     <div class="pilot-tag">PILOT</div>
   </div>
 
-  <!-- SYNC STATUS -->
-  <div class="sync-bar" id="sync-bar">
-    <span class="sync-dot" id="sync-dot"></span>
-    <span id="sync-text">Checking sync…</span>
-  </div>
-
   <!-- SCORE HERO -->
   <div class="score-hero" id="score-hero">
     <div class="score-eyebrow">Raven Score</div>
@@ -254,26 +257,23 @@ a:focus-visible, button:focus-visible, .tab:focus-visible, input:focus-visible, 
       <div class="chip">
         <div class="chip-top"><span class="chip-label">Spending</span><span class="chip-value" id="chip-spend">—</span></div>
         <div class="chip-track"><div class="chip-fill" id="chip-spend-fill" style="width:0%"></div></div>
-        <div class="chip-note">Bills vs. income</div>
+        <div class="chip-note">Bills paid vs. income earned this month</div>
       </div>
       <div class="chip">
         <div class="chip-top"><span class="chip-label">Timeliness</span><span class="chip-value" id="chip-time">—</span></div>
         <div class="chip-track"><div class="chip-fill" id="chip-time-fill" style="width:0%"></div></div>
-        <div class="chip-note">Paid on time</div>
+        <div class="chip-note">Share of bills paid on or before the due date</div>
       </div>
       <div class="chip">
         <div class="chip-top"><span class="chip-label">Investing</span><span class="chip-value" id="chip-invest">—</span></div>
         <div class="chip-track"><div class="chip-fill" id="chip-invest-fill" style="width:0%"></div></div>
-        <div class="chip-note">Vs. 15% target</div>
+        <div class="chip-note" id="chip-invest-note">Money set aside vs. a 15% target of income</div>
       </div>
     </div>
 
     <span class="score-info-toggle" id="info-toggle">How is this calculated?</span>
     <div class="score-info-panel" id="info-panel">
-      <b>Spending</b> (40% of score) — keep bills under ~60% of income.<br>
-      <b>Timeliness</b> (35%) — pay bills on or before the due date.<br>
-      <b>Investing</b> (25%) — put aside 15% of income.<br>
-      Hit <b>90+</b> for the whole month and a medal joins your roost.
+      Your <b>Raven Score</b> blends three habits from the current month: <b>spending discipline</b> (40%) rewards keeping bills under ~60% of income, <b>bill timeliness</b> (35%) tracks what's paid on or before its due date, and <b>investing consistency</b> (25%) measures contributions against your <span id="info-invest-target">15</span>%-of-income target (default 15% — a good baseline for a healthy score, editable under Raven Suggests). Score <b>90+</b> for the whole month and a medal joins your roost.
     </div>
   </div>
 
@@ -294,10 +294,10 @@ a:focus-visible, button:focus-visible, .tab:focus-visible, input:focus-visible, 
     </div>
   </div>
   <div class="tabbar">
-    <button class="tab active" data-tab="paychecks" onclick="switchTab('paychecks')"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.6"/><path d="M12 7.5v9M14.5 9.6c0-1-.9-1.8-2.5-1.8s-2.5.8-2.5 1.8c0 2.4 5 1.1 5 3.5 0 1-1 1.8-2.5 1.8s-2.7-.8-2.7-1.8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg> Paychecks</button>
-    <button class="tab" data-tab="bills" onclick="switchTab('bills')"><svg viewBox="0 0 24 24" fill="none"><path d="M6 3h12v18l-2.5-1.6L13 21l-2.5-1.6L8 21l-2-1.4V3Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M8.5 8h7M8.5 11.5h7M8.5 15h4.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg> Bills</button>
-    <button class="tab" data-tab="investments" onclick="switchTab('investments')"><svg viewBox="0 0 24 24" fill="none"><path d="M4 16l5.2-5.5 3.4 3 6.4-7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M15.6 6.2h3.4v3.4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg> Investments</button>
-    <button class="tab" data-tab="suggests" onclick="switchTab('suggests')"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3.5l1.4 4.4 4.4 1.4-4.4 1.4L12 15.1l-1.4-4.4L6.2 9.3l4.4-1.4L12 3.5Z" fill="currentColor"/><path d="M18.3 14.8l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7.7-2Z" fill="currentColor"/></svg> Raven Suggests</button>
+    <button class="tab active" data-tab="paychecks" onclick="switchTab('paychecks')">💵 Paychecks</button>
+    <button class="tab" data-tab="bills" onclick="switchTab('bills')">🧾 Bills</button>
+    <button class="tab" data-tab="investments" onclick="switchTab('investments')">📈 Investments</button>
+    <button class="tab" data-tab="suggests" onclick="switchTab('suggests')">✨ Raven Suggests</button>
   </div>
 
   <div class="panel active" id="panel-paychecks">
@@ -325,16 +325,72 @@ a:focus-visible, button:focus-visible, .tab:focus-visible, input:focus-visible, 
   </div>
 
   <div class="panel" id="panel-suggests">
-    <div class="ai-coach-card">
-      <div class="ai-coach-head">
-        <div class="ai-coach-title"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3.5l1.4 4.4 4.4 1.4-4.4 1.4L12 15.1l-1.4-4.4L6.2 9.3l4.4-1.4L12 3.5Z" fill="currentColor"/></svg> Raven AI Coach</div>
-        <button class="ai-coach-refresh" id="ai-coach-refresh" onclick="fetchAICoaching(true)">Refresh</button>
+    <div class="breakdown-card" id="breakdown-card">
+      <div class="breakdown-icon" id="breakdown-icon">🪶</div>
+      <div>
+        <div class="breakdown-title" id="breakdown-title">Log some activity to see a breakdown</div>
+        <div class="breakdown-copy" id="breakdown-copy">Add a paycheck, bill, or investment to get instant, rule-based feedback.</div>
       </div>
-      <div class="ai-coach-body loading" id="ai-coach-body">Loading your coaching…</div>
     </div>
-    <div class="suggest-divider">Quick Breakdown</div>
-    <div class="suggest-list" id="suggest-list"></div>
-    <div class="suggest-note">The quick breakdown is generated instantly from this month's numbers. The AI coach above calls Claude for freeform advice. Neither is a substitute for financial advice.</div>
+    <div class="breakdown-note">The quick breakdown above is generated instantly from this month's numbers — no AI call.</div>
+
+    <div class="coach-card">
+      <div class="coach-head">
+        <div class="coach-title">✨ Raven AI Coach</div>
+        <button class="coach-btn" id="coach-btn" onclick="requestCoaching()">Get my coaching</button>
+      </div>
+      <div class="coach-empty" id="coach-empty">Freeform, personalized advice from an AI model — only generated when you ask for it.</div>
+      <div class="coach-loading" id="coach-loading" style="display:none"><div class="spinner"></div>Raven is thinking this through…</div>
+      <div class="coach-body" id="coach-body" style="display:none"></div>
+      <div class="coach-quota" id="coach-quota"></div>
+    </div>
+
+    <div class="goals-title">Your Targets</div>
+    <div class="goal-card">
+      <div class="goal-row">
+        <div>
+          <div class="goal-label">Investing target</div>
+          <div class="goal-sub">Used for your Investing score. Default is 15% of income.</div>
+        </div>
+        <div class="target-input-row">
+          <input type="range" id="invest-target-range" min="1" max="50" step="1" value="15" oninput="onInvestTargetInput(this.value)">
+          <div class="target-input-row"><input type="number" id="invest-target-num" min="1" max="50" value="15" oninput="onInvestTargetInput(this.value)">%</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="goal-card">
+      <div class="goal-row" style="margin-bottom:4px">
+        <div>
+          <div class="goal-label">🎯 Retire By</div>
+          <div class="goal-sub">Set a goal and Raven tracks whether your current investing pace gets you there.</div>
+        </div>
+      </div>
+      <div class="goal-fields">
+        <div class="field"><label>Current age</label><input id="rt-current-age" type="number" min="16" max="99" placeholder="e.g. 30"></div>
+        <div class="field"><label>Retire at age</label><input id="rt-target-age" type="number" min="17" max="100" placeholder="e.g. 60"></div>
+        <div class="field"><label>Target nest egg</label><input id="rt-target-amount" type="number" min="0" step="1000" placeholder="e.g. 1500000"></div>
+        <div class="field"><label>Avg. annual return</label><input id="rt-return" type="number" min="0" max="20" step="0.5" value="7" placeholder="7"></div>
+      </div>
+      <button class="add-btn" style="margin-top:12px" onclick="calcRetirement()">Run the numbers</button>
+      <div class="goal-result" id="retire-result" style="display:none"></div>
+    </div>
+
+    <div class="goal-card">
+      <div class="goal-row" style="margin-bottom:4px">
+        <div>
+          <div class="goal-label">🏖️ Vacation Budget Planner</div>
+          <div class="goal-sub">Tell Raven what you want to spend — it'll work out the monthly savings, without wrecking your investing target.</div>
+        </div>
+      </div>
+      <div class="goal-fields">
+        <div class="field full"><label>Trip name</label><input id="vb-name" placeholder="e.g. Tokyo in November"></div>
+        <div class="field"><label>Budget</label><input id="vb-amount" type="number" min="0" step="50" placeholder="e.g. 2500"></div>
+        <div class="field"><label>Trip date</label><input id="vb-date" type="date"></div>
+      </div>
+      <button class="add-btn" style="margin-top:12px" onclick="calcVacation()">Build my plan</button>
+      <div class="goal-result" id="vacation-result" style="display:none"></div>
+    </div>
   </div>
 </div>
 
@@ -354,124 +410,19 @@ a:focus-visible, button:focus-visible, .tab:focus-visible, input:focus-visible, 
 
 <script>
 // ── DATA LAYER ──
-// Data is cached locally for instant load, and synced to Supabase per-account
-// so it appears on any device signed into the same RAVEN account.
-const STORAGE_KEY = 'raven_lifestyle_v2';
-const SUPABASE_URL = 'https://ffjpzkpdumdcwnakpaje.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZmanB6a3BkdW1kY3duYWtwYWplIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5ODc4OTcsImV4cCI6MjA4ODU2Mzg5N30.JtDLVu4K1TJ8emcN_mvSHBu6e0y8-jPQv-ypoc9p0RU';
-
-let db = null;
-try {
-  const { createClient } = supabase;
-  db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-    auth: { flowType: 'implicit', detectSessionInUrl: true, persistSession: true, autoRefreshToken: true }
-  });
-} catch(e) { console.warn('Supabase unavailable, running local-only:', e && e.message); }
-
-let currentUserId = null;
-
-function loadLocal() {
+const STORAGE_KEY = 'raven_lifestyle_v1';
+const DEFAULT_SETTINGS = { investTargetPct: 15, retireGoal: null, vacationGoal: null };
+function loadData() {
   try {
-    const d = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
-    if (d) return { paychecks: d.paychecks || [], bills: d.bills || [], investments: d.investments || [] };
-  } catch(e) {}
-  // migrate older local-only save
-  try {
-    const old = JSON.parse(localStorage.getItem('raven_lifestyle_v1') || 'null');
-    if (old) return { paychecks: old.paychecks || [], bills: old.bills || [], investments: old.investments || [] };
-  } catch(e) {}
-  return { paychecks: [], bills: [], investments: [] };
+    const d = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+    return {
+      paychecks: d.paychecks || [], bills: d.bills || [], investments: d.investments || [],
+      settings: Object.assign({}, DEFAULT_SETTINGS, d.settings || {})
+    };
+  } catch(e) { return { paychecks: [], bills: [], investments: [], settings: Object.assign({}, DEFAULT_SETTINGS) }; }
 }
-function saveLocal(d) { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(d)); } catch(e) {} }
-let DATA = loadLocal();
-
-function setSyncBadge(state) {
-  const dot = document.getElementById('sync-dot');
-  const text = document.getElementById('sync-text');
-  const bar = document.getElementById('sync-bar');
-  if (!dot || !text || !bar) return;
-  const existingLink = bar.querySelector('.sync-link');
-  if (state === 'synced') {
-    dot.className = 'sync-dot on';
-    text.textContent = 'Synced to your account — up to date on every device';
-    if (existingLink) existingLink.remove();
-  } else {
-    dot.className = 'sync-dot off';
-    text.textContent = 'Saved on this device only';
-    if (!existingLink) {
-      const a = document.createElement('a');
-      a.href = 'dashboard.html';
-      a.className = 'sync-link';
-      a.textContent = 'Sign in to sync →';
-      bar.appendChild(a);
-    }
-  }
-}
-
-function mapRowsToData(rows) {
-  const mapped = { paychecks: [], bills: [], investments: [] };
-  (rows || []).forEach(row => {
-    if (row.kind === 'paycheck') {
-      mapped.paychecks.push({ id: row.id, source: row.name, amount: Number(row.amount || 0), date: row.date, frequency: row.frequency || 'one-time', seriesId: row.series_id || null });
-    } else if (row.kind === 'bill') {
-      mapped.bills.push({ id: row.id, name: row.name, amount: Number(row.amount || 0), dueDate: row.due_date, paidDate: row.paid_date, frequency: row.frequency || 'one-time', seriesId: row.series_id || null });
-    } else if (row.kind === 'investment') {
-      mapped.investments.push({ id: row.id, name: row.name, amount: Number(row.amount || 0), type: row.type, date: row.date });
-    }
-  });
-  return mapped;
-}
-
-async function pullCloud() {
-  if (!db || !currentUserId) return;
-  try {
-    const { data, error } = await db.from('lifestyle_entries').select('*').eq('user_id', currentUserId);
-    if (error) throw error;
-    DATA = mapRowsToData(data);
-    saveLocal(DATA);
-    renderAll();
-  } catch(e) { console.warn('RAVEN Lifestyle: cloud pull failed, showing local cache', e); }
-}
-
-async function persistRows(kind, rows) {
-  if (!db || !currentUserId) return;
-  try {
-    const payload = rows.map(r => ({ ...r, kind, user_id: currentUserId }));
-    const { error } = await db.from('lifestyle_entries').insert(payload);
-    if (error) throw error;
-  } catch(e) { console.warn('RAVEN Lifestyle: cloud save failed, kept locally', e); }
-}
-
-async function initAuthAndData() {
-  renderAll();
-  if (!db) { setSyncBadge('local'); return; }
-  try {
-    const { data: { session } } = await db.auth.getSession();
-    if (session && session.user) {
-      currentUserId = session.user.id;
-      setSyncBadge('synced');
-      await pullCloud();
-    } else {
-      setSyncBadge('local');
-    }
-  } catch(e) { setSyncBadge('local'); }
-
-  try {
-    db.auth.onAuthStateChange((event, session) => {
-      if (session && session.user) {
-        const changed = currentUserId !== session.user.id;
-        currentUserId = session.user.id;
-        setSyncBadge('synced');
-        if (changed) pullCloud();
-      } else {
-        currentUserId = null;
-        setSyncBadge('local');
-      }
-    });
-  } catch(e) {}
-
-  window.addEventListener('focus', () => { if (currentUserId) pullCloud(); });
-}
+function saveData(d) { localStorage.setItem(STORAGE_KEY, JSON.stringify(d)); }
+let DATA = loadData();
 
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
 function monthKey(dateStr) { return (dateStr || '').slice(0,7); } // YYYY-MM
@@ -483,43 +434,6 @@ function fmtDate(dateStr) {
 }
 function todayISO() { return new Date().toISOString().slice(0,10); }
 function currentMonthKey() { return todayISO().slice(0,7); }
-
-// ── RECURRENCE ──
-const FREQ_LABELS = { daily: 'Daily', weekly: 'Weekly', biweekly: 'Bi-weekly', monthly: 'Monthly' };
-const FREQ_HORIZON_DAYS = { daily: 45, weekly: 182, biweekly: 182, monthly: 365 };
-function freqLabel(f) { return FREQ_LABELS[f] || ''; }
-function generateOccurrenceDates(anchorISO, frequency) {
-  if (!frequency || frequency === 'one-time' || !FREQ_HORIZON_DAYS[frequency]) return [anchorISO];
-  const dates = [];
-  let d = new Date(anchorISO + 'T12:00:00');
-  const end = new Date(d.getTime() + FREQ_HORIZON_DAYS[frequency] * 86400000);
-  const stepDays = { daily: 1, weekly: 7, biweekly: 14 };
-  while (d <= end) {
-    dates.push(d.toISOString().slice(0,10));
-    if (frequency === 'monthly') d = new Date(d.getFullYear(), d.getMonth() + 1, d.getDate(), 12);
-    else d = new Date(d.getTime() + stepDays[frequency] * 86400000);
-  }
-  return dates;
-}
-function freqHintText(freq) {
-  const map = {
-    'one-time': 'Logged once, on the date above.',
-    daily: 'Repeats daily for about 6 weeks so future months keep counting automatically.',
-    weekly: 'Repeats weekly for about 6 months.',
-    biweekly: 'Repeats every 2 weeks for about 6 months.',
-    monthly: 'Repeats monthly for the next 12 months.'
-  };
-  return map[freq] || '';
-}
-function updateFreqHint() {
-  const sel = document.getElementById('f-frequency');
-  const hint = document.getElementById('freq-hint');
-  if (!sel || !hint) return;
-  hint.textContent = freqHintText(sel.value);
-}
-function freqPillHtml(seriesId, frequency) {
-  return seriesId ? `<span class="freq-pill">🔁 ${freqLabel(frequency)}</span>` : '';
-}
 
 // ── SCORE ENGINE ──
 function computeMonthScore(mKey) {
@@ -544,9 +458,10 @@ function computeMonthScore(mKey) {
     timeliness = (onTime / decided.length) * 100;
   }
 
+  const targetPct = (DATA.settings && DATA.settings.investTargetPct ? DATA.settings.investTargetPct : 15) / 100;
   let investing = null;
   if (income > 0) {
-    investing = clamp((investTotal / income) / 0.15 * 100, 0, 100);
+    investing = clamp((investTotal / income) / targetPct * 100, 0, 100);
   } else if (investTotal > 0) {
     investing = 100;
   }
@@ -633,6 +548,12 @@ function renderScoreHero() {
   setChip('time', res.timeliness);
   setChip('invest', res.investing);
 
+  const targetPct = DATA.settings.investTargetPct;
+  const noteEl = document.getElementById('chip-invest-note');
+  if (noteEl) noteEl.textContent = 'Money set aside vs. a ' + targetPct + '% target of income';
+  const infoEl = document.getElementById('info-invest-target');
+  if (infoEl) infoEl.textContent = targetPct;
+
   setWingAngle(res.overall, tier);
 }
 function setChip(key, val) {
@@ -689,9 +610,8 @@ function renderPaychecks() {
   list.innerHTML = items.map(p => `
     <div class="entry-card">
       <div class="entry-icon">💵</div>
-      <div class="entry-body"><div class="entry-name">${escHtml(p.source)}</div><div class="entry-meta"><span>${fmtDate(p.date)}</span>${freqPillHtml(p.seriesId, p.frequency)}</div></div>
+      <div class="entry-body"><div class="entry-name">${escHtml(p.source)}</div><div class="entry-meta">${fmtDate(p.date)}</div></div>
       <div class="entry-amount pos">+${fmtMoney(p.amount)}</div>
-      ${p.seriesId ? `<button class="entry-del entry-stop" title="Stop future occurrences" onclick="deleteSeries('paychecks','${p.seriesId}')">⏹</button>` : ''}
       <button class="entry-del" onclick="deleteEntry('paychecks','${p.id}')">×</button>
     </div>`).join('');
 }
@@ -710,10 +630,9 @@ function renderBills() {
     return `
     <div class="entry-card">
       <div class="entry-icon">🧾</div>
-      <div class="entry-body"><div class="entry-name">${escHtml(b.name)}</div><div class="entry-meta">${pill}${freqPillHtml(b.seriesId, b.frequency)}</div></div>
+      <div class="entry-body"><div class="entry-name">${escHtml(b.name)}</div><div class="entry-meta">${pill}</div></div>
       <div class="entry-amount neg">-${fmtMoney(b.amount)}</div>
       <button class="entry-del" onclick="markPaid('${b.id}')" title="Mark paid" style="${b.paidDate ? 'display:none' : ''}">✓</button>
-      ${b.seriesId ? `<button class="entry-del entry-stop" title="Stop future occurrences" onclick="deleteSeries('bills','${b.seriesId}')">⏹</button>` : ''}
       <button class="entry-del" onclick="deleteEntry('bills','${b.id}')">×</button>
     </div>`;
   }).join('');
@@ -741,150 +660,14 @@ function renderAll() {
   renderScoreHero();
   renderRoost();
   renderTrackers();
-  renderSuggests();
-}
-
-// ── RAVEN SUGGESTS ──
-function generateInsights(res) {
-  const insights = [];
-  if (!res.hasAnyData) {
-    insights.push({ icon:'🪶', title:'Log your first activity', copy:'Add a paycheck, a bill, or an investment for this month and Raven Suggests will start coaching you toward a 90+ score.', impact:null });
-    return insights;
-  }
-  if (res.overall !== null && res.overall >= 90) {
-    insights.push({ icon:'🏅', title:'Soaring — you\u2019re at 90+', copy:'Hold spending, timeliness, and investing where they are through month-end to lock in this month\u2019s medal.', impact:null, highlight:true });
-  }
-  if (res.spending === null) {
-    insights.push({ icon:'💵', title:'Log income to unlock spending scoring', copy:'Add this month\u2019s paychecks so Raven can measure your bills against what you actually earned.', impact:'Unlocks 40% of your score' });
-  } else if (res.spending < 100) {
-    const ratio = res.income > 0 ? res.billsTotal / res.income : 0;
-    const over = res.billsTotal - res.income * 0.6;
-    insights.push({
-      icon:'💵',
-      title: over > 0 ? `Bills are ${Math.round(ratio*100)}% of income` : 'Keep bills under 60% of income',
-      copy: over > 0
-        ? `Bringing bills down by about ${fmtMoney(over)} (or adding that much more income) this month maxes out your spending score.`
-        : 'You\u2019re close to the 60% target — a little more income or a little less spend gets you to full marks.',
-      impact: `Spending is 40% of the score · currently ${Math.round(res.spending)}/100`
-    });
-  }
-  if (res.timeliness === null) {
-    insights.push({ icon:'🧾', title:'Mark a bill paid to unlock timeliness', copy:'Once you mark a bill paid, Raven tracks whether it landed on or before the due date.', impact:'Unlocks 35% of your score' });
-  } else if (res.timeliness < 100) {
-    const mKey = currentMonthKey();
-    const bills = DATA.bills.filter(b => monthKey(b.dueDate) === mKey);
-    const lateOrOverdue = bills.filter(b => (b.paidDate && b.paidDate > b.dueDate) || (!b.paidDate && b.dueDate < todayISO()));
-    insights.push({
-      icon:'🧾',
-      title: lateOrOverdue.length ? `${lateOrOverdue.length} bill${lateOrOverdue.length > 1 ? 's' : ''} paid late or overdue` : 'Pay remaining bills on time',
-      copy: 'Paying every remaining bill on or before its due date this month brings timeliness to 100.',
-      impact: `Timeliness is 35% of the score · currently ${Math.round(res.timeliness)}/100`
-    });
-  }
-  if (res.investing === null) {
-    insights.push({ icon:'📈', title:'Log income to unlock investing scoring', copy:'Raven measures contributions against 15% of what you earned this month.', impact:'Unlocks 25% of your score' });
-  } else if (res.investing < 100) {
-    const gap = Math.max(0, res.income * 0.15 - res.investTotal);
-    insights.push({
-      icon:'📈',
-      title: gap > 0 ? `${fmtMoney(gap)} short of your investing target` : 'Keep investing steady',
-      copy: gap > 0 ? `Adding ${fmtMoney(gap)} more toward savings or investments this month hits the 15%-of-income target.` : 'You\u2019re at or above target — keep this pace to hold a perfect investing score.',
-      impact: `Investing is 25% of the score · currently ${Math.round(res.investing)}/100`
-    });
-  }
-  return insights;
-}
-const LIFESTYLE_BACKEND = 'https://raven-backend-production-fb1f.up.railway.app';
-let coachFetchedForKey = null;
-async function fetchAICoaching(force) {
-  const box = document.getElementById('ai-coach-body');
-  const btn = document.getElementById('ai-coach-refresh');
-  if (!box) return;
-  const mKey = currentMonthKey();
-  const res = computeMonthScore(mKey);
-
-  if (!res.hasAnyData) {
-    box.textContent = 'Log a paycheck, a bill, or an investment first — then your AI coach will have something to work with.';
-    box.className = 'ai-coach-body fallback';
-    return;
-  }
-
-  const cacheKey = 'raven_lifestyle_coach_' + mKey;
-  if (!force) {
-    try {
-      const cached = JSON.parse(sessionStorage.getItem(cacheKey) || 'null');
-      if (cached && cached.overall === res.overall && cached.text) {
-        box.textContent = cached.text;
-        box.className = 'ai-coach-body';
-        coachFetchedForKey = mKey + ':' + res.overall;
-        return;
-      }
-    } catch(e) {}
-  }
-
-  box.textContent = 'Thinking through your numbers…';
-  box.className = 'ai-coach-body loading';
-  if (btn) btn.disabled = true;
-
-  try {
-    const bills = DATA.bills.filter(b => monthKey(b.dueDate) === mKey);
-    const lateOrOverdue = bills.filter(b => (b.paidDate && b.paidDate > b.dueDate) || (!b.paidDate && b.dueDate < todayISO()));
-    const payload = {
-      month: mKey,
-      income: res.income, billsTotal: res.billsTotal, investTotal: res.investTotal,
-      spending: res.spending, timeliness: res.timeliness, investing: res.investing, overall: res.overall,
-      billCount: bills.length, lateOrOverdueCount: lateOrOverdue.length,
-      paycheckCount: DATA.paychecks.filter(p => monthKey(p.date) === mKey).length,
-      investmentCount: DATA.investments.filter(i => monthKey(i.date) === mKey).length
-    };
-    const r = await fetch(LIFESTYLE_BACKEND + '/api/lifestyle-coach', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-    const data = await r.json();
-    if (data.success && data.coaching) {
-      box.textContent = data.coaching;
-      box.className = 'ai-coach-body';
-      coachFetchedForKey = mKey + ':' + res.overall;
-      try { sessionStorage.setItem(cacheKey, JSON.stringify({ overall: res.overall, text: data.coaching })); } catch(e) {}
-    } else {
-      box.textContent = (data.error ? data.error + ' — ' : '') + 'Couldn\u2019t reach the AI coach right now. The quick breakdown below still has you covered.';
-      box.className = 'ai-coach-body fallback';
-    }
-  } catch(e) {
-    box.textContent = 'Couldn\u2019t reach the AI coach right now. The quick breakdown below still has you covered.';
-    box.className = 'ai-coach-body fallback';
-  } finally {
-    if (btn) btn.disabled = false;
-  }
-}
-
-function renderSuggests() {
-  const list = document.getElementById('suggest-list');
-  if (!list) return;
-  const res = computeMonthScore(currentMonthKey());
-  const insights = generateInsights(res);
-  list.innerHTML = insights.map(i => `
-    <div class="suggest-card${i.highlight ? ' highlight' : ''}">
-      <div class="suggest-icon">${i.icon}</div>
-      <div class="suggest-body">
-        <div class="suggest-title">${i.title}</div>
-        <div class="suggest-copy">${i.copy}</div>
-        ${i.impact ? `<div class="suggest-impact">${i.impact}</div>` : ''}
-      </div>
-    </div>`).join('');
+  renderBreakdown();
+  renderCoachQuota();
 }
 
 // ── TABS ──
 function switchTab(name) {
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
   document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.id === 'panel-' + name));
-  if (name === 'suggests') {
-    const res = computeMonthScore(currentMonthKey());
-    const key = currentMonthKey() + ':' + res.overall;
-    if (coachFetchedForKey !== key) fetchAICoaching(false);
-  }
 }
 
 // ── MODAL ──
@@ -894,25 +677,15 @@ function openModal(type) {
   const titleMap = { paycheck:'Add Paycheck', bill:'Add Bill', investment:'Add Investment' };
   document.getElementById('modal-title').textContent = titleMap[type];
   const fields = document.getElementById('modal-fields');
-  const freqOptions = `
-        <option value="one-time" selected>One-time</option>
-        <option value="daily">Daily</option>
-        <option value="weekly">Weekly</option>
-        <option value="biweekly">Bi-weekly</option>
-        <option value="monthly">Monthly</option>`;
   if (type === 'paycheck') {
     fields.innerHTML = `
       <div class="field"><label>Source</label><input id="f-source" placeholder="e.g. Employer, Freelance"></div>
       <div class="field"><label>Amount</label><input id="f-amount" type="number" step="0.01" placeholder="0.00"></div>
-      <div class="field"><label>Frequency</label><select id="f-frequency" onchange="updateFreqHint()">${freqOptions}</select></div>
-      <div class="field-hint" id="freq-hint">${freqHintText('one-time')}</div>
       <div class="field"><label>Date</label><input id="f-date" type="date" value="${todayISO()}"></div>`;
   } else if (type === 'bill') {
     fields.innerHTML = `
       <div class="field"><label>Name</label><input id="f-name" placeholder="e.g. Rent, Electric"></div>
       <div class="field"><label>Amount</label><input id="f-amount" type="number" step="0.01" placeholder="0.00"></div>
-      <div class="field"><label>Frequency</label><select id="f-frequency" onchange="updateFreqHint()">${freqOptions}</select></div>
-      <div class="field-hint" id="freq-hint">${freqHintText('one-time')}</div>
       <div class="field"><label>Due date</label><input id="f-due" type="date" value="${todayISO()}"></div>`;
   } else {
     fields.innerHTML = `
@@ -928,7 +701,7 @@ function openModal(type) {
 }
 function closeModal() { document.getElementById('modal-backdrop').classList.remove('open'); modalType = null; }
 
-async function saveEntry() {
+function saveEntry() {
   const amount = parseFloat(document.getElementById('f-amount').value);
   if (!amount || amount <= 0) { showToast('Enter an amount greater than $0'); return; }
 
@@ -936,76 +709,269 @@ async function saveEntry() {
 
   if (modalType === 'paycheck') {
     const source = document.getElementById('f-source').value.trim() || 'Paycheck';
-    const anchor = document.getElementById('f-date').value || todayISO();
-    const frequency = document.getElementById('f-frequency').value;
-    const dates = generateOccurrenceDates(anchor, frequency);
-    const seriesId = dates.length > 1 ? uid() : null;
-    const rows = dates.map(date => ({ id: uid(), source, amount, date, frequency, seriesId }));
-    DATA.paychecks.push(...rows);
-    await persistRows('paycheck', rows.map(r => ({ id: r.id, name: r.source, amount: r.amount, date: r.date, frequency: r.frequency, series_id: r.seriesId })));
+    const date = document.getElementById('f-date').value || todayISO();
+    DATA.paychecks.push({ id: uid(), source, amount, date });
   } else if (modalType === 'bill') {
     const name = document.getElementById('f-name').value.trim() || 'Bill';
-    const anchor = document.getElementById('f-due').value || todayISO();
-    const frequency = document.getElementById('f-frequency').value;
-    const dates = generateOccurrenceDates(anchor, frequency);
-    const seriesId = dates.length > 1 ? uid() : null;
-    const rows = dates.map(dueDate => ({ id: uid(), name, amount, dueDate, paidDate: null, frequency, seriesId }));
-    DATA.bills.push(...rows);
-    await persistRows('bill', rows.map(r => ({ id: r.id, name: r.name, amount: r.amount, due_date: r.dueDate, paid_date: null, frequency: r.frequency, series_id: r.seriesId })));
+    const dueDate = document.getElementById('f-due').value || todayISO();
+    DATA.bills.push({ id: uid(), name, amount, dueDate, paidDate: null });
   } else {
     const name = document.getElementById('f-name').value.trim() || 'Investment';
     const type = document.getElementById('f-type').value;
     const date = document.getElementById('f-date').value || todayISO();
-    const row = { id: uid(), name, type, amount, date };
-    DATA.investments.push(row);
-    await persistRows('investment', [{ id: row.id, name: row.name, type: row.type, amount: row.amount, date: row.date }]);
+    DATA.investments.push({ id: uid(), name, type, amount, date });
   }
-  saveLocal(DATA);
+  saveData(DATA);
   closeModal();
   renderAll();
   checkMedalMoment(prevRes);
   showToast('Saved');
 }
-async function markPaid(id) {
+function markPaid(id) {
   const bill = DATA.bills.find(b => b.id === id);
   if (!bill) return;
   const prevRes = computeMonthScore(currentMonthKey());
   bill.paidDate = todayISO();
-  saveLocal(DATA);
+  saveData(DATA);
   renderAll();
   checkMedalMoment(prevRes);
   showToast('Marked paid');
-  if (db && currentUserId) {
-    try { await db.from('lifestyle_entries').update({ paid_date: bill.paidDate }).eq('id', id).eq('user_id', currentUserId); } catch(e) {}
-  }
 }
-async function deleteEntry(bucket, id) {
+function deleteEntry(bucket, id) {
   DATA[bucket] = DATA[bucket].filter(x => x.id !== id);
-  saveLocal(DATA);
+  saveData(DATA);
   renderAll();
   showToast('Removed');
-  if (db && currentUserId) {
-    try { await db.from('lifestyle_entries').delete().eq('id', id).eq('user_id', currentUserId); } catch(e) {}
-  }
-}
-async function deleteSeries(bucket, seriesId) {
-  const today = todayISO();
-  const dateOf = x => bucket === 'bills' ? x.dueDate : x.date;
-  DATA[bucket] = DATA[bucket].filter(x => !(x.seriesId === seriesId && dateOf(x) >= today));
-  saveLocal(DATA);
-  renderAll();
-  showToast('Stopped future occurrences');
-  if (db && currentUserId) {
-    try {
-      const dateCol = bucket === 'bills' ? 'due_date' : 'date';
-      await db.from('lifestyle_entries').delete().eq('series_id', seriesId).eq('user_id', currentUserId).gte(dateCol, today);
-    } catch(e) {}
-  }
 }
 function checkMedalMoment(prevRes) {
   const res = computeMonthScore(currentMonthKey());
   if (prevRes.overall !== null && prevRes.overall < 90 && res.overall !== null && res.overall >= 90) {
     showToast('🏅 Soaring — this month just earned a medal', true);
+  }
+}
+
+// ── QUICK BREAKDOWN (instant, rule-based — no API call) ──
+function renderBreakdown() {
+  const res = computeMonthScore(currentMonthKey());
+  const card = document.getElementById('breakdown-card');
+  const icon = document.getElementById('breakdown-icon');
+  const title = document.getElementById('breakdown-title');
+  const copy = document.getElementById('breakdown-copy');
+  if (!res.hasAnyData) {
+    card.className = 'breakdown-card';
+    icon.textContent = '🪶';
+    title.textContent = 'Log some activity to see a breakdown';
+    copy.textContent = 'Add a paycheck, bill, or investment to get instant, rule-based feedback.';
+    return;
+  }
+  const status = statusFor(res.overall);
+  const tierClass = { SOARING:'tier-gold', CRUISING:'tier-cruise', TAXIING:'tier-taxi', GROUNDED:'tier-ground' }[status.label] || '';
+  card.className = 'breakdown-card ' + tierClass;
+  const copies = {
+    SOARING: ['🏅', 'Soaring — you\u2019re at 90+', 'Hold spending, timeliness, and investing where they are through month-end to lock in this month\u2019s medal.'],
+    CRUISING: ['✈️', 'Cruising — solidly on track', 'You\u2019re close to medal range. Tightening up your weakest of the three pillars gets you there.'],
+    TAXIING: ['🛫', 'Taxiing — building momentum', 'Spending, timeliness, and investing all move the needle. Focus on whichever chip below is lowest.'],
+    GROUNDED: ['🪫', 'Grounded — room to climb', 'This month is behind pace. Paying a bill on time or logging an investment now still helps this month\u2019s score.']
+  };
+  const [ic, t, c] = copies[status.label] || copies.GROUNDED;
+  icon.textContent = ic; title.textContent = t; copy.textContent = c;
+}
+
+// ── AI COACH (click-to-load, rate-limited) ──
+const COACH_KEY = 'raven_lifestyle_coach_v1';
+const COACH_DAILY_LIMIT = 2; // keep this low — each click is a real, billed API call
+function loadCoachLog() {
+  try { return JSON.parse(localStorage.getItem(COACH_KEY) || '{}'); } catch(e) { return {}; }
+}
+function saveCoachLog(l) { localStorage.setItem(COACH_KEY, JSON.stringify(l)); }
+function coachCallsToday() {
+  const log = loadCoachLog();
+  return (log[todayISO()] || []).length;
+}
+function renderCoachQuota() {
+  const used = coachCallsToday();
+  const remaining = Math.max(0, COACH_DAILY_LIMIT - used);
+  const btn = document.getElementById('coach-btn');
+  const quota = document.getElementById('coach-quota');
+  if (remaining <= 0) {
+    btn.disabled = true;
+    btn.textContent = 'Used for today';
+    quota.textContent = 'You\u2019ve used your ' + COACH_DAILY_LIMIT + ' coaching calls for today \u2014 check back tomorrow.';
+  } else {
+    btn.disabled = false;
+    btn.textContent = 'Get my coaching';
+    quota.textContent = remaining + ' of ' + COACH_DAILY_LIMIT + ' coaching calls left today';
+  }
+  // Restore last cached response for today, if any, so a page refresh doesn't hide it
+  const log = loadCoachLog();
+  const todays = log[todayISO()] || [];
+  if (todays.length > 0) {
+    const last = todays[todays.length - 1];
+    document.getElementById('coach-empty').style.display = 'none';
+    document.getElementById('coach-body').style.display = 'block';
+    document.getElementById('coach-body').textContent = last;
+  }
+}
+async function requestCoaching() {
+  if (coachCallsToday() >= COACH_DAILY_LIMIT) { renderCoachQuota(); return; }
+  const btn = document.getElementById('coach-btn');
+  btn.disabled = true;
+  document.getElementById('coach-empty').style.display = 'none';
+  document.getElementById('coach-body').style.display = 'none';
+  document.getElementById('coach-loading').style.display = 'flex';
+  const res = computeMonthScore(currentMonthKey());
+  try {
+    // NOTE: this hits the backend, not the model directly \u2014 no API key ships to the client.
+    // The backend endpoint is responsible for the *authoritative* per-user daily rate limit
+    // (this client-side counter is just UX; enforce the real limit server-side, e.g. a
+    // `coach_usage(user_id, date, count)` row in Supabase, incremented atomically per call,
+    // using a small/cheap model since this is a short, low-stakes coaching note).
+    const resp = await fetch('/lifestyle-coach', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        income: res.income, billsTotal: res.billsTotal, investTotal: res.investTotal,
+        spending: res.spending, timeliness: res.timeliness, investing: res.investing,
+        overall: res.overall, investTargetPct: DATA.settings.investTargetPct
+      })
+    });
+    if (resp.status === 429) { throw new Error('rate_limited'); }
+    if (!resp.ok) { throw new Error('bad_response'); }
+    const data = await resp.json();
+    const text = (data && data.message) || 'Raven didn\u2019t have anything new to add this time.';
+    const log = loadCoachLog();
+    log[todayISO()] = (log[todayISO()] || []).concat(text);
+    saveCoachLog(log);
+    document.getElementById('coach-body').textContent = text;
+    document.getElementById('coach-body').style.display = 'block';
+  } catch (e) {
+    document.getElementById('coach-empty').style.display = 'block';
+    document.getElementById('coach-empty').textContent = e.message === 'rate_limited'
+      ? 'You\u2019ve hit today\u2019s coaching limit \u2014 try again tomorrow.'
+      : 'Couldn\u2019t reach Raven\u2019s coach right now. Try again in a bit.';
+  } finally {
+    document.getElementById('coach-loading').style.display = 'none';
+    renderCoachQuota();
+  }
+}
+
+// ── INVESTING TARGET ──
+function onInvestTargetInput(val) {
+  let pct = Math.round(Number(val));
+  if (!Number.isFinite(pct)) return;
+  pct = Math.max(1, Math.min(50, pct));
+  document.getElementById('invest-target-range').value = pct;
+  document.getElementById('invest-target-num').value = pct;
+  DATA.settings.investTargetPct = pct;
+  saveData(DATA);
+  renderAll();
+}
+
+// ── RETIRE BY ──
+function calcRetirement() {
+  const currentAge = Number(document.getElementById('rt-current-age').value);
+  const targetAge = Number(document.getElementById('rt-target-age').value);
+  const targetAmount = Number(document.getElementById('rt-target-amount').value) || 0;
+  const annualReturn = Number(document.getElementById('rt-return').value) || 0;
+  const box = document.getElementById('retire-result');
+  box.style.display = 'block';
+  if (!currentAge || !targetAge || targetAge <= currentAge) {
+    box.className = 'goal-result warn';
+    box.innerHTML = 'Enter a current age and a retirement age that\u2019s later than your current age.';
+    return;
+  }
+  const years = targetAge - currentAge;
+  const months = years * 12;
+  const monthlyReturn = annualReturn / 100 / 12;
+
+  // Use this month's actual investing pace as the assumed monthly contribution going forward.
+  const res = computeMonthScore(currentMonthKey());
+  const monthlyContribution = res.investTotal > 0 ? res.investTotal : (res.income * (DATA.settings.investTargetPct/100));
+
+  // Future value of a monthly contribution series (ordinary annuity).
+  let projected;
+  if (monthlyReturn > 0) {
+    projected = monthlyContribution * ((Math.pow(1+monthlyReturn, months) - 1) / monthlyReturn);
+  } else {
+    projected = monthlyContribution * months;
+  }
+
+  DATA.settings.retireGoal = { currentAge, targetAge, targetAmount, annualReturn };
+  saveData(DATA);
+
+  if (targetAmount > 0) {
+    const pctToGoal = clamp((projected / targetAmount) * 100, 0, 999);
+    const onTrack = projected >= targetAmount;
+    box.className = 'goal-result ' + (onTrack ? 'ok' : 'warn');
+    let requiredMonthly = monthlyReturn > 0
+      ? targetAmount / ((Math.pow(1+monthlyReturn, months) - 1) / monthlyReturn)
+      : targetAmount / months;
+    box.innerHTML = `At <b>${fmtMoney(monthlyContribution)}/mo</b> for <b>${years} years</b> (${annualReturn}% avg return), you\u2019re projected to reach <b>${fmtMoney(projected)}</b> by age ${targetAge} \u2014 ${onTrack ? 'on track to clear' : 'short of'} your <b>${fmtMoney(targetAmount)}</b> goal.
+      ${onTrack ? '' : `To hit it exactly, you\u2019d need roughly <b>${fmtMoney(requiredMonthly)}/mo</b> instead.`}
+      <div class="goal-track"><div class="goal-track-fill" style="width:${Math.min(100,pctToGoal)}%"></div></div>`;
+  } else {
+    box.className = 'goal-result ok';
+    box.innerHTML = `At <b>${fmtMoney(monthlyContribution)}/mo</b> for <b>${years} years</b> (${annualReturn}% avg return), you\u2019re projected to have about <b>${fmtMoney(projected)}</b> by age ${targetAge}. Add a target nest egg above to see if that\u2019s enough.`;
+  }
+}
+
+// ── VACATION BUDGET PLANNER ──
+function calcVacation() {
+  const name = document.getElementById('vb-name').value.trim() || 'Your trip';
+  const amount = Number(document.getElementById('vb-amount').value);
+  const dateStr = document.getElementById('vb-date').value;
+  const box = document.getElementById('vacation-result');
+  box.style.display = 'block';
+  if (!amount || !dateStr) {
+    box.className = 'goal-result warn';
+    box.innerHTML = 'Enter a budget and a trip date.';
+    return;
+  }
+  const today = new Date(todayISO() + 'T00:00:00');
+  const trip = new Date(dateStr + 'T00:00:00');
+  const msPerMonth = 30.44 * 24 * 60 * 60 * 1000;
+  const monthsLeft = Math.max(1, Math.round((trip - today) / msPerMonth));
+  const perMonth = amount / monthsLeft;
+
+  const res = computeMonthScore(currentMonthKey());
+  const investTarget = res.income * (DATA.settings.investTargetPct / 100);
+  const billRoom = res.income > 0 ? res.income * 0.6 - res.billsTotal : null;
+
+  DATA.settings.vacationGoal = { name, amount, date: dateStr };
+  saveData(DATA);
+
+  let fitNote = 'Log a paycheck this month so Raven can check this against your income.';
+  let cls = 'goal-result';
+  if (res.income > 0) {
+    const leftoverAfterTarget = res.income - res.billsTotal - investTarget;
+    if (perMonth <= leftoverAfterTarget) {
+      cls = 'goal-result ok';
+      fitNote = `That fits inside your income after bills and your ${DATA.settings.investTargetPct}% investing target \u2014 no need to dip into either.`;
+    } else {
+      cls = 'goal-result warn';
+      const gap = perMonth - Math.max(0, leftoverAfterTarget);
+      fitNote = `That\u2019s about <b>${fmtMoney(gap)}/mo</b> more than what\u2019s left after bills and your investing target \u2014 consider spreading the trip out, trimming the budget, or temporarily lowering your investing target above.`;
+    }
+  }
+  box.className = cls;
+  box.innerHTML = `<b>${escHtml(name)}</b>: save about <b>${fmtMoney(perMonth)}/mo</b> for the next <b>${monthsLeft} month${monthsLeft===1?'':'s'}</b> to cover ${fmtMoney(amount)}. ${fitNote}`;
+}
+
+function loadSavedGoalsUI() {
+  document.getElementById('invest-target-range').value = DATA.settings.investTargetPct;
+  document.getElementById('invest-target-num').value = DATA.settings.investTargetPct;
+  if (DATA.settings.retireGoal) {
+    const g = DATA.settings.retireGoal;
+    if (g.currentAge) document.getElementById('rt-current-age').value = g.currentAge;
+    if (g.targetAge) document.getElementById('rt-target-age').value = g.targetAge;
+    if (g.targetAmount) document.getElementById('rt-target-amount').value = g.targetAmount;
+    if (g.annualReturn) document.getElementById('rt-return').value = g.annualReturn;
+  }
+  if (DATA.settings.vacationGoal) {
+    const v = DATA.settings.vacationGoal;
+    document.getElementById('vb-name').value = v.name || '';
+    document.getElementById('vb-amount').value = v.amount || '';
+    document.getElementById('vb-date').value = v.date || '';
   }
 }
 
@@ -1026,7 +992,8 @@ document.getElementById('modal-backdrop').addEventListener('click', (e) => { if 
 
 buildFeatherGroup('wing-left', false);
 buildFeatherGroup('wing-right', true);
-initAuthAndData();
+loadSavedGoalsUI();
+renderAll();
 </script>
 </body>
 </html>
