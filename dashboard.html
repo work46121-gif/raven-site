@@ -1099,6 +1099,22 @@ body.app-mode .cb-raven-add-icon { width:18px;height:18px;display:block; }
 #page-lifestyle .score-info-panel { display:none; margin-top:12px; padding:14px 16px; background:var(--dark2); border:1px solid var(--border); border-radius:12px; font-size:12px; color:var(--muted2); line-height:1.65; }
 #page-lifestyle .score-info-panel.open { display:block; }
 #page-lifestyle .score-info-panel b { color:var(--white); }
+#page-lifestyle .invest-target-row { display:flex; align-items:center; gap:12px; margin-top:16px; padding:12px 14px; background:var(--dark2); border:1px solid var(--border); border-radius:12px; }
+#page-lifestyle .invest-target-label { font-size:11.5px; font-weight:700; color:var(--muted2); white-space:nowrap; }
+#page-lifestyle .invest-target-row input[type=range] { flex:1; accent-color: var(--purple); }
+#page-lifestyle .invest-target-value { font-family:'Bebas Neue',sans-serif; font-size:20px; color:var(--purple3); min-width:44px; text-align:right; }
+#page-lifestyle .invest-target-note { font-size:10.5px; color:var(--muted); margin-top:4px; text-align:center; }
+#page-lifestyle .goal-card { background:var(--dark); border:1px solid var(--border2); border-radius:18px; padding:20px; margin-bottom:16px; }
+#page-lifestyle .goal-card .field { margin-bottom:12px; }
+#page-lifestyle .goal-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+#page-lifestyle .goal-result { margin-top:14px; padding:14px 16px; background:var(--dark2); border:1px solid var(--border); border-radius:12px; }
+#page-lifestyle .goal-result-row { display:flex; justify-content:space-between; align-items:baseline; padding:5px 0; font-size:13px; color:var(--muted2); }
+#page-lifestyle .goal-result-row b { color:var(--white); font-family:'JetBrains Mono',monospace; }
+#page-lifestyle .goal-status { display:inline-block; margin-top:8px; padding:5px 11px; border-radius:8px; font-size:11px; font-weight:800; letter-spacing:0.04em; text-transform:uppercase; }
+#page-lifestyle .goal-status.ontrack { background:rgba(48,209,88,0.12); color:var(--green); border:1px solid rgba(48,209,88,0.3); }
+#page-lifestyle .goal-status.offtrack { background:rgba(255,107,53,0.12); color:var(--orange); border:1px solid rgba(255,107,53,0.3); }
+#page-lifestyle .goal-empty { font-size:12.5px; color:var(--muted); line-height:1.6; }
+@media(max-width:560px) { #page-lifestyle .goal-grid { grid-template-columns:1fr; } }
 
 /* ── SYNC BAR ── */
 #page-lifestyle .sync-bar { display:flex; align-items:center; gap:9px; font-size:11.5px; color:var(--muted2); margin-bottom:16px; padding:10px 14px; background:var(--dark2); border:1px solid var(--border); border-radius:11px; }
@@ -1151,8 +1167,9 @@ body.app-mode .cb-raven-add-icon { width:18px;height:18px;display:block; }
 #page-lifestyle .medal-month { font-size:9.5px; color:var(--muted); letter-spacing:0.04em; text-transform:uppercase; }
 
 /* ── TABS ── */
-#page-lifestyle .tabbar { display:flex; gap:6px; background:var(--dark2); border:1px solid var(--border); border-radius:13px; padding:4px; margin-top:10px; }
-#page-lifestyle .tab { flex:1; display:flex; align-items:center; justify-content:center; gap:7px; padding:10px 8px; border:none; background:none; color:var(--muted); font-size:13px; font-weight:700; border-radius:9px; cursor:pointer; transition:all .15s; }
+#page-lifestyle .tabbar { display:flex; gap:6px; background:var(--dark2); border:1px solid var(--border); border-radius:13px; padding:4px; margin-top:10px; overflow-x:auto; scrollbar-width:none; }
+#page-lifestyle .tabbar::-webkit-scrollbar { display:none; }
+#page-lifestyle .tab { flex:1 0 auto; min-width:118px; display:flex; align-items:center; justify-content:center; gap:7px; padding:10px 8px; border:none; background:none; color:var(--muted); font-size:13px; font-weight:700; border-radius:9px; cursor:pointer; transition:all .15s; white-space:nowrap; }
 #page-lifestyle .tab.active { background:var(--dark3); color:var(--white); box-shadow:0 2px 10px rgba(0,0,0,0.35); }
 #page-lifestyle .tab svg { width:15px; height:15px; }
 
@@ -1435,7 +1452,7 @@ body.app-mode .cb-raven-add-icon { width:18px;height:18px;display:block; }
       <button class="nav-item" onclick="showPage('create-bill')"><span class="ni"><svg class="raven-icon"><use href="#icon-create-bill"></use></svg></span> Create Bill</button>
       <button class="nav-item" onclick="showPage('trip-hub')"><span class="ni"><svg class="raven-icon"><use href="#icon-trip-hub"></use></svg></span> Trip Hub</button>
       <button class="nav-item" onclick="showPage('roommates')"><span class="ni"><svg class="raven-icon"><use href="#icon-roommates"></use></svg></span> Roommates <span style="font-size:9px;font-weight:700;padding:1px 6px;background:rgba(48,209,88,0.15);border:1px solid rgba(48,209,88,0.3);border-radius:6px;color:var(--green);margin-left:4px;vertical-align:middle">BETA</span></button>
-      <button class="nav-item" onclick="showPage('lifestyle')"><span class="ni"><svg class="raven-icon"><use href="#icon-lifestyle"></use></svg></span> Lifestyle <span style="font-size:9px;font-weight:700;padding:1px 6px;background:rgba(124,58,237,0.15);border:1px solid rgba(124,58,237,0.3);border-radius:6px;color:var(--purple3);margin-left:4px;vertical-align:middle">PILOT</span></button>
+      <button class="nav-item" onclick="showPage('lifestyle')"><span class="ni"><svg class="raven-icon"><use href="#icon-lifestyle"></use></svg></span> Lifestyle <span style="font-size:9px;font-weight:700;padding:1px 6px;background:rgba(242,193,78,0.15);border:1px solid rgba(242,193,78,0.4);border-radius:6px;color:var(--gold);margin-left:4px;vertical-align:middle">PILOT</span></button>
       <button class="nav-item" onclick="showPage('friends')" style="position:relative"><span class="ni"><svg class="raven-icon"><use href="#icon-friends"></use></svg></span> Friends <span id="friends-dm-badge" style="display:none;position:absolute;top:6px;right:8px;min-width:16px;height:16px;padding:0 4px;background:var(--purple);border-radius:8px;font-size:10px;font-weight:700;color:#fff;align-items:center;justify-content:center"></span></button>
       <button class="nav-item" onclick="showPage('history')"><span class="ni"><svg class="raven-icon"><use href="#icon-history"></use></svg></span> History</button>
       <div style="flex:1"></div>
@@ -2108,9 +2125,10 @@ body.app-mode .cb-raven-add-icon { width:18px;height:18px;display:block; }
     <div id="page-lifestyle" class="page">
       <div class="page-header">
         <div>
-          <h1 class="page-title">Raven <span>Lifestyle</span><span style="font-size:13px;font-weight:700;padding:2px 9px;background:rgba(124,58,237,0.12);border:1px solid rgba(124,58,237,0.35);border-radius:8px;color:var(--purple3);vertical-align:middle;margin-left:8px">PILOT</span></h1>
+          <h1 class="page-title">Raven <span>Lifestyle</span><span style="font-size:13px;font-weight:700;padding:2px 9px;background:rgba(242,193,78,0.14);border:1px solid rgba(242,193,78,0.4);border-radius:8px;color:var(--gold);vertical-align:middle;margin-left:8px">PILOT</span></h1>
           <div style="font-size:13px;color:var(--muted);margin-top:4px">Track paychecks, bills, and investments to build your Raven Score.</div>
         </div>
+        <button class="bill-action-btn" style="padding:10px 20px;font-size:13px;background:rgba(48,209,88,0.1);border:1px solid rgba(48,209,88,0.25);color:var(--green)" onclick="openModal('paycheck')">💵 Log Paycheck</button>
       </div>
 
       <!-- SYNC STATUS -->
@@ -2165,15 +2183,22 @@ body.app-mode .cb-raven-add-icon { width:18px;height:18px;display:block; }
           <div class="chip">
             <div class="chip-top"><span class="chip-label">Investing</span><span class="chip-value" id="chip-invest">—</span></div>
             <div class="chip-track"><div class="chip-fill" id="chip-invest-fill" style="width:0%"></div></div>
-            <div class="chip-note">Vs. 15% target</div>
+            <div class="chip-note" id="chip-invest-note">Vs. 15% target</div>
           </div>
         </div>
+
+        <div class="invest-target-row">
+          <span class="invest-target-label">Investing target</span>
+          <input type="range" id="invest-target-slider" min="5" max="40" step="1" value="15" oninput="onInvestTargetInput(this.value)">
+          <span class="invest-target-value" id="invest-target-value">15%</span>
+        </div>
+        <div class="invest-target-note">15% is the default baseline for a perfect investing score — raise or lower it to match your own goal.</div>
 
         <span class="score-info-toggle" id="info-toggle">How is this calculated?</span>
         <div class="score-info-panel" id="info-panel">
           <b>Spending</b> (40% of score) — keep bills under ~60% of income.<br>
           <b>Timeliness</b> (35%) — pay bills on or before the due date.<br>
-          <b>Investing</b> (25%) — put aside 15% of income.<br>
+          <b>Investing</b> (25%) — put aside <span id="info-panel-target">15</span>% of income.<br>
           Hit <b>90+</b> for the whole month and a medal joins your roost.
         </div>
       </div>
@@ -2198,13 +2223,14 @@ body.app-mode .cb-raven-add-icon { width:18px;height:18px;display:block; }
         <button class="tab active" data-tab="paychecks" onclick="switchTab('paychecks')"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.6"/><path d="M12 7.5v9M14.5 9.6c0-1-.9-1.8-2.5-1.8s-2.5.8-2.5 1.8c0 2.4 5 1.1 5 3.5 0 1-1 1.8-2.5 1.8s-2.7-.8-2.7-1.8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg> Paychecks</button>
         <button class="tab" data-tab="bills" onclick="switchTab('bills')"><svg viewBox="0 0 24 24" fill="none"><path d="M6 3h12v18l-2.5-1.6L13 21l-2.5-1.6L8 21l-2-1.4V3Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M8.5 8h7M8.5 11.5h7M8.5 15h4.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg> Bills</button>
         <button class="tab" data-tab="investments" onclick="switchTab('investments')"><svg viewBox="0 0 24 24" fill="none"><path d="M4 16l5.2-5.5 3.4 3 6.4-7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M15.6 6.2h3.4v3.4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg> Investments</button>
+        <button class="tab" data-tab="retireby" onclick="switchTab('retireby')"><svg viewBox="0 0 24 24" fill="none"><path d="M12 21C12 21 5 17.5 5 10.5C5 6 8 3 12 3C16 3 19 6 19 10.5C19 17.5 12 21 12 21Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M12 21V6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg> Retire By</button>
+        <button class="tab" data-tab="vacation" onclick="switchTab('vacation')"><svg viewBox="0 0 24 24" fill="none"><path d="M2 15.5L9.5 12.5L15.8 3.5L13 11L16.5 12.5L12.5 13.3L9.5 19L8.3 13.7L2 15.5Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg> Vacation</button>
         <button class="tab" data-tab="suggests" onclick="switchTab('suggests')"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3.5l1.4 4.4 4.4 1.4-4.4 1.4L12 15.1l-1.4-4.4L6.2 9.3l4.4-1.4L12 3.5Z" fill="currentColor"/><path d="M18.3 14.8l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7.7-2Z" fill="currentColor"/></svg> Raven Suggests</button>
       </div>
 
       <div class="panel active" id="panel-paychecks">
         <div class="panel-summary">
           <div><div class="panel-total-label">Income this month</div><div class="panel-total-value mono" id="total-paychecks">$0.00</div></div>
-          <button class="add-btn" onclick="openModal('paycheck')">+ Add Paycheck</button>
         </div>
         <div class="entry-list" id="list-paychecks"></div>
       </div>
@@ -2223,6 +2249,33 @@ body.app-mode .cb-raven-add-icon { width:18px;height:18px;display:block; }
           <button class="add-btn" onclick="openModal('investment')">+ Add Investment</button>
         </div>
         <div class="entry-list" id="list-investments"></div>
+      </div>
+
+      <div class="panel" id="panel-retireby">
+        <div class="goal-card">
+          <div class="panel-total-label" style="margin-bottom:14px">Retirement Goal</div>
+          <div class="goal-grid">
+            <div class="field"><label>Current age</label><input id="rb-current-age" type="number" min="16" max="99" placeholder="e.g. 30"></div>
+            <div class="field"><label>Target retirement age</label><input id="rb-target-age" type="number" min="17" max="100" placeholder="e.g. 65"></div>
+            <div class="field"><label>Nest egg goal <span style="color:var(--muted);font-weight:400">(optional)</span></label><input id="rb-goal" type="number" min="0" step="1000" placeholder="e.g. 1500000"></div>
+            <div class="field"><label>Assumed annual return</label><input id="rb-return" type="number" min="0" max="20" step="0.1" placeholder="e.g. 7"></div>
+          </div>
+          <button class="submit-btn" style="margin-top:4px" onclick="saveRetireGoal()">Save & Project</button>
+          <div class="goal-result" id="rb-result"></div>
+        </div>
+      </div>
+
+      <div class="panel" id="panel-vacation">
+        <div class="goal-card">
+          <div class="panel-total-label" style="margin-bottom:14px">Vacation Budget Planner</div>
+          <div class="goal-grid">
+            <div class="field"><label>Trip name</label><input id="vac-name" type="text" placeholder="e.g. Cancun with friends"></div>
+            <div class="field"><label>Budget</label><input id="vac-budget" type="number" min="0" step="50" placeholder="e.g. 2000"></div>
+            <div class="field" style="grid-column:1/-1"><label>Trip date</label><input id="vac-date" type="date"></div>
+          </div>
+          <button class="submit-btn" style="margin-top:4px" onclick="saveVacationGoal()">Save & Check Budget</button>
+          <div class="goal-result" id="vac-result"></div>
+        </div>
       </div>
 
       <div class="panel" id="panel-suggests">
@@ -10448,6 +10501,21 @@ function fmtDate(dateStr) {
 function todayISO() { return new Date().toISOString().slice(0,10); }
 function currentMonthKey() { return todayISO().slice(0,7); }
 
+// ── LIFESTYLE SETTINGS (investing target, retire-by goal, vacation goal) ──
+// Kept local-only for now (per-device) — a small footprint compared to the
+// entry data above, which already syncs to Supabase via lifestyle_entries.
+const LIFESTYLE_SETTINGS_KEY = 'raven_lifestyle_settings_v1';
+function loadLifestyleSettings() {
+  try {
+    const s = JSON.parse(localStorage.getItem(LIFESTYLE_SETTINGS_KEY) || 'null');
+    if (s) return { investTarget: 15, retire: null, vacation: null, ...s };
+  } catch(e) {}
+  return { investTarget: 15, retire: null, vacation: null };
+}
+function saveLifestyleSettings(s) { try { localStorage.setItem(LIFESTYLE_SETTINGS_KEY, JSON.stringify(s)); } catch(e) {} }
+let LSETTINGS = loadLifestyleSettings();
+function getInvestTargetPct() { return Number(LSETTINGS.investTarget) > 0 ? Number(LSETTINGS.investTarget) : 15; }
+
 // ── RECURRENCE ──
 const FREQ_LABELS = { daily: 'Daily', weekly: 'Weekly', biweekly: 'Bi-weekly', monthly: 'Monthly' };
 const FREQ_HORIZON_DAYS = { daily: 45, weekly: 182, biweekly: 182, monthly: 365 };
@@ -10508,9 +10576,10 @@ function computeMonthScore(mKey) {
     timeliness = (onTime / decided.length) * 100;
   }
 
+  const targetPct = getInvestTargetPct();
   let investing = null;
   if (income > 0) {
-    investing = clamp((investTotal / income) / 0.15 * 100, 0, 100);
+    investing = clamp((investTotal / income) / (targetPct / 100) * 100, 0, 100);
   } else if (investTotal > 0) {
     investing = 100;
   }
@@ -10529,7 +10598,7 @@ function computeMonthScore(mKey) {
 
   return {
     income, billsTotal, investTotal,
-    spending, timeliness, investing,
+    spending, timeliness, investing, targetPct,
     overall: overall !== null ? Math.round(overall) : null,
     hasAnyData: paychecks.length > 0 || bills.length > 0 || investments.length > 0
   };
@@ -10597,7 +10666,25 @@ function renderScoreHero() {
   setChip('time', res.timeliness);
   setChip('invest', res.investing);
 
+  const targetPct = res.targetPct;
+  const slider = document.getElementById('invest-target-slider');
+  const valEl = document.getElementById('invest-target-value');
+  const noteEl = document.getElementById('chip-invest-note');
+  const infoTargetEl = document.getElementById('info-panel-target');
+  if (slider && document.activeElement !== slider) slider.value = targetPct;
+  if (valEl) valEl.textContent = targetPct + '%';
+  if (noteEl) noteEl.textContent = 'Vs. ' + targetPct + '% target';
+  if (infoTargetEl) infoTargetEl.textContent = targetPct;
+
   setWingAngle(res.overall, tier);
+}
+function onInvestTargetInput(value) {
+  const pct = Math.max(5, Math.min(40, Math.round(Number(value) || 15)));
+  LSETTINGS.investTarget = pct;
+  saveLifestyleSettings(LSETTINGS);
+  const valEl = document.getElementById('invest-target-value');
+  if (valEl) valEl.textContent = pct + '%';
+  renderAll();
 }
 function setChip(key, val) {
   const valEl = document.getElementById('chip-' + key);
@@ -10706,6 +10793,7 @@ function renderAll() {
   renderRoost();
   renderTrackers();
   renderSuggests();
+  updateCoachRefreshButton();
 }
 
 // ── RAVEN SUGGESTS ──
@@ -10746,19 +10834,45 @@ function generateInsights(res) {
     });
   }
   if (res.investing === null) {
-    insights.push({ icon:'📈', title:'Log income to unlock investing scoring', copy:'Raven measures contributions against 15% of what you earned this month.', impact:'Unlocks 25% of your score' });
+    insights.push({ icon:'📈', title:'Log income to unlock investing scoring', copy:`Raven measures contributions against ${res.targetPct}% of what you earned this month.`, impact:'Unlocks 25% of your score' });
   } else if (res.investing < 100) {
-    const gap = Math.max(0, res.income * 0.15 - res.investTotal);
+    const gap = Math.max(0, res.income * (res.targetPct / 100) - res.investTotal);
     insights.push({
       icon:'📈',
       title: gap > 0 ? `${fmtMoney(gap)} short of your investing target` : 'Keep investing steady',
-      copy: gap > 0 ? `Adding ${fmtMoney(gap)} more toward savings or investments this month hits the 15%-of-income target.` : 'You\u2019re at or above target — keep this pace to hold a perfect investing score.',
+      copy: gap > 0 ? `Adding ${fmtMoney(gap)} more toward savings or investments this month hits the ${res.targetPct}%-of-income target.` : 'You\u2019re at or above target — keep this pace to hold a perfect investing score.',
       impact: `Investing is 25% of the score · currently ${Math.round(res.investing)}/100`
     });
   }
   return insights;
 }
 // Reuses the dashboard's existing BACKEND constant (same value).
+// NOTE: this is a client-side UX cap only (2 calls/day) — it's easy to clear by
+// wiping localStorage. Real enforcement needs a server-side check (e.g. a
+// Supabase coach_usage(user_id, day, count) row incremented atomically before
+// the backend ever calls the model). See /api/lifestyle-coach on the backend.
+const AI_COACH_DAILY_LIMIT = 2;
+function getCoachQuota() {
+  try {
+    const q = JSON.parse(localStorage.getItem('raven_lifestyle_coach_quota') || 'null');
+    if (q && q.date === todayISO()) return q;
+  } catch(e) {}
+  return { date: todayISO(), count: 0 };
+}
+function bumpCoachQuota() {
+  const q = getCoachQuota();
+  q.count += 1;
+  try { localStorage.setItem('raven_lifestyle_coach_quota', JSON.stringify(q)); } catch(e) {}
+  return q;
+}
+function updateCoachRefreshButton() {
+  const btn = document.getElementById('ai-coach-refresh');
+  if (!btn) return;
+  const q = getCoachQuota();
+  const remaining = Math.max(0, AI_COACH_DAILY_LIMIT - q.count);
+  if (remaining <= 0) { btn.textContent = 'Used for today'; btn.disabled = true; }
+  else { btn.textContent = 'Refresh (' + remaining + ' left today)'; btn.disabled = false; }
+}
 let coachFetchedForKey = null;
 async function fetchAICoaching(force) {
   const box = document.getElementById('ai-coach-body');
@@ -10781,9 +10895,18 @@ async function fetchAICoaching(force) {
         box.textContent = cached.text;
         box.className = 'ai-coach-body';
         coachFetchedForKey = mKey + ':' + res.overall;
+        updateCoachRefreshButton();
         return;
       }
     } catch(e) {}
+  }
+
+  const quota = getCoachQuota();
+  if (quota.count >= AI_COACH_DAILY_LIMIT) {
+    box.textContent = 'You\u2019ve used today\u2019s ' + AI_COACH_DAILY_LIMIT + ' AI coaching calls. The quick breakdown below still works anytime — check back tomorrow for fresh AI coaching.';
+    box.className = 'ai-coach-body fallback';
+    updateCoachRefreshButton();
+    return;
   }
 
   box.textContent = 'Thinking through your numbers…';
@@ -10812,6 +10935,7 @@ async function fetchAICoaching(force) {
       box.className = 'ai-coach-body';
       coachFetchedForKey = mKey + ':' + res.overall;
       try { sessionStorage.setItem(cacheKey, JSON.stringify({ overall: res.overall, text: data.coaching })); } catch(e) {}
+      bumpCoachQuota();
     } else {
       box.textContent = (data.error ? data.error + ' — ' : '') + 'Couldn\u2019t reach the AI coach right now. The quick breakdown below still has you covered.';
       box.className = 'ai-coach-body fallback';
@@ -10820,7 +10944,7 @@ async function fetchAICoaching(force) {
     box.textContent = 'Couldn\u2019t reach the AI coach right now. The quick breakdown below still has you covered.';
     box.className = 'ai-coach-body fallback';
   } finally {
-    if (btn) btn.disabled = false;
+    updateCoachRefreshButton();
   }
 }
 
@@ -10840,15 +10964,123 @@ function renderSuggests() {
     </div>`).join('');
 }
 
+// ── RETIRE BY ──
+function renderRetireGoal() {
+  const g = LSETTINGS.retire || {};
+  const setVal = (id, v) => { const el = document.getElementById(id); if (el && v !== undefined && v !== null) el.value = v; };
+  setVal('rb-current-age', g.currentAge);
+  setVal('rb-target-age', g.targetAge);
+  setVal('rb-goal', g.goal);
+  setVal('rb-return', g.returnPct);
+
+  const result = document.getElementById('rb-result');
+  if (!result) return;
+  if (!g.currentAge || !g.targetAge || g.targetAge <= g.currentAge) {
+    result.innerHTML = '<div class="goal-empty">Enter your current age and target retirement age, then save to see a projection based on this month\u2019s investing pace.</div>';
+    return;
+  }
+  const res = computeMonthScore(currentMonthKey());
+  const monthlyPace = res.investTotal || 0;
+  const months = Math.round((g.targetAge - g.currentAge) * 12);
+  const annualReturn = Number(g.returnPct) || 0;
+  const r = annualReturn / 100 / 12;
+  const fv = r > 0 ? monthlyPace * ((Math.pow(1 + r, months) - 1) / r) : monthlyPace * months;
+
+  let html = '';
+  html += `<div class="goal-result-row"><span>Months until retirement</span><b>${months}</b></div>`;
+  html += `<div class="goal-result-row"><span>This month's investing pace</span><b>${fmtMoney(monthlyPace)}/mo</b></div>`;
+  html += `<div class="goal-result-row"><span>Projected nest egg at that pace</span><b>${fmtMoney(fv)}</b></div>`;
+
+  if (g.goal && Number(g.goal) > 0) {
+    const goal = Number(g.goal);
+    const onTrack = fv >= goal;
+    const requiredMonthly = r > 0 ? goal / ((Math.pow(1 + r, months) - 1) / r) : (months > 0 ? goal / months : 0);
+    html += `<div class="goal-result-row"><span>Your goal</span><b>${fmtMoney(goal)}</b></div>`;
+    html += `<div class="goal-result-row"><span>Monthly contribution needed to hit goal</span><b>${fmtMoney(requiredMonthly)}/mo</b></div>`;
+    html += `<span class="goal-status ${onTrack ? 'ontrack' : 'offtrack'}">${onTrack ? 'On track' : 'Off track by ' + fmtMoney(Math.max(0, requiredMonthly - monthlyPace)) + '/mo'}</span>`;
+  } else {
+    html += '<div class="goal-empty" style="margin-top:8px">Add a nest-egg goal above to see whether this pace is on track and what monthly contribution would hit it exactly.</div>';
+  }
+  result.innerHTML = html;
+}
+function saveRetireGoal() {
+  const g = {
+    currentAge: parseFloat(document.getElementById('rb-current-age').value) || null,
+    targetAge: parseFloat(document.getElementById('rb-target-age').value) || null,
+    goal: parseFloat(document.getElementById('rb-goal').value) || null,
+    returnPct: parseFloat(document.getElementById('rb-return').value) || 0
+  };
+  if (!g.currentAge || !g.targetAge) { showToast('Enter your current age and target retirement age'); return; }
+  if (g.targetAge <= g.currentAge) { showToast('Target retirement age must be after your current age'); return; }
+  LSETTINGS.retire = g;
+  saveLifestyleSettings(LSETTINGS);
+  renderRetireGoal();
+  showToast('Retirement goal saved');
+}
+
+// ── VACATION BUDGET PLANNER ──
+function renderVacationGoal() {
+  const g = LSETTINGS.vacation || {};
+  const setVal = (id, v) => { const el = document.getElementById(id); if (el && v !== undefined && v !== null) el.value = v; };
+  setVal('vac-name', g.name);
+  setVal('vac-budget', g.budget);
+  setVal('vac-date', g.date);
+
+  const result = document.getElementById('vac-result');
+  if (!result) return;
+  if (!g.budget || !g.date) {
+    result.innerHTML = '<div class="goal-empty">Enter a budget and trip date, then save to see the monthly savings needed and whether it fits your income.</div>';
+    return;
+  }
+  const res = computeMonthScore(currentMonthKey());
+  const today = new Date(todayISO() + 'T12:00:00');
+  const tripDate = new Date(g.date + 'T12:00:00');
+  const daysLeft = Math.max(1, Math.ceil((tripDate - today) / 86400000));
+  const monthsLeft = Math.max(1, daysLeft / 30.4);
+  const monthlyNeeded = Number(g.budget) / monthsLeft;
+
+  const targetPct = getInvestTargetPct();
+  const investingReserve = res.income * (targetPct / 100);
+  const availableAfterBillsAndInvesting = res.income > 0 ? Math.max(0, res.income - res.billsTotal - investingReserve) : null;
+  const fits = availableAfterBillsAndInvesting !== null && availableAfterBillsAndInvesting >= monthlyNeeded;
+
+  let html = '';
+  html += `<div class="goal-result-row"><span>Trip</span><b>${escHtml(g.name || 'Vacation')}</b></div>`;
+  html += `<div class="goal-result-row"><span>Days until trip</span><b>${daysLeft}</b></div>`;
+  html += `<div class="goal-result-row"><span>Monthly savings needed</span><b>${fmtMoney(monthlyNeeded)}/mo</b></div>`;
+  if (availableAfterBillsAndInvesting !== null) {
+    html += `<div class="goal-result-row"><span>Left over after bills + ${targetPct}% investing</span><b>${fmtMoney(availableAfterBillsAndInvesting)}/mo</b></div>`;
+    html += `<span class="goal-status ${fits ? 'ontrack' : 'offtrack'}">${fits ? 'Fits your budget' : 'Short by ' + fmtMoney(Math.max(0, monthlyNeeded - availableAfterBillsAndInvesting)) + '/mo'}</span>`;
+  } else {
+    html += '<div class="goal-empty" style="margin-top:8px">Log this month\u2019s paychecks to see whether this fits after bills and your investing target.</div>';
+  }
+  result.innerHTML = html;
+}
+function saveVacationGoal() {
+  const g = {
+    name: (document.getElementById('vac-name').value || '').trim(),
+    budget: parseFloat(document.getElementById('vac-budget').value) || null,
+    date: document.getElementById('vac-date').value || null
+  };
+  if (!g.budget || !g.date) { showToast('Enter a budget and trip date'); return; }
+  LSETTINGS.vacation = g;
+  saveLifestyleSettings(LSETTINGS);
+  renderVacationGoal();
+  showToast('Vacation budget saved');
+}
+
 // ── TABS ──
 function switchTab(name) {
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
   document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.id === 'panel-' + name));
   if (name === 'suggests') {
+    updateCoachRefreshButton();
     const res = computeMonthScore(currentMonthKey());
     const key = currentMonthKey() + ':' + res.overall;
     if (coachFetchedForKey !== key) fetchAICoaching(false);
   }
+  if (name === 'retireby') renderRetireGoal();
+  if (name === 'vacation') renderVacationGoal();
 }
 
 // ── MODAL ──
