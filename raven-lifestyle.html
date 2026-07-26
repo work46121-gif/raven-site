@@ -95,6 +95,16 @@ button { font-family:'Epilogue',sans-serif; }
 .entry-stop { font-size:13px; }
 
 /* ── SUGGESTS ── */
+.ai-coach-card { position:relative; background:radial-gradient(120% 100% at 50% 0%, rgba(124,58,237,0.14), transparent 60%), var(--dark); border:1px solid var(--border2); border-radius:18px; padding:20px 20px 18px; margin-bottom:18px; }
+.ai-coach-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+.ai-coach-title { display:flex; align-items:center; gap:8px; font-size:13px; font-weight:800; letter-spacing:0.06em; text-transform:uppercase; color:var(--purple3); }
+.ai-coach-title svg { width:15px; height:15px; }
+.ai-coach-refresh { background:var(--dark2); border:1px solid var(--border2); color:var(--muted2); font-size:11px; font-weight:700; padding:6px 11px; border-radius:9px; cursor:pointer; transition:all .15s; }
+.ai-coach-refresh:hover:not(:disabled) { color:var(--white); background:var(--dark3); }
+.ai-coach-refresh:disabled { opacity:0.5; cursor:default; }
+.ai-coach-body { font-size:13.5px; line-height:1.7; color:var(--white); white-space:pre-line; }
+.ai-coach-body.loading, .ai-coach-body.fallback { color:var(--muted2); font-style:italic; }
+.suggest-divider { text-align:center; font-size:10.5px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--muted); margin:6px 0 12px; }
 .suggest-list { display:flex; flex-direction:column; gap:10px; }
 .suggest-card { display:flex; gap:12px; background:var(--dark2); border:1px solid var(--border); border-radius:14px; padding:15px 16px; }
 .suggest-card.highlight { border-color:rgba(242,193,78,0.4); background:linear-gradient(180deg,rgba(242,193,78,0.08),var(--dark2)); }
@@ -315,8 +325,16 @@ a:focus-visible, button:focus-visible, .tab:focus-visible, input:focus-visible, 
   </div>
 
   <div class="panel" id="panel-suggests">
+    <div class="ai-coach-card">
+      <div class="ai-coach-head">
+        <div class="ai-coach-title"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3.5l1.4 4.4 4.4 1.4-4.4 1.4L12 15.1l-1.4-4.4L6.2 9.3l4.4-1.4L12 3.5Z" fill="currentColor"/></svg> Raven AI Coach</div>
+        <button class="ai-coach-refresh" id="ai-coach-refresh" onclick="fetchAICoaching(true)">Refresh</button>
+      </div>
+      <div class="ai-coach-body loading" id="ai-coach-body">Loading your coaching…</div>
+    </div>
+    <div class="suggest-divider">Quick Breakdown</div>
     <div class="suggest-list" id="suggest-list"></div>
-    <div class="suggest-note">Generated from this month's own numbers — not a substitute for financial advice.</div>
+    <div class="suggest-note">The quick breakdown is generated instantly from this month's numbers. The AI coach above calls Claude for freeform advice. Neither is a substitute for financial advice.</div>
   </div>
 </div>
 
@@ -776,6 +794,72 @@ function generateInsights(res) {
   }
   return insights;
 }
+const LIFESTYLE_BACKEND = 'https://raven-backend-production-fb1f.up.railway.app';
+let coachFetchedForKey = null;
+async function fetchAICoaching(force) {
+  const box = document.getElementById('ai-coach-body');
+  const btn = document.getElementById('ai-coach-refresh');
+  if (!box) return;
+  const mKey = currentMonthKey();
+  const res = computeMonthScore(mKey);
+
+  if (!res.hasAnyData) {
+    box.textContent = 'Log a paycheck, a bill, or an investment first — then your AI coach will have something to work with.';
+    box.className = 'ai-coach-body fallback';
+    return;
+  }
+
+  const cacheKey = 'raven_lifestyle_coach_' + mKey;
+  if (!force) {
+    try {
+      const cached = JSON.parse(sessionStorage.getItem(cacheKey) || 'null');
+      if (cached && cached.overall === res.overall && cached.text) {
+        box.textContent = cached.text;
+        box.className = 'ai-coach-body';
+        coachFetchedForKey = mKey + ':' + res.overall;
+        return;
+      }
+    } catch(e) {}
+  }
+
+  box.textContent = 'Thinking through your numbers…';
+  box.className = 'ai-coach-body loading';
+  if (btn) btn.disabled = true;
+
+  try {
+    const bills = DATA.bills.filter(b => monthKey(b.dueDate) === mKey);
+    const lateOrOverdue = bills.filter(b => (b.paidDate && b.paidDate > b.dueDate) || (!b.paidDate && b.dueDate < todayISO()));
+    const payload = {
+      month: mKey,
+      income: res.income, billsTotal: res.billsTotal, investTotal: res.investTotal,
+      spending: res.spending, timeliness: res.timeliness, investing: res.investing, overall: res.overall,
+      billCount: bills.length, lateOrOverdueCount: lateOrOverdue.length,
+      paycheckCount: DATA.paychecks.filter(p => monthKey(p.date) === mKey).length,
+      investmentCount: DATA.investments.filter(i => monthKey(i.date) === mKey).length
+    };
+    const r = await fetch(LIFESTYLE_BACKEND + '/api/lifestyle-coach', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await r.json();
+    if (data.success && data.coaching) {
+      box.textContent = data.coaching;
+      box.className = 'ai-coach-body';
+      coachFetchedForKey = mKey + ':' + res.overall;
+      try { sessionStorage.setItem(cacheKey, JSON.stringify({ overall: res.overall, text: data.coaching })); } catch(e) {}
+    } else {
+      box.textContent = (data.error ? data.error + ' — ' : '') + 'Couldn\u2019t reach the AI coach right now. The quick breakdown below still has you covered.';
+      box.className = 'ai-coach-body fallback';
+    }
+  } catch(e) {
+    box.textContent = 'Couldn\u2019t reach the AI coach right now. The quick breakdown below still has you covered.';
+    box.className = 'ai-coach-body fallback';
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
 function renderSuggests() {
   const list = document.getElementById('suggest-list');
   if (!list) return;
@@ -796,6 +880,11 @@ function renderSuggests() {
 function switchTab(name) {
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
   document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.id === 'panel-' + name));
+  if (name === 'suggests') {
+    const res = computeMonthScore(currentMonthKey());
+    const key = currentMonthKey() + ':' + res.overall;
+    if (coachFetchedForKey !== key) fetchAICoaching(false);
+  }
 }
 
 // ── MODAL ──
