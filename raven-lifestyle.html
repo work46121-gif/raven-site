@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RAVEN LIFESTYLE</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Epilogue:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --black: #06060A;
+  --dark: #0C0C12;
+  --dark2: #13131A;
+  --dark3: #1A1A24;
+  --dark4: #22222E;
+  --border: rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.12);
+  --white: #F0EEF8;
+  --muted: #6E6B80;
+  --muted2: #9896A8;
+  --purple: #7C3AED;
+  --purple2: #A855F7;
+  --purple3: #C084FC;
+  --green: #30D158;
+  --green-glow: rgba(48,209,88,0.2);
+  --gold: #F2C14E;
+  --gold2: #FFE8A3;
+  --gold-glow: rgba(242,193,78,0.28);
+  --red: #FF6B6B;
+}
+* { box-sizing: border-box; }
+html, body { margin:0; padding:0; height:100%; font-family:'Epilogue',sans-serif; background:var(--black); color:var(--white); overflow-x:hidden; }
+::-webkit-scrollbar { height:6px; width:6px; }
+::-webkit-scrollbar-thumb { background:var(--dark4); border-radius:6px; }
+a { color:inherit; text-decoration:none; }
+button { font-family:'Epilogue',sans-serif; }
+.mono { font-family:'JetBrains Mono',monospace; }
+
+.wrap { max-width:900px; margin:0 auto; padding:0 20px 100px; }
+
+/* ── TOP BAR ── */
+.topbar { display:flex; align-items:center; justify-content:space-between; padding:22px 0 26px; }
+.back-link { display:flex; align-items:center; gap:7px; font-size:13px; font-weight:600; color:var(--muted2); padding:8px 12px; border-radius:9px; transition:all .15s; }
+.back-link:hover { color:var(--white); background:var(--dark2); }
+.brand { display:flex; flex-direction:column; align-items:center; gap:2px; }
+.brand-name { font-family:'Bebas Neue',sans-serif; font-size:26px; letter-spacing:0.14em; background:linear-gradient(135deg,var(--white),var(--purple3)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+.brand-sub { font-size:9.5px; letter-spacing:0.32em; color:var(--muted); text-transform:uppercase; }
+.pilot-tag { font-size:10px; font-weight:800; letter-spacing:0.1em; color:var(--purple3); border:1px solid rgba(124,58,237,0.4); background:rgba(124,58,237,0.1); padding:6px 11px; border-radius:20px; }
+
+/* ── SCORE HERO ── */
+.score-hero { position:relative; background:radial-gradient(120% 100% at 50% 0%, rgba(124,58,237,0.16), transparent 60%), var(--dark); border:1px solid var(--border2); border-radius:24px; padding:34px 28px 26px; overflow:hidden; }
+.score-hero.soaring { background:radial-gradient(120% 100% at 50% 0%, rgba(242,193,78,0.18), transparent 60%), var(--dark); border-color:rgba(242,193,78,0.35); }
+.score-eyebrow { text-align:center; font-size:11px; font-weight:700; letter-spacing:0.28em; color:var(--muted2); text-transform:uppercase; margin-bottom:4px; }
+.score-month { text-align:center; font-size:12px; color:var(--muted); margin-bottom:6px; }
+
+.gauge-stage { position:relative; width:100%; max-width:420px; margin:0 auto; }
+.gauge-svg { width:100%; height:auto; display:block; }
+.gauge-center { position:absolute; left:50%; bottom:38%; transform:translateX(-50%); text-align:center; width:100%; }
+.gauge-number { font-family:'Bebas Neue',sans-serif; font-size:76px; line-height:0.85; letter-spacing:0.02em; }
+.gauge-number.na { font-size:44px; color:var(--muted); }
+.gauge-status { margin-top:2px; font-size:13px; font-weight:800; letter-spacing:0.18em; text-transform:uppercase; }
+.gauge-caption { margin-top:6px; font-size:11.5px; color:var(--muted); max-width:260px; margin-left:auto; margin-right:auto; line-height:1.4; }
+
+.status-grounded { color:var(--red); }
+.status-taxiing { color:var(--purple3); }
+.status-cruising { color:var(--green); }
+.status-soaring { color:var(--gold); }
+.status-none { color:var(--muted); }
+
+.chip-row { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:22px; }
+.chip { background:var(--dark2); border:1px solid var(--border); border-radius:14px; padding:13px 14px; }
+.chip-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+.chip-label { font-size:10px; font-weight:800; letter-spacing:0.08em; color:var(--muted2); text-transform:uppercase; }
+.chip-value { font-family:'Bebas Neue',sans-serif; font-size:20px; }
+.chip-track { height:5px; border-radius:3px; background:var(--dark4); overflow:hidden; }
+.chip-fill { height:100%; border-radius:3px; background:linear-gradient(90deg,var(--purple),var(--purple3)); transition:width .5s ease; }
+.chip-note { margin-top:7px; font-size:10.5px; color:var(--muted); line-height:1.4; }
+
+.score-info-toggle { display:block; text-align:center; margin-top:16px; font-size:11px; color:var(--muted); cursor:pointer; text-decoration:underline; text-underline-offset:2px; }
+.score-info-panel { display:none; margin-top:12px; padding:14px 16px; background:var(--dark2); border:1px solid var(--border); border-radius:12px; font-size:12px; color:var(--muted2); line-height:1.65; }
+.score-info-panel.open { display:block; }
+.score-info-panel b { color:var(--white); }
+
+/* ── ROOST ── */
+.section-head { display:flex; align-items:baseline; justify-content:space-between; margin:34px 0 12px; }
+.section-title { font-family:'Bebas Neue',sans-serif; font-size:22px; letter-spacing:0.06em; }
+.section-sub { font-size:11.5px; color:var(--muted); }
+
+.roost { display:flex; gap:10px; overflow-x:auto; padding:4px 2px 10px; }
+.medal { flex-shrink:0; width:64px; display:flex; flex-direction:column; align-items:center; gap:7px; }
+.medal-badge { width:52px; height:52px; border-radius:50%; display:flex; align-items:center; justify-content:center; position:relative; }
+.medal-badge.earned { background:radial-gradient(circle at 35% 30%,var(--gold2),var(--gold) 60%,#B8862E 100%); box-shadow:0 0 0 1px rgba(242,193,78,0.5), 0 6px 18px var(--gold-glow); }
+.medal-badge.missed { background:var(--dark3); border:1px solid var(--border2); }
+.medal-badge.live { background:var(--dark3); border:1.5px dashed var(--purple2); animation:pulse-ring 2s infinite; }
+@keyframes pulse-ring { 0%,100%{ box-shadow:0 0 0 0 rgba(168,85,247,0.35);} 50%{ box-shadow:0 0 0 6px rgba(168,85,247,0);} }
+.medal-badge svg { width:24px; height:24px; }
+.medal-score { font-family:'JetBrains Mono',monospace; font-size:10px; font-weight:700; color:var(--muted2); }
+.medal-badge.earned + .medal-score { color:var(--gold); }
+.medal-month { font-size:9.5px; color:var(--muted); letter-spacing:0.04em; text-transform:uppercase; }
+
+/* ── TABS ── */
+.tabbar { display:flex; gap:6px; background:var(--dark2); border:1px solid var(--border); border-radius:13px; padding:4px; margin-top:10px; }
+.tab { flex:1; display:flex; align-items:center; justify-content:center; gap:7px; padding:10px 8px; border:none; background:none; color:var(--muted); font-size:13px; font-weight:700; border-radius:9px; cursor:pointer; transition:all .15s; }
+.tab.active { background:var(--dark3); color:var(--white); box-shadow:0 2px 10px rgba(0,0,0,0.35); }
+.tab svg { width:15px; height:15px; }
+
+.panel { display:none; margin-top:16px; }
+.panel.active { display:block; }
+.panel-summary { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+.panel-total-label { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:0.1em; font-weight:700; }
+.panel-total-value { font-family:'Bebas Neue',sans-serif; font-size:26px; }
+.add-btn { display:flex; align-items:center; gap:6px; padding:9px 15px; background:var(--purple); color:#fff; border:none; border-radius:10px; font-size:12.5px; font-weight:800; cursor:pointer; transition:all .15s; }
+.add-btn:hover { background:#8b4cf0; transform:translateY(-1px); }
+
+.entry-list { display:flex; flex-direction:column; gap:8px; }
+.entry-card { display:flex; align-items:center; gap:12px; background:var(--dark2); border:1px solid var(--border); border-radius:12px; padding:12px 14px; }
+.entry-icon { width:36px; height:36px; border-radius:10px; background:var(--dark3); display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:15px; }
+.entry-body { flex:1; min-width:0; }
+.entry-name { font-size:13.5px; font-weight:700; }
+.entry-meta { font-size:11px; color:var(--muted); margin-top:2px; }
+.entry-amount { font-family:'JetBrains Mono',monospace; font-size:14px; font-weight:700; white-space:nowrap; }
+.entry-amount.neg { color:var(--red); }
+.entry-amount.pos { color:var(--green); }
+.pill { font-size:9.5px; font-weight:800; letter-spacing:0.04em; text-transform:uppercase; padding:3px 8px; border-radius:20px; white-space:nowrap; }
+.pill-ontime { background:rgba(48,209,88,0.12); color:var(--green); border:1px solid rgba(48,209,88,0.3); }
+.pill-late { background:rgba(255,107,107,0.12); color:var(--red); border:1px solid rgba(255,107,107,0.3); }
+.pill-due { background:rgba(124,58,237,0.12); color:var(--purple3); border:1px solid rgba(124,58,237,0.3); }
+.pill-overdue { background:rgba(255,107,107,0.18); color:var(--red); border:1px solid rgba(255,107,107,0.4); }
+.entry-del { width:26px; height:26px; border-radius:50%; background:transparent; border:1px solid var(--border2); color:var(--muted2); font-size:14px; cursor:pointer; flex-shrink:0; display:flex; align-items:center; justify-content:center; transition:all .15s; }
+.entry-del:hover { background:rgba(255,107,107,0.12); border-color:rgba(255,107,107,0.35); color:var(--red); }
+
+.empty-state { text-align:center; padding:40px 20px; color:var(--muted); }
+.empty-state .es-icon { font-size:32px; margin-bottom:10px; opacity:0.7; }
+.empty-state .es-title { font-size:14px; font-weight:700; color:var(--muted2); margin-bottom:4px; }
+.empty-state .es-copy { font-size:12px; max-width:280px; margin:0 auto; line-height:1.5; }
+
+/* ── MODAL ── */
+.modal-backdrop { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.72); z-index:200; align-items:center; justify-content:center; padding:20px; }
+.modal-backdrop.open { display:flex; }
+.modal { width:min(380px,100%); background:var(--dark); border:1px solid var(--border2); border-radius:18px; padding:22px; box-shadow:0 24px 80px rgba(0,0,0,0.6); }
+.modal-title { font-family:'Bebas Neue',sans-serif; font-size:22px; letter-spacing:0.04em; margin-bottom:16px; }
+.field { margin-bottom:12px; }
+.field label { display:block; font-size:10.5px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--muted2); margin-bottom:6px; }
+.field input, .field select { width:100%; padding:11px 13px; background:var(--dark2); border:1px solid var(--border); border-radius:9px; color:var(--white); font-family:'Epilogue',sans-serif; font-size:13.5px; outline:none; transition:border-color .15s; }
+.field input:focus, .field select:focus { border-color:var(--purple); }
+.modal-actions { display:flex; gap:10px; justify-content:flex-end; margin-top:18px; }
+.btn-cancel { padding:10px 15px; background:transparent; border:1px solid var(--border2); border-radius:10px; color:var(--muted2); font-weight:700; font-size:12.5px; cursor:pointer; }
+.btn-save { padding:10px 18px; background:var(--green); border:none; border-radius:10px; color:#000; font-weight:800; font-size:12.5px; cursor:pointer; box-shadow:0 4px 16px var(--green-glow); }
+
+.toast { position:fixed; bottom:26px; left:50%; transform:translateX(-50%) translateY(20px); background:var(--dark3); border:1px solid var(--border2); color:var(--white); padding:12px 20px; border-radius:12px; font-size:13px; font-weight:600; opacity:0; transition:all .25s; z-index:300; box-shadow:0 10px 30px rgba(0,0,0,0.4); }
+.toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+.toast.medal { border-color:rgba(242,193,78,0.5); }
+
+a:focus-visible, button:focus-visible, .tab:focus-visible, input:focus-visible, select:focus-visible {
+  outline: 2px solid var(--purple2); outline-offset: 2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .medal-badge.live { animation:none; }
+  .chip-fill, .add-btn, .entry-del { transition:none; }
+}
+@media (max-width:560px) {
+  .gauge-number { font-size:58px; }
+  .chip-row { gap:8px; }
+  .chip-label { font-size:9px; }
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="topbar">
+    <a class="back-link" href="dashboard.html">‹ Dashboard</a>
+    <div class="brand">
+      <div class="brand-name">RAVEN LIFESTYLE</div>
+      <div class="brand-sub">Money · Managed</div>
+    </div>
+    <div class="pilot-tag">PILOT</div>
+  </div>
+
+  <!-- SCORE HERO -->
+  <div class="score-hero" id="score-hero">
+    <div class="score-eyebrow">Raven Score</div>
+    <div class="score-month" id="score-month"></div>
+    <div class="gauge-stage">
+      <svg class="gauge-svg" id="gauge-svg" viewBox="0 0 320 260">
+        <defs>
+          <linearGradient id="wingGrad" x1="0" y1="1" x2="1" y2="0">
+            <stop offset="0%" stop-color="#6D28D9"></stop>
+            <stop offset="100%" stop-color="#C084FC"></stop>
+          </linearGradient>
+          <linearGradient id="wingGradGold" x1="0" y1="1" x2="1" y2="0">
+            <stop offset="0%" stop-color="#B8862E"></stop>
+            <stop offset="100%" stop-color="#FFE8A3"></stop>
+          </linearGradient>
+          <linearGradient id="wingGradLow" x1="0" y1="1" x2="1" y2="0">
+            <stop offset="0%" stop-color="#3A3846"></stop>
+            <stop offset="100%" stop-color="#6E6B80"></stop>
+          </linearGradient>
+        </defs>
+        <!-- perch line -->
+        <line x1="55" y1="150" x2="265" y2="150" stroke="rgba(255,255,255,0.08)" stroke-width="1.5" stroke-dasharray="2 5"></line>
+        <g id="wing-left"></g>
+        <g id="wing-right"></g>
+        <circle cx="160" cy="150" r="5" fill="var(--dark4)" stroke="rgba(255,255,255,0.15)" stroke-width="1"></circle>
+      </svg>
+      <div class="gauge-center">
+        <div class="gauge-number" id="gauge-number">—</div>
+        <div class="gauge-status" id="gauge-status">NO FLIGHT DATA YET</div>
+        <div class="gauge-caption" id="gauge-caption">Log a paycheck, a bill, or an investment below to get your first score.</div>
+      </div>
+    </div>
+
+    <div class="chip-row">
+      <div class="chip">
+        <div class="chip-top"><span class="chip-label">Spending</span><span class="chip-value" id="chip-spend">—</span></div>
+        <div class="chip-track"><div class="chip-fill" id="chip-spend-fill" style="width:0%"></div></div>
+        <div class="chip-note">Bills paid vs. income earned this month</div>
+      </div>
+      <div class="chip">
+        <div class="chip-top"><span class="chip-label">Timeliness</span><span class="chip-value" id="chip-time">—</span></div>
+        <div class="chip-track"><div class="chip-fill" id="chip-time-fill" style="width:0%"></div></div>
+        <div class="chip-note">Share of bills paid on or before the due date</div>
+      </div>
+      <div class="chip">
+        <div class="chip-top"><span class="chip-label">Investing</span><span class="chip-value" id="chip-invest">—</span></div>
+        <div class="chip-track"><div class="chip-fill" id="chip-invest-fill" style="width:0%"></div></div>
+        <div class="chip-note">Money set aside vs. a 15% target of income</div>
+      </div>
+    </div>
+
+    <span class="score-info-toggle" id="info-toggle">How is this calculated?</span>
+    <div class="score-info-panel" id="info-panel">
+      Your <b>Raven Score</b> blends three habits from the current month: <b>spending discipline</b> (40%) rewards keeping bills under ~60% of income, <b>bill timeliness</b> (35%) tracks what's paid on or before its due date, and <b>investing consistency</b> (25%) measures contributions against a 15%-of-income target. Score <b>90+</b> for the whole month and a medal joins your roost.
+    </div>
+  </div>
+
+  <!-- ROOST -->
+  <div class="section-head">
+    <div>
+      <div class="section-title">The Roost</div>
+      <div class="section-sub">Score 90+ in a month, a medal comes home to roost.</div>
+    </div>
+  </div>
+  <div class="roost" id="roost"></div>
+
+  <!-- TRACKERS -->
+  <div class="section-head" style="margin-bottom:0">
+    <div>
+      <div class="section-title">Tracked This Month</div>
+      <div class="section-sub">Paychecks, bills, and investments feed your score.</div>
+    </div>
+  </div>
+  <div class="tabbar">
+    <button class="tab active" data-tab="paychecks" onclick="switchTab('paychecks')">💵 Paychecks</button>
+    <button class="tab" data-tab="bills" onclick="switchTab('bills')">🧾 Bills</button>
+    <button class="tab" data-tab="investments" onclick="switchTab('investments')">📈 Investments</button>
+  </div>
+
+  <div class="panel active" id="panel-paychecks">
+    <div class="panel-summary">
+      <div><div class="panel-total-label">Income this month</div><div class="panel-total-value mono" id="total-paychecks">$0.00</div></div>
+      <button class="add-btn" onclick="openModal('paycheck')">+ Add Paycheck</button>
+    </div>
+    <div class="entry-list" id="list-paychecks"></div>
+  </div>
+
+  <div class="panel" id="panel-bills">
+    <div class="panel-summary">
+      <div><div class="panel-total-label">Due this month</div><div class="panel-total-value mono" id="total-bills">$0.00</div></div>
+      <button class="add-btn" onclick="openModal('bill')">+ Add Bill</button>
+    </div>
+    <div class="entry-list" id="list-bills"></div>
+  </div>
+
+  <div class="panel" id="panel-investments">
+    <div class="panel-summary">
+      <div><div class="panel-total-label">Invested this month</div><div class="panel-total-value mono" id="total-investments">$0.00</div></div>
+      <button class="add-btn" onclick="openModal('investment')">+ Add Investment</button>
+    </div>
+    <div class="entry-list" id="list-investments"></div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-backdrop" id="modal-backdrop">
+  <div class="modal">
+    <div class="modal-title" id="modal-title">Add Paycheck</div>
+    <div id="modal-fields"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-save" onclick="saveEntry()">Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── DATA LAYER ──
+const STORAGE_KEY = 'raven_lifestyle_v1';
+function loadData() {
+  try {
+    const d = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+    return { paychecks: d.paychecks || [], bills: d.bills || [], investments: d.investments || [] };
+  } catch(e) { return { paychecks: [], bills: [], investments: [] }; }
+}
+function saveData(d) { localStorage.setItem(STORAGE_KEY, JSON.stringify(d)); }
+let DATA = loadData();
+
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+function monthKey(dateStr) { return (dateStr || '').slice(0,7); } // YYYY-MM
+function fmtMoney(n) { return '$' + Number(n||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function fmtDate(dateStr) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr + 'T12:00:00');
+  return d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+}
+function todayISO() { return new Date().toISOString().slice(0,10); }
+function currentMonthKey() { return todayISO().slice(0,7); }
+
+// ── SCORE ENGINE ──
+function computeMonthScore(mKey) {
+  const paychecks = DATA.paychecks.filter(p => monthKey(p.date) === mKey);
+  const bills = DATA.bills.filter(b => monthKey(b.dueDate) === mKey);
+  const investments = DATA.investments.filter(i => monthKey(i.date) === mKey);
+
+  const income = paychecks.reduce((s,p) => s + Number(p.amount||0), 0);
+  const billsTotal = bills.reduce((s,b) => s + Number(b.amount||0), 0);
+  const investTotal = investments.reduce((s,i) => s + Number(i.amount||0), 0);
+
+  let spending = null;
+  if (income > 0) {
+    const ratio = billsTotal / income;
+    spending = clamp(100 - Math.max(0, ratio - 0.6) * 250, 0, 100);
+  }
+
+  let timeliness = null;
+  const decided = bills.filter(b => b.paidDate);
+  if (decided.length > 0) {
+    const onTime = decided.filter(b => b.paidDate <= b.dueDate).length;
+    timeliness = (onTime / decided.length) * 100;
+  }
+
+  let investing = null;
+  if (income > 0) {
+    investing = clamp((investTotal / income) / 0.15 * 100, 0, 100);
+  } else if (investTotal > 0) {
+    investing = 100;
+  }
+
+  const parts = [
+    { v: spending, w: 0.40 },
+    { v: timeliness, w: 0.35 },
+    { v: investing, w: 0.25 }
+  ].filter(p => p.v !== null);
+
+  let overall = null;
+  if (parts.length > 0) {
+    const totalW = parts.reduce((s,p)=>s+p.w,0);
+    overall = parts.reduce((s,p)=> s + p.v * (p.w/totalW), 0);
+  }
+
+  return {
+    income, billsTotal, investTotal,
+    spending, timeliness, investing,
+    overall: overall !== null ? Math.round(overall) : null,
+    hasAnyData: paychecks.length > 0 || bills.length > 0 || investments.length > 0
+  };
+}
+function clamp(v,min,max) { return Math.max(min, Math.min(max, v)); }
+
+function statusFor(score) {
+  if (score === null) return { label: 'NO FLIGHT DATA YET', cls: 'status-none' };
+  if (score >= 90) return { label: 'SOARING', cls: 'status-soaring' };
+  if (score >= 65) return { label: 'CRUISING', cls: 'status-cruising' };
+  if (score >= 40) return { label: 'TAXIING', cls: 'status-taxiing' };
+  return { label: 'GROUNDED', cls: 'status-grounded' };
+}
+
+// ── WING GAUGE ──
+// Feather silhouette drawn pointing left from a pivot at (160,188); mirrored for the right wing.
+const FEATHER_PATH = 'M0,0 C -18,-10 -52,-19 -92,-14 C -114,-11 -122,-3 -110,3 C -104,6 -96,8 -86,8.5 C -54,10 -22,4 0,0 Z';
+const FEATHER_BARBS = [
+  'M-22,-3 L-30,-14', 'M-42,-1 L-52,-13', 'M-62,2 L-73,-9', 'M-80,5 L-91,-5'
+];
+function buildFeatherGroup(id, mirror) {
+  const g = document.getElementById(id);
+  const scaleX = mirror ? -1 : 1;
+  g.setAttribute('transform', `translate(160,150) scale(${scaleX},1)`);
+  let inner = `<g id="${id}-rot"><path d="${FEATHER_PATH}" fill="url(#wingGrad)" class="feather-fill" stroke="rgba(0,0,0,0.15)" stroke-width="0.5"></path>`;
+  FEATHER_BARBS.forEach(d => { inner += `<path d="${d}" stroke="rgba(255,255,255,0.22)" stroke-width="1" stroke-linecap="round" fill="none"></path>`; });
+  inner += `</g>`;
+  g.innerHTML = inner;
+}
+function setWingAngle(score, tier) {
+  // score 0 -> wings drooped (55deg down); score 100 -> wings raised (-58deg, near-vertical spread)
+  const s = score === null ? 8 : score;
+  const angle = 48 - (98 * (s/100));
+  const fillId = tier === 'gold' ? 'url(#wingGradGold)' : (score === null ? 'url(#wingGradLow)' : 'url(#wingGrad)');
+  ['wing-left-rot','wing-right-rot'].forEach((id, i) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    // left wing rotates negative (counter-clockwise raises tip), mirrored group means same sign visually raises both
+    el.setAttribute('transform', `rotate(${-angle})`);
+    el.querySelector('.feather-fill').setAttribute('fill', fillId);
+  });
+}
+
+// ── RENDER ──
+function renderScoreHero() {
+  const mKey = currentMonthKey();
+  const res = computeMonthScore(mKey);
+  const status = statusFor(res.overall);
+  const hero = document.getElementById('score-hero');
+  const tier = res.overall !== null && res.overall >= 90 ? 'gold' : 'normal';
+  hero.classList.toggle('soaring', tier === 'gold');
+
+  document.getElementById('score-month').textContent = new Date(mKey + '-01T12:00:00').toLocaleDateString('en-US',{month:'long',year:'numeric'}) + ' · updates as you log activity';
+  const numEl = document.getElementById('gauge-number');
+  numEl.textContent = res.overall === null ? '—' : res.overall;
+  numEl.classList.toggle('na', res.overall === null);
+  const statusEl = document.getElementById('gauge-status');
+  statusEl.textContent = status.label;
+  statusEl.className = 'gauge-status ' + status.cls;
+  document.getElementById('gauge-caption').textContent = res.overall === null
+    ? 'Log a paycheck, a bill, or an investment below to get your first score.'
+    : (res.overall >= 90 ? 'Full spread. Keep this up through month-end to lock the medal.' : 'Every logged paycheck, bill, and investment adjusts this live.');
+
+  setChip('spend', res.spending);
+  setChip('time', res.timeliness);
+  setChip('invest', res.investing);
+
+  setWingAngle(res.overall, tier);
+}
+function setChip(key, val) {
+  const valEl = document.getElementById('chip-' + key);
+  const fillEl = document.getElementById('chip-' + key + '-fill');
+  valEl.textContent = val === null ? '—' : Math.round(val);
+  fillEl.style.width = (val === null ? 0 : val) + '%';
+  fillEl.style.background = val !== null && val >= 90 ? 'linear-gradient(90deg,#B8862E,#FFE8A3)' : 'linear-gradient(90deg,var(--purple),var(--purple3))';
+}
+
+function renderRoost() {
+  const roost = document.getElementById('roost');
+  const now = new Date();
+  const months = [];
+  for (let i = 7; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    months.push(d.toISOString().slice(0,7));
+  }
+  const curKey = currentMonthKey();
+  roost.innerHTML = months.map(mKey => {
+    const res = computeMonthScore(mKey);
+    const label = new Date(mKey + '-01T12:00:00').toLocaleDateString('en-US',{month:'short'});
+    const isCurrent = mKey === curKey;
+    if (isCurrent) {
+      return `<div class="medal">
+        <div class="medal-badge live">${featherIconSVG('#9896A8')}</div>
+        <div class="medal-score">${res.overall === null ? '—' : res.overall}</div>
+        <div class="medal-month">${label} · live</div>
+      </div>`;
+    }
+    const earned = res.overall !== null && res.overall >= 90;
+    return `<div class="medal">
+      <div class="medal-badge ${earned ? 'earned' : 'missed'}">${featherIconSVG(earned ? '#3D2B06' : '#4A4858')}</div>
+      <div class="medal-score">${res.overall === null ? '\u2014' : res.overall}</div>
+      <div class="medal-month">${label}</div>
+    </div>`;
+  }).join('');
+}
+function featherIconSVG(color) {
+  return `<svg viewBox="0 0 24 24" fill="none"><path d="M12 21C12 21 5 17.5 5 10.5C5 6 8 3 12 3C16 3 19 6 19 10.5C19 17.5 12 21 12 21Z" stroke="${color}" stroke-width="1.6" stroke-linejoin="round"/><path d="M12 21V6" stroke="${color}" stroke-width="1.4" stroke-linecap="round"/></svg>`;
+}
+
+function renderTrackers() {
+  renderPaychecks();
+  renderBills();
+  renderInvestments();
+}
+function renderPaychecks() {
+  const mKey = currentMonthKey();
+  const items = DATA.paychecks.filter(p => monthKey(p.date) === mKey).sort((a,b)=> b.date.localeCompare(a.date));
+  document.getElementById('total-paychecks').textContent = fmtMoney(items.reduce((s,p)=>s+Number(p.amount||0),0));
+  const list = document.getElementById('list-paychecks');
+  if (items.length === 0) { list.innerHTML = emptyState('💵','No paychecks logged yet','Add your first paycheck to start building this month\u2019s score.'); return; }
+  list.innerHTML = items.map(p => `
+    <div class="entry-card">
+      <div class="entry-icon">💵</div>
+      <div class="entry-body"><div class="entry-name">${escHtml(p.source)}</div><div class="entry-meta">${fmtDate(p.date)}</div></div>
+      <div class="entry-amount pos">+${fmtMoney(p.amount)}</div>
+      <button class="entry-del" onclick="deleteEntry('paychecks','${p.id}')">×</button>
+    </div>`).join('');
+}
+function renderBills() {
+  const mKey = currentMonthKey();
+  const items = DATA.bills.filter(b => monthKey(b.dueDate) === mKey).sort((a,b)=> a.dueDate.localeCompare(b.dueDate));
+  document.getElementById('total-bills').textContent = fmtMoney(items.reduce((s,b)=>s+Number(b.amount||0),0));
+  const list = document.getElementById('list-bills');
+  if (items.length === 0) { list.innerHTML = emptyState('🧾','No bills logged yet','Add what\u2019s due this month to track timeliness.'); return; }
+  list.innerHTML = items.map(b => {
+    let pill;
+    if (b.paidDate && b.paidDate <= b.dueDate) pill = '<span class="pill pill-ontime">Paid on time</span>';
+    else if (b.paidDate) pill = '<span class="pill pill-late">Paid late</span>';
+    else if (b.dueDate < todayISO()) pill = '<span class="pill pill-overdue">Overdue</span>';
+    else pill = '<span class="pill pill-due">Due ' + fmtDate(b.dueDate) + '</span>';
+    return `
+    <div class="entry-card">
+      <div class="entry-icon">🧾</div>
+      <div class="entry-body"><div class="entry-name">${escHtml(b.name)}</div><div class="entry-meta">${pill}</div></div>
+      <div class="entry-amount neg">-${fmtMoney(b.amount)}</div>
+      <button class="entry-del" onclick="markPaid('${b.id}')" title="Mark paid" style="${b.paidDate ? 'display:none' : ''}">✓</button>
+      <button class="entry-del" onclick="deleteEntry('bills','${b.id}')">×</button>
+    </div>`;
+  }).join('');
+}
+function renderInvestments() {
+  const mKey = currentMonthKey();
+  const items = DATA.investments.filter(i => monthKey(i.date) === mKey).sort((a,b)=> b.date.localeCompare(a.date));
+  document.getElementById('total-investments').textContent = fmtMoney(items.reduce((s,i)=>s+Number(i.amount||0),0));
+  const list = document.getElementById('list-investments');
+  if (items.length === 0) { list.innerHTML = emptyState('📈','No investments logged yet','Log a contribution to start counting toward your score.'); return; }
+  list.innerHTML = items.map(i => `
+    <div class="entry-card">
+      <div class="entry-icon">📈</div>
+      <div class="entry-body"><div class="entry-name">${escHtml(i.name)}</div><div class="entry-meta">${escHtml(i.type)} · ${fmtDate(i.date)}</div></div>
+      <div class="entry-amount pos">+${fmtMoney(i.amount)}</div>
+      <button class="entry-del" onclick="deleteEntry('investments','${i.id}')">×</button>
+    </div>`).join('');
+}
+function emptyState(icon, title, copy) {
+  return `<div class="empty-state"><div class="es-icon">${icon}</div><div class="es-title">${title}</div><div class="es-copy">${copy}</div></div>`;
+}
+function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function renderAll() {
+  renderScoreHero();
+  renderRoost();
+  renderTrackers();
+}
+
+// ── TABS ──
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+  document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.id === 'panel-' + name));
+}
+
+// ── MODAL ──
+let modalType = null;
+function openModal(type) {
+  modalType = type;
+  const titleMap = { paycheck:'Add Paycheck', bill:'Add Bill', investment:'Add Investment' };
+  document.getElementById('modal-title').textContent = titleMap[type];
+  const fields = document.getElementById('modal-fields');
+  if (type === 'paycheck') {
+    fields.innerHTML = `
+      <div class="field"><label>Source</label><input id="f-source" placeholder="e.g. Employer, Freelance"></div>
+      <div class="field"><label>Amount</label><input id="f-amount" type="number" step="0.01" placeholder="0.00"></div>
+      <div class="field"><label>Date</label><input id="f-date" type="date" value="${todayISO()}"></div>`;
+  } else if (type === 'bill') {
+    fields.innerHTML = `
+      <div class="field"><label>Name</label><input id="f-name" placeholder="e.g. Rent, Electric"></div>
+      <div class="field"><label>Amount</label><input id="f-amount" type="number" step="0.01" placeholder="0.00"></div>
+      <div class="field"><label>Due date</label><input id="f-due" type="date" value="${todayISO()}"></div>`;
+  } else {
+    fields.innerHTML = `
+      <div class="field"><label>Name</label><input id="f-name" placeholder="e.g. 401(k), Index fund"></div>
+      <div class="field"><label>Amount</label><input id="f-amount" type="number" step="0.01" placeholder="0.00"></div>
+      <div class="field"><label>Type</label><select id="f-type">
+        <option>Retirement</option><option>Stocks</option><option>Savings</option><option>Crypto</option><option>Other</option>
+      </select></div>
+      <div class="field"><label>Date</label><input id="f-date" type="date" value="${todayISO()}"></div>`;
+  }
+  document.getElementById('modal-backdrop').classList.add('open');
+  setTimeout(() => { const first = fields.querySelector('input'); if (first) first.focus(); }, 50);
+}
+function closeModal() { document.getElementById('modal-backdrop').classList.remove('open'); modalType = null; }
+
+function saveEntry() {
+  const amount = parseFloat(document.getElementById('f-amount').value);
+  if (!amount || amount <= 0) { showToast('Enter an amount greater than $0'); return; }
+
+  const prevRes = computeMonthScore(currentMonthKey());
+
+  if (modalType === 'paycheck') {
+    const source = document.getElementById('f-source').value.trim() || 'Paycheck';
+    const date = document.getElementById('f-date').value || todayISO();
+    DATA.paychecks.push({ id: uid(), source, amount, date });
+  } else if (modalType === 'bill') {
+    const name = document.getElementById('f-name').value.trim() || 'Bill';
+    const dueDate = document.getElementById('f-due').value || todayISO();
+    DATA.bills.push({ id: uid(), name, amount, dueDate, paidDate: null });
+  } else {
+    const name = document.getElementById('f-name').value.trim() || 'Investment';
+    const type = document.getElementById('f-type').value;
+    const date = document.getElementById('f-date').value || todayISO();
+    DATA.investments.push({ id: uid(), name, type, amount, date });
+  }
+  saveData(DATA);
+  closeModal();
+  renderAll();
+  checkMedalMoment(prevRes);
+  showToast('Saved');
+}
+function markPaid(id) {
+  const bill = DATA.bills.find(b => b.id === id);
+  if (!bill) return;
+  const prevRes = computeMonthScore(currentMonthKey());
+  bill.paidDate = todayISO();
+  saveData(DATA);
+  renderAll();
+  checkMedalMoment(prevRes);
+  showToast('Marked paid');
+}
+function deleteEntry(bucket, id) {
+  DATA[bucket] = DATA[bucket].filter(x => x.id !== id);
+  saveData(DATA);
+  renderAll();
+  showToast('Removed');
+}
+function checkMedalMoment(prevRes) {
+  const res = computeMonthScore(currentMonthKey());
+  if (prevRes.overall !== null && prevRes.overall < 90 && res.overall !== null && res.overall >= 90) {
+    showToast('🏅 Soaring — this month just earned a medal', true);
+  }
+}
+
+let toastTimer;
+function showToast(msg, isMedal) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.toggle('medal', !!isMedal);
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
+}
+
+document.getElementById('info-toggle').addEventListener('click', () => {
+  document.getElementById('info-panel').classList.toggle('open');
+});
+document.getElementById('modal-backdrop').addEventListener('click', (e) => { if (e.target.id === 'modal-backdrop') closeModal(); });
+
+buildFeatherGroup('wing-left', false);
+buildFeatherGroup('wing-right', true);
+renderAll();
+</script>
+</body>
+</html>
