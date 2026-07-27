@@ -2223,7 +2223,7 @@ body.app-mode .cb-raven-add-icon { width:18px;height:18px;display:block; }
         <button class="tab active" data-tab="paychecks" onclick="switchTab('paychecks')"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.6"/><path d="M12 7.5v9M14.5 9.6c0-1-.9-1.8-2.5-1.8s-2.5.8-2.5 1.8c0 2.4 5 1.1 5 3.5 0 1-1 1.8-2.5 1.8s-2.7-.8-2.7-1.8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg> Paychecks</button>
         <button class="tab" data-tab="bills" onclick="switchTab('bills')"><svg viewBox="0 0 24 24" fill="none"><path d="M6 3h12v18l-2.5-1.6L13 21l-2.5-1.6L8 21l-2-1.4V3Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M8.5 8h7M8.5 11.5h7M8.5 15h4.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg> Bills</button>
         <button class="tab" data-tab="investments" onclick="switchTab('investments')"><svg viewBox="0 0 24 24" fill="none"><path d="M4 16l5.2-5.5 3.4 3 6.4-7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M15.6 6.2h3.4v3.4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg> Investments</button>
-        <button class="tab" data-tab="retireby" onclick="switchTab('retireby')"><svg viewBox="0 0 24 24" fill="none"><path d="M12 21C12 21 5 17.5 5 10.5C5 6 8 3 12 3C16 3 19 6 19 10.5C19 17.5 12 21 12 21Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M12 21V6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg> Retire By</button>
+        <button class="tab" data-tab="retireby" onclick="switchTab('retireby')"><svg viewBox="0 0 24 24" fill="none"><path d="M12 21C12 21 5 17.5 5 10.5C5 6 8 3 12 3C16 3 19 6 19 10.5C19 17.5 12 21 12 21Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M12 21V6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg> Goal</button>
         <button class="tab" data-tab="vacation" onclick="switchTab('vacation')"><svg viewBox="0 0 24 24" fill="none"><path d="M2 15.5L9.5 12.5L15.8 3.5L13 11L16.5 12.5L12.5 13.3L9.5 19L8.3 13.7L2 15.5Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg> Vacation</button>
         <button class="tab" data-tab="suggests" onclick="switchTab('suggests')"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3.5l1.4 4.4 4.4 1.4-4.4 1.4L12 15.1l-1.4-4.4L6.2 9.3l4.4-1.4L12 3.5Z" fill="currentColor"/><path d="M18.3 14.8l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7.7-2Z" fill="currentColor"/></svg> Raven Suggests</button>
       </div>
@@ -2253,11 +2253,12 @@ body.app-mode .cb-raven-add-icon { width:18px;height:18px;display:block; }
 
       <div class="panel" id="panel-retireby">
         <div class="goal-card">
-          <div class="panel-total-label" style="margin-bottom:14px">Retirement Goal</div>
+          <div class="panel-total-label" style="margin-bottom:14px">Your Goal</div>
           <div class="goal-grid">
-            <div class="field"><label>Current age</label><input id="rb-current-age" type="number" min="16" max="99" placeholder="e.g. 30"></div>
-            <div class="field"><label>Target retirement age</label><input id="rb-target-age" type="number" min="17" max="100" placeholder="e.g. 65"></div>
-            <div class="field"><label>Nest egg goal <span style="color:var(--muted);font-weight:400">(optional)</span></label><input id="rb-goal" type="number" min="0" step="1000" placeholder="e.g. 1500000"></div>
+            <div class="field" style="grid-column:1/-1"><label>Goal name</label><input id="rb-name" type="text" placeholder="e.g. Retirement, House down payment, Freedom fund"></div>
+            <div class="field"><label>Your age now</label><input id="rb-current-age" type="number" min="16" max="99" placeholder="e.g. 30"></div>
+            <div class="field"><label>Age you want to hit it by</label><input id="rb-target-age" type="number" min="17" max="100" placeholder="e.g. 65"></div>
+            <div class="field"><label>Target amount <span style="color:var(--muted);font-weight:400">(optional)</span></label><input id="rb-goal" type="number" min="0" step="1000" placeholder="e.g. 1500000"></div>
             <div class="field"><label>Assumed annual return</label><input id="rb-return" type="number" min="0" max="20" step="0.1" placeholder="e.g. 7"></div>
           </div>
           <button class="submit-btn" style="margin-top:4px" onclick="saveRetireGoal()">Save & Project</button>
@@ -2290,16 +2291,16 @@ body.app-mode .cb-raven-add-icon { width:18px;height:18px;display:block; }
         <div class="suggest-list" id="suggest-list"></div>
         <div class="suggest-note">The quick breakdown is generated instantly from this month's numbers. The AI coach above calls an AI model for freeform advice. Neither is a substitute for financial advice.</div>
       </div>
-    </div>
 
-    <!-- LIFESTYLE MODAL -->
-    <div class="modal-backdrop" id="modal-backdrop">
-      <div class="modal">
-        <div class="modal-title" id="modal-title">Add Paycheck</div>
-        <div id="modal-fields"></div>
-        <div class="modal-actions">
-          <button class="btn-cancel" onclick="closeModal()">Cancel</button>
-          <button class="btn-save" onclick="saveEntry()">Save</button>
+      <!-- LIFESTYLE MODAL -->
+      <div class="modal-backdrop" id="modal-backdrop">
+        <div class="modal">
+          <div class="modal-title" id="modal-title">Add Paycheck</div>
+          <div id="modal-fields"></div>
+          <div class="modal-actions">
+            <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+            <button class="btn-save" onclick="saveEntry()">Save</button>
+          </div>
         </div>
       </div>
     </div>
@@ -10964,19 +10965,23 @@ function renderSuggests() {
     </div>`).join('');
 }
 
-// ── RETIRE BY ──
+// ── GOAL (formerly "Retire By" — now any named goal, still using the same age-based projection) ──
 function renderRetireGoal() {
   const g = LSETTINGS.retire || {};
   const setVal = (id, v) => { const el = document.getElementById(id); if (el && v !== undefined && v !== null) el.value = v; };
+  setVal('rb-name', g.name);
   setVal('rb-current-age', g.currentAge);
   setVal('rb-target-age', g.targetAge);
   setVal('rb-goal', g.goal);
   setVal('rb-return', g.returnPct);
 
+  const goalLabel = document.querySelector('#panel-retireby .panel-total-label');
+  if (goalLabel) goalLabel.textContent = g.name ? g.name : 'Your Goal';
+
   const result = document.getElementById('rb-result');
   if (!result) return;
   if (!g.currentAge || !g.targetAge || g.targetAge <= g.currentAge) {
-    result.innerHTML = '<div class="goal-empty">Enter your current age and target retirement age, then save to see a projection based on this month\u2019s investing pace.</div>';
+    result.innerHTML = '<div class="goal-empty">Enter your current age and the age you want to hit this by, then save to see a projection based on this month\u2019s investing pace.</div>';
     return;
   }
   const res = computeMonthScore(currentMonthKey());
@@ -10987,35 +10992,36 @@ function renderRetireGoal() {
   const fv = r > 0 ? monthlyPace * ((Math.pow(1 + r, months) - 1) / r) : monthlyPace * months;
 
   let html = '';
-  html += `<div class="goal-result-row"><span>Months until retirement</span><b>${months}</b></div>`;
+  html += `<div class="goal-result-row"><span>Months until your goal</span><b>${months}</b></div>`;
   html += `<div class="goal-result-row"><span>This month's investing pace</span><b>${fmtMoney(monthlyPace)}/mo</b></div>`;
-  html += `<div class="goal-result-row"><span>Projected nest egg at that pace</span><b>${fmtMoney(fv)}</b></div>`;
+  html += `<div class="goal-result-row"><span>Projected total at that pace</span><b>${fmtMoney(fv)}</b></div>`;
 
   if (g.goal && Number(g.goal) > 0) {
     const goal = Number(g.goal);
     const onTrack = fv >= goal;
     const requiredMonthly = r > 0 ? goal / ((Math.pow(1 + r, months) - 1) / r) : (months > 0 ? goal / months : 0);
-    html += `<div class="goal-result-row"><span>Your goal</span><b>${fmtMoney(goal)}</b></div>`;
-    html += `<div class="goal-result-row"><span>Monthly contribution needed to hit goal</span><b>${fmtMoney(requiredMonthly)}/mo</b></div>`;
+    html += `<div class="goal-result-row"><span>Target amount</span><b>${fmtMoney(goal)}</b></div>`;
+    html += `<div class="goal-result-row"><span>Monthly contribution needed to hit it</span><b>${fmtMoney(requiredMonthly)}/mo</b></div>`;
     html += `<span class="goal-status ${onTrack ? 'ontrack' : 'offtrack'}">${onTrack ? 'On track' : 'Off track by ' + fmtMoney(Math.max(0, requiredMonthly - monthlyPace)) + '/mo'}</span>`;
   } else {
-    html += '<div class="goal-empty" style="margin-top:8px">Add a nest-egg goal above to see whether this pace is on track and what monthly contribution would hit it exactly.</div>';
+    html += '<div class="goal-empty" style="margin-top:8px">Add a target amount above to see whether this pace is on track and what monthly contribution would hit it exactly.</div>';
   }
   result.innerHTML = html;
 }
 function saveRetireGoal() {
   const g = {
+    name: (document.getElementById('rb-name').value || '').trim() || null,
     currentAge: parseFloat(document.getElementById('rb-current-age').value) || null,
     targetAge: parseFloat(document.getElementById('rb-target-age').value) || null,
     goal: parseFloat(document.getElementById('rb-goal').value) || null,
     returnPct: parseFloat(document.getElementById('rb-return').value) || 0
   };
-  if (!g.currentAge || !g.targetAge) { showToast('Enter your current age and target retirement age'); return; }
-  if (g.targetAge <= g.currentAge) { showToast('Target retirement age must be after your current age'); return; }
+  if (!g.currentAge || !g.targetAge) { showToast('Enter your current age and the age you want to hit this goal by'); return; }
+  if (g.targetAge <= g.currentAge) { showToast('Target age must be after your current age'); return; }
   LSETTINGS.retire = g;
   saveLifestyleSettings(LSETTINGS);
   renderRetireGoal();
-  showToast('Retirement goal saved');
+  showToast((g.name || 'Goal') + ' saved');
 }
 
 // ── VACATION BUDGET PLANNER ──
