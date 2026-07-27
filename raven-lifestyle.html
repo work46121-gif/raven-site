@@ -412,6 +412,7 @@ a:focus-visible, button:focus-visible, .tab:focus-visible, input:focus-visible, 
 <script>
 // Same project as dashboard.html — persistSession keeps the logged-in session
 // available here too, since it's the same site/localStorage.
+const BACKEND = 'https://raven-backend-production-fb1f.up.railway.app';
 const SUPABASE_URL = 'https://ffjpzkpdumdcwnakpaje.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZmanB6a3BkdW1kY3duYWtwYWplIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5ODc4OTcsImV4cCI6MjA4ODU2Mzg5N30.JtDLVu4K1TJ8emcN_mvSHBu6e0y8-jPQv-ypoc9p0RU';
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
@@ -843,10 +844,9 @@ async function requestCoaching() {
   }
   try {
     // NOTE: this hits the backend, not the model directly — no API key ships to the client.
-    // The backend verifies the Bearer token above and enforces the *authoritative* per-user
-    // daily rate limit server-side (see increment_coach_usage in Supabase) — this client-side
-    // counter below is just UX, not the real gate.
-    const resp = await fetch('/lifestyle-coach', {
+    // The backend verifies the Bearer token above and enforces a per-user daily rate limit
+    // server-side — this client-side counter above is just UX, not the real gate.
+    const resp = await fetch(BACKEND + '/api/lifestyle-coach', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
       body: JSON.stringify({
