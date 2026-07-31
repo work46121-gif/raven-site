@@ -6,7 +6,6 @@
 <title>RAVEN LIFESTYLE</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Epilogue:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root {
   --black: #06060A;
@@ -46,7 +45,7 @@ button { font-family:'Epilogue',sans-serif; }
 .brand { display:flex; flex-direction:column; align-items:center; gap:2px; }
 .brand-name { font-family:'Bebas Neue',sans-serif; font-size:26px; letter-spacing:0.14em; background:linear-gradient(135deg,var(--white),var(--purple3)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
 .brand-sub { font-size:9.5px; letter-spacing:0.32em; color:var(--muted); text-transform:uppercase; }
-.pilot-tag { font-size:10px; font-weight:800; letter-spacing:0.1em; color:var(--gold); border:1px solid rgba(242,193,78,0.4); background:rgba(242,193,78,0.1); padding:6px 11px; border-radius:20px; }
+.pilot-tag { font-size:10px; font-weight:800; letter-spacing:0.1em; color:var(--purple3); border:1px solid rgba(124,58,237,0.4); background:rgba(124,58,237,0.1); padding:6px 11px; border-radius:20px; }
 
 /* ── SCORE HERO ── */
 .score-hero { position:relative; background:radial-gradient(120% 100% at 50% 0%, rgba(124,58,237,0.16), transparent 60%), var(--dark); border:1px solid var(--border2); border-radius:24px; padding:34px 28px 26px; overflow:hidden; }
@@ -130,49 +129,6 @@ button { font-family:'Epilogue',sans-serif; }
 .entry-del { width:26px; height:26px; border-radius:50%; background:transparent; border:1px solid var(--border2); color:var(--muted2); font-size:14px; cursor:pointer; flex-shrink:0; display:flex; align-items:center; justify-content:center; transition:all .15s; }
 .entry-del:hover { background:rgba(255,107,107,0.12); border-color:rgba(255,107,107,0.35); color:var(--red); }
 
-/* ── AI COACH & GOALS ── */
-.coach-card { background:linear-gradient(180deg,var(--dark2),var(--dark)); border:1px solid rgba(124,58,237,0.35); border-radius:16px; padding:18px 20px; margin-bottom:14px; }
-.coach-head { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:4px; }
-.coach-title { font-size:13px; font-weight:800; letter-spacing:0.08em; color:var(--purple3); text-transform:uppercase; display:flex; align-items:center; gap:7px; }
-.coach-body { font-size:13.5px; color:var(--muted2); line-height:1.6; margin-top:10px; white-space:pre-wrap; }
-.coach-empty { font-size:12.5px; color:var(--muted); line-height:1.55; margin-top:8px; }
-.coach-btn { display:flex; align-items:center; gap:7px; padding:9px 15px; background:var(--purple); color:#fff; border:none; border-radius:10px; font-size:12.5px; font-weight:800; cursor:pointer; transition:all .15s; white-space:nowrap; }
-.coach-btn:hover:not(:disabled) { background:#8b4cf0; transform:translateY(-1px); }
-.coach-btn:disabled { background:var(--dark4); color:var(--muted); cursor:not-allowed; transform:none; }
-.coach-quota { font-size:10.5px; color:var(--muted); margin-top:9px; }
-.coach-loading { display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--muted2); margin-top:10px; }
-.spinner { width:13px; height:13px; border-radius:50%; border:2px solid var(--dark4); border-top-color:var(--purple2); animation:spin .7s linear infinite; }
-@keyframes spin { to { transform:rotate(360deg); } }
-
-.breakdown-card { display:flex; align-items:center; gap:12px; padding:14px 16px; border:1px solid var(--border); border-radius:14px; background:var(--dark2); margin-bottom:18px; }
-.breakdown-card.tier-gold { border-color:rgba(242,193,78,0.4); background:rgba(242,193,78,0.06); }
-.breakdown-card.tier-cruise { border-color:rgba(48,209,88,0.35); background:rgba(48,209,88,0.05); }
-.breakdown-card.tier-taxi { border-color:rgba(168,85,247,0.3); }
-.breakdown-card.tier-ground { border-color:rgba(255,107,107,0.3); background:rgba(255,107,107,0.05); }
-.breakdown-icon { font-size:20px; flex-shrink:0; }
-.breakdown-title { font-size:12.5px; font-weight:800; }
-.breakdown-copy { font-size:11.5px; color:var(--muted); margin-top:2px; line-height:1.4; }
-.breakdown-note { text-align:center; font-size:10.5px; color:var(--muted); margin:2px 0 22px; }
-
-.goals-title { font-size:12px; font-weight:800; letter-spacing:0.08em; color:var(--muted2); text-transform:uppercase; margin:22px 0 10px; }
-.goal-card { background:var(--dark2); border:1px solid var(--border); border-radius:14px; padding:16px 18px; margin-bottom:12px; }
-.goal-row { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px; }
-.goal-row:last-child { margin-bottom:0; }
-.goal-label { font-size:12.5px; font-weight:700; }
-.goal-sub { font-size:11px; color:var(--muted); margin-top:2px; }
-.target-input-row { display:flex; align-items:center; gap:8px; }
-.target-input-row input[type=range] { width:120px; accent-color:var(--purple2); }
-.target-input-row input[type=number] { width:56px; padding:6px 7px; background:var(--dark3); border:1px solid var(--border); border-radius:7px; color:var(--white); font-family:'JetBrains Mono',monospace; font-size:12.5px; text-align:center; }
-.goal-fields { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:4px; }
-.goal-fields .field { margin-bottom:0; }
-.goal-fields .field.full { grid-column:1 / -1; }
-.goal-result { margin-top:12px; padding:12px 14px; background:var(--dark3); border-radius:11px; font-size:12.5px; color:var(--muted2); line-height:1.55; }
-.goal-result b { color:var(--white); }
-.goal-result.ok { border-left:3px solid var(--green); }
-.goal-result.warn { border-left:3px solid var(--red); }
-.goal-track { height:6px; border-radius:3px; background:var(--dark4); overflow:hidden; margin-top:8px; }
-.goal-track-fill { height:100%; border-radius:3px; background:linear-gradient(90deg,var(--purple),var(--purple3)); }
-
 .empty-state { text-align:center; padding:40px 20px; color:var(--muted); }
 .empty-state .es-icon { font-size:32px; margin-bottom:10px; opacity:0.7; }
 .empty-state .es-title { font-size:14px; font-weight:700; color:var(--muted2); margin-bottom:4px; }
@@ -207,13 +163,86 @@ a:focus-visible, button:focus-visible, .tab:focus-visible, input:focus-visible, 
   .chip-row { gap:8px; }
   .chip-label { font-size:9px; }
 }
+
+/* ── GOAL ── */
+.goal-card { background:linear-gradient(180deg,var(--panel,var(--dark2)),var(--dark2)); border:1px solid var(--border2); border-radius:18px; padding:20px 20px 18px; margin-top:14px; }
+.goal-head { display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:12px; }
+.goal-title { font-family:'Bebas Neue',sans-serif; font-size:19px; letter-spacing:0.06em; display:flex; align-items:center; gap:8px; }
+.goal-status { font-size:10.5px; color:var(--muted); }
+.goal-options { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; }
+.goal-chip { display:flex; align-items:center; gap:7px; padding:9px 14px; background:var(--dark3); border:1px solid var(--border2); border-radius:999px; font-size:12.5px; font-weight:700; color:var(--muted2); cursor:pointer; transition:all .15s; user-select:none; }
+.goal-chip:hover { border-color:rgba(124,58,237,0.4); }
+.goal-chip.selected { background:rgba(124,58,237,0.16); border-color:var(--purple2); color:var(--white); }
+.goal-note { width:100%; min-height:60px; padding:11px 13px; background:var(--dark2); border:1px solid var(--border); border-radius:9px; color:var(--white); font-family:'Epilogue',sans-serif; font-size:13px; outline:none; resize:vertical; margin-bottom:12px; }
+.goal-note:focus { border-color:var(--purple); }
+.goal-save { padding:10px 18px; background:var(--purple); border:none; border-radius:10px; color:#fff; font-weight:800; font-size:12.5px; cursor:pointer; }
+.goal-save:hover { background:#8b4cf0; }
+.goal-saved-line { margin-top:10px; font-size:11px; color:var(--muted); }
+.goal-saved-line b { color:var(--muted2); }
+
+/* ── AI COACH ── */
+.coach-card { background:radial-gradient(120% 100% at 0% 0%, rgba(48,209,88,0.08), transparent 55%), var(--dark); border:1px solid var(--border2); border-radius:18px; padding:20px 20px 18px; margin-top:14px; }
+.coach-head { display:flex; align-items:center; gap:9px; margin-bottom:4px; }
+.coach-avatar { width:30px; height:30px; border-radius:50%; background:linear-gradient(135deg,var(--purple),var(--green)); display:flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0; }
+.coach-title { font-family:'Bebas Neue',sans-serif; font-size:19px; letter-spacing:0.06em; }
+.coach-sub { font-size:11px; color:var(--muted); margin:2px 0 14px 39px; }
+.coach-block { background:var(--dark2); border:1px solid var(--border); border-radius:12px; padding:13px 14px; margin-bottom:10px; }
+.coach-block:last-child { margin-bottom:0; }
+.coach-block-title { font-size:11px; font-weight:800; letter-spacing:0.06em; text-transform:uppercase; color:var(--purple3); margin-bottom:6px; }
+.coach-block p { margin:0 0 6px; font-size:12.5px; color:var(--muted2); line-height:1.55; }
+.coach-block p:last-child { margin-bottom:0; }
+.coach-tickers { display:flex; gap:7px; flex-wrap:wrap; margin:8px 0 6px; }
+.ticker-pill { font-family:'JetBrains Mono',monospace; font-size:11.5px; font-weight:700; padding:5px 10px; border-radius:8px; background:rgba(48,209,88,0.1); border:1px solid rgba(48,209,88,0.25); color:var(--green); }
+.coach-disclaimer { font-size:10px; color:var(--muted); line-height:1.5; border-top:1px dashed var(--border2); margin-top:10px; padding-top:9px; }
+.coach-flag { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 10px; background:var(--dark3); border-radius:9px; margin-top:8px; }
+.coach-flag-name { font-size:12px; font-weight:700; }
+.coach-flag-note { font-size:11px; color:var(--gold2); }
+.coach-empty { font-size:12.5px; color:var(--muted); }
+
+/* ── RAVEN FLYOVER INTRO ── */
+.raven-intro { position:fixed; inset:0; z-index:999; background:radial-gradient(120% 100% at 50% 30%, #14101f, var(--black) 70%); display:flex; align-items:center; justify-content:center; overflow:hidden; transition:opacity .5s ease; }
+.raven-intro.fade-out { opacity:0; pointer-events:none; }
+.raven-intro-title { position:absolute; bottom:18%; left:0; right:0; text-align:center; font-family:'Bebas Neue',sans-serif; font-size:15px; letter-spacing:0.4em; color:var(--muted2); text-transform:uppercase; opacity:0; animation:raven-intro-label 1.6s ease forwards .35s; }
+@keyframes raven-intro-label { 0%{opacity:0; transform:translateY(6px);} 40%{opacity:1; transform:translateY(0);} 80%{opacity:1;} 100%{opacity:0;} }
+.raven-fly-svg { position:absolute; width:120px; height:64px; left:-140px; top:52%; transform:translateY(-50%) scale(0.8); animation:raven-fly-path 1.6s cubic-bezier(.34,0,.2,1) forwards; filter:drop-shadow(0 6px 18px rgba(124,58,237,0.45)); }
+.rf-wing { transform-origin:100px 50px; animation:raven-wing-flap 0.32s ease-in-out infinite alternate; }
+.rf-wing.right { animation-delay:.05s; }
+@keyframes raven-wing-flap { 0%{ transform:rotateX(0deg) scaleY(1); } 100%{ transform:rotateX(35deg) scaleY(0.6); } }
+@keyframes raven-fly-path {
+  0%   { left:-140px; top:70%; transform:translateY(-50%) scale(0.7) rotate(-4deg); }
+  50%  { left:48%; top:38%; transform:translateY(-50%) scale(1.05) rotate(2deg); }
+  100% { left:112%; top:18%; transform:translateY(-50%) scale(0.6) rotate(-6deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .raven-intro { display:none; }
+}
+@media (max-width:560px) {
+  .goal-options { gap:6px; }
+  .goal-chip { padding:8px 12px; font-size:12px; }
+  .coach-sub { margin-left:0; }
+}
 </style>
 </head>
 <body>
 
+<div class="raven-intro" id="raven-intro">
+  <svg class="raven-fly-svg" viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="introWingGrad" x1="0" y1="1" x2="1" y2="0">
+        <stop offset="0%" stop-color="#6D28D9"></stop>
+        <stop offset="100%" stop-color="#C084FC"></stop>
+      </linearGradient>
+    </defs>
+    <ellipse cx="100" cy="50" rx="9" ry="5.5" fill="url(#introWingGrad)"></ellipse>
+    <path class="rf-wing left" d="M100,50 C72,32 34,26 6,42 C32,47 62,56 92,52 Z" fill="url(#introWingGrad)"></path>
+    <path class="rf-wing right" d="M100,50 C128,32 166,26 194,42 C168,47 138,56 108,52 Z" fill="url(#introWingGrad)"></path>
+  </svg>
+  <div class="raven-intro-title">Raven Lifestyle</div>
+</div>
+
 <div class="wrap">
   <div class="topbar">
-    <a class="back-link" href="dashboard.html">‹ Dashboard</a>
+    <a class="back-link" href="dashboard.html" onclick="if(window.history.length>1){history.back();return false;}">‹ Dashboard</a>
     <div class="brand">
       <div class="brand-name">RAVEN LIFESTYLE</div>
       <div class="brand-sub">Money · Managed</div>
@@ -268,14 +297,40 @@ a:focus-visible, button:focus-visible, .tab:focus-visible, input:focus-visible, 
       <div class="chip">
         <div class="chip-top"><span class="chip-label">Investing</span><span class="chip-value" id="chip-invest">—</span></div>
         <div class="chip-track"><div class="chip-fill" id="chip-invest-fill" style="width:0%"></div></div>
-        <div class="chip-note" id="chip-invest-note">Money set aside vs. a 15% target of income</div>
+        <div class="chip-note">Money set aside vs. a 15% target of income</div>
       </div>
     </div>
 
     <span class="score-info-toggle" id="info-toggle">How is this calculated?</span>
     <div class="score-info-panel" id="info-panel">
-      Your <b>Raven Score</b> blends three habits from the current month: <b>spending discipline</b> (40%) rewards keeping bills under ~60% of income, <b>bill timeliness</b> (35%) tracks what's paid on or before its due date, and <b>investing consistency</b> (25%) measures contributions against your <span id="info-invest-target">15</span>%-of-income target (default 15% — a good baseline for a healthy score, editable under Raven Suggests). Score <b>90+</b> for the whole month and a medal joins your roost.
+      Your <b>Raven Score</b> blends three habits from the current month: <b>spending discipline</b> (40%) rewards keeping bills under ~60% of income, <b>bill timeliness</b> (35%) tracks what's paid on or before its due date, and <b>investing consistency</b> (25%) measures contributions against a 15%-of-income target. Score <b>90+</b> for the whole month and a medal joins your roost.
     </div>
+  </div>
+
+  <!-- GOAL -->
+  <div class="goal-card" id="goal-card">
+    <div class="goal-head">
+      <div class="goal-title">🎯 Your Goal</div>
+      <div class="goal-status" id="goal-status">Not set yet</div>
+    </div>
+    <div class="goal-options" id="goal-options">
+      <div class="goal-chip" data-value="real-estate">🏠 Real Estate</div>
+      <div class="goal-chip" data-value="stocks">📈 Stocks</div>
+      <div class="goal-chip" data-value="both">⚖️ A Balance Of Both</div>
+    </div>
+    <textarea class="goal-note" id="goal-note" placeholder="Optional — anything specific? e.g. &quot;Save for a down payment in 3 years while still investing monthly.&quot;"></textarea>
+    <button class="goal-save" onclick="saveGoal()">Save Goal</button>
+    <div class="goal-saved-line" id="goal-saved-line"></div>
+  </div>
+
+  <!-- RAVEN AI COACH -->
+  <div class="coach-card" id="coach-card">
+    <div class="coach-head">
+      <div class="coach-avatar">🪶</div>
+      <div class="coach-title">RAVEN AI Coach</div>
+    </div>
+    <div class="coach-sub">A personal read on your goal, your investing, and your spending — updated live.</div>
+    <div id="coach-body"></div>
   </div>
 
   <!-- ROOST -->
@@ -298,7 +353,6 @@ a:focus-visible, button:focus-visible, .tab:focus-visible, input:focus-visible, 
     <button class="tab active" data-tab="paychecks" onclick="switchTab('paychecks')">💵 Paychecks</button>
     <button class="tab" data-tab="bills" onclick="switchTab('bills')">🧾 Bills</button>
     <button class="tab" data-tab="investments" onclick="switchTab('investments')">📈 Investments</button>
-    <button class="tab" data-tab="suggests" onclick="switchTab('suggests')">✨ Raven Suggests</button>
   </div>
 
   <div class="panel active" id="panel-paychecks">
@@ -324,75 +378,6 @@ a:focus-visible, button:focus-visible, .tab:focus-visible, input:focus-visible, 
     </div>
     <div class="entry-list" id="list-investments"></div>
   </div>
-
-  <div class="panel" id="panel-suggests">
-    <div class="breakdown-card" id="breakdown-card">
-      <div class="breakdown-icon" id="breakdown-icon">🪶</div>
-      <div>
-        <div class="breakdown-title" id="breakdown-title">Log some activity to see a breakdown</div>
-        <div class="breakdown-copy" id="breakdown-copy">Add a paycheck, bill, or investment to get instant, rule-based feedback.</div>
-      </div>
-    </div>
-    <div class="breakdown-note">The quick breakdown above is generated instantly from this month's numbers — no AI call.</div>
-
-    <div class="coach-card">
-      <div class="coach-head">
-        <div class="coach-title">✨ Raven AI Coach</div>
-        <button class="coach-btn" id="coach-btn" onclick="requestCoaching()">Get my coaching</button>
-      </div>
-      <div class="coach-empty" id="coach-empty">Freeform, personalized advice from an AI model — only generated when you ask for it.</div>
-      <div class="coach-loading" id="coach-loading" style="display:none"><div class="spinner"></div>Raven is thinking this through…</div>
-      <div class="coach-body" id="coach-body" style="display:none"></div>
-      <div class="coach-quota" id="coach-quota"></div>
-    </div>
-
-    <div class="goals-title">Your Targets</div>
-    <div class="goal-card">
-      <div class="goal-row">
-        <div>
-          <div class="goal-label">Investing target</div>
-          <div class="goal-sub">Used for your Investing score. Default is 15% of income.</div>
-        </div>
-        <div class="target-input-row">
-          <input type="range" id="invest-target-range" min="1" max="50" step="1" value="15" oninput="onInvestTargetInput(this.value)">
-          <div class="target-input-row"><input type="number" id="invest-target-num" min="1" max="50" value="15" oninput="onInvestTargetInput(this.value)">%</div>
-        </div>
-      </div>
-    </div>
-
-    <div class="goal-card">
-      <div class="goal-row" style="margin-bottom:4px">
-        <div>
-          <div class="goal-label">🎯 Retire By</div>
-          <div class="goal-sub">Set a goal and Raven tracks whether your current investing pace gets you there.</div>
-        </div>
-      </div>
-      <div class="goal-fields">
-        <div class="field"><label>Current age</label><input id="rt-current-age" type="number" min="16" max="99" placeholder="e.g. 30"></div>
-        <div class="field"><label>Retire at age</label><input id="rt-target-age" type="number" min="17" max="100" placeholder="e.g. 60"></div>
-        <div class="field"><label>Target nest egg</label><input id="rt-target-amount" type="number" min="0" step="1000" placeholder="e.g. 1500000"></div>
-        <div class="field"><label>Avg. annual return</label><input id="rt-return" type="number" min="0" max="20" step="0.5" value="7" placeholder="7"></div>
-      </div>
-      <button class="add-btn" style="margin-top:12px" onclick="calcRetirement()">Run the numbers</button>
-      <div class="goal-result" id="retire-result" style="display:none"></div>
-    </div>
-
-    <div class="goal-card">
-      <div class="goal-row" style="margin-bottom:4px">
-        <div>
-          <div class="goal-label">🏖️ Vacation Budget Planner</div>
-          <div class="goal-sub">Tell Raven what you want to spend — it'll work out the monthly savings, without wrecking your investing target.</div>
-        </div>
-      </div>
-      <div class="goal-fields">
-        <div class="field full"><label>Trip name</label><input id="vb-name" placeholder="e.g. Tokyo in November"></div>
-        <div class="field"><label>Budget</label><input id="vb-amount" type="number" min="0" step="50" placeholder="e.g. 2500"></div>
-        <div class="field"><label>Trip date</label><input id="vb-date" type="date"></div>
-      </div>
-      <button class="add-btn" style="margin-top:12px" onclick="calcVacation()">Build my plan</button>
-      <div class="goal-result" id="vacation-result" style="display:none"></div>
-    </div>
-  </div>
 </div>
 
 <!-- MODAL -->
@@ -410,30 +395,18 @@ a:focus-visible, button:focus-visible, .tab:focus-visible, input:focus-visible, 
 <div class="toast" id="toast"></div>
 
 <script>
-// Same project as dashboard.html — persistSession keeps the logged-in session
-// available here too, since it's the same site/localStorage.
-const BACKEND = 'https://raven-backend-production-fb1f.up.railway.app';
-const SUPABASE_URL = 'https://ffjpzkpdumdcwnakpaje.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZmanB6a3BkdW1kY3duYWtwYWplIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5ODc4OTcsImV4cCI6MjA4ODU2Mzg5N30.JtDLVu4K1TJ8emcN_mvSHBu6e0y8-jPQv-ypoc9p0RU';
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-  auth: { flowType: 'implicit', detectSessionInUrl: true, persistSession: true, autoRefreshToken: true }
-});
-async function getAuthToken() {
-  const { data } = await supabase.auth.getSession();
-  return data && data.session ? data.session.access_token : null;
-}
-
 // ── DATA LAYER ──
 const STORAGE_KEY = 'raven_lifestyle_v1';
-const DEFAULT_SETTINGS = { investTargetPct: 15, retireGoal: null, vacationGoal: null };
 function loadData() {
   try {
     const d = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
     return {
-      paychecks: d.paychecks || [], bills: d.bills || [], investments: d.investments || [],
-      settings: Object.assign({}, DEFAULT_SETTINGS, d.settings || {})
+      paychecks: d.paychecks || [],
+      bills: d.bills || [],
+      investments: d.investments || [],
+      goal: d.goal || { interests: [], note: '', updatedAt: null }
     };
-  } catch(e) { return { paychecks: [], bills: [], investments: [], settings: Object.assign({}, DEFAULT_SETTINGS) }; }
+  } catch(e) { return { paychecks: [], bills: [], investments: [], goal: { interests: [], note: '', updatedAt: null } }; }
 }
 function saveData(d) { localStorage.setItem(STORAGE_KEY, JSON.stringify(d)); }
 let DATA = loadData();
@@ -472,10 +445,9 @@ function computeMonthScore(mKey) {
     timeliness = (onTime / decided.length) * 100;
   }
 
-  const targetPct = (DATA.settings && DATA.settings.investTargetPct ? DATA.settings.investTargetPct : 15) / 100;
   let investing = null;
   if (income > 0) {
-    investing = clamp((investTotal / income) / targetPct * 100, 0, 100);
+    investing = clamp((investTotal / income) / 0.15 * 100, 0, 100);
   } else if (investTotal > 0) {
     investing = 100;
   }
@@ -561,12 +533,6 @@ function renderScoreHero() {
   setChip('spend', res.spending);
   setChip('time', res.timeliness);
   setChip('invest', res.investing);
-
-  const targetPct = DATA.settings.investTargetPct;
-  const noteEl = document.getElementById('chip-invest-note');
-  if (noteEl) noteEl.textContent = 'Money set aside vs. a ' + targetPct + '% target of income';
-  const infoEl = document.getElementById('info-invest-target');
-  if (infoEl) infoEl.textContent = targetPct;
 
   setWingAngle(res.overall, tier);
 }
@@ -674,8 +640,8 @@ function renderAll() {
   renderScoreHero();
   renderRoost();
   renderTrackers();
-  renderBreakdown();
-  renderCoachQuota();
+  renderGoal();
+  renderCoach();
 }
 
 // ── TABS ──
@@ -764,235 +730,180 @@ function checkMedalMoment(prevRes) {
   }
 }
 
-// ── QUICK BREAKDOWN (instant, rule-based — no API call) ──
-function renderBreakdown() {
-  const res = computeMonthScore(currentMonthKey());
-  const card = document.getElementById('breakdown-card');
-  const icon = document.getElementById('breakdown-icon');
-  const title = document.getElementById('breakdown-title');
-  const copy = document.getElementById('breakdown-copy');
-  if (!res.hasAnyData) {
-    card.className = 'breakdown-card';
-    icon.textContent = '🪶';
-    title.textContent = 'Log some activity to see a breakdown';
-    copy.textContent = 'Add a paycheck, bill, or investment to get instant, rule-based feedback.';
-    return;
-  }
-  const status = statusFor(res.overall);
-  const tierClass = { SOARING:'tier-gold', CRUISING:'tier-cruise', TAXIING:'tier-taxi', GROUNDED:'tier-ground' }[status.label] || '';
-  card.className = 'breakdown-card ' + tierClass;
-  const copies = {
-    SOARING: ['🏅', 'Soaring — you\u2019re at 90+', 'Hold spending, timeliness, and investing where they are through month-end to lock in this month\u2019s medal.'],
-    CRUISING: ['✈️', 'Cruising — solidly on track', 'You\u2019re close to medal range. Tightening up your weakest of the three pillars gets you there.'],
-    TAXIING: ['🛫', 'Taxiing — building momentum', 'Spending, timeliness, and investing all move the needle. Focus on whichever chip below is lowest.'],
-    GROUNDED: ['🪫', 'Grounded — room to climb', 'This month is behind pace. Paying a bill on time or logging an investment now still helps this month\u2019s score.']
-  };
-  const [ic, t, c] = copies[status.label] || copies.GROUNDED;
-  icon.textContent = ic; title.textContent = t; copy.textContent = c;
-}
-
-// ── AI COACH (click-to-load, rate-limited) ──
-const COACH_KEY = 'raven_lifestyle_coach_v1';
-const COACH_DAILY_LIMIT = 2; // keep this low — each click is a real, billed API call
-function loadCoachLog() {
-  try { return JSON.parse(localStorage.getItem(COACH_KEY) || '{}'); } catch(e) { return {}; }
-}
-function saveCoachLog(l) { localStorage.setItem(COACH_KEY, JSON.stringify(l)); }
-function coachCallsToday() {
-  const log = loadCoachLog();
-  return (log[todayISO()] || []).length;
-}
-function renderCoachQuota() {
-  const used = coachCallsToday();
-  const remaining = Math.max(0, COACH_DAILY_LIMIT - used);
-  const btn = document.getElementById('coach-btn');
-  const quota = document.getElementById('coach-quota');
-  if (remaining <= 0) {
-    btn.disabled = true;
-    btn.textContent = 'Used for today';
-    quota.textContent = 'You\u2019ve used your ' + COACH_DAILY_LIMIT + ' coaching calls for today \u2014 check back tomorrow.';
+// ── GOAL ──
+// Goal is stored on DATA (localStorage) and simply stays put until the user
+// hits "Save Goal" again — nothing here resets it automatically.
+let pendingGoalInterests = null;
+function renderGoal() {
+  const goal = DATA.goal || { interests: [], note: '', updatedAt: null };
+  const interests = pendingGoalInterests || goal.interests || [];
+  document.querySelectorAll('#goal-options .goal-chip').forEach(chip => {
+    chip.classList.toggle('selected', interests.includes(chip.dataset.value));
+  });
+  const noteEl = document.getElementById('goal-note');
+  if (document.activeElement !== noteEl) noteEl.value = goal.note || '';
+  const statusEl = document.getElementById('goal-status');
+  const savedLine = document.getElementById('goal-saved-line');
+  if (goal.updatedAt) {
+    statusEl.textContent = 'Set ' + fmtDate(goal.updatedAt.slice(0,10));
+    savedLine.innerHTML = 'This stays on your account until you change it — <b>' + goalLabel(goal.interests) + '</b>.';
   } else {
-    btn.disabled = false;
-    btn.textContent = 'Get my coaching';
-    quota.textContent = remaining + ' of ' + COACH_DAILY_LIMIT + ' coaching calls left today';
-  }
-  // Restore last cached response for today, if any, so a page refresh doesn't hide it
-  const log = loadCoachLog();
-  const todays = log[todayISO()] || [];
-  if (todays.length > 0) {
-    const last = todays[todays.length - 1];
-    document.getElementById('coach-empty').style.display = 'none';
-    document.getElementById('coach-body').style.display = 'block';
-    document.getElementById('coach-body').textContent = last;
+    statusEl.textContent = 'Not set yet';
+    savedLine.textContent = 'Pick what you\u2019re working toward so the AI Coach can tailor its notes below.';
   }
 }
-async function requestCoaching() {
-  if (coachCallsToday() >= COACH_DAILY_LIMIT) { renderCoachQuota(); return; }
-  const btn = document.getElementById('coach-btn');
-  btn.disabled = true;
-  document.getElementById('coach-empty').style.display = 'none';
-  document.getElementById('coach-body').style.display = 'none';
-  document.getElementById('coach-loading').style.display = 'flex';
-  const res = computeMonthScore(currentMonthKey());
-  const token = await getAuthToken();
-  if (!token) {
-    document.getElementById('coach-loading').style.display = 'none';
-    document.getElementById('coach-empty').style.display = 'block';
-    document.getElementById('coach-empty').textContent = 'Sign in to get personalized coaching.';
-    btn.disabled = false;
-    return;
-  }
-  try {
-    // NOTE: this hits the backend, not the model directly — no API key ships to the client.
-    // The backend verifies the Bearer token above and enforces a per-user daily rate limit
-    // server-side — this client-side counter above is just UX, not the real gate.
-    const resp = await fetch(BACKEND + '/api/lifestyle-coach', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-      body: JSON.stringify({
-        income: res.income, billsTotal: res.billsTotal, investTotal: res.investTotal,
-        spending: res.spending, timeliness: res.timeliness, investing: res.investing,
-        overall: res.overall, investTargetPct: DATA.settings.investTargetPct
-      })
-    });
-    if (resp.status === 429) { throw new Error('rate_limited'); }
-    if (!resp.ok) { throw new Error('bad_response'); }
-    const data = await resp.json();
-    const text = (data && data.message) || 'Raven didn\u2019t have anything new to add this time.';
-    const log = loadCoachLog();
-    log[todayISO()] = (log[todayISO()] || []).concat(text);
-    saveCoachLog(log);
-    document.getElementById('coach-body').textContent = text;
-    document.getElementById('coach-body').style.display = 'block';
-  } catch (e) {
-    document.getElementById('coach-empty').style.display = 'block';
-    document.getElementById('coach-empty').textContent = e.message === 'rate_limited'
-      ? 'You\u2019ve hit today\u2019s coaching limit \u2014 try again tomorrow.'
-      : 'Couldn\u2019t reach Raven\u2019s coach right now. Try again in a bit.';
-  } finally {
-    document.getElementById('coach-loading').style.display = 'none';
-    renderCoachQuota();
-  }
+function goalLabel(interests) {
+  if (!interests || interests.length === 0) return 'no goal selected yet';
+  const map = { 'real-estate': 'Real Estate', 'stocks': 'Stocks', 'both': 'A Balance Of Both' };
+  return interests.map(i => map[i] || i).join(' + ');
 }
-
-// ── INVESTING TARGET ──
-function onInvestTargetInput(val) {
-  let pct = Math.round(Number(val));
-  if (!Number.isFinite(pct)) return;
-  pct = Math.max(1, Math.min(50, pct));
-  document.getElementById('invest-target-range').value = pct;
-  document.getElementById('invest-target-num').value = pct;
-  DATA.settings.investTargetPct = pct;
-  saveData(DATA);
-  renderAll();
-}
-
-// ── RETIRE BY ──
-function calcRetirement() {
-  const currentAge = Number(document.getElementById('rt-current-age').value);
-  const targetAge = Number(document.getElementById('rt-target-age').value);
-  const targetAmount = Number(document.getElementById('rt-target-amount').value) || 0;
-  const annualReturn = Number(document.getElementById('rt-return').value) || 0;
-  const box = document.getElementById('retire-result');
-  box.style.display = 'block';
-  if (!currentAge || !targetAge || targetAge <= currentAge) {
-    box.className = 'goal-result warn';
-    box.innerHTML = 'Enter a current age and a retirement age that\u2019s later than your current age.';
-    return;
-  }
-  const years = targetAge - currentAge;
-  const months = years * 12;
-  const monthlyReturn = annualReturn / 100 / 12;
-
-  // Use this month's actual investing pace as the assumed monthly contribution going forward.
-  const res = computeMonthScore(currentMonthKey());
-  const monthlyContribution = res.investTotal > 0 ? res.investTotal : (res.income * (DATA.settings.investTargetPct/100));
-
-  // Future value of a monthly contribution series (ordinary annuity).
-  let projected;
-  if (monthlyReturn > 0) {
-    projected = monthlyContribution * ((Math.pow(1+monthlyReturn, months) - 1) / monthlyReturn);
+document.getElementById('goal-options').addEventListener('click', (e) => {
+  const chip = e.target.closest('.goal-chip');
+  if (!chip) return;
+  const goal = DATA.goal || { interests: [], note: '' };
+  let interests = pendingGoalInterests || goal.interests.slice();
+  const val = chip.dataset.value;
+  if (val === 'both') {
+    interests = interests.includes('both') ? [] : ['both'];
   } else {
-    projected = monthlyContribution * months;
+    interests = interests.filter(v => v !== 'both');
+    if (interests.includes(val)) interests = interests.filter(v => v !== val);
+    else interests.push(val);
   }
-
-  DATA.settings.retireGoal = { currentAge, targetAge, targetAmount, annualReturn };
+  pendingGoalInterests = interests;
+  renderGoal();
+});
+function saveGoal() {
+  const interests = pendingGoalInterests || (DATA.goal && DATA.goal.interests) || [];
+  const note = document.getElementById('goal-note').value.trim();
+  DATA.goal = { interests, note, updatedAt: new Date().toISOString() };
+  pendingGoalInterests = null;
   saveData(DATA);
-
-  if (targetAmount > 0) {
-    const pctToGoal = clamp((projected / targetAmount) * 100, 0, 999);
-    const onTrack = projected >= targetAmount;
-    box.className = 'goal-result ' + (onTrack ? 'ok' : 'warn');
-    let requiredMonthly = monthlyReturn > 0
-      ? targetAmount / ((Math.pow(1+monthlyReturn, months) - 1) / monthlyReturn)
-      : targetAmount / months;
-    box.innerHTML = `At <b>${fmtMoney(monthlyContribution)}/mo</b> for <b>${years} years</b> (${annualReturn}% avg return), you\u2019re projected to reach <b>${fmtMoney(projected)}</b> by age ${targetAge} \u2014 ${onTrack ? 'on track to clear' : 'short of'} your <b>${fmtMoney(targetAmount)}</b> goal.
-      ${onTrack ? '' : `To hit it exactly, you\u2019d need roughly <b>${fmtMoney(requiredMonthly)}/mo</b> instead.`}
-      <div class="goal-track"><div class="goal-track-fill" style="width:${Math.min(100,pctToGoal)}%"></div></div>`;
-  } else {
-    box.className = 'goal-result ok';
-    box.innerHTML = `At <b>${fmtMoney(monthlyContribution)}/mo</b> for <b>${years} years</b> (${annualReturn}% avg return), you\u2019re projected to have about <b>${fmtMoney(projected)}</b> by age ${targetAge}. Add a target nest egg above to see if that\u2019s enough.`;
-  }
+  renderGoal();
+  renderCoach();
+  showToast('Goal saved — it\u2019ll stick around until you change it');
 }
 
-// ── VACATION BUDGET PLANNER ──
-function calcVacation() {
-  const name = document.getElementById('vb-name').value.trim() || 'Your trip';
-  const amount = Number(document.getElementById('vb-amount').value);
-  const dateStr = document.getElementById('vb-date').value;
-  const box = document.getElementById('vacation-result');
-  box.style.display = 'block';
-  if (!amount || !dateStr) {
-    box.className = 'goal-result warn';
-    box.innerHTML = 'Enter a budget and a trip date.';
-    return;
-  }
-  const today = new Date(todayISO() + 'T00:00:00');
-  const trip = new Date(dateStr + 'T00:00:00');
-  const msPerMonth = 30.44 * 24 * 60 * 60 * 1000;
-  const monthsLeft = Math.max(1, Math.round((trip - today) / msPerMonth));
-  const perMonth = amount / monthsLeft;
-
-  const res = computeMonthScore(currentMonthKey());
-  const investTarget = res.income * (DATA.settings.investTargetPct / 100);
-  const billRoom = res.income > 0 ? res.income * 0.6 - res.billsTotal : null;
-
-  DATA.settings.vacationGoal = { name, amount, date: dateStr };
-  saveData(DATA);
-
-  let fitNote = 'Log a paycheck this month so Raven can check this against your income.';
-  let cls = 'goal-result';
-  if (res.income > 0) {
-    const leftoverAfterTarget = res.income - res.billsTotal - investTarget;
-    if (perMonth <= leftoverAfterTarget) {
-      cls = 'goal-result ok';
-      fitNote = `That fits inside your income after bills and your ${DATA.settings.investTargetPct}% investing target \u2014 no need to dip into either.`;
-    } else {
-      cls = 'goal-result warn';
-      const gap = perMonth - Math.max(0, leftoverAfterTarget);
-      fitNote = `That\u2019s about <b>${fmtMoney(gap)}/mo</b> more than what\u2019s left after bills and your investing target \u2014 consider spreading the trip out, trimming the budget, or temporarily lowering your investing target above.`;
+// ── RAVEN AI COACH ──
+// Educational, non-personalized insight only. Everything here is framed as
+// starting points to research further, never as individual financial advice.
+const STOCK_IDEAS = {
+  stocks: [
+    { t: 'VTI', d: 'Total U.S. stock market' },
+    { t: 'VOO', d: 'S&P 500 index' },
+    { t: 'VXUS', d: 'International stocks' },
+    { t: 'SCHD', d: 'Dividend-focused' }
+  ],
+  'real-estate': [
+    { t: 'VNQ', d: 'U.S. real estate (REIT) index' },
+    { t: 'SCHH', d: 'Real estate (REIT) index' }
+  ],
+  balanced: [
+    { t: 'VTI', d: 'Total U.S. stock market' },
+    { t: 'VNQ', d: 'U.S. real estate (REIT) index' },
+    { t: 'BND', d: 'U.S. bonds, for stability' }
+  ]
+};
+function discretionaryFlagsFor(bills) {
+  const patterns = [
+    { key: 'Date Night', re: /date.?night|dining|restaurant/i },
+    { key: 'Takeout / Delivery', re: /takeout|delivery|doordash|uber ?eats|grubhub/i },
+    { key: 'Shopping', re: /shopping|amazon|retail/i },
+    { key: 'Subscriptions', re: /subscription|netflix|spotify|hulu|disney\+/i },
+    { key: 'Entertainment', re: /entertainment|movies|concert|bar\b/i }
+  ];
+  const flagged = {};
+  bills.forEach(b => {
+    for (const p of patterns) {
+      if (p.re.test(b.name || '')) {
+        flagged[p.key] = (flagged[p.key] || 0) + Number(b.amount || 0);
+        break;
+      }
     }
-  }
-  box.className = cls;
-  box.innerHTML = `<b>${escHtml(name)}</b>: save about <b>${fmtMoney(perMonth)}/mo</b> for the next <b>${monthsLeft} month${monthsLeft===1?'':'s'}</b> to cover ${fmtMoney(amount)}. ${fitNote}`;
+  });
+  return flagged;
 }
+function renderCoach() {
+  const mKey = currentMonthKey();
+  const paychecks = DATA.paychecks.filter(p => monthKey(p.date) === mKey);
+  const bills = DATA.bills.filter(b => monthKey(b.dueDate) === mKey);
+  const investments = DATA.investments.filter(i => monthKey(i.date) === mKey);
+  const income = paychecks.reduce((s,p) => s + Number(p.amount||0), 0);
+  const billsTotal = bills.reduce((s,b) => s + Number(b.amount||0), 0);
+  const goal = DATA.goal || { interests: [] };
 
-function loadSavedGoalsUI() {
-  document.getElementById('invest-target-range').value = DATA.settings.investTargetPct;
-  document.getElementById('invest-target-num').value = DATA.settings.investTargetPct;
-  if (DATA.settings.retireGoal) {
-    const g = DATA.settings.retireGoal;
-    if (g.currentAge) document.getElementById('rt-current-age').value = g.currentAge;
-    if (g.targetAge) document.getElementById('rt-target-age').value = g.targetAge;
-    if (g.targetAmount) document.getElementById('rt-target-amount').value = g.targetAmount;
-    if (g.annualReturn) document.getElementById('rt-return').value = g.annualReturn;
+  const blocks = [];
+
+  // 1) Goal-based balanced plan (insight only)
+  if (goal.interests && goal.interests.length > 0) {
+    const wantsRE = goal.interests.includes('real-estate') || goal.interests.includes('both');
+    const wantsStocks = goal.interests.includes('stocks') || goal.interests.includes('both');
+    let planText;
+    if (wantsRE && wantsStocks) {
+      planText = 'You told Raven you\u2019re weighing real estate and stocks. A common balanced approach is to keep building liquid, diversified investments (stocks/index funds) while separately saving toward a real-estate down payment in cash or short-term bonds — that way a housing goal doesn\u2019t force you to sell stocks at a bad time.';
+    } else if (wantsRE) {
+      planText = 'Your goal is real estate. Most people get there by saving a dedicated down-payment fund (cash or short-term bonds so it isn\u2019t exposed to stock swings right before you need it) while keeping some smaller, steady contributions going toward long-term investing too.';
+    } else {
+      planText = 'Your goal is stocks. A steady, automatic monthly contribution to a couple of diversified, low-cost index funds — rather than trying to time the market — is the approach most long-term investors lean on.';
+    }
+    blocks.push(`<div class="coach-block">
+      <div class="coach-block-title">Your Balanced Plan</div>
+      <p>${planText}</p>
+      ${goal.note ? `<p style="font-style:italic;color:var(--muted)">"${escHtml(goal.note)}"</p>` : ''}
+    </div>`);
+  } else {
+    blocks.push(`<div class="coach-block">
+      <div class="coach-block-title">Your Balanced Plan</div>
+      <p class="coach-empty">Set a goal above (Real Estate, Stocks, or Both) and Raven will tailor this section to it.</p>
+    </div>`);
   }
-  if (DATA.settings.vacationGoal) {
-    const v = DATA.settings.vacationGoal;
-    document.getElementById('vb-name').value = v.name || '';
-    document.getElementById('vb-amount').value = v.amount || '';
-    document.getElementById('vb-date').value = v.date || '';
+
+  // 2) Retirement / investing insight with stock ideas
+  const hasRetirement = investments.some(i => (i.type || '').toLowerCase() === 'retirement');
+  const wantsRE2 = goal.interests && (goal.interests.includes('real-estate') || goal.interests.includes('both'));
+  const wantsStocks2 = goal.interests && (goal.interests.includes('stocks') || goal.interests.includes('both'));
+  let ideaSet = STOCK_IDEAS.stocks;
+  if (wantsRE2 && wantsStocks2) ideaSet = STOCK_IDEAS.balanced;
+  else if (wantsRE2 && !wantsStocks2) ideaSet = STOCK_IDEAS['real-estate'];
+  if (hasRetirement || (goal.interests && goal.interests.length > 0)) {
+    blocks.push(`<div class="coach-block">
+      <div class="coach-block-title">${hasRetirement ? 'Retirement Contribution — Insight' : 'A Few Places To Start Researching'}</div>
+      <p>${hasRetirement ? 'Nice — you logged a retirement contribution this month. Here are a few widely-used, low-cost, diversified funds people in a similar spot often look into:' : 'Based on your goal, here are a few widely-used, diversified fund categories worth researching:'}</p>
+      <div class="coach-tickers">${ideaSet.map(s => `<span class="ticker-pill" title="${escHtml(s.d)}">${s.t}</span>`).join('')}</div>
+      <div class="coach-disclaimer">This is general, educational information only — not personalized investment advice, and Raven isn\u2019t a financial advisor. Consider talking to a licensed advisor before acting, and always research a fund\u2019s fees and risk before investing.</div>
+    </div>`);
   }
+
+  // 3) Bills spending dissection
+  const flagged = discretionaryFlagsFor(bills);
+  const flagKeys = Object.keys(flagged);
+  if (income > 0) {
+    const cap = income * 0.64; // the ratio above which the Spending component drops below 90
+    const overBy = billsTotal - cap;
+    let spendBlock = `<div class="coach-block">
+      <div class="coach-block-title">Where Your Money's Going</div>
+      <p>Bills this month total ${fmtMoney(billsTotal)} against ${fmtMoney(income)} income (${Math.round(billsTotal/income*100)}%). To keep Spending above 90, aim to stay under <b style="color:var(--white)">${fmtMoney(cap)}</b> (64% of income).</p>`;
+    if (flagKeys.length > 0) {
+      flagKeys.forEach(key => {
+        const amt = flagged[key];
+        const note = overBy > 0
+          ? `try keeping it fixed around ${fmtMoney(Math.max(0, amt - overBy))} so total bills come back under ${fmtMoney(cap)} and you stay above 90`
+          : `try keeping it fixed around ${fmtMoney(amt)} so it doesn\u2019t creep and push bills over ${fmtMoney(cap)}`;
+        spendBlock += `<div class="coach-flag"><span class="coach-flag-name">${escHtml(key)} · ${fmtMoney(amt)}</span><span class="coach-flag-note">${note}</span></div>`;
+      });
+    } else {
+      spendBlock += `<p class="coach-empty">No discretionary categories (like dining or shopping) spotted in this month\u2019s bills yet.</p>`;
+    }
+    spendBlock += `</div>`;
+    blocks.push(spendBlock);
+  } else {
+    blocks.push(`<div class="coach-block">
+      <div class="coach-block-title">Where Your Money's Going</div>
+      <p class="coach-empty">Log a paycheck first — Raven needs your income to tell you exactly what to keep discretionary spending under.</p>
+    </div>`);
+  }
+
+  document.getElementById('coach-body').innerHTML = blocks.join('');
 }
 
 let toastTimer;
@@ -1012,8 +923,20 @@ document.getElementById('modal-backdrop').addEventListener('click', (e) => { if 
 
 buildFeatherGroup('wing-left', false);
 buildFeatherGroup('wing-right', true);
-loadSavedGoalsUI();
 renderAll();
+
+// ── Raven flyover intro ──
+(function() {
+  const intro = document.getElementById('raven-intro');
+  if (!intro) return;
+  const skip = sessionStorage.getItem('raven_lifestyle_intro_seen') === '1';
+  if (skip) { intro.remove(); return; }
+  setTimeout(() => {
+    intro.classList.add('fade-out');
+    setTimeout(() => intro.remove(), 550);
+  }, 1500);
+  try { sessionStorage.setItem('raven_lifestyle_intro_seen', '1'); } catch(e) {}
+})();
 </script>
 </body>
 </html>
