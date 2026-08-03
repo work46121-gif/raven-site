@@ -3465,14 +3465,21 @@ function hideAuthError() { document.getElementById('auth-error').style.display =
 async function handleGoogleAuth() {
   try {
     const redirectTo = getDashboardAuthRedirectTo();
-    const { error } = await db.auth.signInWithOAuth({
+    const { data, error } = await db.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo
+        redirectTo,
+        skipBrowserRedirect: true
       }
     });
-    if (error) showAuthError(error.message);
+    if (error) { showAuthError(error.message); return; }
+    if (data?.url) {
+      window.location.href = data.url;
+    } else {
+      showAuthError('Google sign-in did not return a redirect URL. Please try again.');
+    }
   } catch(e) {
+    console.warn('Google sign-in error:', e);
     showAuthError('Google sign-in failed. Please try email/password.');
   }
 }
