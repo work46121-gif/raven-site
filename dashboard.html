@@ -3238,8 +3238,13 @@ async function init() {
       try { history.replaceState(null, '', window.location.pathname + (RAVEN_APP_MODE ? '?app=1' : '')); } catch(e) {}
     }
     if (params.get('error')) {
-      console.warn('OAuth error:', params.get('error_description'));
-      history.replaceState(null, '', window.location.pathname);
+      const desc = params.get('error_description') || params.get('error') || 'Sign-in failed.';
+      console.warn('OAuth error:', desc);
+      history.replaceState(null, '', window.location.pathname + (RAVEN_APP_MODE ? '?app=1' : ''));
+      currentUser = null;
+      showAuth();
+      showAuthError(decodeURIComponent(String(desc).replace(/\+/g, ' ')));
+      return;
     }
     // Handle implicit flow — token comes back in URL hash
     if (hash && (hash.includes('access_token') || hash.includes('error'))) {
