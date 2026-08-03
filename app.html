@@ -1438,6 +1438,14 @@ async function handleSetNewPassword(event){
   }
   const hash = window.location.hash;
   const params = new URLSearchParams(window.location.search);
+  if (params.get('error')) {
+    const desc = params.get('error_description') || params.get('error') || 'Sign-in failed.';
+    try { history.replaceState(null, '', window.location.pathname + '?app=1'); } catch(e) {}
+    showSignedOutHome();
+    showAuthPanel('login');
+    showMessage('error', decodeURIComponent(desc.replace(/\+/g, ' ')));
+    return;
+  }
   if (params.get('signed_out') === '1') {
     clearRavenSignedInCache();
     try { history.replaceState(null, '', window.location.pathname + '?app=1'); } catch(e) {}
@@ -1558,4 +1566,3 @@ setTimeout(() => {
 </script>
 </body>
 </html>
-
