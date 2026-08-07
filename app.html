@@ -131,6 +131,11 @@ button,input,textarea{font:inherit}
   display:flex;align-items:center;justify-content:center;gap:10px;transition:opacity .15s}
 .google-btn:hover{opacity:.92}
 .google-btn svg{width:22px;height:22px;display:block;flex:0 0 auto}
+.apple-btn{width:100%;border:1px solid rgba(255,255,255,.18);border-radius:14px;
+  background:#000;color:#fff;padding:13px 16px;font-weight:900;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:10px;transition:opacity .15s;margin-top:10px}
+.apple-btn:hover{opacity:.88}
+.apple-btn svg{width:19px;height:19px;display:block;flex:0 0 auto}
 .row{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .tiny{font-size:11.5px;color:var(--muted);line-height:1.5}
 .link-btn{border:0;background:transparent;color:var(--soft);font-size:12px;font-weight:800;cursor:pointer}
@@ -389,6 +394,12 @@ button,input,textarea{font:inherit}
         </svg>
         Continue with Google
       </button>
+      <button class="apple-btn" type="button" onclick="handleAppleAuth()">
+        <svg viewBox="0 0 24 24" aria-hidden="true" fill="#fff">
+          <path d="M16.365 1.43c0 1.14-.468 2.223-1.235 3.023-.845.884-2.14 1.556-3.235 1.47-.14-1.09.41-2.235 1.19-3.024C13.9.99 15.34.28 16.365 1.43zM20.32 17.14c-.518 1.194-.765 1.726-1.43 2.78-.928 1.47-2.236 3.302-3.86 3.317-1.44.015-1.81-.938-3.76-.928-1.95.01-2.36.943-3.8.928-1.624-.015-2.862-1.667-3.79-3.137C1.06 16.87.29 12.98 1.63 10.36c.79-1.548 2.204-2.526 3.744-2.54 1.42-.015 2.76.955 3.63.955.87 0 2.5-1.18 4.21-1.007.717.03 2.73.29 4.03 2.18-.104.065-2.407 1.404-2.38 4.19.03 3.33 2.92 4.44 2.955 4.454-.03.084-.462 1.583-1.5 3.13z"/>
+        </svg>
+        Continue with Apple
+      </button>
       <div class="row">
         <label class="tiny"><input id="remember-email" type="checkbox" style="accent-color:var(--green);vertical-align:-2px"> Remember email</label>
         <button class="link-btn" type="button" onclick="showTab('reset')">Forgot?</button>
@@ -544,6 +555,7 @@ const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
 let pendingConfirmEmail = '';
 const RAVEN_SIGNED_OUT_KEY = 'raven_signed_out';
 const RAVEN_GOOGLE_AUTH_KEY = 'raven_google_auth_in_progress';
+const RAVEN_APPLE_AUTH_KEY = 'raven_apple_auth_in_progress';
 const RAVEN_SIGNUP_AUTH_KEY = 'raven_signup_auth_in_progress';
 let ravenAuthRouting = false;
 
@@ -581,13 +593,13 @@ function markFreshAuthStart(key){
 }
 function hasFreshAuthStart(){
   const now = Date.now();
-  return [RAVEN_GOOGLE_AUTH_KEY, RAVEN_SIGNUP_AUTH_KEY].some(key => {
+  return [RAVEN_GOOGLE_AUTH_KEY, RAVEN_APPLE_AUTH_KEY, RAVEN_SIGNUP_AUTH_KEY].some(key => {
     const value = Number(sessionStorage.getItem(key) || localStorage.getItem(key) || 0);
     return value && now - value < 10 * 60 * 1000;
   });
 }
 function clearFreshAuthStart(){
-  [RAVEN_GOOGLE_AUTH_KEY, RAVEN_SIGNUP_AUTH_KEY].forEach(key => {
+  [RAVEN_GOOGLE_AUTH_KEY, RAVEN_APPLE_AUTH_KEY, RAVEN_SIGNUP_AUTH_KEY].forEach(key => {
     try { sessionStorage.removeItem(key); } catch(e) {}
     try { localStorage.removeItem(key); } catch(e) {}
   });
@@ -652,8 +664,14 @@ function isNativeAppMode(){
   }
 }
 function getAppAuthRedirectTo(){
-  // OAuth redirects always go through the system browser, so ravensplit:// custom schemes
-  // don't work. Always use the production HTTPS URL.
+  try {
+    if (isNativeAppMode()) {
+      return 'ravensplit://auth/callback';
+    }
+    const origin = window.location.origin || '';
+    if (/^https?:\/\//i.test(origin)) return origin + window.location.pathname + '?app=1';
+  } catch(e) {}
+  // Capacitor uses a capacitor:// or file:// origin — fall back to the web URL for OAuth redirects only
   return 'https://ravensplit.com/app.html?app=1';
 }
 function getAppPasswordResetRedirectTo(){
@@ -897,43 +915,60 @@ async function routeAfterAuth(user){
       showAppHome(profile);
       return;
     }
-    // Always show the app home — new users fill in details from Settings.
-    // Silently patch onboarding_complete to true so the dashboard never redirects them away.
-    if (profile && !profile.onboarding_complete) {
-      try { await db.from('profiles').update({ onboarding_complete: true }).eq('id', user.id); } catch(e) {}
+    if (!profile && !hasFreshAuthStart() && !isNativeAppMode()) {
+      await enforceAppSignedOut();
+      ravenAuthRouting = false;
+      showAuthPanel('login');
+      showMessage('error', 'That account was removed or setup was canceled. Please create the account again.');
+      return;
     }
     const cached = getCachedAppProfile();
     const cachedMatchesUser = cached && (
       (cached.user_id && cached.user_id === user.id) ||
       (cached.email && user.email && String(cached.email).toLowerCase() === String(user.email).toLowerCase())
     );
-    try { if (user.email) localStorage.setItem('raven_app_dashboard_email', user.email); } catch(e) {}
-    localStorage.setItem('raven_profile', JSON.stringify({
-      ...(cachedMatchesUser ? cached : {}),
-      user_id: user.id,
-      email: user.email || '',
-      first_name: profile?.first_name || (cachedMatchesUser ? cached?.first_name : '') || '',
-      raven_id: profile?.raven_id || profile?.username || (cachedMatchesUser ? cached?.raven_id : '') || '',
-      username: profile?.username || profile?.raven_id || (cachedMatchesUser ? cached?.username : '') || '',
-      avatar_url: profile?.avatar_url || (cachedMatchesUser ? cached?.avatar_url : '') || '',
-      onboarding_complete: true
-    }));
+    if (cachedMatchesUser && cached?.onboarding_complete) {
+      try { if (user.email) localStorage.setItem('raven_app_dashboard_email', user.email); } catch(e) {}
+      localStorage.setItem('raven_profile', JSON.stringify({
+        ...cached,
+        user_id: cached.user_id || user.id,
+        email: cached.email || user.email || '',
+        first_name: cached.first_name || profile?.first_name || '',
+        raven_id: cached.raven_id || profile?.raven_id || profile?.username || '',
+        username: cached.username || profile?.username || profile?.raven_id || '',
+        avatar_url: cached.avatar_url || profile?.avatar_url || '',
+        onboarding_complete: true
+      }));
+      showLoading(false);
+      ravenAuthRouting = false;
+      clearFreshAuthStart();
+      showAppHome(profile || cached || {});
+      return;
+    }
+    if ((cachedMatchesUser && cached) || new URLSearchParams(window.location.search).get('app') === '1' || isNativeAppMode()) {
+      localStorage.setItem('raven_profile', JSON.stringify({
+        ...(cachedMatchesUser ? cached : {}),
+        user_id: user.id,
+        email: user.email || '',
+        first_name: cachedMatchesUser ? (cached?.first_name || profile?.first_name || '') : (profile?.first_name || ''),
+        raven_id: cachedMatchesUser ? (cached?.raven_id || profile?.raven_id || profile?.username || '') : (profile?.raven_id || profile?.username || ''),
+        username: cachedMatchesUser ? (cached?.username || profile?.username || profile?.raven_id || '') : (profile?.username || profile?.raven_id || ''),
+        avatar_url: cachedMatchesUser ? (cached?.avatar_url || profile?.avatar_url || '') : (profile?.avatar_url || ''),
+        onboarding_complete: false
+      }));
+    }
     showLoading(false);
     ravenAuthRouting = false;
-    clearFreshAuthStart();
-    showAppHome(profile || cached || {});
+    window.location.href = 'onboarding.html' + (new URLSearchParams(window.location.search).get('app') === '1' ? '?app=1' : '');
   } catch(e) {
     showLoading(false);
     ravenAuthRouting = false;
-    // Best-effort: show app home even on error
-    const cached = getCachedAppProfile();
     localStorage.setItem('raven_profile', JSON.stringify({
-      ...(cached || {}),
       user_id: user.id,
       email: user.email || '',
-      onboarding_complete: true
+      onboarding_complete: false
     }));
-    showAppHome(cached || {});
+    window.location.href = 'onboarding.html' + (new URLSearchParams(window.location.search).get('app') === '1' ? '?app=1' : '');
   }
 }
 function getCachedAppProfile(){
@@ -1087,19 +1122,20 @@ async function goDashboard(){
       cached.id === session.user.id ||
       (cached.email && session.user.email && String(cached.email).toLowerCase() === String(session.user.email).toLowerCase())
     );
-    // Always go to dashboard — patch onboarding_complete if needed so it doesn't redirect back
-    if (profile && !profile.onboarding_complete) {
-      try { await db.from('profiles').update({ onboarding_complete: true }).eq('id', session.user.id); } catch(e) {}
+    if (profile?.onboarding_complete || (cachedMatches && cached.onboarding_complete)) {
+      localStorage.setItem('raven_profile', JSON.stringify({
+        ...(cachedMatches ? cached : {}),
+        ...(profile || {}),
+        user_id: session.user.id,
+        email: profile?.email || session.user.email || cached?.email || '',
+        username: profile?.username || profile?.raven_id || cached?.username || cached?.raven_id || '',
+        onboarding_complete: true
+      }));
+      navigateWithRavens('dashboard.html?app=1&page=overview');
+      return false;
     }
-    localStorage.setItem('raven_profile', JSON.stringify({
-      ...(cachedMatches ? cached : {}),
-      ...(profile || {}),
-      user_id: session.user.id,
-      email: profile?.email || session.user.email || cached?.email || '',
-      username: profile?.username || profile?.raven_id || cached?.username || cached?.raven_id || '',
-      onboarding_complete: true
-    }));
-    navigateWithRavens('dashboard.html?app=1&page=overview');
+    showLoading(false);
+    window.location.href = 'onboarding.html?app=1';
     return false;
   } catch(e) {
     showLoading(false);
@@ -1193,6 +1229,49 @@ async function handleGoogleAuth(){
     showMessage('error', 'Google sign-in failed. Please try email/password.');
   } finally {
     setTimeout(() => { handleGoogleAuth._busy = false; }, 1200);
+  }
+}
+async function handleAppleAuth(){
+  if (handleAppleAuth._busy) return;
+  handleAppleAuth._busy = true;
+  clearMessage();
+  showLoading(true);
+  try {
+    const redirectTo = getAppAuthRedirectTo();
+    localStorage.setItem('raven_native_app','1');
+    clearAppIdentityForAuthSwitch();
+    try { await db.auth.signOut(); } catch(e) {}
+    try { localStorage.removeItem(RAVEN_SIGNED_OUT_KEY); } catch(e) {}
+    markFreshAuthStart(RAVEN_APPLE_AUTH_KEY);
+    const { data, error } = await db.auth.signInWithOAuth({
+      provider: 'apple',
+      options: {
+        redirectTo,
+        skipBrowserRedirect: true
+      }
+    });
+    if (error) {
+      showLoading(false);
+      showMessage('error', error.message);
+      handleAppleAuth._busy = false;
+      return;
+    }
+    if (data?.url) {
+      const capBrowser = window.Capacitor?.Plugins?.Browser;
+      if (capBrowser?.open) {
+        await capBrowser.open({ url: data.url, presentationStyle: 'fullscreen' });
+      } else {
+        window.location.href = data.url;
+      }
+      return;
+    }
+    showLoading(false);
+    showMessage('error', 'Sign in with Apple did not open. Please try again.');
+  } catch(e) {
+    showLoading(false);
+    showMessage('error', 'Sign in with Apple failed. Please try email/password.');
+  } finally {
+    setTimeout(() => { handleAppleAuth._busy = false; }, 1200);
   }
 }
 async function handleLogin(event){
@@ -1322,7 +1401,7 @@ async function handleSignup(event){
         first_name: first,
         raven_id: ravenId || await generateUniqueRavenId(first || 'raven', data.user.id),
         username: ravenId,
-        onboarding_complete: true,
+        onboarding_complete: false,
         updated_at: new Date().toISOString()
       }, { onConflict: 'id' });
     } catch(e) {}
@@ -1438,14 +1517,6 @@ async function handleSetNewPassword(event){
   }
   const hash = window.location.hash;
   const params = new URLSearchParams(window.location.search);
-  if (params.get('error')) {
-    const desc = params.get('error_description') || params.get('error') || 'Sign-in failed.';
-    try { history.replaceState(null, '', window.location.pathname + '?app=1'); } catch(e) {}
-    showSignedOutHome();
-    showAuthPanel('login');
-    showMessage('error', decodeURIComponent(desc.replace(/\+/g, ' ')));
-    return;
-  }
   if (params.get('signed_out') === '1') {
     clearRavenSignedInCache();
     try { history.replaceState(null, '', window.location.pathname + '?app=1'); } catch(e) {}
@@ -1504,7 +1575,7 @@ async function handleSetNewPassword(event){
       }
       showSignedOutHome();
       showAuthPanel('login');
-      showMessage('error', 'Google sign-in could not finish in Safari. Please use email sign-in for now.');
+      showMessage('error', 'Sign-in could not finish in Safari. Please use email sign-in for now.');
       return;
     }
   }
@@ -1557,7 +1628,7 @@ setTimeout(() => {
     const homeVisible = el('app-home')?.classList.contains('active');
     const shellVisible = document.querySelector('.app-shell')?.style.display !== 'none';
     if (loading && !homeVisible && !shellVisible) {
-      recoverAuthScreen('Google sign-in got stuck. Please try again.');
+      recoverAuthScreen('Sign-in got stuck. Please try again.');
     } else if (!homeVisible && !shellVisible) {
       recoverAuthScreen('');
     }
