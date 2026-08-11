@@ -4241,13 +4241,18 @@ const PRIVACY_DEFAULTS = { appear_offline:false, push_notif:false, payment_alert
 
 // ─── AI DATA CONSENT (App Store guideline 5.1.1(i) / 5.1.2(i)) ────────────
 // Receipt Scanning and RAVENbot send data to Anthropic's Claude API to work.
-// We gate both features behind explicit, revocable user permission and
-// disclose exactly what is sent before the first use.
+// The toggle is ON by default (the feature is core to the app), and is
+// disclosed via a one-time notice the first time a user reaches either
+// feature. Turning the toggle OFF is a hard requirement: both Receipt Scan
+// and RAVENbot are blocked everywhere (dashboard + trip hub) until it's
+// switched back on in Settings → Privacy.
 const RAVEN_AI_CONSENT_KEY = 'raven_ai_consent';
 
 function getRavenAiConsent() {
-  try { return localStorage.getItem(RAVEN_AI_CONSENT_KEY) === 'granted'; }
-  catch(e) { return false; }
+  try {
+    const v = localStorage.getItem(RAVEN_AI_CONSENT_KEY);
+    return v !== 'denied'; // default ON — only an explicit opt-out turns it off
+  } catch(e) { return true; }
 }
 
 function setRavenAiConsent(granted) {
@@ -4256,35 +4261,26 @@ function setRavenAiConsent(granted) {
   try { if (typeof currentUser !== 'undefined' && currentUser?.id) db.from('profiles').upsert({ id: currentUser.id, ai_consent: granted, updated_at: new Date().toISOString() }, { onConflict:'id' }); } catch(e) {}
 }
 
-// Shows a one-time explanatory modal before the first AI-powered action
-// (receipt scan or RAVENbot message), unless the user already answered.
-// Resolves true only if the user allows. Safe to call before any AI request.
+// Shown once, the first time a user reaches an AI-powered feature, so they
+// know what's shared with Anthropic before it happens — even though the
+// toggle defaults to on.
+function maybeShowAiDisclosure() {
+  try {
+    if (localStorage.getItem('raven_ai_notice_shown')) return;
+    localStorage.setItem('raven_ai_notice_shown', '1');
+  } catch(e) {}
+  showToast("Receipt Scan & RAVENbot use Anthropic's Claude AI to read your photo or message. Turn this off anytime in Settings → Privacy.", 'success');
+}
+
+// Hard gate in front of every AI request (receipt scan, RAVENbot). Resolves
+// false — and blocks the call — whenever the Settings toggle is off.
 function requestRavenAiConsent() {
-  return new Promise((resolve) => {
-    let existing = null;
-    try { existing = localStorage.getItem(RAVEN_AI_CONSENT_KEY); } catch(e) {}
-    if (existing === 'granted') return resolve(true);
-    if (existing === 'denied') return resolve(false);
-    let modal = document.getElementById('ai-consent-modal');
-    if (!modal) {
-      modal = document.createElement('div');
-      modal.id = 'ai-consent-modal';
-      modal.style.cssText = 'position:fixed;inset:0;background:rgba(6,6,10,0.85);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px';
-      modal.innerHTML =
-        '<div style="max-width:380px;background:var(--dark,#111);border:1px solid var(--border,#2a2a35);border-radius:16px;padding:24px">' +
-          '<div style="font-size:17px;font-weight:800;margin-bottom:10px;color:#fff">Allow AI features?</div>' +
-          '<div style="font-size:13px;color:#9896A8;line-height:1.6;margin-bottom:20px">RAVEN uses Anthropic&rsquo;s Claude AI to read your receipt photos (Receipt Scan) and to answer your questions (RAVENbot). Only the receipt image or the message you type is sent to Anthropic &mdash; nothing else. You can change this anytime in Settings &rarr; Privacy.</div>' +
-          '<div style="display:flex;gap:10px">' +
-            '<button id="ai-consent-deny" style="flex:1;padding:12px;background:transparent;border:1px solid var(--border2,#333);border-radius:10px;color:#9896A8;font-family:\'Epilogue\',sans-serif;font-weight:700;cursor:pointer">Not Now</button>' +
-            '<button id="ai-consent-allow" style="flex:1;padding:12px;background:var(--green,#30D158);border:none;border-radius:10px;color:#06060A;font-family:\'Epilogue\',sans-serif;font-weight:800;cursor:pointer">Allow</button>' +
-          '</div>' +
-        '</div>';
-      document.body.appendChild(modal);
-    }
-    modal.style.display = 'flex';
-    document.getElementById('ai-consent-allow').onclick = () => { setRavenAiConsent(true); modal.style.display = 'none'; resolve(true); };
-    document.getElementById('ai-consent-deny').onclick = () => { setRavenAiConsent(false); modal.style.display = 'none'; resolve(false); };
-  });
+  if (!getRavenAiConsent()) {
+    showToast('AI features are off. Enable "Receipt Scanning & RAVENbot" in Settings → Privacy to continue.', 'error');
+    return Promise.resolve(false);
+  }
+  maybeShowAiDisclosure();
+  return Promise.resolve(true);
 }
 
 function getPrivacySettings() {
