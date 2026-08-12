@@ -59,7 +59,21 @@
       <li>To create and manage bills, trips, comments, receipts, and payment reminders.</li>
       <li>To send transactional emails and transactional SMS messages you request or consent to receive.</li>
       <li>To provide support, prevent abuse, and maintain service reliability.</li>
+      <li>To power optional AI features, described below, when you choose to use them.</li>
     </ul>
+
+    <h2>AI Features (Receipt Scan &amp; RAVENbot)</h2>
+    <div class="card">
+      <p>RAVEN uses <strong>Anthropic's Claude AI</strong> to power two optional features:</p>
+      <ul>
+        <li><strong>Receipt Scan</strong> &mdash; when you photograph or upload a receipt, that image is sent to Anthropic so it can read the items, prices, tax, and tip and fill them into your bill automatically.</li>
+        <li><strong>RAVENbot</strong> &mdash; when you send a message to RAVENbot, the text of that message (and recent RAVENbot conversation history, so it has context) is sent to Anthropic so it can generate a reply about your trip or bill.</li>
+      </ul>
+      <p><strong>What is sent:</strong> only the specific receipt image or the specific message you submit, plus the minimal trip/bill context needed to answer (such as item names and amounts already on that bill). We do not send your full account history, contacts, payment details, or other trips.</p>
+      <p><strong>What is not sent:</strong> your email, phone number, saved payment handles, or any bill/trip you have not actively scanned or messaged about.</p>
+      <p><strong>Your control:</strong> both features are covered by a single "Receipt Scanning &amp; RAVENbot" toggle in <strong>Settings &rarr; Privacy</strong> in the app. Turning it off disables both features entirely &mdash; no receipt image or message is sent to Anthropic while it is off. You can turn it back on at any time.</p>
+      <p>Anthropic processes this data solely to generate the requested output (parsed receipt items or a chat reply) and does not use it to serve you ads.</p>
+    </div>
 
     <h2>SMS Privacy</h2>
     <div class="card">
@@ -84,7 +98,7 @@
     <ul>
       <li>Twilio for SMS delivery</li>
       <li>Supabase for database and authentication infrastructure</li>
-      <li>Anthropic for receipt parsing features when you upload receipt images</li>
+      <li>Anthropic for Receipt Scan (reading receipt photos you submit) and RAVENbot (generating replies to messages you send), as described above. You can disable both in Settings &rarr; Privacy.</li>
     </ul>
     <p>These providers only receive information needed to perform their services for RAVEN.</p>
 
@@ -92,7 +106,7 @@
     <p>We keep account and bill-related information for as long as needed to operate your account and maintain your history, unless you request deletion or we need to retain certain records for security or legal reasons.</p>
 
     <h2>Your Rights</h2>
-    <p>You may contact us to request access, correction, or deletion of your personal information.</p>
+    <p>You may contact us to request access, correction, or deletion of your personal information. You can also delete your account directly from the app at <strong>Settings &rarr; Delete My Account</strong>, which permanently removes your profile and signs you out.</p>
 
     <h2>Contact</h2>
     <p>If you have privacy questions, contact us at <a href="mailto:support@ravensplit.com">support@ravensplit.com</a>.</p>
