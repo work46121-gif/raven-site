@@ -247,6 +247,12 @@ button,input,textarea{font:inherit}
 .app-home .google-btn{min-height:56px;padding:14px 14px;border-radius:17px;font-size:16px}
 .app-home .apple-btn{min-height:56px;padding:14px 14px;border-radius:17px;font-size:16px}
 .app-home .tiny{font-size:11px}
+/* When the full sign-in/create form is open, let it scroll instead of being
+   clipped by the centered/hidden-overflow scan-card, and hide the redundant
+   compact Sign in / Create account bar so the form gets the full height. */
+.app-home.auth-visible .scan-hero{overflow-y:auto;-webkit-overflow-scrolling:touch}
+.app-home.auth-visible .scan-card{overflow-y:auto;-webkit-overflow-scrolling:touch;justify-content:flex-start;padding-bottom:24px}
+.app-home.auth-visible .app-cta-bottom{display:none}
 
 /* raven flight animation */
 .raven-flight{position:fixed;inset:0;z-index:80;pointer-events:none;overflow:hidden}
@@ -910,10 +916,31 @@ async function routeAfterAuth(user){
       showAppHome(profile);
       return;
     }
-    // Always show the app home — new users fill in details from Settings.
-    // Silently patch onboarding_complete to true so the dashboard never redirects them away.
-    if (profile && !profile.onboarding_complete) {
-      try { await db.from('profiles').update({ onboarding_complete: true }).eq('id', user.id); } catch(e) {}
+    // Route anyone without a completed profile through onboarding — this is
+    // how first- and last-name (and everything else onboarding collects) get
+    // set. Previously this silently patched onboarding_complete to true and
+    // dropped new users straight on the dashboard with a blank profile.
+    if (!profile?.onboarding_complete) {
+      try { if (user.email) localStorage.setItem('raven_app_dashboard_email', user.email); } catch(e) {}
+      const cached = getCachedAppProfile();
+      const cachedMatchesUser = cached && (
+        (cached.user_id && cached.user_id === user.id) ||
+        (cached.email && user.email && String(cached.email).toLowerCase() === String(user.email).toLowerCase())
+      );
+      localStorage.setItem('raven_profile', JSON.stringify({
+        user_id: user.id,
+        email: user.email || '',
+        first_name: profile?.first_name || (cachedMatchesUser ? cached?.first_name : '') || '',
+        raven_id: profile?.raven_id || profile?.username || '',
+        username: profile?.username || profile?.raven_id || '',
+        avatar_url: profile?.avatar_url || '',
+        onboarding_complete: false
+      }));
+      showLoading(false);
+      ravenAuthRouting = false;
+      clearFreshAuthStart();
+      window.location.href = 'dashboard.html?app=1&page=overview';
+      return;
     }
     const cached = getCachedAppProfile();
     const cachedMatchesUser = cached && (
