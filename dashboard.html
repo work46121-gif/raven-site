@@ -3428,7 +3428,17 @@ async function checkOnboardingAndShow(userId) {
             onboarding_complete: !!liveProfile.onboarding_complete
           };
         } else if (existingMatchesUser && existing?.onboarding_complete && profileReadFailed) {
+          // The read itself failed (network issue) — keep the cached "complete"
+          // state rather than force a signed-in user back through onboarding.
           nextProfile = { ...nextProfile, onboarding_complete: true };
+        } else if (!profileReadFailed) {
+          // The read succeeded and confirmed there is no profile row for this
+          // user id — most commonly because the account was deleted and
+          // recreated (Supabase issues a fresh user id, so a locally cached
+          // profile from before deletion can still email-match here). Don't
+          // trust any stale cached name/handle/avatar in that case — send
+          // them through onboarding like any other brand-new account.
+          nextProfile = { user_id: targetId, email: realEmail, onboarding_complete: false };
         }
       }
       localStorage.setItem('raven_profile', JSON.stringify(nextProfile));
@@ -3486,6 +3496,18 @@ function switchAuthTab(tab) {
   hideAuthError();
 }
 function showAuthError(msg) { const el = document.getElementById('auth-error'); el.textContent = msg; el.style.display = 'block'; }
+function showAuthErrorConfirmResend(email) {
+  const el = document.getElementById('auth-error');
+  el.textContent = '';
+  el.appendChild(document.createTextNode('Please confirm your email first. '));
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.textContent = 'Resend confirmation email →';
+  btn.style.cssText = "background:none;border:none;color:var(--green);font-family:'Epilogue',sans-serif;font-size:inherit;cursor:pointer;text-decoration:underline;padding:0";
+  btn.addEventListener('click', () => resendConfirmation(email));
+  el.appendChild(btn);
+  el.style.display = 'block';
+}
 function hideAuthError() { document.getElementById('auth-error').style.display = 'none'; }
 
 async function handleGoogleAuth() {
@@ -3544,8 +3566,7 @@ async function handleLogin() {
     // Check if it's an email not confirmed error
     if (error.message?.toLowerCase().includes('email not confirmed') || error.message?.toLowerCase().includes('confirm')) {
       // Show resend confirmation option
-      showAuthError('Please confirm your email first. ' +
-        '<button onclick="resendConfirmation(\'' + email.replace(/'/g, '') + '\')" style="background:none;border:none;color:var(--green);font-family:\'Epilogue\',sans-serif;font-size:inherit;cursor:pointer;text-decoration:underline;padding:0">Resend confirmation email →</button>');
+      showAuthErrorConfirmResend(email);
       return;
     }
     showAuthError(error.message);
