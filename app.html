@@ -336,6 +336,12 @@ button,input,textarea{font:inherit}
 @media(min-height:900px){.scan-orbit{width:clamp(180px,26vh,250px)}.scan-title{font-size:clamp(56px,11vh,88px)}}
 @media(min-width:760px){.app-shell{max-width:460px;margin:0 auto}.raven-stage{width:220px}}
 </style>
+<!-- TEMP DIAGNOSTIC ONLY — remove once the Google/Apple sign-in black-screen
+     issue is confirmed fixed. Adds a floating console button (bottom-right)
+     showing real JS errors/logs directly on-device, no cable/Mac needed.
+     Tap it to open, tap Console tab to see errors. -->
+<script src="https://cdn.jsdelivr.net/npm/eruda"></script>
+<script>try{ eruda.init(); }catch(e){}</script>
 </head>
 <body>
 <div class="intro-splash" id="intro-splash" aria-hidden="true"><div class="intro-r"></div></div>
