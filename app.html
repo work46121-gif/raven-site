@@ -671,9 +671,13 @@ function isNativeAppMode(){
   }
 }
 function getAppAuthRedirectTo(){
-  // OAuth redirects always go through the system browser, so ravensplit:// custom schemes
-  // don't work. Always use the production HTTPS URL.
-  return 'https://ravensplit.com/app.html?app=1';
+  // Supabase performs the final redirect hop itself (Google/Apple only ever
+  // see Supabase's own https callback), so a custom scheme is safe here even
+  // though it wouldn't be for a URI handed directly to an OAuth provider.
+  // Using it lets iOS fire the appUrlOpen deep-link listener the instant the
+  // OAuth flow finishes, which closes the in-app browser (Browser.close())
+  // immediately instead of leaving the Safari-style chrome sitting on screen.
+  return 'ravensplit://auth/callback?app=1';
 }
 function getAppPasswordResetRedirectTo(){
   // Use the HTTPS app page for recovery links. Custom schemes can open as a
