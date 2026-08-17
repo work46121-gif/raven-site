@@ -554,7 +554,10 @@ const BACKEND = 'https://raven-backend-production-fb1f.up.railway.app';
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
     flowType: 'pkce',
-    detectSessionInUrl: true,
+    // See dashboard.html for why this is off: it was racing against this
+    // file's own manual exchangeCodeForSession() handling below, and a
+    // single-use PKCE code fails whichever one loses the race.
+    detectSessionInUrl: false,
     persistSession: true,
     autoRefreshToken: true
   }
