@@ -2800,7 +2800,13 @@ try {
   db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     auth: {
       flowType: 'pkce',
-      detectSessionInUrl: true,
+      // Supabase's own automatic URL detection races against the manual
+      // exchangeCodeForSession()/getSession() handling in init() below —
+      // since a PKCE code is single-use, whichever one runs second fails
+      // with "Google/Apple sign-in did not finish." Keep detection off and
+      // let the manual handling (which already covers both the code and
+      // hash cases) be the single source of truth.
+      detectSessionInUrl: false,
       persistSession: true,
       autoRefreshToken: true
     }
@@ -3302,9 +3308,18 @@ async function init() {
       console.warn('OAuth error:', params.get('error_description'));
       history.replaceState(null, '', window.location.pathname);
     }
-    // Handle implicit flow — token comes back in URL hash
+    // Handle implicit flow — token comes back in URL hash. Now that
+    // detectSessionInUrl is off (to stop it racing the PKCE code exchange
+    // below), this has to manually parse the hash and call setSession()
+    // itself instead of relying on getSession() to auto-pick it up.
     if (hash && (hash.includes('access_token') || hash.includes('error'))) {
-      try { await db.auth.getSession(); } catch(e) {}
+      try {
+        const hashParams = new URLSearchParams(hash.replace(/^#/, ''));
+        const access_token = hashParams.get('access_token');
+        const refresh_token = hashParams.get('refresh_token');
+        if (access_token && refresh_token) await db.auth.setSession({ access_token, refresh_token });
+        else await db.auth.getSession();
+      } catch(e) {}
       if (isPasswordRecovery) {
         history.replaceState(null, '', window.location.pathname + (RAVEN_APP_MODE ? '?app=1' : ''));
         showPasswordResetForm();
