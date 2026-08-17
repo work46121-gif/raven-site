@@ -680,13 +680,14 @@ function isNativeAppMode(){
   }
 }
 function getAppAuthRedirectTo(){
-  // Supabase performs the final redirect hop itself (Google/Apple only ever
-  // see Supabase's own https callback), so a custom scheme is safe here even
-  // though it wouldn't be for a URI handed directly to an OAuth provider.
-  // Using it lets iOS fire the appUrlOpen deep-link listener the instant the
-  // OAuth flow finishes, which closes the in-app browser (Browser.close())
-  // immediately instead of leaving the Safari-style chrome sitting on screen.
-  return 'ravensplit://auth/callback?app=1';
+  // REVERTED — the custom-scheme deep-link handoff (ravensplit://auth/callback)
+  // was causing a hard black-screen deadlock on-device, confirmed via the
+  // debug console never even loading on that screen — meaning the failure
+  // is at the native navigation layer, not fixable by further JS changes
+  // here. Back to the HTTPS redirect, which is the known-working behavior
+  // (its only downside is the in-app browser chrome staying visible after
+  // sign-in, which is a cosmetic issue, not a functional blocker).
+  return 'https://ravensplit.com/app.html?app=1';
 }
 function getAppPasswordResetRedirectTo(){
   // Use the HTTPS app page for recovery links. Custom schemes can open as a
