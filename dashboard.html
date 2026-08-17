@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <script>history.scrollRestoration="manual";if("serviceWorker"in navigator)navigator.serviceWorker.getRegistrations().then(r=>r.forEach(s=>s.unregister()));</script>
+<script>try{if(localStorage.getItem('raven_theme')==='light')document.documentElement.classList.add('light-mode');}catch(e){}</script>
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
@@ -51,6 +52,28 @@
   --gold: #F2C14E;
   --gold2: #FFE8A3;
   --gold-glow: rgba(242,193,78,0.28);
+}
+html.light-mode {
+  --black: #FFFFFF;
+  --dark: #F7F7FA;
+  --dark2: #F0F0F5;
+  --dark3: #E8E8EF;
+  --dark4: #DCDCE6;
+  --border: rgba(10,10,20,0.09);
+  --border2: rgba(10,10,20,0.16);
+  --white: #14141C;
+  --muted: #6B6878;
+  --muted2: #47454F;
+  --purple: #7C3AED;
+  --purple2: #9333EA;
+  --purple3: #A855F7;
+  --green: #1FA34A;
+  --green-glow: rgba(31,163,74,0.16);
+  --red: #E0332E;
+  --orange: #E0592E;
+  --gold: #B8860B;
+  --gold2: #8A6508;
+  --gold-glow: rgba(184,134,11,0.2);
 }
 html, body { height: 100%; font-family: 'Epilogue', sans-serif; background: var(--black); color: var(--white); overflow-x: hidden; }
 /* IMPORTANT: keep website dashboard visible by default */
@@ -2115,6 +2138,18 @@ body.app-mode .cb-raven-add-icon { width:18px;height:18px;display:block; }
           </div>
           <div style="margin-top:14px;font-size:11px;color:var(--muted);text-align:center">Saved automatically · <a href="https://ravensplit.com/privacy" style="color:var(--muted2);text-decoration:none">Privacy Policy</a></div>
 
+          <div style="font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-top:24px;margin-bottom:8px">Appearance</div>
+          <div style="background:var(--dark2);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:20px">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;gap:14px">
+              <div style="flex:1"><div style="font-size:14px;font-weight:600;margin-bottom:2px">Light Mode</div><div style="font-size:12px;color:var(--muted);line-height:1.5">Switch the dashboard to a light background. Applies to this device.</div></div>
+              <label style="position:relative;width:46px;height:26px;flex-shrink:0;cursor:pointer">
+                <input type="checkbox" id="priv-theme-light" style="opacity:0;width:0;height:0;position:absolute" onchange="setRavenTheme(this.checked ? 'light' : 'dark')">
+                <span id="toggle-priv-theme-light" style="position:absolute;inset:0;background:var(--dark3);border:1px solid var(--border2);border-radius:13px;transition:all 0.2s"></span>
+                <span id="knob-priv-theme-light" style="position:absolute;top:3px;left:3px;width:18px;height:18px;background:var(--muted);border-radius:50%;transition:all 0.2s"></span>
+              </label>
+            </div>
+          </div>
+
           <div style="font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-top:24px;margin-bottom:8px">AI Features</div>
           <div style="background:var(--dark2);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:20px">
             <div style="display:flex;align-items:flex-start;justify-content:space-between;padding:14px 16px;gap:14px">
@@ -2764,7 +2799,7 @@ let db;
 try {
   db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     auth: {
-      flowType: 'implicit',
+      flowType: 'pkce',
       detectSessionInUrl: true,
       persistSession: true,
       autoRefreshToken: true
@@ -4260,6 +4295,21 @@ async function saveSettings() {
 
 const PRIVACY_DEFAULTS = { appear_offline:false, push_notif:false, payment_alerts:true, email_marketing:false, sms_reminders:true, discoverable:true, analytics:true };
 
+// ─── APPEARANCE (light/dark mode) ──────────────────────────────────────────
+const RAVEN_THEME_KEY = 'raven_theme';
+
+function getRavenTheme() {
+  try { return localStorage.getItem(RAVEN_THEME_KEY) === 'light' ? 'light' : 'dark'; }
+  catch(e) { return 'dark'; }
+}
+
+function setRavenTheme(theme) {
+  const isLight = theme === 'light';
+  try { localStorage.setItem(RAVEN_THEME_KEY, isLight ? 'light' : 'dark'); } catch(e) {}
+  document.documentElement.classList.toggle('light-mode', isLight);
+  setPrivacyToggle('theme-light', isLight);
+}
+
 // ─── AI DATA CONSENT (App Store guideline 5.1.1(i) / 5.1.2(i)) ────────────
 // Receipt Scanning and RAVENbot send data to Anthropic's Claude API to work.
 // The toggle is ON by default (the feature is core to the app), and is
@@ -4324,6 +4374,7 @@ function loadPrivacyToggles() {
   const priv = getPrivacySettings();
   Object.keys(PRIVACY_DEFAULTS).forEach(key => setPrivacyToggle(key, priv[key]));
   setPrivacyToggle('ai-consent', getRavenAiConsent());
+  setPrivacyToggle('theme-light', getRavenTheme() === 'light');
 }
 
 async function savePrivacySetting(key, value) {
