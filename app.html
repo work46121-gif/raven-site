@@ -1518,6 +1518,19 @@ async function handleSetNewPassword(event){
 })();
 
 (async function init(){
+  try {
+    await initInner();
+  } catch(e) {
+    // Last-resort safety net: whatever went wrong deep in the auth/routing
+    // chain above, never leave the screen silently black with no way
+    // forward. Surface it and drop back to a recoverable state.
+    console.error('init() failed:', e);
+    try { showSignedOutHome(); } catch(_) {}
+    try { showAuthPanel('login'); } catch(_) {}
+    try { showMessage('error', 'Something went wrong loading RAVEN. Please try signing in again.'); } catch(_) {}
+  }
+})();
+async function initInner(){
   localStorage.setItem('raven_native_app','1');
   // Fade-in on initial render
   requestAnimationFrame(() => document.body.classList.add('ready'));
@@ -1639,7 +1652,7 @@ async function handleSetNewPassword(event){
   } else {
     showSignedOutHome();
   }
-})();
+}
 
 setTimeout(() => {
   try {
