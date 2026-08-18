@@ -1587,24 +1587,37 @@ async function initInner(){
     }
   }
   if (params.get('code') && !isPasswordReset) {
-    try {
-      const { data, error } = await db.auth.exchangeCodeForSession(params.get('code'));
-      if (error) throw error;
-      history.replaceState(null, '', window.location.pathname + '?app=1');
-      if (data?.session?.user) {
-        markRavenSignedIn();
-        routeAfterAuth(data.session.user);
-        return;
+    // First attempt frequently fails when this page is loaded inside the
+    // in-app browser overlay (SFSafariViewController) — its storage can lag
+    // briefly right after the OAuth redirect chain lands, so the PKCE code
+    // exchange throws even though the session settles correctly moments
+    // later. Retry the exchange itself once before falling back to polling
+    // getSession() with a much more generous window than before.
+    let exchanged = false;
+    for (let exchangeAttempt = 0; exchangeAttempt < 2 && !exchanged; exchangeAttempt++) {
+      try {
+        const { data, error } = await db.auth.exchangeCodeForSession(params.get('code'));
+        if (error) throw error;
+        if (data?.session?.user) {
+          history.replaceState(null, '', window.location.pathname + '?app=1');
+          markRavenSignedIn();
+          routeAfterAuth(data.session.user);
+          exchanged = true;
+          return;
+        }
+      } catch(e) {
+        if (exchangeAttempt === 0) await new Promise(resolve => setTimeout(resolve, 600));
       }
-    } catch(e) {
+    }
+    if (!exchanged) {
       let session = null;
-      for (let attempt = 0; attempt < 4; attempt++) {
+      for (let attempt = 0; attempt < 10; attempt++) {
         try {
           const result = await db.auth.getSession();
           session = result?.data?.session || null;
         } catch(_) {}
         if (session?.user) break;
-        await new Promise(resolve => setTimeout(resolve, 250));
+        await new Promise(resolve => setTimeout(resolve, 400));
       }
       history.replaceState(null, '', window.location.pathname + '?app=1');
       if (session?.user) {
