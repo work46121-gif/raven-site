@@ -700,13 +700,58 @@ function getAppConfirmRedirectTo(){
 }
 function handleNativeAuthCallbackUrl(url){
   try {
-    try { window.Capacitor?.Plugins?.Browser?.close?.(); } catch(_) {}
-    try { localStorage.removeItem(RAVEN_SIGNED_OUT_KEY); } catch(_) {}
     const incoming = new URL(url);
     const isRavenAuth = incoming.protocol === 'ravensplit:' && incoming.hostname === 'auth';
     if (!isRavenAuth && !/\/app\.html|\/dashboard\.html/.test(incoming.pathname)) return false;
     const hash = incoming.hash || '';
     const isReset = incoming.pathname.includes('reset') || incoming.searchParams.get('reset') === '1' || incoming.searchParams.get('type') === 'recovery' || hash.includes('type=recovery');
+    const errorParam = incoming.searchParams.get('error');
+    const code = incoming.searchParams.get('code');
+
+    if (!isReset && (code || errorParam)) {
+      // Exchange right here, in-memory, using the SAME db client instance
+      // that wrote the PKCE verifier before capBrowser.open() launched.
+      // This is the fix: capBrowser.open() shows the OAuth flow inside a
+      // separate SFSafariViewController, which has its OWN storage — not
+      // the calling native webview's. The old approach reloaded app.html
+      // INSIDE that overlay to consume the code, but the verifier was
+      // never there to find, so the exchange failed every first attempt
+      // (it only ever worked on retry, when window.Capacitor being
+      // unavailable inside the overlay made it silently fall back to an
+      // in-place navigation that happened to keep everything in one
+      // storage context by accident). Handling the code here, in the
+      // original long-lived script context, avoids a reload — and avoids
+      // the mismatch — entirely.
+      (async () => {
+        try {
+          if (errorParam) throw new Error(incoming.searchParams.get('error_description') || errorParam);
+          const { data, error } = await db.auth.exchangeCodeForSession(code);
+          if (error) throw error;
+          try { window.Capacitor?.Plugins?.Browser?.close?.(); } catch(_) {}
+          try { localStorage.removeItem(RAVEN_SIGNED_OUT_KEY); } catch(_) {}
+          if (data?.session?.user) {
+            markRavenSignedIn();
+            routeAfterAuth(data.session.user);
+          } else {
+            showSignedOutHome();
+            showAuthPanel('login');
+            showMessage('error', 'Sign-in did not complete. Please try again.');
+          }
+        } catch(e) {
+          try { window.Capacitor?.Plugins?.Browser?.close?.(); } catch(_) {}
+          showSignedOutHome();
+          showAuthPanel('login');
+          showMessage('error', 'Sign-in did not complete. Please try again.');
+        }
+      })();
+      return true;
+    }
+
+    // Password reset (opened from an email link, not from capBrowser.open()
+    // — no storage-context mismatch here) and any other case fall back to
+    // the reload-based handling.
+    try { window.Capacitor?.Plugins?.Browser?.close?.(); } catch(_) {}
+    try { localStorage.removeItem(RAVEN_SIGNED_OUT_KEY); } catch(_) {}
     const params = new URLSearchParams();
     params.set('app', '1');
     if (isReset) params.set('reset', '1');
