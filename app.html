@@ -336,12 +336,6 @@ button,input,textarea{font:inherit}
 @media(min-height:900px){.scan-orbit{width:clamp(180px,26vh,250px)}.scan-title{font-size:clamp(56px,11vh,88px)}}
 @media(min-width:760px){.app-shell{max-width:460px;margin:0 auto}.raven-stage{width:220px}}
 </style>
-<!-- TEMP DIAGNOSTIC ONLY — remove once the Google/Apple sign-in black-screen
-     issue is confirmed fixed. Adds a floating console button (bottom-right)
-     showing real JS errors/logs directly on-device, no cable/Mac needed.
-     Tap it to open, tap Console tab to see errors. -->
-<script src="https://cdn.jsdelivr.net/npm/eruda"></script>
-<script>try{ eruda.init(); }catch(e){}</script>
 </head>
 <body>
 <div class="intro-splash" id="intro-splash" aria-hidden="true"><div class="intro-r"></div></div>
@@ -680,14 +674,12 @@ function isNativeAppMode(){
   }
 }
 function getAppAuthRedirectTo(){
-  // REVERTED — the custom-scheme deep-link handoff (ravensplit://auth/callback)
-  // was causing a hard black-screen deadlock on-device, confirmed via the
-  // debug console never even loading on that screen — meaning the failure
-  // is at the native navigation layer, not fixable by further JS changes
-  // here. Back to the HTTPS redirect, which is the known-working behavior
-  // (its only downside is the in-app browser chrome staying visible after
-  // sign-in, which is a cosmetic issue, not a functional blocker).
-  return 'https://ravensplit.com/app.html?app=1';
+  // Custom scheme is required so iOS fires the appUrlOpen deep-link
+  // listener, which now handles the code exchange directly in the original
+  // calling context (see handleNativeAuthCallbackUrl) instead of reloading
+  // the page inside the separate SFSafariViewController overlay — that
+  // reload was the actual bug, not the custom scheme itself.
+  return 'ravensplit://auth/callback?app=1';
 }
 function getAppPasswordResetRedirectTo(){
   // Use the HTTPS app page for recovery links. Custom schemes can open as a
@@ -723,6 +715,7 @@ function handleNativeAuthCallbackUrl(url){
       // original long-lived script context, avoids a reload — and avoids
       // the mismatch — entirely.
       (async () => {
+        showLoading(true);
         try {
           if (errorParam) throw new Error(incoming.searchParams.get('error_description') || errorParam);
           const { data, error } = await db.auth.exchangeCodeForSession(code);
@@ -733,12 +726,14 @@ function handleNativeAuthCallbackUrl(url){
             markRavenSignedIn();
             routeAfterAuth(data.session.user);
           } else {
+            showLoading(false);
             showSignedOutHome();
             showAuthPanel('login');
             showMessage('error', 'Sign-in did not complete. Please try again.');
           }
         } catch(e) {
           try { window.Capacitor?.Plugins?.Browser?.close?.(); } catch(_) {}
+          showLoading(false);
           showSignedOutHome();
           showAuthPanel('login');
           showMessage('error', 'Sign-in did not complete. Please try again.');
