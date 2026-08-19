@@ -10,7 +10,7 @@
 
 <!-- Sentry: add your loader script here when ready (sentry.io → Settings → Projects → Client Keys) -->
 <!-- PostHog: add your analytics script here when ready (posthog.com → Project Settings → API Keys) -->
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewporQt" content="width=device-width, initial-scale=1.0">
 <title>Dashboard — RavenSplit | AI Bill Splitter</title>
 <meta name="description" content="Manage your bills, track group trip expenses, and get paid faster with RavenSplit's AI-powered dashboard.">
 <meta name="robots" content="noindex, follow">
@@ -1534,6 +1534,17 @@ body.app-mode .cb-raven-add-icon { width:18px;height:18px;display:block; }
         <button onclick="showPage('active-bills')" style="background:none;border:none;color:var(--purple3);font-size:13px;cursor:pointer;font-family:'Epilogue',sans-serif">View all →</button>
       </div>
       <div id="overview-bills" class="bills-list"><div class="loading"><div class="spinner"></div> Loading bills...</div></div>
+
+      <div class="section-header" style="margin-top:20px">
+        <div class="section-title">Recent Trip</div>
+        <button onclick="showPage('trip-hub')" style="background:none;border:none;color:var(--purple3);font-size:13px;cursor:pointer;font-family:'Epilogue',sans-serif">View all →</button>
+      </div>
+      <div id="overview-recent-trip"><div class="loading"><div class="spinner"></div> Loading trip...</div></div>
+
+      <div class="section-header" style="margin-top:20px">
+        <div class="section-title">RAVEN Lifestyle</div>
+      </div>
+      <div id="overview-lifestyle-card"></div>
     </div>
 
     <!-- ACTIVE BILLS -->
@@ -4852,6 +4863,8 @@ function showPage(page) {
 
 async function loadAllData() {
   loadOverview().catch(e=>{ console.warn(e); renderOverviewEmptyState(); });
+  loadOverviewRecentTrip().catch(e=>console.warn('loadOverviewRecentTrip:', e));
+  loadOverviewLifestyleCard();
   loadActiveBills().catch(e=>{
     console.warn(e);
     const container = document.getElementById('active-bills-list');
@@ -4945,6 +4958,74 @@ async function loadOverview() {
     ? activeBillsForOverview.slice(0, 6).map(b => renderBillCard(b)).join('')
     : '<div class="empty-state"><span class="empty-icon empty-icon-svg"><svg class="raven-icon empty"><use href="#icon-overview"></use></svg></span><div class="empty-title">All settled up!</div><div class="empty-sub">No active bills right now. <a href="#" onclick="showPage(\'create-bill\')" style="color:var(--green)">Create one →</a></div></div>';
   wireBillCardActions(container);
+}
+
+// ─── OVERVIEW: RECENT TRIP CARD ────────────────────────────────────────────
+async function loadOverviewRecentTrip() {
+  const container = document.getElementById('overview-recent-trip');
+  if (!container) return;
+  const userEmail = getDashboardUserEmail();
+  if (!userEmail) {
+    container.innerHTML = '<div class="empty-state"><span class="empty-icon empty-icon-svg"><svg class="raven-icon empty"><use href="#icon-trip-hub"></use></svg></span><div class="empty-title">No trips yet</div><div class="empty-sub">Create a trip hub or join one via an invite link</div></div>';
+    return;
+  }
+  let trips = [];
+  const seen = new Set();
+  try {
+    const { data: createdTrips } = await db.from('trips').select('*').eq('creator_email', userEmail).neq('type', 'roommates').order('created_at', { ascending: false });
+    (createdTrips || []).forEach(t => { if (!seen.has(t.id)) { seen.add(t.id); trips.push(t); } });
+    const emailEscaped = userEmail.toLowerCase().replace(/[%_]/g, '\\$&');
+    const { data: memberTrips } = await db.from('trips').select('*').ilike('member_emails', '%' + emailEscaped + '%').neq('type', 'roommates').order('created_at', { ascending: false });
+    (memberTrips || []).forEach(t => {
+      if (typeof tripBelongsToDashboardUser === 'function' ? tripBelongsToDashboardUser(t, userEmail) : true) {
+        if (!seen.has(t.id)) { seen.add(t.id); trips.push(t); }
+      }
+    });
+  } catch(e) { console.warn('loadOverviewRecentTrip query:', e); }
+  trips.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+  if (trips.length === 0) {
+    container.innerHTML = '<div class="empty-state"><span class="empty-icon empty-icon-svg"><svg class="raven-icon empty"><use href="#icon-trip-hub"></use></svg></span><div class="empty-title">No trips yet</div><div class="empty-sub">Create a trip hub or join one via an invite link</div></div>';
+    return;
+  }
+  const t = trips[0];
+  let people = [];
+  try { people = Array.isArray(t.people) ? t.people : JSON.parse(t.people || '[]'); } catch(e) {}
+  const total = parseFloat(t.total || 0);
+  const safeName = String(t.name || 'Trip').replace(/&/g, '&amp;').replace(/</g, '&lt;');
+  container.innerHTML =
+    '<div class="bill-card" onclick="showPage(\'trip-hub\')" style="display:block">' +
+      '<div style="font-size:16px;font-weight:700;color:var(--white)">' + safeName + '</div>' +
+      '<div style="font-size:13px;color:var(--muted);margin-top:4px">' + people.length + ' people' + (total > 0 ? ' · $' + total.toFixed(2) : '') + '</div>' +
+    '</div>';
+}
+
+// ─── OVERVIEW: RAVEN LIFESTYLE CARD ────────────────────────────────────────
+function loadOverviewLifestyleCard() {
+  const container = document.getElementById('overview-lifestyle-card');
+  if (!container) return;
+  let overall = null;
+  try {
+    if (typeof computeMonthScore === 'function' && typeof currentMonthKey === 'function') {
+      overall = computeMonthScore(currentMonthKey()).overall;
+    }
+  } catch(e) { console.warn('loadOverviewLifestyleCard:', e); }
+  if (overall === null || overall === undefined) {
+    container.innerHTML =
+      '<div class="stat-card" onclick="showPage(\'lifestyle\')" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:12px">' +
+        '<div><div class="stat-label">Raven Score</div><div style="font-size:13px;color:var(--muted);margin-top:4px">Log a paycheck, bill, or investment to get your first score.</div></div>' +
+        '<div style="color:var(--purple3);font-size:13px;font-weight:700;white-space:nowrap">Go to RAVEN Lifestyle →</div>' +
+      '</div>';
+    return;
+  }
+  const barColor = overall >= 90 ? 'var(--gold, #F2C14E)' : overall >= 65 ? 'var(--green)' : overall >= 40 ? 'var(--purple)' : '#FF6B6B';
+  container.innerHTML =
+    '<div class="stat-card" onclick="showPage(\'lifestyle\')" style="cursor:pointer">' +
+      '<div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px">' +
+        '<div class="stat-label">Raven Score</div>' +
+        '<div style="font-size:20px;font-weight:800;color:' + barColor + '">' + overall + '</div>' +
+      '</div>' +
+      '<div class="bill-progress"><div class="bill-progress-fill" style="width:' + overall + '%;background:' + barColor + '"></div></div>' +
+    '</div>';
 }
 
 function wireBillCardActions(container) {
