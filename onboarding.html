@@ -576,7 +576,7 @@ try {
           </div>
         </div>
         <div class="field">
-          <label class="label">Date of Birth</label>
+          <label class="label">Date of Birth <span style="opacity:0.6;font-weight:500">(optional)</span></label>
           <div class="dob-row">
             <select id="dob-month" class="select">
               <option value="">Month</option>
@@ -989,6 +989,20 @@ async function init() {
 
   currentUser = session.user;
 
+  // App Store guideline 4 — Sign in with Apple must not ask users to
+  // re-provide their name/email when Apple's authentication already
+  // supplied it. Pre-fill from the OAuth provider's metadata (Apple and
+  // Google both populate this on Supabase's session) so the fields already
+  // show the answer instead of presenting a blank form to refill. A saved
+  // profile row (fetched below) still takes priority over this if present,
+  // since that reflects anything the user has explicitly edited since.
+  const meta = currentUser.user_metadata || {};
+  const metaFullName = meta.full_name || meta.name || '';
+  const metaFirst = meta.given_name || meta.first_name || metaFullName.split(' ')[0] || '';
+  const metaLast = meta.family_name || meta.last_name || metaFullName.split(' ').slice(1).join(' ') || '';
+  if (metaFirst) document.getElementById('first-name').value = metaFirst;
+  if (metaLast) document.getElementById('last-name').value = metaLast;
+
   // Check localStorage first (fast)
   const localProfile = JSON.parse(localStorage.getItem('raven_profile') || '{}');
   const localUserId = String(localProfile.user_id || localProfile.id || '');
@@ -1039,9 +1053,11 @@ async function submitStep1() {
   const err = document.getElementById('error-1');
 
   if (!firstName || !lastName) { showError('error-1', 'Please enter your first and last name.'); return; }
-  if (!month || !day || !year) { showError('error-1', 'Please enter your full date of birth.'); return; }
-
-  const dob = `${year}-${month}-${day}`;
+  // Date of birth is optional (App Store guideline 5.1.1(v) — RAVEN's core
+  // functionality doesn't need it, so it can't be required to proceed).
+  // Only save it if the user chose to fill in all three parts; a partial
+  // selection is treated the same as leaving it blank rather than blocking.
+  const dob = (month && day && year) ? `${year}-${month}-${day}` : null;
   hideError('error-1');
   profileData = { ...profileData, first_name: firstName, last_name: lastName, date_of_birth: dob };
 
