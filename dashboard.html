@@ -4392,7 +4392,7 @@ function requestRavenAiConsent() {
       modal.innerHTML =
         '<div style="max-width:380px;background:var(--dark,#111);border:1px solid var(--border,#2a2a35);border-radius:16px;padding:24px">' +
           '<div style="font-size:17px;font-weight:800;margin-bottom:10px;color:#fff">Allow AI features?</div>' +
-          '<div style="font-size:13px;color:#9896A8;line-height:1.6;margin-bottom:20px">RAVEN uses Anthropic&rsquo;s Claude AI to read your receipt photos (Receipt Scan) and to answer your questions (RAVENbot). Only the receipt image or the message you type is sent to Anthropic &mdash; nothing else. You can change this anytime in Settings &rarr; Privacy.</div>' +
+          '<div style="font-size:13px;color:#9896A8;line-height:1.6;margin-bottom:20px">RAVEN uses Anthropic&rsquo;s Claude AI for three features: reading your receipt photos (Receipt Scan), answering your questions (RAVENbot), and generating spending insights (RAVEN Suggests). Depending on the feature, this sends the receipt image, your typed message, or a summary of your logged paychecks/bills/investments (income and spending totals, no account numbers) to Anthropic &mdash; nothing else. You can change this anytime in Settings &rarr; Privacy.</div>' +
           '<div style="display:flex;gap:10px">' +
             '<button id="ai-consent-deny" style="flex:1;padding:12px;background:transparent;border:1px solid var(--border2,#333);border-radius:10px;color:#9896A8;font-family:\'Epilogue\',sans-serif;font-weight:700;cursor:pointer">Not Now</button>' +
             '<button id="ai-consent-allow" style="flex:1;padding:12px;background:var(--green,#30D158);border:none;border-radius:10px;color:#06060A;font-family:\'Epilogue\',sans-serif;font-weight:800;cursor:pointer">Allow</button>' +
@@ -11263,6 +11263,19 @@ async function fetchAICoaching(force) {
   if (!res.hasAnyData) {
     box.textContent = 'Log a paycheck, a bill, or an investment first — then your AI coach will have something to work with.';
     box.className = 'ai-coach-body fallback';
+    return;
+  }
+
+  // App Store guideline 5.1.1(i)/5.1.2(i) — this sends financial details
+  // (income, bill and investment totals, spending/timeliness/investing
+  // scores, goals) to Anthropic to generate coaching. Same explicit-consent
+  // gate as Receipt Scan and RAVENbot; nothing is sent until the user has
+  // allowed it.
+  const aiOk = await requestRavenAiConsent();
+  if (!aiOk) {
+    box.textContent = 'RAVEN Suggests needs AI permission to analyze your numbers. Enable "Receipt Scanning & RAVENbot" in Settings → Privacy to use it.';
+    box.className = 'ai-coach-body fallback';
+    if (btn) btn.disabled = false;
     return;
   }
 
