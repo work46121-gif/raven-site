@@ -996,10 +996,26 @@ async function init() {
   // show the answer instead of presenting a blank form to refill. A saved
   // profile row (fetched below) still takes priority over this if present,
   // since that reflects anything the user has explicitly edited since.
+  //
+  // Apple only includes the user's name in the very FIRST authorization a
+  // given Apple ID ever grants this app — on every subsequent sign-in
+  // (even to a brand-new RAVEN account) Apple omits it entirely, and there
+  // is no way to request it again short of the user revoking RAVEN's
+  // access at appleid.apple.com and re-authorizing. So a blank field here
+  // for an Apple sign-in doesn't necessarily mean this code is broken; it
+  // may mean Apple genuinely didn't send a name this time. Widen the shapes
+  // we check as far as possible so we never miss it when Apple *does* send
+  // it — Supabase has been inconsistent about whether Apple's name arrives
+  // as a flat string or a nested {firstName,lastName} object.
+  function safeStr(v) { return typeof v === 'string' ? v : ''; }
   const meta = currentUser.user_metadata || {};
-  const metaFullName = meta.full_name || meta.name || '';
-  const metaFirst = meta.given_name || meta.first_name || metaFullName.split(' ')[0] || '';
-  const metaLast = meta.family_name || meta.last_name || metaFullName.split(' ').slice(1).join(' ') || '';
+  const appleIdentity = (currentUser.identities || []).find(i => i.provider === 'apple');
+  const appleData = appleIdentity?.identity_data || {};
+  const nameObj = (meta.name && typeof meta.name === 'object') ? meta.name : (appleData.name && typeof appleData.name === 'object' ? appleData.name : {});
+  const metaFullNameRaw = meta.full_name || safeStr(meta.name) || appleData.full_name || safeStr(appleData.name) || '';
+  const metaFullName = safeStr(metaFullNameRaw);
+  const metaFirst = safeStr(meta.given_name) || safeStr(meta.first_name) || safeStr(nameObj.firstName) || safeStr(nameObj.first_name) || safeStr(appleData.given_name) || (metaFullName ? metaFullName.split(' ')[0] : '');
+  const metaLast = safeStr(meta.family_name) || safeStr(meta.last_name) || safeStr(nameObj.lastName) || safeStr(nameObj.last_name) || safeStr(appleData.family_name) || (metaFullName ? metaFullName.split(' ').slice(1).join(' ') : '');
   if (metaFirst) document.getElementById('first-name').value = metaFirst;
   if (metaLast) document.getElementById('last-name').value = metaLast;
 
