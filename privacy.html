@@ -38,6 +38,7 @@
         <div class="chip">Effective April 4, 2026</div>
         <div class="chip">Applies to ravensplit.com</div>
       </div>
+      <p style="margin-top:16px"><a href="https://ravensplit.com/dashboard.html" style="font-size:14px">← Back to RAVEN</a></p>
     </div>
 
     <div class="card callout">
@@ -62,17 +63,18 @@
       <li>To power optional AI features, described below, when you choose to use them.</li>
     </ul>
 
-    <h2>AI Features (Receipt Scan &amp; RAVENbot)</h2>
+    <h2 id="ai-features">AI Features (Receipt Scan, RAVENbot &amp; RAVEN Suggests)</h2>
     <div class="card">
-      <p>RAVEN uses <strong>Anthropic's Claude AI</strong> to power two optional features:</p>
+      <p>RAVEN uses <strong>Anthropic's Claude AI</strong> to power three optional features:</p>
       <ul>
         <li><strong>Receipt Scan</strong> &mdash; when you photograph or upload a receipt, that image is sent to Anthropic so it can read the items, prices, tax, and tip and fill them into your bill automatically.</li>
         <li><strong>RAVENbot</strong> &mdash; when you send a message to RAVENbot, the text of that message (and recent RAVENbot conversation history, so it has context) is sent to Anthropic so it can generate a reply about your trip or bill.</li>
+        <li><strong>RAVEN Suggests</strong> &mdash; in RAVEN Lifestyle, when you request AI coaching, a summary of your logged paychecks, bills, and investments for that month (income and spending totals, timeliness, and investing figures) is sent to Anthropic so it can generate personalized suggestions. This does not include your name, email, phone number, or account numbers.</li>
       </ul>
-      <p><strong>What is sent:</strong> only the specific receipt image or the specific message you submit, plus the minimal trip/bill context needed to answer (such as item names and amounts already on that bill). We do not send your full account history, contacts, payment details, or other trips.</p>
-      <p><strong>What is not sent:</strong> your email, phone number, saved payment handles, or any bill/trip you have not actively scanned or messaged about.</p>
-      <p><strong>Your control:</strong> both features are covered by a single "Receipt Scanning &amp; RAVENbot" toggle in <strong>Settings &rarr; Privacy</strong> in the app. Turning it off disables both features entirely &mdash; no receipt image or message is sent to Anthropic while it is off. You can turn it back on at any time.</p>
-      <p>Anthropic processes this data solely to generate the requested output (parsed receipt items or a chat reply) and does not use it to serve you ads.</p>
+      <p><strong>What is sent:</strong> only the specific receipt image, the specific message you submit, or the monthly financial summary described above &mdash; plus the minimal trip/bill context needed to answer (such as item names and amounts already on that bill). We do not send your full account history, contacts, payment details, or other trips.</p>
+      <p><strong>What is not sent:</strong> your email, phone number, saved payment handles, account numbers, or any bill/trip you have not actively scanned or messaged about.</p>
+      <p><strong>Your control:</strong> all three features are covered by a single "Receipt Scanning, RAVENbot &amp; RAVEN Suggests" toggle in <strong>Settings &rarr; Privacy</strong> in the app. Nothing is sent to Anthropic until you explicitly allow it &mdash; the first time you use any of these features, RAVEN shows a permission prompt naming Anthropic and explaining what will be sent, and no data leaves your device for these features until you tap Allow. You can turn this off at any time, which disables all three features immediately, and turn it back on whenever you like.</p>
+      <p>Anthropic processes this data solely to generate the requested output (parsed receipt items, a chat reply, or coaching suggestions) and does not use it to serve you ads.</p>
     </div>
 
     <h2>SMS Privacy</h2>
@@ -98,7 +100,7 @@
     <ul>
       <li>Twilio for SMS delivery</li>
       <li>Supabase for database and authentication infrastructure</li>
-      <li>Anthropic for Receipt Scan (reading receipt photos you submit) and RAVENbot (generating replies to messages you send), as described above. You can disable both in Settings &rarr; Privacy.</li>
+      <li>Anthropic for Receipt Scan (reading receipt photos you submit), RAVENbot (generating replies to messages you send), and RAVEN Suggests (generating coaching from your monthly financial summary), as described above. You can disable all three in Settings &rarr; Privacy.</li>
     </ul>
     <p>These providers only receive information needed to perform their services for RAVEN.</p>
 
@@ -113,7 +115,7 @@
 
     <div class="footer">
       <p>RAVEN by RavenSplit</p>
-      <p><a href="https://ravensplit.com/terms">Terms of Service</a></p>
+      <p><a href="https://ravensplit.com/terms">Terms of Service</a> &middot; <a href="https://ravensplit.com/dashboard.html">← Back to RAVEN</a></p>
     </div>
   </div>
 </body>
