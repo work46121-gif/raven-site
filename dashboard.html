@@ -2743,6 +2743,7 @@ body.app-mode .cb-raven-add-icon { width:18px;height:18px;display:block; }
     <div class="modal-actions">
       <button class="modal-btn modal-btn-view" id="modal-view-btn"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" style="vertical-align:middle;margin-right:4px"><path d="M6 3H3a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1v-3M10 2h4v4M14 2l-6 6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg> Open Bill Page</button>
       <button class="modal-btn" id="modal-share-btn" style="background:rgba(0,140,255,0.1);border:1px solid rgba(0,140,255,0.25);color:#4DB8FF">📤 Share Link</button>
+      <button class="modal-btn" id="modal-view-only-share-btn" style="background:rgba(124,58,237,0.1);border:1px solid rgba(168,85,247,0.28);color:var(--purple3)">👁 Copy View-Only Link</button>
       <button class="modal-btn modal-btn-remind" id="modal-remind-btn"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" style="vertical-align:middle;margin-right:4px"><path d="M8 2a4 4 0 0 0-4 4v3l-1 1.5h10L12 9V6a4 4 0 0 0-4-4z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M6.5 12.5a1.5 1.5 0 0 0 3 0" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg> Remind Unpaid</button>
       <button class="modal-btn" id="modal-edit-toggle-btn" style="background:rgba(48,209,88,0.08);border:1px solid rgba(48,209,88,0.2);color:var(--green)" onclick="toggleBillEditPanel()">✏️ Edit Bill</button>
       <button class="modal-btn" id="modal-add-person-btn" style="background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.2);color:var(--purple3)">👤 Add Person</button>
@@ -4882,6 +4883,31 @@ async function loadAllData() {
   });
 }
 
+function overviewHiddenBillKey() {
+  const local = (() => { try { return JSON.parse(localStorage.getItem('raven_profile') || '{}'); } catch(e) { return {}; } })();
+  const identity = String(currentUser?.id || local.user_id || local.id || getDashboardUserEmail() || '').toLowerCase();
+  return 'raven_overview_hidden_bills_' + (identity || 'guest');
+}
+
+function getOverviewHiddenBillIds() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(overviewHiddenBillKey()) || '[]');
+    return new Set(Array.isArray(saved) ? saved.map(String) : []);
+  } catch(e) {
+    return new Set();
+  }
+}
+
+function removeBillFromMyOverview(billId, event) {
+  if (event) { event.preventDefault(); event.stopPropagation(); }
+  const hidden = getOverviewHiddenBillIds();
+  hidden.add(String(billId));
+  try { localStorage.setItem(overviewHiddenBillKey(), JSON.stringify([...hidden])); } catch(e) {}
+  showToast('Removed from your overview', 'success');
+  loadOverview();
+  loadActiveBills();
+}
+
 async function loadOverview() {
   const userEmail = getDashboardUserEmail();
   if (!userEmail) {
@@ -4962,8 +4988,13 @@ async function loadOverview() {
   document.getElementById('stat-settled').textContent = completed.length;
   document.getElementById('active-count').textContent = active.length;
   const container = document.getElementById('overview-bills');
-  // Overview shows only active bills (including shared/member bills) — completed/deleted go to History
-  const activeBillsForOverview = bills.filter(b => b.status === 'active');
+  // Bills assigned to you remain in your overview after payment, until you choose
+  // to remove them. This keeps a completed shared bill accessible to its recipient.
+  const hiddenBillIds = getOverviewHiddenBillIds();
+  const activeBillsForOverview = bills.filter(b => {
+    const isCreator = b.creator_phone === userEmail;
+    return isCreator ? b.status === 'active' : !hiddenBillIds.has(String(b.id));
+  });
   container.innerHTML = activeBillsForOverview.length > 0
     ? activeBillsForOverview.slice(0, 6).map(b => renderBillCard(b)).join('')
     : '<div class="empty-state"><span class="empty-icon empty-icon-svg"><svg class="raven-icon empty"><use href="#icon-overview"></use></svg></span><div class="empty-title">All settled up!</div><div class="empty-sub">No active bills right now. <a href="#" onclick="showPage(\'create-bill\')" style="color:var(--green)">Create one →</a></div></div>';
@@ -5331,6 +5362,9 @@ function renderBillCard(b) {
     : '<span style="color:var(--orange)">$' + owed.toFixed(2) + ' owed</span>';
   const sharedBadge = !isCreator ? '<span style="font-size:10px;background:rgba(124,58,237,0.12);border:1px solid rgba(124,58,237,0.2);color:var(--purple3);padding:2px 7px;border-radius:6px;vertical-align:middle;margin-left:6px">shared</span>' : '';
   const completedBadge = b.status === 'completed' ? ' <span class="status-badge status-completed" style="font-size:10px;padding:2px 7px;vertical-align:middle">Completed</span>' : '';
+  const removeOverviewCta = !isCreator
+    ? '<button class="bill-action-btn" type="button" onclick="removeBillFromMyOverview(\'' + b.id + '\', event)" style="background:rgba(255,68,68,0.08);border:1px solid rgba(255,68,68,0.22);color:#FF6B6B">Remove from overview</button>'
+    : '';
   return '<div class="bill-card" onclick="openBillModal(\'' + b.id + '\')">' +
     '<div><div class="bill-name">' + b.name + sharedBadge + completedBadge + ' <span class="bill-id">' + b.id + '</span></div><div class="bill-meta"><span>' + total + ' people</span><span>' + paid + '/' + total + ' paid</span>' + owedDisplay + '</div></div>' +
     '<div class="bill-amount" style="color:' + (isFullyPaid ? 'var(--green)' : 'var(--white)') + '">$' + parseFloat(b.total).toFixed(2) + '</div>' +
@@ -5340,6 +5374,7 @@ function renderBillCard(b) {
     (isCreator ? '<button class="bill-action-btn btn-remind" onclick="sendReminder(\'' + b.id + '\')">Remind</button>' : '') +
     '<button class="bill-action-btn" onclick="shareBillLink(\'' + b.id + '\',\'' + (b.name||'').replace(/'/g,"\\'") + '\',\'' + (b.share_token||'') + '\')" style="background:rgba(0,140,255,0.1);border:1px solid rgba(0,140,255,0.2);color:#4DB8FF">Share</button>' +
     viewCta +
+    removeOverviewCta +
     '</div></div>';
 }
 function generateId() { const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; return Array.from({length: 5}, () => chars[Math.floor(Math.random() * chars.length)]).join(''); }
@@ -5537,6 +5572,7 @@ async function openBillModal(billId) {
 
   document.getElementById('modal-view-btn').onclick = () => viewBillPage(billId);
   document.getElementById('modal-share-btn').onclick = () => shareBillLink(billId, bill.name, bill.share_token);
+  document.getElementById('modal-view-only-share-btn').onclick = () => shareViewOnlyBillLink(billId, bill.name, bill.share_token);
   document.getElementById('modal-remind-btn').onclick = () => sendReminder(billId);
   document.getElementById('modal-delete-btn').onclick = () => deleteBill(billId);
 
@@ -5714,6 +5750,31 @@ async function shareBillLink(billId, billName, shareToken) {
   }
   try { await navigator.clipboard.writeText(url); showToast('📋 Bill link copied!', 'success'); }
   catch(e) { prompt('Copy this link:', url); }
+}
+
+async function getViewOnlyBillToken(shareToken) {
+  if (!shareToken || !window.crypto?.subtle) throw new Error('View-only links are unavailable in this browser.');
+  const bytes = new TextEncoder().encode('raven:view-only:v1:' + shareToken);
+  const digest = await window.crypto.subtle.digest('SHA-256', bytes);
+  return Array.from(new Uint8Array(digest)).map(byte => byte.toString(16).padStart(2, '0')).join('');
+}
+
+async function shareViewOnlyBillLink(billId, billName, shareToken) {
+  try {
+    const viewToken = await getViewOnlyBillToken(shareToken);
+    const url = FRONTEND + '/bill/' + encodeURIComponent(billId) + '?view=' + encodeURIComponent(viewToken);
+    const message = 'View-only copy of "' + (billName || 'this bill') + '" on RAVEN';
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: message, text: 'This link is view only — it cannot be used to edit, claim, pay, or comment.', url });
+        return;
+      } catch(e) { if (e.name === 'AbortError') return; }
+    }
+    await navigator.clipboard.writeText(url);
+    showToast('View-only bill link copied!', 'success');
+  } catch(e) {
+    showToast(e.message || 'Could not create a view-only link', 'error');
+  }
 }
 
 async function shareTripLink(tripId) {
