@@ -731,7 +731,7 @@ try {
           <label class="label">Mobile Number</label>
           <div class="phone-wrap">
             <span class="phone-prefix"><span>🇺🇸 +1</span><small>US</small></span>
-            <input id="phone-number" type="tel" class="input input-phone" placeholder="(555) 867-5309" maxlength="14" oninput="formatPhone(this)" autocomplete="tel">
+            <input id="phone-number" type="tel" inputmode="numeric" class="input input-phone" placeholder="(555) 867-5309" maxlength="14" oninput="formatPhone(this)" autocomplete="tel">
           </div>
           <div class="phone-meta">
             <div class="phone-chip">Used for group bill matching</div>
@@ -1296,10 +1296,38 @@ function showLoading() { document.getElementById('loading-overlay').classList.ad
 function hideLoading() { document.getElementById('loading-overlay').classList.remove('show'); }
 
 function formatPhone(input) {
-  let v = input.value.replace(/\D/g, '').slice(0,10);
-  if (v.length >= 6) v = `(${v.slice(0,3)}) ${v.slice(3,6)}-${v.slice(6)}`;
-  else if (v.length >= 3) v = `(${v.slice(0,3)}) ${v.slice(3)}`;
-  input.value = v;
+  // Reformatting an input normally moves its caret to the end. Keep its
+  // position relative to the digits so people can correct any part of the
+  // number, including the area code and prefix.
+  const value = input.value;
+  const selectionStart = input.selectionStart ?? value.length;
+  const selectionEnd = input.selectionEnd ?? selectionStart;
+  const digitsBeforeStart = value.slice(0, selectionStart).replace(/\D/g, '').length;
+  const digitsBeforeEnd = value.slice(0, selectionEnd).replace(/\D/g, '').length;
+
+  const digits = value.replace(/\D/g, '').slice(0, 10);
+  let formatted = digits;
+  if (digits.length >= 6) formatted = `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+  else if (digits.length >= 3) formatted = `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+
+  input.value = formatted;
+
+  const positionAfterDigits = (count) => {
+    if (!count) return 0;
+    let seen = 0;
+    for (let index = 0; index < formatted.length; index += 1) {
+      if (/\d/.test(formatted[index])) seen += 1;
+      if (seen === count) {
+        let position = index + 1;
+        // Keep a forward-moving cursor on the number side of separators.
+        while (position < formatted.length && !/\d/.test(formatted[position])) position += 1;
+        return position;
+      }
+    }
+    return formatted.length;
+  };
+
+  input.setSelectionRange(positionAfterDigits(digitsBeforeStart), positionAfterDigits(digitsBeforeEnd));
   updatePhonePreview();
 }
 
