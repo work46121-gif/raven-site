@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<script>history.scrollRestoration="manual";if("serviceWorker"in navigator)navigator.serviceWorker.getRegistrations().then(r=>r.forEach(s=>s.unregister()));</script>
+<script>history.scrollRestoration="manual";</script>
 <script>try{if(localStorage.getItem('raven_theme')==='light')document.documentElement.classList.add('light-mode');}catch(e){}</script>
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -1130,6 +1130,24 @@ body.app-mode .cb-raven-add-icon { width:18px;height:18px;display:block; }
 #page-lifestyle .sync-dot.off { background:var(--gold); box-shadow:0 0 0 3px var(--gold-glow); }
 #page-lifestyle .sync-link { color:var(--purple3); font-weight:700; text-decoration:underline; text-underline-offset:2px; margin-left:auto; flex-shrink:0; }
 
+/* A compact, cash-flow-first view inspired by subscription managers, but
+   expressed as a RAVEN flight plan rather than a generic finance dashboard. */
+#page-lifestyle .flight-deck { margin:0 0 18px; padding:18px; background:linear-gradient(135deg,rgba(124,58,237,.12),rgba(48,209,88,.055)); border:1px solid rgba(168,85,247,.28); border-radius:18px; }
+#page-lifestyle .flight-deck-head { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:14px; }
+#page-lifestyle .flight-deck-title { font-size:14px; font-weight:900; color:var(--white); }
+#page-lifestyle .flight-deck-copy { margin-top:3px; font-size:12px; line-height:1.45; color:var(--muted2); }
+#page-lifestyle .flight-deck-action { flex:0 0 auto; border:1px solid rgba(192,132,252,.34); border-radius:9px; background:rgba(124,58,237,.14); color:var(--purple3); padding:8px 10px; font:700 11px 'Epilogue',sans-serif; cursor:pointer; }
+#page-lifestyle .flight-deck-action:hover { background:rgba(124,58,237,.24); color:var(--white); }
+#page-lifestyle .flight-metrics { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+#page-lifestyle .flight-metric { min-width:0; padding:13px; border:1px solid var(--border); border-radius:13px; background:rgba(8,8,14,.42); }
+#page-lifestyle .flight-metric-label { color:var(--muted); font-size:10px; font-weight:800; letter-spacing:.09em; text-transform:uppercase; }
+#page-lifestyle .flight-metric-value { margin-top:7px; color:var(--white); font-family:'JetBrains Mono',monospace; font-size:18px; font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+#page-lifestyle .flight-metric-value.safe { color:var(--green); }
+#page-lifestyle .flight-metric-value.caution { color:var(--gold); }
+#page-lifestyle .flight-metric-value.alert { color:var(--red); }
+#page-lifestyle .flight-metric-note { min-height:30px; margin-top:6px; color:var(--muted2); font-size:10.5px; line-height:1.4; }
+#page-lifestyle .flight-deck-foot { margin-top:11px; color:var(--muted); font-size:10.5px; line-height:1.45; }
+
 /* ── RECURRING ── */
 #page-lifestyle .freq-pill { font-size:9.5px; font-weight:800; letter-spacing:0.03em; text-transform:uppercase; padding:3px 8px; border-radius:20px; background:rgba(124,58,237,0.12); color:var(--purple3); border:1px solid rgba(124,58,237,0.3); white-space:nowrap; }
 #page-lifestyle .field-hint { font-size:10.5px; color:var(--muted); line-height:1.45; margin:-6px 0 12px; }
@@ -2226,6 +2244,36 @@ body.app-mode .cb-raven-add-icon { width:18px;height:18px;display:block; }
         <span class="sync-dot" id="sync-dot"></span>
         <span id="sync-text">Checking sync…</span>
       </div>
+
+      <!-- FLIGHT PLAN: an at-a-glance cash-flow view built from tracked RAVEN activity. -->
+      <section class="flight-deck" aria-labelledby="flight-deck-title">
+        <div class="flight-deck-head">
+          <div>
+            <div class="flight-deck-title" id="flight-deck-title">This month's flight plan</div>
+            <div class="flight-deck-copy">Know what is free to fly with, what is landing soon, and what repeats.</div>
+          </div>
+          <button type="button" class="flight-deck-action" onclick="switchTab('bills')">Review bills</button>
+        </div>
+        <div class="flight-metrics">
+          <div class="flight-metric">
+            <div class="flight-metric-label">Monthly runway</div>
+            <div class="flight-metric-value" id="flight-runway-value">—</div>
+            <div class="flight-metric-note" id="flight-runway-note">Add income to calculate your runway.</div>
+          </div>
+          <div class="flight-metric">
+            <div class="flight-metric-label">Due in 7 days</div>
+            <div class="flight-metric-value" id="flight-due-value">—</div>
+            <div class="flight-metric-note" id="flight-due-note">No upcoming bills yet.</div>
+          </div>
+          <div class="flight-metric">
+            <div class="flight-metric-label">Recurring watch</div>
+            <div class="flight-metric-value" id="flight-recurring-value">—</div>
+            <div class="flight-metric-note" id="flight-recurring-note">Add recurring bills to keep an eye on them.</div>
+          </div>
+        </div>
+        <div class="flight-deck-foot">Built from the income, bills, and investments you add to RAVEN. It never guesses from a bank account.</div>
+      </section>
+
 
       <!-- SCORE HERO -->
       <div class="score-hero" id="score-hero">
@@ -4448,13 +4496,48 @@ async function savePrivacySetting(key, value) {
   try { await db.from('profiles').upsert({ id: currentUser.id, ['privacy_'+key]: value, updated_at: new Date().toISOString() }, { onConflict:'id' }); } catch(e) {}
 }
 
-async function handlePushNotifToggle(value) {
-  if (value && 'Notification' in window) {
-    const perm = await Notification.requestPermission();
-    if (perm !== 'granted') { setPrivacyToggle('push_notif', false); showToast('Notifications blocked — allow in browser settings', 'error'); return; }
+async function ensureRavenNotificationWorker() {
+  if (!('serviceWorker' in navigator)) return null;
+  try {
+    const registration = await navigator.serviceWorker.register('/sw.js');
+    return await navigator.serviceWorker.ready || registration;
+  } catch (e) {
+    console.warn('RAVEN notification worker unavailable', e);
+    return null;
   }
-  await savePrivacySetting('push_notif', value);
 }
+
+async function handlePushNotifToggle(value) {
+  if (!value) {
+    await savePrivacySetting('push_notif', false);
+    return;
+  }
+  if (!('Notification' in window)) {
+    setPrivacyToggle('push_notif', false);
+    showToast('Device notifications are not supported on this device.', 'error');
+    return;
+  }
+  const perm = await Notification.requestPermission();
+  if (perm !== 'granted') {
+    setPrivacyToggle('push_notif', false);
+    showToast('Notifications blocked — allow them in your device settings.', 'error');
+    return;
+  }
+  const registration = await ensureRavenNotificationWorker();
+  await savePrivacySetting('push_notif', true);
+  if (registration?.showNotification) {
+    try {
+      await registration.showNotification('RAVEN notifications are on', {
+        body: 'We will keep your bill and friend activity in view.',
+        icon: '/icon-1024.png',
+        badge: '/icon-1024.png',
+        tag: 'raven-notifications-enabled'
+      });
+    } catch (e) {}
+  }
+  showToast('Device notifications are on.', 'success');
+}
+
 
 // ─── PWA INSTALL ──────────────────────────────────────────────────────────────
 
@@ -11073,6 +11156,65 @@ function renderScoreHero() {
 
   setWingAngle(res.overall, tier);
 }
+function renderFlightDeck() {
+  const res = computeMonthScore(currentMonthKey());
+  const today = todayISO();
+  const nextWeek = new Date(today + 'T12:00:00');
+  nextWeek.setDate(nextWeek.getDate() + 7);
+  const nextWeekISO = nextWeek.toISOString().slice(0, 10);
+  const unpaid = DATA.bills.filter(b => !b.paidDate && monthKey(b.dueDate) === currentMonthKey());
+  const overdue = unpaid.filter(b => b.dueDate < today);
+  const dueSoon = unpaid.filter(b => b.dueDate >= today && b.dueDate <= nextWeekISO);
+  const dueSoonTotal = dueSoon.reduce((sum, b) => sum + Number(b.amount || 0), 0);
+  const recurring = DATA.bills.filter(b => monthKey(b.dueDate) === currentMonthKey() && b.seriesId && b.frequency && b.frequency !== 'one-time');
+  const recurringTotal = recurring.reduce((sum, b) => sum + Number(b.amount || 0), 0);
+  const runway = res.income - res.billsTotal - res.investTotal;
+
+  const runwayValue = document.getElementById('flight-runway-value');
+  const runwayNote = document.getElementById('flight-runway-note');
+  const dueValue = document.getElementById('flight-due-value');
+  const dueNote = document.getElementById('flight-due-note');
+  const recurringValue = document.getElementById('flight-recurring-value');
+  const recurringNote = document.getElementById('flight-recurring-note');
+  if (!runwayValue || !runwayNote || !dueValue || !dueNote || !recurringValue || !recurringNote) return;
+
+  runwayValue.className = 'flight-metric-value';
+  if (res.income <= 0) {
+    runwayValue.textContent = '—';
+    runwayNote.textContent = 'Add a paycheck to calculate what is left this month.';
+  } else {
+    runwayValue.textContent = fmtMoney(runway);
+    runwayValue.classList.add(runway >= 0 ? 'safe' : 'alert');
+    runwayNote.textContent = runway >= 0
+      ? 'Income after tracked bills and investing.'
+      : 'Tracked plans are above this month\'s income.';
+  }
+
+  dueValue.className = 'flight-metric-value';
+  if (overdue.length) {
+    const overdueTotal = overdue.reduce((sum, b) => sum + Number(b.amount || 0), 0);
+    dueValue.textContent = fmtMoney(overdueTotal);
+    dueValue.classList.add('alert');
+    dueNote.textContent = overdue.length + (overdue.length === 1 ? ' tracked bill is overdue.' : ' tracked bills are overdue.');
+  } else if (dueSoon.length) {
+    dueValue.textContent = fmtMoney(dueSoonTotal);
+    dueValue.classList.add('caution');
+    dueNote.textContent = dueSoon.length + (dueSoon.length === 1 ? ' bill lands in the next 7 days.' : ' bills land in the next 7 days.');
+  } else {
+    dueValue.textContent = '$0.00';
+    dueValue.classList.add('safe');
+    dueNote.textContent = 'No tracked bills due in the next 7 days.';
+  }
+
+  recurringValue.className = 'flight-metric-value';
+  recurringValue.textContent = recurring.length ? fmtMoney(recurringTotal) : '—';
+  if (recurring.length) {
+    recurringValue.classList.add('caution');
+    recurringNote.textContent = recurring.length + (recurring.length === 1 ? ' repeating bill this month.' : ' repeating bills this month.');
+  } else {
+    recurringNote.textContent = 'Add a recurring bill to keep an eye on it.';
+  }
+}
 function setChip(key, val) {
   const valEl = document.getElementById('chip-' + key);
   const fillEl = document.getElementById('chip-' + key + '-fill');
@@ -11177,6 +11319,7 @@ function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&
 
 function renderAll() {
   renderScoreHero();
+  renderFlightDeck();
   renderRoost();
   renderTrackers();
   renderSuggests();
