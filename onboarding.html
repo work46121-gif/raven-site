@@ -731,7 +731,7 @@ try {
           <label class="label">Mobile Number</label>
           <div class="phone-wrap">
             <span class="phone-prefix"><span>🇺🇸 +1</span><small>US</small></span>
-            <input id="phone-number" type="tel" inputmode="numeric" class="input input-phone" placeholder="(555) 867-5309" maxlength="14" oninput="formatPhone(this)" autocomplete="tel">
+            <input id="phone-number" type="tel" inputmode="numeric" class="input input-phone" placeholder="(555) 867-5309" maxlength="14" oninput="formatPhone(this)" onkeydown="handlePhoneKeydown(event)" autocomplete="tel">
           </div>
           <div class="phone-meta">
             <div class="phone-chip">Used for group bill matching</div>
@@ -1295,6 +1295,32 @@ function hideError(id) {
 function showLoading() { document.getElementById('loading-overlay').classList.add('show'); }
 function hideLoading() { document.getElementById('loading-overlay').classList.remove('show'); }
 
+function phoneDigits(value) {
+  const digits = String(value || '').replace(/\D/g, '');
+  return (digits.length === 11 && digits.startsWith('1') ? digits.slice(1) : digits).slice(0, 10);
+}
+
+function handlePhoneKeydown(event) {
+  const input = event.currentTarget;
+  if (!input || input.selectionStart !== input.selectionEnd) return;
+
+  const value = input.value;
+  const caret = input.selectionStart ?? value.length;
+  const direction = event.key === 'Backspace' ? -1 : event.key === 'Delete' ? 1 : 0;
+  if (!direction) return;
+
+  // Formatting punctuation should never become a stopping point. If the
+  // caret is beside it, remove the adjacent digit in the requested direction.
+  let index = caret + (direction < 0 ? -1 : 0);
+  while (index >= 0 && index < value.length && !/\d/.test(value[index])) index += direction;
+  if (index < 0 || index >= value.length || index === caret + (direction < 0 ? -1 : 0)) return;
+
+  event.preventDefault();
+  input.value = value.slice(0, index) + value.slice(index + 1);
+  input.setSelectionRange(direction < 0 ? index : caret, direction < 0 ? index : caret);
+  formatPhone(input);
+}
+
 function formatPhone(input) {
   // Reformatting an input normally moves its caret to the end. Keep its
   // position relative to the digits so people can correct any part of the
@@ -1305,10 +1331,11 @@ function formatPhone(input) {
   const digitsBeforeStart = value.slice(0, selectionStart).replace(/\D/g, '').length;
   const digitsBeforeEnd = value.slice(0, selectionEnd).replace(/\D/g, '').length;
 
-  const digits = value.replace(/\D/g, '').slice(0, 10);
-  let formatted = digits;
-  if (digits.length >= 6) formatted = `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
-  else if (digits.length >= 3) formatted = `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+  const digits = phoneDigits(value);
+  let formatted = '';
+  if (digits.length > 6) formatted = `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+  else if (digits.length > 3) formatted = `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+  else if (digits.length) formatted = `(${digits}`;
 
   input.value = formatted;
 
