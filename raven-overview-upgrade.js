@@ -75,8 +75,31 @@
   const overviewHeader=document.querySelector('#page-overview > .page-header');
   if (overviewHeader) {
     overviewHeader.insertAdjacentHTML('beforeend','<button type="button" class="raven-inbox-trigger" id="raven-inbox-open" aria-label="Open inbox: messages and notifications" aria-haspopup="dialog"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 4h16v13H9l-5 4V4Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8 9h8M8 13h5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg><span class="raven-inbox-label">Inbox</span><span class="raven-inbox-count" id="raven-inbox-count" hidden></span></button>');
-    document.body.insertAdjacentHTML('beforeend','<dialog id="raven-inbox" aria-labelledby="raven-inbox-title"><div class="raven-inbox-head"><div><h2 id="raven-inbox-title">Your inbox</h2><span class="rm-muted">Your people. Your updates.</span></div><button type="button" id="raven-inbox-close" aria-label="Close inbox">×</button></div><div class="raven-inbox-tabs" role="group" aria-label="Inbox sections"><button type="button" data-inbox-tab="messages" aria-pressed="true">Messages</button><button type="button" data-inbox-tab="notifications" aria-pressed="false">Notifications</button></div><div id="raven-inbox-list" aria-live="polite"></div></dialog>');
+    document.body.insertAdjacentHTML('beforeend','<dialog id="raven-inbox" aria-labelledby="raven-inbox-title"><div class="raven-inbox-head"><div><h2 id="raven-inbox-title">Inbox</h2></div><button type="button" id="raven-inbox-close" aria-label="Close inbox">×</button></div><div class="raven-inbox-tabs" role="group" aria-label="Inbox sections"><button type="button" data-inbox-tab="messages" aria-pressed="true">Inbox</button><button type="button" data-inbox-tab="notifications" aria-pressed="false">Notifications</button></div><div id="raven-inbox-list" aria-live="polite"></div></dialog>');
     byId('raven-inbox-open').onclick=()=>{byId('raven-inbox').showModal();refreshInbox(true)};
+    const compose=document.createElement('button');compose.type='button';compose.id='raven-inbox-compose';compose.textContent='+';compose.setAttribute('aria-label','Start a new chat');compose.style.marginLeft='auto';compose.style.marginRight='8px';
+    byId('raven-inbox-close').before(compose);
+    compose.onclick=async()=>{
+      const list=byId('raven-inbox-list');list.innerHTML='<div class="raven-inbox-empty">Loading Raven friends…</div>';
+      const owner=currentUser?.id;if(!owner)return;
+      try {
+        const {data:edges,error}=await db.from('raven_friends').select('user_id,friend_id').eq('status','accepted').or('user_id.eq.'+owner+',friend_id.eq.'+owner);
+        if(error)throw error;
+        const ids=[...new Set((edges||[]).map(f=>f.user_id===owner?f.friend_id:f.user_id))];
+        const {data:friends,error:lookupError}=ids.length?await db.from('profiles').select('id,first_name,last_name,raven_id,avatar_url').in('id',ids):{data:[]};
+        if(lookupError)throw lookupError;if(currentUser?.id!==owner)return;
+        list.replaceChildren();
+        const title=document.createElement('p');title.className='rm-muted';title.textContent='Start a DM with a Raven friend';list.append(title);
+        for(const friend of friends||[]) {
+          const button=document.createElement('button');button.type='button';button.className='raven-inbox-row';
+          const text=document.createElement('span');text.className='raven-inbox-copy';
+          const name=document.createElement('strong');name.textContent=[friend.first_name,friend.last_name].filter(Boolean).join(' ')||'Raven friend';
+          const id=document.createElement('small');id.textContent=friend.raven_id?'@'+friend.raven_id:'';text.append(name,id);button.append(text);
+          button.onclick=()=>{byId('raven-inbox').close();openDirectMessage(friend.id,name.textContent,friend)};list.append(button);
+        }
+        if(!friends?.length){const empty=document.createElement('p');empty.className='raven-inbox-empty';empty.textContent='No Raven friends yet. Add a friend and wait for them to accept to start a chat.';list.append(empty)}
+      }catch{list.innerHTML='<div class="raven-inbox-empty">Could not load friends. Tap + to retry.</div>'}
+    };
     byId('raven-inbox-close').onclick=()=>byId('raven-inbox').close();
     byId('raven-inbox').addEventListener('click',e=>{if(e.target===byId('raven-inbox')){const r=e.target.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)e.target.close()}});
     document.querySelectorAll('[data-inbox-tab]').forEach(button=>button.onclick=()=>{inboxTab=button.dataset.inboxTab;renderInbox()});

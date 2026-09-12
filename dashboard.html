@@ -5865,6 +5865,14 @@ async function openBillModal(billId) {
   document.getElementById('modal-bill-meta').textContent = 'ID: ' + bill.id + '  ·  Total: $' + parseFloat(bill.total).toFixed(2) + (bill.paid_by ? '  ·  💳 ' + bill.paid_by + ' paid' : '');
 
   const parts = bill.participants || [];
+  let assignmentNote = document.getElementById('bill-assignment-friend-note');
+  if (!assignmentNote) {
+    assignmentNote = document.createElement('p');
+    assignmentNote.id = 'bill-assignment-friend-note';
+    assignmentNote.style.cssText = 'font-size:11px;line-height:1.6;color:var(--muted2);margin:12px 0';
+    assignmentNote.textContent = 'To assign someone to a Raven ID, you must be Raven friends first. Example: @john001.';
+    document.getElementById('modal-participants').after(assignmentNote);
+  }
 
   // Build participant rows — three states:
   // 1. Bill payer → purple "💳 Paid the bill" badge, no action
@@ -5949,14 +5957,26 @@ async function openBillModal(billId) {
   document.getElementById('bill-modal').classList.add('open');
 }
 
+async function findAssignableRavenProfile(value) {
+  const ravenId = String(value || '').trim().replace(/^@/, '').toLowerCase();
+  if (!/^[a-z0-9_]{1,20}$/.test(ravenId)) throw new Error('Enter a valid exact Raven ID.');
+  if (!currentUser?.id) throw new Error('Please sign in again.');
+  const { data: profile, error } = await db.from('profiles').select('id,first_name,last_name,email,raven_id').eq('raven_id', ravenId).maybeSingle();
+  if (error || !profile?.email) throw new Error('Raven ID not found. Check the exact ID.');
+  if (profile.id !== currentUser.id) {
+    const { data: friends, error: friendError } = await db.from('raven_friends').select('user_id,friend_id').eq('status', 'accepted').or('and(user_id.eq.' + currentUser.id + ',friend_id.eq.' + profile.id + '),and(user_id.eq.' + profile.id + ',friend_id.eq.' + currentUser.id + ')');
+    if (friendError || !friends?.length) throw new Error('You must be Raven friends first. Send a friend request and wait for acceptance.');
+  }
+  return profile;
+}
+
 async function assignBillParticipantRavenId(billId, participant, shareToken) {
-  const entered = prompt('Enter the exact Raven ID for ' + participant.name + ' (for example @nicholas110):');
+  const entered = prompt('Enter the exact Raven ID for ' + participant.name + ' (for example @john001). You must be Raven friends first:');
   if (entered === null) return;
   const ravenId = entered.trim().replace(/^@/, '').toLowerCase();
-  if (!/^[a-z0-9_]{3,20}$/.test(ravenId)) return showToast('Enter a valid, complete Raven ID.', 'error');
+  if (!/^[a-z0-9_]{1,20}$/.test(ravenId)) return showToast('Enter a valid, complete Raven ID.', 'error');
   try {
-    const { data: profile, error } = await db.from('profiles').select('raven_id,first_name,last_name').eq('raven_id', ravenId).maybeSingle();
-    if (error || !profile) throw new Error('That Raven ID was not found. No changes were made.');
+    const profile = await findAssignableRavenProfile(ravenId);
     const name = [profile.first_name, profile.last_name].filter(Boolean).join(' ');
     if (!confirm('Assign ' + participant.name + ' to @' + profile.raven_id + (name ? ' (' + name + ')' : '') + '? This moves this participant’s bill access to that account. Amounts and payment status stay unchanged.')) return;
     const { data: { session } } = await db.auth.getSession();
@@ -7456,9 +7476,7 @@ async function addPersonToExistingBill(bill, raw) {
   let personName = raw.replace(/^@/, '');
   if (raw.startsWith('@')) {
     const ravenId = raw.slice(1).trim().toLowerCase();
-    if (!/^[a-z0-9_]{3,20}$/.test(ravenId)) throw new Error('Enter a valid exact Raven ID.');
-    const { data: profile, error } = await db.from('profiles').select('id,first_name,email,raven_id').eq('raven_id', ravenId).maybeSingle();
-    if (error || !profile?.email) throw new Error('Raven ID not found. Add a plain guest name or check the full @RavenID.');
+    const profile = await findAssignableRavenProfile(ravenId);
     personEmail = profile.email;
     personName = '@' + profile.raven_id;
   }
@@ -10603,6 +10621,13 @@ function cbBuildStep3() {
   });
 }
 async function cbCreateFinalBill() {
+  const profileEmailMap = {};
+  try {
+    for (const person of cbPeople.filter(person => person.startsWith('@'))) {
+      const profile = await findAssignableRavenProfile(person);
+      profileEmailMap[person] = profile.email;
+    }
+  } catch (error) { return showToast(error.message, 'error'); }
   const name = document.getElementById('cb-name').value.trim();
   if (!cbValidateStep1(true) || !cbValidateStep2(true)) {
     cbGoToStep(!name ? 1 : 2);
@@ -10660,15 +10685,7 @@ async function cbCreateFinalBill() {
     if (lmErr) console.warn('live_mode column not set:', lmErr.message);
   }
   // Only a deliberately entered @RavenID may create an account link.
-  const profileEmailMap = {};
-  const explicitPeople = cbPeople.filter(person => /^@[a-z0-9_]{3,20}$/i.test(person));
-  if (explicitPeople.length) {
-    const { data: profiles } = await db.from('profiles').select('raven_id,email').in('raven_id', explicitPeople.map(person => person.slice(1).toLowerCase()));
-    for (const person of explicitPeople) {
-      const profile = (profiles || []).find(p => p.raven_id === person.slice(1).toLowerCase());
-      if (profile?.email) profileEmailMap[person] = profile.email;
-    }
-  }
+  // Explicit IDs were verified as friends before any bill was inserted.
 
   // Payer is marked as already paid (they fronted the money)
   const rows = cbPeople.map(person => ({
