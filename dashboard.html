@@ -1527,6 +1527,7 @@ body.app-mode .cb-raven-add-icon { width:18px;height:18px;display:block; }
       <div style="flex:1"></div>
       <button class="nav-item" onclick="showPage('notifications')" style="position:relative"><span class="ni"><svg class="raven-icon"><use href="#icon-notifications"></use></svg></span> Notifications <span id="notif-badge" style="display:none;margin-left:auto;background:#FF4444;color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;min-width:20px;text-align:center"></span></button>
       <button class="nav-item" onclick="showPage('invite')"><span class="ni"><svg class="raven-icon"><use href="#icon-invite"></use></svg></span> Invite Friends</button>
+<button id="raven-admin-nav" class="nav-item" onclick="showPage('admin')" style="display:none;color:#F6C453"><span class="ni">✦</span> Admin mode</button>
     </nav>
     <div class="sidebar-user">
       <button onclick="showPage('settings')" style="width:100%;display:flex;align-items:center;gap:10px;padding:10px 12px;background:transparent;border:none;border-radius:10px;cursor:pointer;transition:background 0.2s;text-align:left" onmouseover="this.style.background='var(--dark3)'" onmouseout="this.style.background='transparent'">
@@ -2009,6 +2010,7 @@ body.app-mode .cb-raven-add-icon { width:18px;height:18px;display:block; }
           <button onclick="showPage('invite');setMobNav('mob-settings')" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:14px 8px;background:var(--dark);border:1px solid var(--border);border-radius:14px;cursor:pointer;-webkit-tap-highlight-color:transparent;text-align:center">
             <span class="mob-quick-glyph"><svg class="raven-icon xl"><use href="#icon-invite"></use></svg></span><span style="font-size:11px;font-weight:600;color:var(--white)">Invite</span>
           </button>
+<button id="raven-admin-mobile" onclick="showPage('admin');setMobNav('mob-settings')" style="display:none;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:14px 8px;background:rgba(246,196,83,0.08);border:1px solid rgba(246,196,83,0.32);border-radius:14px;cursor:pointer;-webkit-tap-highlight-color:transparent;text-align:center">
           <button onclick="document.getElementById('privacy-section').scrollIntoView({behavior:'smooth'})" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:14px 8px;background:var(--dark);border:1px solid var(--border);border-radius:14px;cursor:pointer;-webkit-tap-highlight-color:transparent;text-align:center">
             <span class="mob-quick-glyph"><svg class="raven-icon xl"><use href="#icon-privacy"></use></svg></span><span style="font-size:11px;font-weight:600;color:var(--white)">Privacy</span>
           </button>
@@ -2423,6 +2425,27 @@ body.app-mode .cb-raven-add-icon { width:18px;height:18px;display:block; }
       </div>
     </div>
 
+
+    <!-- PRIVATE ADMIN PAGE — revealed only after server-side verification -->
+    <div id="page-admin" class="page">
+      <div class="page-header"><h1 class="page-title">RAVEN <span>Admin</span></h1></div>
+      <div style="max-width:820px">
+        <div style="padding:18px 20px;margin-bottom:18px;background:linear-gradient(135deg,rgba(246,196,83,0.12),rgba(124,58,237,0.08));border:1px solid rgba(246,196,83,0.32);border-radius:16px">
+          <div style="font-size:11px;font-weight:900;letter-spacing:.12em;text-transform:uppercase;color:#F6C453;margin-bottom:7px">Private owner workspace</div>
+          <div style="font-size:13px;color:var(--muted2);line-height:1.55">Search an exact RAVEN ID to inspect that member’s account snapshot and update their profile details when needed.</div>
+        </div>
+        <div class="form-card" style="padding:20px;margin-bottom:18px">
+          <label class="form-label">RAVEN ID</label>
+          <div style="display:flex;gap:10px;align-items:center">
+            <span style="font-size:18px;color:var(--purple3);font-weight:800">@</span>
+            <input id="admin-raven-id-input" type="text" class="form-input" placeholder="ravenid" autocomplete="off" style="flex:1" onkeydown="if(event.key==='Enter')loadAdminProfile()">
+            <button id="admin-search-btn" onclick="loadAdminProfile()" style="padding:12px 18px;background:#F6C453;border:none;border-radius:10px;color:#241A00;font-family:'Epilogue',sans-serif;font-size:13px;font-weight:900;cursor:pointer;white-space:nowrap">View account</button>
+          </div>
+          <div id="admin-search-status" style="display:none;margin-top:12px;font-size:12px"></div>
+        </div>
+        <div id="admin-profile-result"></div>
+      </div>
+    </div>
 
     <!-- NOTIFICATIONS PAGE -->
     <div id="page-notifications" class="page">
@@ -4742,6 +4765,10 @@ async function showDashboard() {
     if (greetingEl) greetingEl.closest('h1').innerHTML = 'Welcome Back <span style="color:var(--green)" class="raven-r-mark"></span>';
   }
   loadAllData();
+  // The backend's exact-email check decides whether the private owner control
+  // is shown; this is only a visibility check, never the authorization itself.
+  void checkRavenAdminAccess();
+  void provisionCreatorWelcomeFromDashboard();
   if (RAVEN_APP_MODE) {
     const appPage = new URLSearchParams(window.location.search).get('page');
     if (appPage) {
@@ -4912,7 +4939,228 @@ function goToLifestyleAnimated() {
   }, 650);
 }
 
+let ravenAdminAccess = false;
+let ravenAdminProfile = null;
+
+async function ravenAdminRequest(path, options = {}) {
+  const { data: { session } } = await db.auth.getSession();
+  if (!session?.access_token) throw new Error('Sign in again to use Admin mode.');
+  const response = await fetch(BACKEND + path, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + session.access_token,
+      ...(options.headers || {})
+    }
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok || payload.success === false) throw new Error(payload.error || 'Admin request failed.');
+  return payload;
+}
+
+async function checkRavenAdminAccess() {
+  const nav = document.getElementById('raven-admin-nav');
+  const mobile = document.getElementById('raven-admin-mobile');
+  if (nav) nav.style.display = 'none';
+  if (mobile) mobile.style.display = 'none';
+  ravenAdminAccess = false;
+  try {
+    const result = await ravenAdminRequest('/admin/me');
+    if (!result.isAdmin) return;
+    ravenAdminAccess = true;
+    if (nav) nav.style.display = 'flex';
+    if (mobile) mobile.style.display = 'flex';
+  } catch (error) {
+    // Expected for every non-owner account; never expose an admin hint.
+  }
+}
+
+function setAdminSearchStatus(message, tone) {
+  const status = document.getElementById('admin-search-status');
+  if (!status) return;
+  status.style.display = message ? 'block' : 'none';
+  status.style.color = tone === 'error' ? '#FF8A8A' : tone === 'success' ? 'var(--green)' : 'var(--muted2)';
+  status.textContent = message || '';
+}
+
+function adminElement(tag, text, cssText) {
+  const element = document.createElement(tag);
+  if (text !== undefined && text !== null) element.textContent = text;
+  if (cssText) element.style.cssText = cssText;
+  return element;
+}
+
+function adminField(label, name, value) {
+  const wrap = adminElement('div', null, 'display:flex;flex-direction:column;gap:7px');
+  wrap.appendChild(adminElement('label', label, 'font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted2)'));
+  const input = document.createElement('input');
+  input.name = name;
+  input.type = name === 'phone' ? 'tel' : 'text';
+  input.className = 'form-input';
+  input.value = value || '';
+  input.autocomplete = 'off';
+  wrap.appendChild(input);
+  return wrap;
+}
+
+function adminSectionTitle(text) {
+  return adminElement('div', text, 'font-size:11px;font-weight:900;letter-spacing:.11em;text-transform:uppercase;color:var(--muted2);margin:0 0 10px');
+}
+
+function renderAdminProfile(data) {
+  const root = document.getElementById('admin-profile-result');
+  if (!root) return;
+  const profile = data.profile;
+  const snapshot = data.snapshot || {};
+  ravenAdminProfile = profile;
+  root.replaceChildren();
+
+  const identity = adminElement('section', null, 'padding:20px;background:var(--dark);border:1px solid var(--border2);border-radius:16px;margin-bottom:16px');
+  const top = adminElement('div', null, 'display:flex;align-items:center;gap:14px');
+  const avatar = adminElement('div', null, 'width:54px;height:54px;border-radius:50%;overflow:hidden;flex:0 0 auto;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--purple),var(--green));font-size:20px;font-weight:800;color:#fff');
+  if (profile.avatar_url) {
+    const image = document.createElement('img');
+    image.src = profile.avatar_url;
+    image.alt = '';
+    image.style.cssText = 'width:100%;height:100%;object-fit:cover';
+    avatar.appendChild(image);
+  } else {
+    avatar.textContent = (profile.first_name || profile.raven_id || '?').slice(0, 1).toUpperCase();
+  }
+  top.appendChild(avatar);
+  const text = adminElement('div', null, 'min-width:0;flex:1');
+  text.appendChild(adminElement('div', [profile.first_name, profile.last_name].filter(Boolean).join(' ') || '@' + profile.raven_id, 'font-size:18px;font-weight:800;color:var(--white)'));
+  text.appendChild(adminElement('div', '@' + profile.raven_id + ' · ' + profile.email, 'font-size:12px;color:var(--purple3);margin-top:3px;overflow-wrap:anywhere'));
+  text.appendChild(adminElement('div', profile.onboarding_complete ? 'Onboarding complete' : 'Onboarding not complete', 'font-size:11px;color:' + (profile.onboarding_complete ? 'var(--green)' : '#FFB04A') + ';margin-top:5px;font-weight:700'));
+  top.appendChild(text);
+  identity.appendChild(top);
+  root.appendChild(identity);
+
+  const stats = snapshot.stats || {};
+  const statGrid = adminElement('div', null, 'display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:16px');
+  [
+    ['Active bills', stats.activeBills || 0],
+    ['Owed by them', '$' + Number(stats.totalOwed || 0).toFixed(2)],
+    ['Settled bills', stats.settledBills || 0],
+    ['Friends', stats.friendCount || 0]
+  ].forEach(([label, value]) => {
+    const card = adminElement('div', null, 'padding:14px;background:var(--dark2);border:1px solid var(--border);border-radius:12px');
+    card.appendChild(adminElement('div', label, 'font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted2);font-weight:800'));
+    card.appendChild(adminElement('div', String(value), 'font-size:20px;font-weight:900;color:var(--white);margin-top:5px'));
+    statGrid.appendChild(card);
+  });
+  root.appendChild(statGrid);
+
+  const snapshotCard = adminElement('section', null, 'padding:20px;background:var(--dark);border:1px solid var(--border);border-radius:16px;margin-bottom:16px');
+  snapshotCard.appendChild(adminSectionTitle('Account snapshot'));
+  snapshotCard.appendChild(adminElement('div', 'This mirrors the member’s current RAVEN data without signing in as them.', 'font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:14px'));
+  const lists = adminElement('div', null, 'display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px');
+  const billList = adminElement('div');
+  billList.appendChild(adminSectionTitle('Bills'));
+  const bills = snapshot.bills || [];
+  if (!bills.length) billList.appendChild(adminElement('div', 'No bills visible.', 'font-size:12px;color:var(--muted);padding:10px 0'));
+  bills.slice(0, 8).forEach(bill => {
+    const row = adminElement('div', null, 'padding:10px 0;border-bottom:1px solid var(--border)');
+    row.appendChild(adminElement('div', bill.name || 'Untitled bill', 'font-size:13px;font-weight:700;color:var(--white)'));
+    const participant = bill.participant;
+    const detail = bill.creator_phone === profile.email ? 'Creator' : participant ? (participant.paid ? 'Paid' : '$' + Number(participant.amount || 0).toFixed(2) + ' owed') : bill.status || 'Bill';
+    row.appendChild(adminElement('div', detail + ' · $' + Number(bill.total || 0).toFixed(2), 'font-size:11px;color:var(--muted);margin-top:3px'));
+    billList.appendChild(row);
+  });
+  lists.appendChild(billList);
+  const friendList = adminElement('div');
+  friendList.appendChild(adminSectionTitle('Friends'));
+  const friends = snapshot.friends || [];
+  if (!friends.length) friendList.appendChild(adminElement('div', 'No friends visible.', 'font-size:12px;color:var(--muted);padding:10px 0'));
+  friends.slice(0, 8).forEach(friend => {
+    const name = [friend.first_name, friend.last_name].filter(Boolean).join(' ') || friend.raven_id || 'RAVEN member';
+    const row = adminElement('div', null, 'padding:10px 0;border-bottom:1px solid var(--border)');
+    row.appendChild(adminElement('div', name, 'font-size:13px;font-weight:700;color:var(--white)'));
+    row.appendChild(adminElement('div', friend.raven_id ? '@' + friend.raven_id : '', 'font-size:11px;color:var(--purple3);margin-top:3px'));
+    friendList.appendChild(row);
+  });
+  lists.appendChild(friendList);
+  snapshotCard.appendChild(lists);
+  const messages = snapshot.messages || [];
+  const messageBlock = adminElement('div', null, 'margin-top:18px');
+  messageBlock.appendChild(adminSectionTitle('Recent messages'));
+  if (!messages.length) messageBlock.appendChild(adminElement('div', 'No messages visible.', 'font-size:12px;color:var(--muted);padding:8px 0'));
+  messages.slice(0, 8).forEach(message => {
+    const row = adminElement('div', null, 'padding:10px 12px;margin-top:7px;background:var(--dark2);border:1px solid var(--border);border-radius:10px');
+    row.appendChild(adminElement('div', message.direction === 'sent' ? 'Sent' : 'Received', 'font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:' + (message.direction === 'sent' ? 'var(--purple3)' : 'var(--green)')));
+    row.appendChild(adminElement('div', message.body || '(empty message)', 'font-size:12px;color:var(--white);line-height:1.45;margin-top:4px;white-space:pre-wrap;overflow-wrap:anywhere'));
+    messageBlock.appendChild(row);
+  });
+  snapshotCard.appendChild(messageBlock);
+  root.appendChild(snapshotCard);
+
+  const editor = adminElement('form', null, 'padding:20px;background:var(--dark);border:1px solid rgba(246,196,83,.28);border-radius:16px;margin-bottom:24px');
+  editor.appendChild(adminSectionTitle('Edit profile'));
+  editor.appendChild(adminElement('div', 'Changes are saved directly to this member’s RAVEN profile.', 'font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:16px'));
+  const fields = adminElement('div', null, 'display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px');
+  [['First name','first_name'],['Last name','last_name'],['RAVEN ID','raven_id'],['Phone','phone'],['Venmo','venmo'],['Cash App','cashapp'],['Zelle','zelle'],['Apple Pay','applepay']].forEach(([label, name]) => fields.appendChild(adminField(label, name, profile[name])));
+  editor.appendChild(fields);
+  const save = adminElement('button', 'Save profile changes', 'margin-top:16px;padding:12px 16px;background:#F6C453;border:0;border-radius:10px;color:#241A00;font-family:Epilogue,sans-serif;font-weight:900;cursor:pointer');
+  save.type = 'submit';
+  editor.appendChild(save);
+  editor.addEventListener('submit', async event => {
+    event.preventDefault();
+    save.disabled = true;
+    save.textContent = 'Saving…';
+    const formData = new FormData(editor);
+    const updates = {};
+    ['first_name','last_name','raven_id','phone','venmo','cashapp','zelle','applepay'].forEach(name => { updates[name] = String(formData.get(name) || ''); });
+    try {
+      const result = await ravenAdminRequest('/admin/profile/' + encodeURIComponent(profile.raven_id), { method: 'PATCH', body: JSON.stringify(updates) });
+      setAdminSearchStatus('Profile updated.', 'success');
+      document.getElementById('admin-raven-id-input').value = result.profile.raven_id;
+      await loadAdminProfile(result.profile.raven_id);
+    } catch (error) {
+      setAdminSearchStatus(error.message || 'Could not save profile.', 'error');
+      save.disabled = false;
+      save.textContent = 'Save profile changes';
+    }
+  });
+  root.appendChild(editor);
+}
+
+async function loadAdminProfile(ravenId) {
+  if (!ravenAdminAccess) return setAdminSearchStatus('Admin access is not available for this account.', 'error');
+  const input = document.getElementById('admin-raven-id-input');
+  const value = String(ravenId || input?.value || '').trim().replace(/^@/, '').toLowerCase();
+  if (!value) return setAdminSearchStatus('Enter a RAVEN ID to continue.', 'error');
+  if (input) input.value = value;
+  const button = document.getElementById('admin-search-btn');
+  const root = document.getElementById('admin-profile-result');
+  if (button) { button.disabled = true; button.textContent = 'Loading…'; }
+  if (root) root.innerHTML = '<div class="loading"><div class="spinner"></div> Loading account snapshot…</div>';
+  setAdminSearchStatus('', '');
+  try {
+    const result = await ravenAdminRequest('/admin/profile/' + encodeURIComponent(value));
+    renderAdminProfile(result);
+  } catch (error) {
+    if (root) root.replaceChildren();
+    setAdminSearchStatus(error.message || 'Could not load that account.', 'error');
+  } finally {
+    if (button) { button.disabled = false; button.textContent = 'View account'; }
+  }
+}
+
+async function provisionCreatorWelcomeFromDashboard() {
+  try {
+    const { data: { session } } = await db.auth.getSession();
+    if (!session?.access_token) return;
+    await fetch(BACKEND + '/account/welcome', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + session.access_token }
+    });
+  } catch (error) {
+    // A temporary welcome failure must never interrupt the dashboard.
+  }
+}
+
 function showPage(page) {
+
   if (typeof posthog !== 'undefined') posthog.capture('page_view', { page });
   // Hide all pages, show only the target
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -4942,7 +5190,8 @@ function showPage(page) {
     'friends':      'mob-settings',
     'history':      'mob-settings',
     'notifications':'mob-settings',
-    'invite':       'mob-settings'
+    'invite':       'mob-settings',
+    'admin':        'mob-settings'
   };
   if (mobMap[page]) setMobNav(mobMap[page]);
   // Load data for the page
