@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="apple-itunes-app" content="app-id=6763961067">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>RavenSplit — Free AI Receipt Scanner & Bill Splitter App</title>
 <meta name="description" content="Snap a receipt, AI splits it in seconds. Share one link with your group — everyone sees what they owe and pays instantly. No app download. Free forever.">
@@ -153,6 +154,13 @@ nav{position:fixed;top:0;left:0;right:0;z-index:500;height:64px;display:flex;ali
 .hero-sub{font-size:18px;font-weight:300;color:var(--muted);max-width:520px;line-height:1.85;margin:24px auto 44px;animation:fadeUp 0.7s 0.16s ease both}
 .hero-sub strong{color:var(--white);font-weight:500}
 .hero-actions{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;animation:fadeUp 0.7s 0.24s ease both}
+.app-download{display:inline-flex;align-items:center;justify-content:center;gap:12px;padding:12px 24px;border:1px solid rgba(192,132,252,.45);border-radius:10px;background:#0C0C12;color:#F0EEF8;text-decoration:none;box-shadow:0 6px 28px rgba(124,58,237,.18);min-height:58px;transition:border-color .2s,background .2s}
+.app-download:hover{background:#191124;border-color:#C084FC}
+.app-download:focus-visible{outline:3px solid #30D158;outline-offset:4px}
+.app-download-copy{display:flex;flex-direction:column;text-align:left;gap:3px}
+.app-download-copy small{font-size:11px;letter-spacing:.03em}
+.app-download-copy strong{font-size:21px;line-height:1.15;font-weight:700}
+.download-note{margin:16px auto 0;color:var(--muted2);font-size:12px;line-height:1.6}
 .btn{display:inline-flex;align-items:center;gap:9px;padding:15px 30px;border-radius:9px;font-family:'Epilogue',sans-serif;font-size:14px;font-weight:700;text-decoration:none;cursor:pointer;border:none;transition:all 0.2s}
 .btn-primary{background:var(--green);color:#000;box-shadow:0 4px 28px var(--green-glow)}
 .btn-primary:hover{background:#3ddd68;transform:translateY(-2px);box-shadow:0 8px 40px var(--green-glow)}
@@ -395,6 +403,7 @@ footer{border-top:1px solid var(--border);padding:36px 52px;display:flex;align-i
     <li><a href="#how">How It Works</a></li>
     <li><a href="#features">Features</a></li>
     <li><a href="#trips">Trip Hub</a></li>
+    <li><a href="https://apps.apple.com/us/app/ravensplit/id6763961067">Get the iPhone app</a></li>
     <li id="nav-si"><a href="dashboard.html">Sign In</a></li>
     <li id="nav-cr"><a href="dashboard.html" class="nav-cta">Get Started Free →</a></li>
     <li id="nav-uc" style="display:none"><a href="dashboard.html" class="nav-cta" id="nav-wb">Dashboard →</a></li>
@@ -406,6 +415,7 @@ footer{border-top:1px solid var(--border);padding:36px 52px;display:flex;align-i
   <a href="#how" class="mml" onclick="toggleMob()">How It Works</a>
   <a href="#features" class="mml" onclick="toggleMob()">Features</a>
   <a href="#trips" class="mml" onclick="toggleMob()">Trip Hub</a>
+  <a href="https://apps.apple.com/us/app/ravensplit/id6763961067" class="mml">Download RAVENSPLIT for iPhone</a>
   <div id="mob-auth-links">
     <a href="dashboard.html" class="mml">Sign In</a>
     <a href="dashboard.html" class="mml-cta">Get Started Free →</a>
@@ -424,13 +434,18 @@ footer{border-top:1px solid var(--border);padding:36px 52px;display:flex;align-i
     <span class="t1">They Owe You.</span>
     <span class="t2">RAVEN Collects.</span>
   </h1>
-  <p class="hero-sub">Snap a receipt. <strong>AI splits it instantly.</strong> Share one link with your group — everyone sees exactly what they owe, picks their items, and pays however they want. No app. No math. No chasing.</p>
+  <p class="hero-sub">Snap a receipt. <strong>AI splits it instantly.</strong> Share one link with your group — everyone sees exactly what they owe, picks their items, and pays however they want. Now on iPhone. Still works in your browser.</p>
   <div class="hero-actions">
+    <a href="https://apps.apple.com/us/app/ravensplit/id6763961067" class="app-download" aria-label="Download RAVENSPLIT on the App Store">
+      <svg width="26" height="30" viewBox="0 0 24 28" fill="none" aria-hidden="true"><rect x="4" y="1" width="16" height="26" rx="4" stroke="currentColor" stroke-width="2"/><path d="M9 4h6M10 24h4M12 8v10m-4-4 4 4 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span class="app-download-copy"><small>Download RAVENSPLIT on the</small><strong>App Store</strong></span>
+    </a>
     <a href="dashboard.html" class="btn btn-primary">🪶 Sign Up Free — No Card Needed</a>
     <a href="raven-demo.html" class="btn btn-secondary">See a live bill →</a>
   </div>
+  <p class="download-note">Get the iPhone app, or keep splitting bills on the web.</p>
   <div class="hero-proof">
-    <div class="proof-item"><span class="proof-dot" style="background:var(--green)"></span>No app download</div>
+    <div class="proof-item"><span class="proof-dot" style="background:var(--green)"></span>iPhone app + web</div>
     <div class="proof-sep"></div>
     <div class="proof-item"><span class="proof-dot" style="background:var(--purple2)"></span>AI scans any receipt</div>
     <div class="proof-sep"></div>
@@ -566,6 +581,7 @@ footer{border-top:1px solid var(--border);padding:36px 52px;display:flex;align-i
   <p style="font-size:12px;letter-spacing:0.22em;text-transform:uppercase;color:var(--muted);font-style:italic;margin-bottom:16px" class="reveal">— Send in the Raven —</p>
   <h2 class="cta-h reveal">They owe you.<br><em>We collect.</em></h2>
   <p class="cta-p reveal">Snap a receipt. Share a link. Everyone pays. Done.</p>
+  <p style="margin-bottom:20px"><a href="https://apps.apple.com/us/app/ravensplit/id6763961067" class="app-download">Download RAVENSPLIT for iPhone</a></p>
   <a href="dashboard.html" class="btn btn-primary reveal" style="font-size:16px;padding:17px 40px">🪶 Create Your Free Account</a>
 </section>
 
@@ -611,6 +627,7 @@ footer{border-top:1px solid var(--border);padding:36px 52px;display:flex;align-i
   </div>
   <div style="display:flex;flex-direction:column;gap:12px;align-items:flex-end">
     <div class="f-links">
+      <a href="https://apps.apple.com/us/app/ravensplit/id6763961067">Download on the App Store</a>
       <a href="dashboard.html">Dashboard</a>
       <a href="raven-demo.html">Live Demo</a>
       <a href="privacy.html">Privacy</a>
