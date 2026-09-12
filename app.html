@@ -960,6 +960,19 @@ async function generateUniqueRavenId(base, excludeUserId){
   }
   return (clean + Date.now().toString().slice(-3)).slice(0,20);
 }
+async function provisionCreatorWelcome(){
+  try {
+    const { data: { session } } = await db.auth.getSession();
+    if (!session?.access_token) return;
+    await fetch(BACKEND + '/account/welcome', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + session.access_token }
+    });
+  } catch(e) {
+    console.warn('Creator welcome could not be provisioned.', e);
+  }
+}
+
 async function routeAfterAuth(user){
   if (!user?.id) {
     showLoading(false);
@@ -972,6 +985,7 @@ async function routeAfterAuth(user){
   try {
     const { data: profile } = await db.from('profiles').select('onboarding_complete,first_name,raven_id,username,avatar_url').eq('id', user.id).maybeSingle();
     if (profile?.onboarding_complete) {
+      await provisionCreatorWelcome();
       try { localStorage.setItem('raven_app_dashboard_email', user.email || ''); } catch(e) {}
       localStorage.setItem('raven_profile', JSON.stringify({
         user_id: user.id,
