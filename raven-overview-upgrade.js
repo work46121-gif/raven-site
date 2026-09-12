@@ -110,7 +110,7 @@
   function updateInboxBadge() {
     const badge=byId('raven-inbox-count');if(!badge)return;
     const read=new Set(readNotificationIds());
-    const count=Object.values(_dmUnreadMap||{}).reduce((s,n)=>s+Number(n||0),0)+notifications.filter(n=>n.unread&&!read.has(n.id)).length;
+    const count=Object.values(_dmUnreadMap||{}).reduce((s,n)=>s+Number(n||0),0)+notifications.filter(n=>n.unread&&!read.has(n.id)).length+Number(window.ravenGroupUnreadCount||0);
     badge.hidden=count===0;badge.textContent=count>99?'99+':String(count);
     byId('raven-inbox-open').setAttribute('aria-label','Open inbox: '+count+' unread messages and notifications');
   }
@@ -143,6 +143,8 @@
     finally{inboxBusy=false}
   }
   function renderInbox() {
+    // Notify the group list after the existing DM/notification rows render.
+    setTimeout(()=>window.dispatchEvent(new Event('raven-inbox-rendered')),0);
     const list=byId('raven-inbox-list');if(!list)return;
     const read=new Set(readNotificationIds());
     document.querySelectorAll('[data-inbox-tab]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.inboxTab===inboxTab)));
@@ -150,7 +152,7 @@
       list.innerHTML=conversations.map((c,index)=>{
         const name=[c.profile.first_name,c.profile.last_name].filter(Boolean).join(' ')|| (c.profile.raven_id?'@'+c.profile.raven_id:'Raven member');
         const unread=Number(_dmUnreadMap[c.id]||0);
-        return '<button type="button" class="raven-inbox-row '+(unread?'unread':'')+'" data-conversation="'+index+'"><span class="raven-inbox-avatar">'+safe(name[0])+'</span><span class="raven-inbox-copy"><strong>'+safe(name)+(unread?' · '+unread+' unread':'')+'</strong><small>'+safe(c.profile.raven_id?'@'+c.profile.raven_id:'')+'</small><small>'+safe(c.message.body||'Message')+'</small></span><time>'+safe(formatTimeAgo(c.message.created_at))+'</time></button>';
+        return '<button type="button" class="raven-inbox-row '+(unread?'unread':'')+'" data-conversation="'+index+'"><span class="raven-inbox-avatar">'+safe(name[0])+'</span><span class="raven-inbox-copy"><strong>'+safe(name)+(unread?' · '+unread+' unread':'')+'</strong><small>'+safe(c.profile.raven_id?'@'+c.profile.raven_id:'')+'</small><small>'+safe(/^\[RAVEN_PHOTO:/.test(c.message.body||'')?'Photo':(c.message.body||'Message'))+'</small></span><time>'+safe(formatTimeAgo(c.message.created_at))+'</time></button>';
       }).join('')||'<div class="raven-inbox-empty">No conversations yet.<br>Message a friend to start one.</div>';
       list.querySelectorAll('[data-conversation]').forEach(button=>button.onclick=()=>{const c=conversations[Number(button.dataset.conversation)];byId('raven-inbox').close();openDirectMessage(c.id,c.profile.first_name||c.profile.raven_id||'Raven member',c.profile)});
     } else {
@@ -163,10 +165,12 @@
       });
     }
   }
+  window.addEventListener('raven-group-unread',updateInboxBadge);
   for(const name of ['updateDMBadges','updateNotifBadge']) {
     const previous=window[name];if(typeof previous==='function')window[name]=function(...args){const result=previous.apply(this,args);updateInboxBadge();return result};
   }
 
+  window.addEventListener('raven-inbox-show-groups',()=>window.dispatchEvent(new Event('raven-inbox-rendered')));
   function moneySnapshot(data, now=new Date()) {
     const pad=n=>String(n).padStart(2,'0');
     const current=now.getFullYear()+'-'+pad(now.getMonth()+1);
