@@ -922,6 +922,10 @@ body.app-mode .cb-raven-add-icon { width:18px;height:18px;display:block; }
 .participant-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: var(--dark2); border-radius: 10px; border: 1px solid var(--border); }
 .participant-name { font-weight: 500; font-size: 14px; }
 .participant-amount { font-family: 'JetBrains Mono', monospace; font-size: 13px; }
+.bill-participant-profile { display:flex; align-items:center; gap:10px; min-width:0; padding:0; border:0; background:transparent; color:inherit; text-align:left; cursor:pointer; font:inherit; }
+.bill-participant-profile .participant-name { color:var(--white); text-decoration:underline; text-decoration-color:rgba(192,132,252,.5); text-underline-offset:3px; }
+.bill-participant-profile:focus-visible { outline:2px solid var(--purple3); outline-offset:4px; border-radius:8px; }
+.creator-badge { display:inline-flex; align-items:center; margin-left:8px; padding:3px 8px; border-radius:999px; border:1px solid rgba(255,207,84,.7); background:linear-gradient(135deg,#FFF3B0,#D89A18); color:#3B2400; font-size:10px; font-weight:900; letter-spacing:.1em; line-height:1; text-shadow:none; box-shadow:0 0 14px rgba(245,185,44,.24); vertical-align:middle; }
 .paid-tag { color: var(--green); font-weight: 600; }
 .owed-tag { color: var(--orange); }
 .mark-paid-btn { padding: 5px 12px; background: rgba(48,209,88,0.1); border: 1px solid rgba(48,209,88,0.25); border-radius: 6px; color: var(--green); font-family: 'Epilogue', sans-serif; font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.15s; }
@@ -5623,9 +5627,11 @@ async function openBillModal(billId) {
   // 2. Non-payer who settled (p.paid=true) → green "💳 Paid" badge, no action
   // 3. Non-payer who hasn't settled (p.paid=false) → orange owed amount + Pay button
   const participantProfiles = await resolveActiveBillParticipantProfiles(parts.map(p => p.name));
-  document.getElementById('modal-participants').innerHTML = parts.map(p => {
+  const participantProfileTargets = parts.map(p => participantProfiles[p.name] || null);
+  document.getElementById('modal-participants').innerHTML = parts.map((p, index) => {
     const participantProfile = participantProfiles[p.name] || null;
     const participantAvatar = activeBillParticipantAvatar(p.name, participantProfile, 28);
+    const hasRavenProfile = !!(participantProfile && participantProfile.raven_id);
     const isBillPayer = paidByName && billPreviewParticipantKey(p.name) === paidByName;
     let badge, action;
     if (isBillPayer) {
@@ -5648,10 +5654,20 @@ async function openBillModal(billId) {
       }
     }
     const removeBtn = '<button class="mark-paid-btn" style="background:rgba(255,68,68,0.08);border:1px solid rgba(255,68,68,0.2);color:#FF6B6B" onclick="removeParticipantFromBillPreview(\'' + billId + '\', \'' + String(p.name || '').replace(/'/g, "\\'") + '\')">Remove</button>';
-    return '<div class="participant-row"><div style="display:flex;align-items:center;gap:10px">' + participantAvatar + '<div><div class="participant-name">@' + p.name + '</div>' +
-      (p.paid && !isBillPayer && p.payment_method ? '<div style="font-size:11px;color:var(--muted);margin-top:3px">via ' + p.payment_method + '</div>' : '') +
-      '</div></div><div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end">' + badge + action + removeBtn + '</div></div>';
+    const paymentMethod = p.paid && !isBillPayer && p.payment_method ? '<div style="font-size:11px;color:var(--muted);margin-top:3px">via ' + p.payment_method + '</div>' : '';
+    const identity = hasRavenProfile
+      ? '<button type="button" class="bill-participant-profile" data-bill-profile-index="' + index + '" aria-label="View RAVEN profile">' + participantAvatar + '<span><span class="participant-name">@' + p.name + '</span>' + paymentMethod + '</span></button>'
+      : '<div style="display:flex;align-items:center;gap:10px">' + participantAvatar + '<div><div class="participant-name">@' + p.name + '</div>' + paymentMethod + '</div></div>';
+    return '<div class="participant-row">' + identity + '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end">' + badge + action + removeBtn + '</div></div>';
   }).join('');
+  document.querySelectorAll('#modal-participants [data-bill-profile-index]').forEach(button => {
+    button.addEventListener('click', event => {
+      event.preventDefault();
+      event.stopPropagation();
+      const profile = participantProfileTargets[Number(button.dataset.billProfileIndex)];
+      if (profile) openProfileModal(profile);
+    });
+  });
 
   document.getElementById('modal-view-btn').onclick = () => viewBillPage(billId);
   document.getElementById('modal-share-btn').onclick = () => shareBillLink(billId, bill.name, bill.share_token);
@@ -7165,7 +7181,10 @@ function openProfileModal(p) {
   const el = id => document.getElementById(id);
   if (el('pm-name')) el('pm-name').textContent = name;
   if (el('pm-raven-id')) el('pm-raven-id').textContent = p.raven_id ? '@' + p.raven_id : '';
-  if (el('pm-raven-score')) el('pm-raven-score').textContent = 'RAVEN Score ★100★';
+  if (el('pm-raven-score')) {
+    const isCreator = String(p.raven_id || '').trim().toLowerCase() === 'melad';
+    el('pm-raven-score').innerHTML = 'RAVEN Score ★100★' + (isCreator ? '<span class="creator-badge">CREATOR</span>' : '');
+  }
   if (el('pm-email')) el('pm-email').style.display = 'none';
   // Payment methods
   const pm = el('pm-payment-methods');
@@ -7268,7 +7287,10 @@ function openProfileModal(p) {
   const el = id => document.getElementById(id);
   if (el('pm-name')) el('pm-name').textContent = name;
   if (el('pm-raven-id')) el('pm-raven-id').textContent = p.raven_id ? '@' + p.raven_id : '';
-  if (el('pm-raven-score')) el('pm-raven-score').textContent = 'RAVEN Score ★100★';
+  if (el('pm-raven-score')) {
+    const isCreator = String(p.raven_id || '').trim().toLowerCase() === 'melad';
+    el('pm-raven-score').innerHTML = 'RAVEN Score ★100★' + (isCreator ? '<span class="creator-badge">CREATOR</span>' : '');
+  }
   if (el('pm-email')) el('pm-email').style.display = 'none';
   hideProfileInlinePicker();
   const pm = el('pm-payment-methods');
