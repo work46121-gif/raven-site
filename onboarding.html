@@ -816,6 +816,7 @@ const SUPABASE_URL = 'https://ffjpzkpdumdcwnakpaje.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZmanB6a3BkdW1kY3duYWtwYWplIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5ODc4OTcsImV4cCI6MjA4ODU2Mzg5N30.JtDLVu4K1TJ8emcN_mvSHBu6e0y8-jPQv-ypoc9p0RU';
 const { createClient } = supabase;
 const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const BACKEND = 'https://raven-backend-production-fb1f.up.railway.app';
 
 let currentUser = null;
 let profileData = {};
@@ -1136,11 +1137,28 @@ async function submitStep4() {
       privacy_accepted: true,
       terms_accepted_at: new Date().toISOString()
     });
+    // This is best-effort: an account is still set up if the welcome service
+    // is briefly unavailable, and the backend prevents duplicate greetings.
+    await provisionCreatorWelcome();
     hideLoading();
     goToStep('success');
   } catch(e) {
     hideLoading();
     showError('error-4', 'Could not finish setup. Please try again.');
+  }
+}
+
+async function provisionCreatorWelcome() {
+  try {
+    const { data: { session } } = await db.auth.getSession();
+    if (!session?.access_token) return;
+    const response = await fetch(BACKEND + '/account/welcome', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + session.access_token }
+    });
+    if (!response.ok) console.warn('Creator welcome could not be provisioned.');
+  } catch (error) {
+    console.warn('Creator welcome could not be provisioned.', error);
   }
 }
 
