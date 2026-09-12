@@ -1,4 +1,71 @@
 /* Additive overview inbox and RAVEN Lifestyle money hub. */
+// Private recent-member list. All reads pass through the authenticated owner API.
+(() => {
+  const result = document.getElementById('admin-profile-result');
+  if (!result) return;
+  const section = document.createElement('section');
+  section.className = 'rm-card';
+  section.style.marginBottom = '18px';
+  section.setAttribute('aria-labelledby', 'admin-recent-title');
+  section.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px"><div><h3 id="admin-recent-title">Recently joined</h3><div class="rm-muted">Newest accounts first · includes setup in progress</div></div><button type="button" id="admin-recent-refresh">Refresh</button></div><div id="admin-recent-status" class="rm-muted" role="status" style="margin-top:12px"></div><div id="admin-recent-list"></div><button type="button" id="admin-recent-more" hidden style="margin-top:14px">Load more</button>';
+  result.before(section);
+  const list = section.querySelector('#admin-recent-list');
+  const status = section.querySelector('#admin-recent-status');
+  const more = section.querySelector('#admin-recent-more');
+  const refresh = section.querySelector('#admin-recent-refresh');
+  let offset = 0, generation = 0;
+  const seen = new Set();
+  async function loadRecentMembers(reset = true) {
+    const requestGeneration = ++generation;
+    const owner = currentUser?.id;
+    if (reset) { list.replaceChildren(); seen.clear(); offset = 0; more.hidden = true; }
+    if (!ravenAdminAccess || !owner) { list.replaceChildren(); status.textContent = ''; more.hidden = true; return; }
+    refresh.disabled = true; more.disabled = true; status.textContent = 'Loading recent members…';
+    try {
+      const response = await ravenAdminRequest('/admin/recent-members?offset=' + offset);
+      if (requestGeneration !== generation || currentUser?.id !== owner || !ravenAdminAccess) return;
+      for (const member of response.members || []) {
+        if (seen.has(member.id)) continue;
+        seen.add(member.id);
+        const row = document.createElement('div'); row.className = 'rm-item';
+        const identity = document.createElement('div'); identity.style.minWidth = '0';
+        const name = document.createElement('strong');
+        name.textContent = [member.first_name, member.last_name].filter(Boolean).join(' ') || 'New member';
+        const handle = document.createElement('small'); handle.style.color = '#C084FC';
+        handle.textContent = member.raven_id ? '@' + member.raven_id : 'Raven ID not set yet';
+        const joined = document.createElement('small');
+        const date = member.created_at ? new Date(member.created_at) : null;
+        joined.textContent = (date && !Number.isNaN(date.getTime()) ? 'Joined ' + date.toLocaleString(undefined, {month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'}) : 'Join date unavailable') + (member.onboarding_complete ? '' : ' · Setup in progress');
+        identity.append(name, handle, joined); row.append(identity);
+        if (member.raven_id) {
+          const view = document.createElement('button'); view.type = 'button'; view.textContent = 'View';
+          view.setAttribute('aria-label', 'View @' + member.raven_id);
+          view.onclick = () => { document.getElementById('admin-raven-id-input').value = member.raven_id; loadAdminProfile(member.raven_id); };
+          row.append(view);
+        }
+        list.append(row);
+      }
+      offset = response.nextOffset;
+      more.hidden = !response.hasMore;
+      status.textContent = seen.size ? seen.size + ' most recent accounts shown' : 'No member profiles yet.';
+    } catch (error) {
+      if (requestGeneration === generation) status.textContent = 'Could not load recent members. Tap Refresh to retry.';
+    } finally {
+      if (requestGeneration === generation) { refresh.disabled = false; more.disabled = false; }
+    }
+  }
+  refresh.onclick = () => loadRecentMembers(true);
+  more.onclick = () => loadRecentMembers(false);
+  const previousShowPage = window.showPage;
+  window.showPage = function(...args) {
+    const response = previousShowPage.apply(this, args);
+    if (args[0] === 'admin') void loadRecentMembers(true);
+    else { generation++; list.replaceChildren(); seen.clear(); more.hidden = true; status.textContent = ''; }
+    return response;
+  };
+  if (document.getElementById('page-admin')?.classList.contains('active')) void loadRecentMembers(true);
+})();
+
 (() => {
   'use strict';
   const byId = id => document.getElementById(id);
