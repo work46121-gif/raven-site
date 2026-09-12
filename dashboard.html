@@ -1736,7 +1736,7 @@ body.app-mode .cb-raven-add-icon { width:18px;height:18px;display:block; }
             <div style="background:var(--dark);border:1px solid var(--border);border-radius:16px;padding:20px">
               <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted2);margin-bottom:12px">Who's on this bill?</div>
               <div style="display:flex;gap:8px;margin-bottom:10px">
-                <input id="cb-person-input" type="text" class="add-person-input" placeholder="Add name (e.g. Jake)" style="flex:1" onkeydown="if(event.key==='Enter')cbAddPerson()">
+                <input id="cb-person-input" type="text" class="add-person-input" placeholder="Guest name or exact @RavenID" style="flex:1" onkeydown="if(event.key==='Enter')cbAddPerson()">
                 <button class="add-person-btn" onclick="cbAddPerson()">+ Add</button>
                 <button class="add-person-btn" onclick="cbOpenContactsPicker()" style="background:rgba(48,209,88,0.1);border-color:rgba(48,209,88,0.25);color:var(--green)" title="Add from contacts"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="6" cy="4.5" r="2.5" stroke="currentColor" stroke-width="1.3"/><path d="M1 13c0-2.8 2.2-5 5-5s5 2.2 5 5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M12 7v4M14 9h-4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></button>
               </div>
@@ -3973,13 +3973,7 @@ async function openPayModal(participantId, billId, amount) {
           .maybeSingle();
         if (directProfile) profile = directProfile;
       }
-      if (!profile) {
-        const { data } = await db.from('profiles')
-          .select('first_name,phone,email,venmo,cashapp,zelle,applepay,updated_at')
-          .ilike('first_name', paidByName)
-          .limit(8);
-        profile = chooseBestPaymentProfile(data, paidByName);
-      }
+      // An unlinked payer must be assigned explicitly, never guessed by name.
     } catch(e) {}
   }
 
@@ -5875,7 +5869,7 @@ async function openBillModal(billId) {
   // 1. Bill payer → purple "💳 Paid the bill" badge, no action
   // 2. Non-payer who settled (p.paid=true) → green "💳 Paid" badge, no action
   // 3. Non-payer who hasn't settled (p.paid=false) → orange owed amount + Pay button
-  const participantProfiles = await resolveActiveBillParticipantProfiles(parts.map(p => p.name));
+  const participantProfiles = await resolveActiveBillParticipantProfiles(parts);
   const participantProfileTargets = parts.map(p => participantProfiles[p.name] || null);
   document.getElementById('modal-participants').innerHTML = parts.map((p, index) => {
     const participantProfile = participantProfiles[p.name] || null;
@@ -5905,9 +5899,9 @@ async function openBillModal(billId) {
     const removeBtn = '<button class="mark-paid-btn" style="background:rgba(255,68,68,0.08);border:1px solid rgba(255,68,68,0.2);color:#FF6B6B" onclick="removeParticipantFromBillPreview(\'' + billId + '\', \'' + String(p.name || '').replace(/'/g, "\\'") + '\')">Remove</button>';
     const paymentMethod = p.paid && !isBillPayer && p.payment_method ? '<div style="font-size:11px;color:var(--muted);margin-top:3px">via ' + p.payment_method + '</div>' : '';
     const identity = hasRavenProfile
-      ? '<button type="button" class="bill-participant-profile" data-bill-profile-index="' + index + '" aria-label="View RAVEN profile">' + participantAvatar + '<span><span class="participant-name">@' + p.name + '</span>' + paymentMethod + '</span></button>'
-      : '<div style="display:flex;align-items:center;gap:10px">' + participantAvatar + '<div><div class="participant-name">@' + p.name + '</div>' + paymentMethod + '</div></div>';
-    return '<div class="participant-row">' + identity + '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end">' + badge + action + removeBtn + '</div></div>';
+      ? '<button type="button" class="bill-participant-profile" data-bill-profile-index="' + index + '" aria-label="View RAVEN profile">' + participantAvatar + '<span><span class="participant-name">@' + escapeHtml(participantProfile.raven_id) + '</span>' + paymentMethod + '</span></button>'
+      : '<div style="display:flex;align-items:center;gap:10px">' + participantAvatar + '<div><div class="participant-name">' + escapeHtml(p.name) + '</div><div style="font-size:11px;color:var(--muted)">Unlinked guest</div>' + paymentMethod + '</div></div>';
+    return '<div class="participant-row">' + identity + '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end">' + badge + action + ((String(bill.creator_phone || '').toLowerCase() === String(currentUser?.email || '').toLowerCase() || ravenAdminAccess) && !p._guest ? '<button type="button" class="mark-paid-btn" data-assign-raven-index="' + index + '">' + (hasRavenProfile ? 'Change Raven ID' : 'Assign Raven ID') + '</button>' : '') + removeBtn + '</div></div>';
   }).join('');
   document.querySelectorAll('#modal-participants [data-bill-profile-index]').forEach(button => {
     button.addEventListener('click', event => {
@@ -5918,6 +5912,12 @@ async function openBillModal(billId) {
     });
   });
 
+  document.querySelectorAll('#modal-participants [data-assign-raven-index]').forEach(button => {
+    button.addEventListener('click', event => {
+      event.stopPropagation();
+      assignBillParticipantRavenId(billId, parts[Number(button.dataset.assignRavenIndex)]);
+    });
+  });
   document.getElementById('modal-view-btn').onclick = () => viewBillPage(billId);
   document.getElementById('modal-share-btn').onclick = () => shareBillLink(billId, bill.name, bill.share_token);
   document.getElementById('modal-view-only-share-btn').onclick = () => shareViewOnlyBillLink(billId, bill.name, bill.share_token);
@@ -5946,6 +5946,31 @@ async function openBillModal(billId) {
   const addInput = document.getElementById('modal-add-person-input');
   if (addInput) { addInput.value = ''; addInput.onkeydown = e => { if (e.key === 'Enter') addPersonToBill(billId, bill); }; }
   document.getElementById('bill-modal').classList.add('open');
+}
+
+async function assignBillParticipantRavenId(billId, participant) {
+  const entered = prompt('Enter the exact Raven ID for ' + participant.name + ' (for example @nicholas110):');
+  if (entered === null) return;
+  const ravenId = entered.trim().replace(/^@/, '').toLowerCase();
+  if (!/^[a-z0-9_]{3,20}$/.test(ravenId)) return showToast('Enter a valid, complete Raven ID.', 'error');
+  try {
+    const { data: profile, error } = await db.from('profiles').select('raven_id,first_name,last_name').eq('raven_id', ravenId).maybeSingle();
+    if (error || !profile) throw new Error('That Raven ID was not found. No changes were made.');
+    const name = [profile.first_name, profile.last_name].filter(Boolean).join(' ');
+    if (!confirm('Assign ' + participant.name + ' to @' + profile.raven_id + (name ? ' (' + name + ')' : '') + '? This moves this participant’s bill access to that account. Amounts and payment status stay unchanged.')) return;
+    const { data: { session } } = await db.auth.getSession();
+    if (!session?.access_token) throw new Error('Please sign in again.');
+    const response = await fetch(BACKEND + '/bill/' + encodeURIComponent(billId) + '/participants/' + encodeURIComponent(participant.id) + '/raven-id', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + session.access_token },
+      body: JSON.stringify({ raven_id: ravenId, expected_phone: participant.phone })
+    });
+    const result = await response.json();
+    if (!response.ok || !result.success) throw new Error(result.error || 'Could not assign this account.');
+    showToast('Assigned to @' + ravenId, 'success');
+    await openBillModal(billId);
+    await loadAllData();
+  } catch (error) { showToast(error.message || 'Could not assign this account.', 'error'); }
 }
 
 function toggleBillEditPanel() {
@@ -5986,46 +6011,6 @@ async function saveBillEdits() {
   loadAllData();
 }
 
-async function addPersonToBill(billId, bill) {
-  const input = document.getElementById('modal-add-person-input');
-  const raw = input?.value.trim();
-  if (!raw) return showToast('Enter a name or @RavenID', 'error');
-  const btn = document.getElementById('modal-add-person-btn-submit');
-  btn.textContent = 'Adding...'; btn.disabled = true;
-
-  // Figure out how much this person owes — use per_person from bill
-  const perPerson = parseFloat(bill.per_person || 0) || (bill.participants?.length > 0 ? parseFloat(bill.total) / (bill.participants.length + 1) : parseFloat(bill.total));
-  let personEmail = null;
-  let personName = raw.replace(/^@/, '');
-
-  // Try to find by Raven ID
-  const query = raw.startsWith('@') ? raw.slice(1) : raw;
-  try {
-    const { data: profile } = await db.from('profiles').select('id,first_name,email,raven_id').or('raven_id.eq.' + query.toLowerCase() + ',first_name.ilike.' + query).maybeSingle();
-    if (profile) {
-      personEmail = profile.email;
-      personName = profile.first_name || profile.raven_id || personName;
-    }
-  } catch(e) {}
-
-  // Check not already on bill
-  const alreadyOn = (bill.participants || []).some(p => p.name.toLowerCase() === personName.toLowerCase());
-  if (alreadyOn) { showToast(personName + ' is already on this bill', 'error'); btn.textContent = 'Add'; btn.disabled = false; return; }
-
-  const { error } = await db.from('participants').insert({
-    bill_id: billId,
-    phone: personEmail || ('unknown_' + personName.toLowerCase().replace(/\s+/g,'_') + '_' + billId),
-    name: personName,
-    amount: perPerson,
-    paid: false
-  });
-
-  btn.textContent = 'Add'; btn.disabled = false;
-  if (error) { showToast('Error: ' + error.message, 'error'); return; }
-  if (input) input.value = '';
-  showToast('✅ ' + personName + ' added to bill' + (personEmail ? ' — will see it on their dashboard' : ''), 'success');
-  openBillModal(billId); // refresh
-}
 
 async function addPersonToBill(billId, bill) {
   const input = document.getElementById('modal-add-person-input');
@@ -6785,52 +6770,21 @@ function friendAvatar(name, url, size) {
   return '<div style="width:'+s+'px;height:'+s+'px;border-radius:50%;background:'+g+';display:flex;align-items:center;justify-content:center;font-size:'+(s*0.35)+'px;font-weight:700;color:#fff;flex-shrink:0">'+(name||'?')[0].toUpperCase()+'</div>';
 }
 
-async function resolveActiveBillParticipantProfiles(names) {
-  const uniqueNames = [...new Set((names || []).map(n => String(n || '').trim()).filter(Boolean))];
-  if (!uniqueNames.length) return {};
-  const missing = uniqueNames.filter(name => !activeBillParticipantProfileCache[normalizeActiveBillPersonKey(name)]);
-  if (missing.length && currentUser) {
-    try {
-      const firstNames = [...new Set(missing.map(name => name.split(' ')[0].trim()).filter(Boolean))];
-      const ravenIds = [...new Set(missing.map(name => String(name || '').trim().replace(/^@/, '')).filter(Boolean))];
-      const lookups = [];
-      if (firstNames.length) {
-        lookups.push(db.from('profiles').select('id,first_name,last_name,raven_id,avatar_url,email').in('first_name', firstNames));
-      }
-      if (ravenIds.length) {
-        lookups.push(db.from('profiles').select('id,first_name,last_name,raven_id,avatar_url,email').in('raven_id', ravenIds));
-      }
-      const results = await Promise.all(lookups);
-      results.forEach(result => {
-        (result.data || []).forEach(profile => {
-          const aliases = [profile.first_name, profile.raven_id, profile.email].map(v => normalizeActiveBillPersonKey(v)).filter(Boolean);
-          aliases.forEach(alias => {
-            if (!activeBillParticipantProfileCache[alias]) activeBillParticipantProfileCache[alias] = profile;
-          });
-        });
-      });
-      try {
-        const local = JSON.parse(localStorage.getItem('raven_profile') || '{}');
-        if (local.first_name || local.raven_id || local.email) {
-          const localProfile = {
-            first_name: local.first_name || '',
-            raven_id: local.raven_id || local.username || '',
-            avatar_url: local.avatar_url || '',
-            email: local.email || ''
-          };
-          [local.first_name, local.raven_id, local.username, local.email].forEach(alias => {
-            alias = normalizeActiveBillPersonKey(alias);
-            if (alias) activeBillParticipantProfileCache[alias] = localProfile;
-          });
-        }
-      } catch(e) {}
-    } catch(e) {}
-  }
+async function resolveActiveBillParticipantProfiles(parts) {
+  // Resolve stored identities only. Display names must never grant account links.
   const resolved = {};
-  uniqueNames.forEach(name => {
-    const key = normalizeActiveBillPersonKey(name);
-    resolved[name] = activeBillParticipantProfileCache[key] || null;
-  });
+  const identities = [...new Set((parts || []).map(p => p.phone).filter(v => v && !v.startsWith('unknown_') && !v.startsWith('guest:')))];
+  if (!identities.length) return resolved;
+  const fields = 'id,first_name,last_name,raven_id,avatar_url,email,phone';
+  const results = await Promise.all([
+    db.from('profiles').select(fields).in('email', identities),
+    db.from('profiles').select(fields).in('phone', identities)
+  ]);
+  for (const p of parts || []) {
+    const matches = results.flatMap(r => r.data || []).filter(profile => profile.email === p.phone || profile.phone === p.phone);
+    const unique = [...new Map(matches.map(profile => [profile.id, profile])).values()];
+    if (unique.length === 1) resolved[p.name] = unique[0];
+  }
   return resolved;
 }
 
@@ -7499,14 +7453,14 @@ async function addPersonToExistingBill(bill, raw) {
   const perPerson = parseFloat(bill.per_person || 0) || (bill.participants?.length > 0 ? parseFloat(bill.total) / (bill.participants.length + 1) : parseFloat(bill.total));
   let personEmail = null;
   let personName = raw.replace(/^@/, '');
-  const query = raw.startsWith('@') ? raw.slice(1) : raw;
-  try {
-    const { data: profile } = await db.from('profiles').select('id,first_name,last_name,email,raven_id').or('raven_id.eq.' + query.toLowerCase() + ',first_name.ilike.' + query + ',last_name.ilike.' + query).maybeSingle();
-    if (profile) {
-      personEmail = profile.email;
-      personName = profile.first_name || profile.raven_id || personName;
-    }
-  } catch(e) {}
+  if (raw.startsWith('@')) {
+    const ravenId = raw.slice(1).trim().toLowerCase();
+    if (!/^[a-z0-9_]{3,20}$/.test(ravenId)) throw new Error('Enter a valid exact Raven ID.');
+    const { data: profile, error } = await db.from('profiles').select('id,first_name,email,raven_id').eq('raven_id', ravenId).maybeSingle();
+    if (error || !profile?.email) throw new Error('Raven ID not found. Add a plain guest name or check the full @RavenID.');
+    personEmail = profile.email;
+    personName = '@' + profile.raven_id;
+  }
   const alreadyOn = (bill.participants || []).some(p => p.name.toLowerCase() === personName.toLowerCase());
   if (alreadyOn) throw new Error(personName + ' is already on this bill');
   const { error } = await db.from('participants').insert({
@@ -10340,16 +10294,11 @@ async function cbScanReceipt() {
 }
 
 async function cbRefreshKnownPeopleProfiles() {
-  const names = Array.from(new Set(cbPeople.map(p => String(p || '').trim()).filter(Boolean)));
   cbKnownProfilesByName = {};
+  const names = cbPeople.filter(name => /^@[a-z0-9_]{3,20}$/i.test(name));
   if (!names.length) return;
-  try {
-    const { data: profiles } = await db.from('profiles').select('first_name,raven_id,email').in('first_name', names);
-    (profiles || []).forEach(profile => {
-      const key = String(profile.first_name || '').trim().toLowerCase();
-      if (key) cbKnownProfilesByName[key] = profile;
-    });
-  } catch (e) {}
+  const { data: profiles } = await db.from('profiles').select('raven_id,email').in('raven_id', names.map(name => name.slice(1).toLowerCase()));
+  for (const profile of profiles || []) cbKnownProfilesByName['@' + profile.raven_id] = profile;
 }
 
 function cbIsKnownRavenUser(name) {
@@ -10709,17 +10658,21 @@ async function cbCreateFinalBill() {
     const { error: lmErr } = await db.from('bills').update({ live_mode: true, live_people_count: livePeopleCount }).eq('id', billId);
     if (lmErr) console.warn('live_mode column not set:', lmErr.message);
   }
-  // Look up Raven profiles for all people by first_name so bill appears in their overview
-  let profileEmailMap = {};
-  try {
-    const { data: profiles } = await db.from('profiles').select('first_name,email').in('first_name', cbPeople);
-    (profiles || []).forEach(p => { if (p.first_name && p.email) profileEmailMap[p.first_name] = p.email; });
-  } catch(e) {}
+  // Only a deliberately entered @RavenID may create an account link.
+  const profileEmailMap = {};
+  const explicitPeople = cbPeople.filter(person => /^@[a-z0-9_]{3,20}$/i.test(person));
+  if (explicitPeople.length) {
+    const { data: profiles } = await db.from('profiles').select('raven_id,email').in('raven_id', explicitPeople.map(person => person.slice(1).toLowerCase()));
+    for (const person of explicitPeople) {
+      const profile = (profiles || []).find(p => p.raven_id === person.slice(1).toLowerCase());
+      if (profile?.email) profileEmailMap[person] = profile.email;
+    }
+  }
 
   // Payer is marked as already paid (they fronted the money)
   const rows = cbPeople.map(person => ({
     bill_id: billId,
-    // Use their real email if found in Raven profiles — makes bill appear in their overview
+    // Plain names stay unknown; only deliberately entered Raven IDs are linked.
     phone: profileEmailMap[person] || ('unknown_' + person.toLowerCase().replace(/\s+/g,'_') + '_' + billId),
     name: person,
     amount: personAmounts[person] || 0,
