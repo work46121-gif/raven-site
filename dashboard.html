@@ -5915,7 +5915,7 @@ async function openBillModal(billId) {
   document.querySelectorAll('#modal-participants [data-assign-raven-index]').forEach(button => {
     button.addEventListener('click', event => {
       event.stopPropagation();
-      assignBillParticipantRavenId(billId, parts[Number(button.dataset.assignRavenIndex)]);
+      assignBillParticipantRavenId(billId, parts[Number(button.dataset.assignRavenIndex)], bill.share_token);
     });
   });
   document.getElementById('modal-view-btn').onclick = () => viewBillPage(billId);
@@ -5948,7 +5948,7 @@ async function openBillModal(billId) {
   document.getElementById('bill-modal').classList.add('open');
 }
 
-async function assignBillParticipantRavenId(billId, participant) {
+async function assignBillParticipantRavenId(billId, participant, shareToken) {
   const entered = prompt('Enter the exact Raven ID for ' + participant.name + ' (for example @nicholas110):');
   if (entered === null) return;
   const ravenId = entered.trim().replace(/^@/, '').toLowerCase();
@@ -5962,7 +5962,7 @@ async function assignBillParticipantRavenId(billId, participant) {
     if (!session?.access_token) throw new Error('Please sign in again.');
     const response = await fetch(BACKEND + '/bill/' + encodeURIComponent(billId) + '/participants/' + encodeURIComponent(participant.id) + '/raven-id', {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + session.access_token },
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + session.access_token, 'X-Raven-Bill-Token': shareToken || '' },
       body: JSON.stringify({ raven_id: ravenId, expected_phone: participant.phone })
     });
     const result = await response.json();
