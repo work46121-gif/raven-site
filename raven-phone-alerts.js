@@ -26,7 +26,7 @@
   plugin.addListener('registrationError',()=>{note.textContent='Could not register. Update RAVEN and try again.';registeredOwner=null;label()});
   plugin.addListener('pushNotificationActionPerformed',event=>{
    const data=event.notification?.data;if(!currentUser?.id||data?.recipient_id!==currentUser.id)return;
-   if(data.kind==='bill')showPage('bills');else if(data.kind==='trip')showPage('trips');else{showPage('overview');document.getElementById('raven-inbox-open')?.click()}
+   if(data.kind==='bill')showPage('active-bills');else if(data.kind==='trip')showPage('trip-hub');else{showPage('overview');document.getElementById('raven-inbox-open')?.click()}
   });
   db.auth.onAuthStateChange((_event,session)=>{setTimeout(async()=>{
    if(registeredOwner!==session?.user?.id){registeredOwner=null;registeringOwner=null;label();await plugin.removeAllDeliveredNotifications().catch(()=>{});}
