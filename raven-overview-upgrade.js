@@ -146,7 +146,7 @@
         const latest=new Map();
         for(const m of messages||[]){const peer=m.sender_id===owner?m.receiver_id:m.sender_id;if(peer&&!latest.has(peer))latest.set(peer,m)}
         const ids=[...latest.keys()];
-        const {data:profiles,error:profileError}=ids.length?await db.from('profiles').select('id,first_name,last_name,raven_id').in('id',ids):{data:[],error:null};
+        const {data:profiles,error:profileError}=ids.length?await db.from('profiles').select('id,first_name,last_name,raven_id,avatar_url').in('id',ids):{data:[],error:null};
         if(profileError)throw profileError;
         if(currentUser?.id!==owner)return;
         conversations=ids.map(id=>({id,message:latest.get(id),profile:(profiles||[]).find(p=>p.id===id)||{id}}));
@@ -167,7 +167,7 @@
         const unread=Number(_dmUnreadMap[c.id]||0);
         return '<button type="button" class="raven-inbox-row '+(unread?'unread':'')+'" data-conversation="'+index+'"><span class="raven-inbox-avatar">'+safe(name[0])+'</span><span class="raven-inbox-copy"><strong>'+safe(name)+(unread?' · '+unread+' unread':'')+'</strong><small>'+safe(c.profile.raven_id?'@'+c.profile.raven_id:'')+'</small><small>'+safe(/^\[RAVEN_PHOTO:/.test(c.message.body||'')?'Photo':(c.message.body||'Message'))+'</small></span><time>'+safe(formatTimeAgo(c.message.created_at))+'</time></button>';
       }).join('')||'<div class="raven-inbox-empty">No conversations yet.<br>Message a friend to start one.</div>';
-      list.querySelectorAll('[data-conversation]').forEach(button=>button.onclick=()=>{const c=conversations[Number(button.dataset.conversation)];byId('raven-inbox').close();openDirectMessage(c.id,c.profile.first_name||c.profile.raven_id||'Raven member',c.profile)});
+      list.querySelectorAll('[data-conversation]').forEach(button=>{const c=conversations[Number(button.dataset.conversation)];if(c.profile.avatar_url&&/^https:\/\//i.test(c.profile.avatar_url)){const img=document.createElement('img');img.src=c.profile.avatar_url;img.alt='';img.loading='lazy';img.onerror=()=>img.remove();button.querySelector('.raven-inbox-avatar').append(img)}button.onclick=()=>{byId('raven-inbox').close();openDirectMessage(c.id,c.profile.first_name||c.profile.raven_id||'Raven member',c.profile)}});
     } else {
       list.innerHTML=notifications.map((n,index)=>'<button type="button" class="raven-inbox-row '+(n.unread&&!read.has(n.id)?'unread':'')+'" data-inbox-notification="'+index+'"><span class="raven-inbox-avatar" aria-hidden="true">'+(n.type==='friend'?'+':'•')+'</span><span class="raven-inbox-copy"><strong>'+safe(n.title)+'</strong><small>'+safe(n.sub)+'</small></span><time>'+safe(formatTimeAgo(n.time))+'</time></button>').join('')||'<div class="raven-inbox-empty">All caught up.<br>Bill updates and friend requests will land here.</div>';
       list.querySelectorAll('[data-inbox-notification]').forEach(button=>button.onclick=()=>{

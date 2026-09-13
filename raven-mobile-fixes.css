@@ -1,0 +1,24 @@
+/* Contain the scan editor instead of shrinking the entire phone viewport. */
+@media(max-width:800px){
+ body.app-mode .main,body.app-mode .main-inner{min-width:0!important;width:100%;max-width:100%;box-sizing:border-box}
+ #page-create-bill,#cb-step-2{width:100%;max-width:100%;min-width:0;box-sizing:border-box}
+ #cb-step-2>div{grid-template-columns:minmax(0,1fr)!important;gap:16px!important}
+ #cb-step-2 div{min-width:0;box-sizing:border-box}
+ #cb-step-2>div>div{width:100%;max-width:100%}
+ #cb-step-2>div>div>div{padding:14px!important}
+ #cb-step-2 input,#cb-step-2 select,#cb-step-2 textarea{font-size:16px!important;min-width:0;max-width:100%;box-sizing:border-box}
+ #cb-person-input{width:0!important;flex:1 1 0!important}
+ #cb-step-2 button{min-height:40px;max-width:100%;box-sizing:border-box}
+ #cb-scan-summary{font-size:12px!important;line-height:1.5;overflow-wrap:anywhere}
+ #cb-scanned-badge{gap:8px!important;padding:10px 12px!important}
+ #cb-items-list>div>div{flex-wrap:wrap;gap:8px!important;padding:9px 10px!important}
+ #cb-items-list>div>div>div:first-child{flex:1 1 50%!important;min-width:0}
+ #cb-item-name{min-width:0!important;flex:1 1 50%!important}
+ #cb-item-price{width:75px!important;min-width:0!important}
+}
+.raven-inbox-avatar{position:relative;overflow:hidden;flex-shrink:0}
+.raven-inbox-avatar img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:inherit}
+#rc-media .rc-body{overflow-y:auto;overscroll-behavior:contain;max-height:65dvh}
+#rc-media .rc-gallery{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+#rc-media .rc-gallery img{height:130px;border-radius:8px}
+@media(max-width:420px){#rc-media .rc-gallery img{height:96px}}
