@@ -1,5 +1,8 @@
 (() => {
- const root=document.getElementById('page-trip-hub');if(!root)return;
+ // Travel belongs inside the opened trip, never on the dashboard's trip list.
+ const root=document.getElementById('trip-travel-action');if(!root)return;
+ const currentUser={id:null};
+ const db={auth:{getSession:async()=>{await initChatDb();const state=await chatDb.auth.getSession();currentUser.id=state.data.session?.user?.id||null;return state}}};
  const el=(tag,text)=>{const e=document.createElement(tag);if(text)e.textContent=text;return e};
  const card=el('dialog');card.className='rm-card';card.id='raven-trip-travel-popup';card.style.cssText='width:min(620px,calc(100% - 24px));max-height:85dvh;overflow-y:auto;overscroll-behavior:contain;box-sizing:border-box;background:#101018;color:#f0eef8;border:1px solid #393044;border-radius:20px;padding:22px';
  const h=el('h3','Travel plans'),desc=el('p','One place for the group’s stay and everyone’s flights.'),select=el('select');desc.className='rm-muted';select.setAttribute('aria-label','Trip for travel plans');select.style.cssText='width:100%;padding:12px;background:#15151f;color:#fff;border:1px solid #ffffff20;border-radius:12px;font-size:16px';
@@ -8,10 +11,7 @@
  card.addEventListener('close',()=>{generation++;rows=[];content.replaceChildren()});
  let generation=0,selectedOwner=null,offset=0,rows=[],members=[],canAssign=false;
  async function api(path,method='GET',body){const {data:{session}}=await db.auth.getSession();if(!session)throw Error('Sign in to see travel plans.');const r=await fetch(BACKEND+path,{method,headers:{Authorization:'Bearer '+session.access_token,'Content-Type':'application/json'},...(body?{body:JSON.stringify(body)}:{})});const d=await r.json();if(!r.ok)throw Error(d.error||'Please retry.');return d}
- function trips(){const owner=currentUser?.id;if(owner!==selectedOwner){selectedOwner=owner;card.close();select.replaceChildren();content.replaceChildren();rows=[];generation++;}
-  for(const open of root.querySelectorAll('#trips-list .btn-view[data-tripid]')){if(open.parentElement.querySelector('[data-travel-button]'))continue;const id=open.dataset.tripid,t=tripDataMap?.[id];if(!t||!tripBelongsToDashboardUser(t,currentUser?.email||''))continue;const button=el('button','Stay & flights');button.type='button';button.className='bill-action-btn';button.dataset.travelButton=id;button.setAttribute('aria-label','Stay and flights for '+(t.name||'trip'));button.onclick=event=>{event.stopPropagation();select.replaceChildren(new Option(t.name||'Trip',id));select.value=id;h.textContent=(t.name||'Trip')+' · Travel';card.showModal();void load()};open.before(button)}
- }
- new MutationObserver(trips).observe(root.querySelector('#trips-list'),{childList:true,subtree:true});trips();
+ root.onclick=async()=>{select.replaceChildren(new Option('Trip',TRIP_ID));select.value=TRIP_ID;h.textContent='Stay & flights';card.showModal();status.textContent='Loading travel plans…';try{await db.auth.getSession();await load()}catch(e){status.textContent=e.message}};
  async function load(more=false){const id=select.value,owner=currentUser?.id,epoch=++generation;content.replaceChildren();if(!id)return;status.textContent='Loading travel plans…';if(!more){offset=0;rows=[];}
   try{const data=await api('/trips/'+encodeURIComponent(id)+'/travel?offset='+offset);if(generation!==epoch||currentUser?.id!==owner||select.value!==id)return;rows.push(...data.media);offset=data.nextOffset;members=data.members;canAssign=data.can_assign;render(id,data.hasMore);status.textContent='Shared with linked trip members only. Hide booking codes, boarding-pass barcodes and personal details before uploading.';}catch(e){if(epoch===generation)status.textContent=e.message;}
  }

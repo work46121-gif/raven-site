@@ -1757,15 +1757,15 @@ body.app-mode .cb-raven-add-icon { width:18px;height:18px;display:block; }
                 <div id="cb-item-count" style="font-size:12px;color:var(--muted)">0 items</div>
               </div>
               <div style="display:flex;gap:8px;margin-bottom:14px">
-                <button id="cb-split-even-btn" onclick="cbSetSplitMode('even')" style="flex:1;padding:9px;border-radius:9px;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;background:rgba(48,209,88,0.12);border:1px solid rgba(48,209,88,0.3);color:var(--green)">⚖️ Split Evenly</button>
                 <button id="cb-split-item-btn" onclick="cbSetSplitMode('itemized')" style="flex:1;padding:9px;border-radius:9px;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;background:var(--dark2);border:1px solid var(--border);color:var(--muted)">📋 Itemized</button>
+                <button id="cb-split-even-btn" onclick="cbSetSplitMode('even')" style="flex:1;padding:9px;border-radius:9px;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;background:rgba(48,209,88,0.12);border:1px solid rgba(48,209,88,0.3);color:var(--green)">⚖️ Split Evenly</button>
               </div>
               <!-- Even: just enter a total -->
-              <div id="cb-even-total-wrap">
-                <div style="position:relative"><span style="position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:14px">$</span><input id="cb-even-total" type="number" class="form-input" placeholder="Enter total amount" step="0.01" style="padding-left:30px" oninput="cbUpdateSummary()"></div>
+              <div id="cb-even-total-wrap" style="display:none"><p style="color:var(--green);font-size:14px;margin:0 0 12px">Split evenly selected · Full bill total, including tax, tip and fees</p>
+                <div style="position:relative"><span style="position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:14px">$</span><input id="cb-even-total" type="number" class="form-input" aria-label="Full bill total including tax and fees" placeholder="Full bill total" step="0.01" style="padding-left:30px" oninput="cbUpdateSummary()"></div>
               </div>
               <!-- Itemized: item list + add row -->
-              <div id="cb-itemized-wrap" style="display:none">
+              <div id="cb-itemized-wrap">
                 <div id="cb-items-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px"></div>
                 <div style="display:flex;gap:8px;border-top:1px solid var(--border);padding-top:12px">
                   <input id="cb-item-name" type="text" class="add-person-input" placeholder="Item name" style="flex:1" onkeydown="if(event.key==='Enter')cbAddItem()">
@@ -9907,7 +9907,7 @@ function cbValidateStep2(showErrors = true) {
     if (showErrors) cbSetFieldError('cb-paidby', 'Mark who paid');
   }
   if (cbSplitMode === 'even') {
-    const base = parseFloat(document.getElementById('cb-even-total')?.value) || 0;
+    const base = cbEvenSubtotal();
     if (base <= 0) {
       ok = false;
       if (showErrors) cbSetFieldError('cb-even-total', 'Enter the bill amount');
@@ -9950,7 +9950,7 @@ function cbGoToStep(step) {
   if (step === 3) cbBuildStep3();
 }
 
-let cbSplitMode = 'even';
+let cbSplitMode = 'itemized';
 const cbChargeSplits = { tax: 'proportional', tip: 'proportional', service: 'proportional', misc: 'proportional' };
 
 function cbSetChargeSplit(charge, mode) {
@@ -9968,12 +9968,20 @@ function cbSetChargeSplit(charge, mode) {
   cbUpdateSummary();
 }
 
+function cbSharedCharges() { return ['cb-tax','cb-tip','cb-service','cb-misc'].reduce((sum,id)=>sum+(parseFloat(document.getElementById(id)?.value)||0),0); }
+function cbEvenSubtotal() { return (parseFloat(document.getElementById('cb-even-total')?.value)||0) - cbSharedCharges(); }
 function cbSetSplitMode(mode) {
   if (mode === 'even' && cbItems.length > 0) {
     const evenTotalEl = document.getElementById('cb-even-total');
-    if (evenTotalEl) evenTotalEl.value = cbItems.reduce((sum, item) => sum + (parseFloat(item.price) || 0), 0).toFixed(2);
+    if (evenTotalEl) evenTotalEl.value = (cbItems.reduce((sum, item) => sum + (parseFloat(item.price) || 0), 0) + cbSharedCharges()).toFixed(2);
   }
   cbSplitMode = mode;
+  const chargesCard = document.getElementById('cb-tax')?.parentElement?.parentElement?.parentElement?.parentElement?.parentElement;
+  if (chargesCard) chargesCard.hidden = mode === 'even';
+  const count = document.getElementById('cb-item-count'); if(count) count.hidden = mode === 'even';
+  const scanResult = document.getElementById('cb-scan-result'); if(scanResult) scanResult.hidden = mode === 'even';
+  document.getElementById('cb-split-even-btn')?.setAttribute('aria-pressed',String(mode==='even'));
+  document.getElementById('cb-split-item-btn')?.setAttribute('aria-pressed',String(mode==='itemized'));
   const EB = document.getElementById('cb-split-even-btn'), IB = document.getElementById('cb-split-item-btn');
   const EW = document.getElementById('cb-even-total-wrap'), IW = document.getElementById('cb-itemized-wrap');
   if (mode === 'even') {
@@ -9997,7 +10005,7 @@ function cbComputePersonAmounts() {
   const itemAmts = {}; cbPeople.forEach(p => { itemAmts[p] = 0; });
   let subtotal = 0;
   if (cbSplitMode === 'even') {
-    const base = parseFloat(document.getElementById('cb-even-total')?.value) || 0;
+    const base = cbEvenSubtotal();
     subtotal = base; cbPeople.forEach(p => { itemAmts[p] = base / n; });
   } else {
     cbItems.forEach(item => {
@@ -10019,7 +10027,7 @@ function cbComputePersonAmounts() {
   return totals;
 }
 
-function cbSkipToStep2() { cbGoToStep(2); cbRenderItems(); cbRenderPeople(); cbSetSplitMode(cbItems.length > 0 ? 'itemized' : 'even'); }
+function cbSkipToStep2() { cbGoToStep(2); cbRenderItems(); cbRenderPeople(); cbSetSplitMode('itemized'); }
 function cbHandleFile(event) { const file = event.target.files[0]; if (file) cbLoadPhoto(file); }
 function cbHandleDrop(event) { event.preventDefault(); event.currentTarget.style.borderColor = 'rgba(48,209,88,0.3)'; const file = event.dataTransfer.files[0]; if (file) cbLoadPhoto(file); }
 
@@ -10110,7 +10118,7 @@ function cbClearPhoto() {
   const miscEl = document.getElementById('cb-misc'); if (miscEl) miscEl.value = '';
   const nameEl = document.getElementById('cb-name'); if (nameEl) nameEl.value = '';
   const scannedBadge = document.getElementById('cb-scanned-badge'); if (scannedBadge) scannedBadge.style.display = 'none';
-  cbSplitMode = 'even';
+  cbSplitMode = 'itemized';
   cbRenderItems();
   cbUpdateSummary();
 }
@@ -10267,7 +10275,7 @@ async function cbScanReceipt() {
         const scannedSubtotal = parseFloat(data.subtotal) > 0
           ? parseFloat(data.subtotal)
           : Math.max(0, parseFloat(data.total || 0) - parseFloat(data.tax || 0) - parseFloat(data.tip || 0) - parseFloat(data.service_fee || 0) - parseFloat(data.misc || 0) + parseFloat(data.discount || 0));
-        document.getElementById('cb-even-total').value = scannedSubtotal.toFixed(2);
+        document.getElementById('cb-even-total').value = (scannedSubtotal + cbSharedCharges()).toFixed(2);
         document.getElementById('cb-scanning').style.display = 'none';
         document.getElementById('cb-scan-result').style.display = 'block';
         document.getElementById('cb-scan-result').innerHTML =
@@ -10499,7 +10507,7 @@ function cbUpdateSummary() {
   const svc = parseFloat(document.getElementById('cb-service')?.value) || 0;
   const msc = parseFloat(document.getElementById('cb-misc')?.value) || 0;
   const subtotal = cbSplitMode === 'even'
-    ? (parseFloat(document.getElementById('cb-even-total')?.value) || 0)
+    ? (cbEvenSubtotal())
     : cbItems.reduce((s,i) => s + i.price, 0);
   const total = subtotal + tax + tip + svc + msc;
   const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = '$' + v.toFixed(2); };
@@ -10531,7 +10539,7 @@ function cbBuildStep3() {
   const svc = parseFloat(document.getElementById('cb-service')?.value) || 0;
   const msc = parseFloat(document.getElementById('cb-misc')?.value) || 0;
   const subtotal = cbSplitMode === 'even'
-    ? (parseFloat(document.getElementById('cb-even-total')?.value) || 0)
+    ? (cbEvenSubtotal())
     : cbItems.reduce((s,i) => s + i.price, 0);
   const total = subtotal + tax + tip + svc + msc;
   const personAmounts = cbComputePersonAmounts();
@@ -10577,7 +10585,7 @@ function cbBuildStep3() {
     const lines = [];
 
     if (cbSplitMode === 'even') {
-      const base = parseFloat(document.getElementById('cb-even-total')?.value) || 0;
+      const base = cbEvenSubtotal();
       lines.push({ label: 'Split share', amount: base / cbPeople.length });
     } else {
       // Items assigned to this person
@@ -10635,7 +10643,7 @@ function cbBuildStep3() {
   });
 }
 async function cbCreateFinalBill() {
-  function cbGetSubtotal() { return cbSplitMode === 'even' ? (parseFloat(document.getElementById('cb-even-total')?.value)||0) : cbItems.reduce((sum,item)=>sum+(Number(item.price)||0),0); }
+  function cbGetSubtotal() { return cbSplitMode === 'even' ? (cbEvenSubtotal()) : cbItems.reduce((sum,item)=>sum+(Number(item.price)||0),0); }
   const scanCurrentTotal = Math.round((cbGetSubtotal() + (parseFloat(document.getElementById('cb-tax')?.value)||0) + (parseFloat(document.getElementById('cb-tip')?.value)||0) + (parseFloat(document.getElementById('cb-service')?.value)||0) + (parseFloat(document.getElementById('cb-misc')?.value)||0))*100)/100;
   if (cbScannedReceiptTotal && (cbReceiptNeedsReview || Math.abs(scanCurrentTotal-cbScannedReceiptTotal)>0.02)) {
     if (!confirm('Review required: your split totals $' + scanCurrentTotal.toFixed(2) + ', and the receipt shows $' + cbScannedReceiptTotal.toFixed(2) + '. Check all items, discounts and fees. Have you reviewed and confirmed these amounts?')) return;
@@ -10659,7 +10667,7 @@ async function cbCreateFinalBill() {
   const msc = parseFloat(document.getElementById('cb-misc')?.value) || 0;
   let total;
   if (cbSplitMode === 'even') {
-    const base = parseFloat(document.getElementById('cb-even-total')?.value) || 0;
+    const base = cbEvenSubtotal();
     if (base <= 0) return showToast('Enter the total amount', 'error');
     total = base + tax + tip + svc + msc;
   } else {
@@ -10781,7 +10789,7 @@ async function cbCreateFinalBill() {
   celebrateBillCreated();
   // Track bill creation in PostHog
   try { if (typeof posthog !== 'undefined') posthog.capture('bill_created', { bill_id: billId, split_mode: cbSplitMode, people_count: cbPeople.length, total, has_receipt: !!cbImageBase64, has_payer: !!paidBy }); } catch(e) {}
-  cbItems = []; cbPeople = []; cbKnownProfilesByName = {}; cbImageBase64 = null; cbSplitMode = 'even'; cbLiveMode = false; cbLivePeopleCount = 2; const lt=document.getElementById('cb-live-toggle'); const lk=document.getElementById('cb-live-knob'); const lpw=document.getElementById('cb-live-people-wrap'); if(lt){lt.style.background='rgba(255,255,255,0.1)';lt.style.borderColor='rgba(255,255,255,0.15)';} if(lk){lk.style.background='#9896A8';lk.style.transform='translateX(0)';} if(lpw)lpw.style.display='none';
+  cbItems = []; cbPeople = []; cbKnownProfilesByName = {}; cbImageBase64 = null; cbSplitMode = 'itemized'; cbLiveMode = false; cbLivePeopleCount = 2; const lt=document.getElementById('cb-live-toggle'); const lk=document.getElementById('cb-live-knob'); const lpw=document.getElementById('cb-live-people-wrap'); if(lt){lt.style.background='rgba(255,255,255,0.1)';lt.style.borderColor='rgba(255,255,255,0.15)';} if(lk){lk.style.background='#9896A8';lk.style.transform='translateX(0)';} if(lpw)lpw.style.display='none';
   Object.keys(cbChargeSplits).forEach(k => { cbChargeSplits[k] = 'proportional'; });
   document.getElementById('cb-name').value = '';
   if (document.getElementById('cb-tax')) document.getElementById('cb-tax').value = '';
@@ -12644,9 +12652,9 @@ body.app-mode #chat-input {
 </style>
 
 <link rel="stylesheet" href="raven-mobile-fixes.css?v=20260913-1">
-<script src="raven-overview-upgrade.js?v=20260913-1"></script>
+<script src="raven-overview-upgrade.js?v=20260913-2"></script>
 <script src="raven-chat.js?v=20260913-1"></script>
-<script src="raven-travel-ui.js?v=20260913-1"></script>
+<script>cbSetSplitMode("itemized");</script>
 <script src="raven-phone-alerts.js?v=20260912-push1"></script>
 </body>
 </html>
