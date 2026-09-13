@@ -1,6 +1,10 @@
 /* Contain the scan editor instead of shrinking the entire phone viewport. */
 @media(max-width:800px){
  body.app-mode .main,body.app-mode .main-inner{min-width:0!important;width:100%;max-width:100%;box-sizing:border-box}
+ #cbs-1,#cbs-2,#cbs-3{flex:1 1 0!important;min-width:0;padding:12px 9px!important;gap:6px!important;box-sizing:border-box}
+ #cbs-1>div:first-child,#cbs-2>div:first-child,#cbs-3>div:first-child{width:24px!important;height:24px!important;font-size:13px!important}
+ #cbs-1>div:last-child,#cbs-2>div:last-child,#cbs-3>div:last-child{min-width:0}
+ #cbs-1>div:last-child>div,#cbs-2>div:last-child>div,#cbs-3>div:last-child>div{font-size:11px!important;overflow-wrap:anywhere}
  #page-create-bill,#cb-step-2{width:100%;max-width:100%;min-width:0;box-sizing:border-box}
  #cb-step-2>div{grid-template-columns:minmax(0,1fr)!important;gap:16px!important}
  #cb-step-2 div{min-width:0;box-sizing:border-box}
