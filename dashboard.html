@@ -9924,6 +9924,7 @@ function cbValidateStep2(showErrors = true) {
 }
 
 function cbGoToStep(step) {
+  if (step === 2 && cbSplitMode === 'itemized') cbSetSplitMode('itemized');
   if (step >= 2 && !cbValidateStep1(true)) return;
   if (step >= 3 && !cbValidateStep2(true)) return;
   [1,2,3].forEach(s => {
@@ -9976,6 +9977,7 @@ function cbSetSplitMode(mode) {
     if (evenTotalEl) evenTotalEl.value = (cbItems.reduce((sum, item) => sum + (parseFloat(item.price) || 0), 0) + cbSharedCharges()).toFixed(2);
   }
   cbSplitMode = mode;
+  const badge = document.getElementById('cb-scanned-badge'); if(badge) badge.style.display = mode === 'even' || !cbItems.length ? 'none' : 'flex';
   const chargesCard = document.getElementById('cb-tax')?.parentElement?.parentElement?.parentElement?.parentElement?.parentElement;
   if (chargesCard) chargesCard.hidden = mode === 'even';
   const count = document.getElementById('cb-item-count'); if(count) count.hidden = mode === 'even';
@@ -10515,6 +10517,10 @@ function cbUpdateSummary() {
   set('cb-service-display', svc); set('cb-misc-display', msc); set('cb-total-display', total);
   const sr = document.getElementById('cb-service-row'); if (sr) sr.style.display = svc > 0 ? 'flex' : 'none';
   const mr = document.getElementById('cb-misc-row');    if (mr) mr.style.display = msc > 0 ? 'flex' : 'none';
+  ['cb-subtotal','cb-tax-display','cb-tip-display','cb-service-display','cb-misc-display'].forEach(id => {
+    const row = document.getElementById(id)?.parentElement;
+    if(row) row.style.display = cbSplitMode === 'even' ? 'none' : (id === 'cb-service-display' && svc <= 0 || id === 'cb-misc-display' && msc <= 0) ? 'none' : 'flex';
+  });
   const liveEl = document.getElementById('cb-per-person-live');
   if (liveEl && cbPeople.length > 0 && total > 0 && !cbLiveMode) {
     const amts = cbComputePersonAmounts();
