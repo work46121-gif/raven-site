@@ -1,5 +1,6 @@
 (() => {
   'use strict';
+  const polish=document.createElement('link');polish.rel='stylesheet';polish.href='raven-chat-polish.css?v=20260912-1';document.head.append(polish);
   const $=id=>document.getElementById(id);
   const el=(tag,text,cls)=>{const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(cls)n.className=cls;return n};
   const nameOf=p=>[p.first_name,p.last_name].filter(Boolean).join(' ')||('@'+(p.raven_id||'member'));
@@ -16,6 +17,8 @@
   const rename=el('button','Rename'),gallery=el('button','Photos');chat.querySelector('.rc-head').insertBefore(rename,chat.querySelector('.rc-head button'));chat.querySelector('.rc-head').insertBefore(gallery,chat.querySelector('.rc-head button'));
   const older=el('button','Load older messages');older.hidden=true;older.style.margin='10px 16px';chat.append(status,older,history);
   const form=el('form',undefined,'rc-composer'),photo=el('button','+ Photo'),input=el('textarea');photo.type='button';input.rows=1;input.maxLength=10000;input.placeholder='Message the group';input.setAttribute('aria-label','Group message');const send=el('button','Send');send.type='submit';form.append(photo,input,send);chat.append(form);
+  send.textContent='↑';send.setAttribute('aria-label','Send');send.title='Send message';
+  input.addEventListener('input',()=>{input.style.height='auto';input.style.height=Math.min(110,input.scrollHeight)+'px'});
   chat.addEventListener('close',()=>{groupEpoch++;group=null;messages=[];photos=[];input.value='';void loadGroups()});
   async function startChat() {
     $('raven-inbox')?.close();picker.textContent='Loading your friends…';composer.showModal();const owner=currentUser?.id;
@@ -56,7 +59,7 @@
       const latest=messages.at(-1);if(latest)await api('/chats/'+id+'/read',{at:latest.created_at});
     }catch(e){status.textContent=e.message}finally{loading=false}
   }
-  function renderGroup(){history.replaceChildren();for(const m of messages){const row=el('div',undefined,'rc-message'+(m.sender_id===currentUser?.id?' mine':''));row.append(el('small',nameOf(members.find(p=>p.id===m.sender_id)||{})));const attachment=photos.find(p=>p.message_id===m.id);if(attachment){const img=el('img');img.src=attachment.url;img.alt='Photo shared in this chat';img.loading='lazy';row.append(img)}else row.append(el('div',m.body));row.append(el('small',new Date(m.created_at).toLocaleString()));history.append(row)}if(!messages.length)history.append(el('p','Your group is ready. Send the first message.','rc-status'));}
+  function renderGroup(){history.replaceChildren();let day='';for(const m of messages){const date=new Date(m.created_at),nextDay=date.toLocaleDateString(undefined,{month:'short',day:'numeric'});if(nextDay!==day){history.append(el('div',nextDay,'rc-day'));day=nextDay}const mine=m.sender_id===currentUser?.id,name=nameOf(members.find(p=>p.id===m.sender_id)||{});const row=el('div',undefined,'rc-message'+(mine?' mine':''));row.dataset.initial=name.charAt(0).toUpperCase();if(!mine)row.append(el('small',name));const attachment=photos.find(p=>p.message_id===m.id);if(attachment){const img=el('img');img.src=attachment.url;img.alt='Photo shared in this chat';img.loading='lazy';row.append(img)}else row.append(el('div',m.body));row.append(el('small',date.toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'})));history.append(row)}if(!messages.length)history.append(el('p','Your group is ready. Send the first message.','rc-status'));}
   older.onclick=()=>refreshGroup(true);
   form.onsubmit=async e=>{e.preventDefault();const body=input.value.trim();if(!body||!group)return;const id=group.id;send.disabled=true;try{await api('/chats/'+id+'/messages',{body});if(group?.id===id){input.value='';await refreshGroup();history.scrollTop=history.scrollHeight}}catch(error){status.textContent=error.message}finally{send.disabled=false}};
   rename.onclick=async()=>{if(!group)return;const id=group.id,name=prompt('Rename this group',group.name);if(name===null)return;try{const data=await api('/chats/'+id,{name},'PATCH');if(group?.id===id){group.name=data.chat.name;$('rc-chat-title').textContent=data.chat.name}}catch(e){status.textContent=e.message}};

@@ -1,0 +1,20 @@
+#rc-chat{width:min(620px,calc(100% - 28px));height:min(780px,88dvh);max-height:88dvh;border-radius:26px;background:#0c0c12;box-shadow:0 28px 100px #0009;font-family:'Epilogue',-apple-system,sans-serif}
+#rc-chat[open]{display:flex;flex-direction:column}
+#rc-chat .rc-head{padding:20px 18px 12px;border-bottom:0;flex-shrink:0;gap:8px}
+#rc-chat-title{font-family:inherit;font-size:16px;font-weight:750;line-height:1.35;letter-spacing:-.03em}
+#rc-chat .rc-head:before{content:'R';width:42px;height:42px;flex-shrink:0;display:grid;place-items:center;background:linear-gradient(145deg,#a855f7,#6023a6);border-radius:16px;color:white;font-weight:850;font-size:22px;box-shadow:inset 0 0 0 1px #ffffff25}
+#rc-chat .rc-head button{border:0;background:#ffffff08;border-radius:50%;height:38px;min-height:38px;font-family:inherit;font-size:11px;font-weight:600;padding:8px}
+#rc-chat>.rc-status{padding:0 22px 14px 70px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-bottom:1px solid #ffffff0b;color:#8f8b9f;flex-shrink:0}
+#rc-history{flex:1;min-height:0;max-height:none;padding:20px;overflow-y:auto;overscroll-behavior:contain;background:radial-gradient(ellipse at 100% 0,#7c3aed0c,transparent 65%)}
+#rc-history .rc-message{position:relative;max-width:76%;width:fit-content;margin:6px auto 14px 36px;padding:11px 15px;border-radius:19px;background:#24232c;font-size:14px;line-height:1.55;white-space:pre-wrap}
+#rc-history .rc-message:not(.mine):before{content:attr(data-initial);position:absolute;left:-36px;bottom:0;display:grid;place-items:center;width:27px;height:27px;border-radius:50%;background:#3b2a53;color:#d7b5ff;font-size:11px;font-weight:800}
+#rc-history .rc-message.mine{margin-left:auto;margin-right:0;background:linear-gradient(125deg,#8c40e5,#6327c4);color:#fff;border-bottom-right-radius:6px}
+#rc-history .rc-message:not(.mine){border-bottom-left-radius:6px}
+#rc-history .rc-message small{font-size:10px;color:#beb8cf;line-height:1.5}
+#rc-history .rc-message.mine small{color:#ffffffa8}
+.rc-day{text-align:center;color:#868194;font-size:10px;font-weight:650;margin:16px 0 24px;letter-spacing:.04em}
+#rc-chat .rc-composer{margin:8px 14px 14px;padding:6px;border:1px solid #ffffff1c;border-radius:28px;background:#15151d;flex-shrink:0;gap:4px}
+#rc-chat .rc-composer textarea{background:transparent;border:0;padding:11px 6px;font-family:inherit;font-size:14px;max-height:110px;outline-offset:-2px}
+#rc-chat .rc-composer button{border:0;background:transparent;color:#c49bff;font-family:inherit;font-size:12px;padding:10px;white-space:nowrap}
+#rc-chat .rc-composer button[type=submit]{background:#8541df;color:#fff;border-radius:50%;width:42px;flex-shrink:0;font-size:20px;padding:8px}
+@media(max-width:600px){#rc-chat{inset:0;width:100%;height:100dvh;max-height:100dvh;max-width:none;border:0;border-radius:0;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom);box-sizing:border-box}#rc-chat .rc-head{padding-top:14px}#rc-chat-title{font-size:15px}#rc-history{padding:16px}#rc-chat .rc-composer{margin-bottom:10px}}
