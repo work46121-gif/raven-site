@@ -10,6 +10,18 @@
   section.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px"><div><h3 id="admin-recent-title">Recently joined</h3><div class="rm-muted">Newest accounts first · includes setup in progress</div></div><button type="button" id="admin-recent-refresh">Refresh</button></div><div id="admin-recent-status" class="rm-muted" role="status" style="margin-top:12px"></div><div id="admin-recent-list"></div><button type="button" id="admin-recent-more" hidden style="margin-top:14px">Load more</button>';
   result.before(section);
   const list = section.querySelector('#admin-recent-list');
+  list.tabIndex = 0;
+  list.setAttribute('role', 'region');
+  list.setAttribute('aria-label', 'Recently joined members; scroll for more');
+  list.style.cssText = 'overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable;';
+  function sizeRecentList() {
+    const rows = [...list.children];
+    if (!rows.length) { list.style.maxHeight = ''; return; }
+    const height = rows.slice(0, 2).reduce((sum, row) => sum + row.getBoundingClientRect().height, 0);
+    if (height) list.style.maxHeight = Math.ceil(height) + 'px';
+  }
+  if (window.ResizeObserver) new ResizeObserver(sizeRecentList).observe(section);
+  window.addEventListener('resize', sizeRecentList);
   const status = section.querySelector('#admin-recent-status');
   const more = section.querySelector('#admin-recent-more');
   const refresh = section.querySelector('#admin-recent-refresh');
@@ -47,7 +59,8 @@
       }
       offset = response.nextOffset;
       more.hidden = !response.hasMore;
-      status.textContent = seen.size ? seen.size + ' most recent accounts shown' : 'No member profiles yet.';
+      status.textContent = seen.size ? 'Newest members · scroll to see more' : 'No member profiles yet.';
+      requestAnimationFrame(sizeRecentList);
     } catch (error) {
       if (requestGeneration === generation) status.textContent = 'Could not load recent members. Tap Refresh to retry.';
     } finally {

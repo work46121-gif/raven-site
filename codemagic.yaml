@@ -129,6 +129,12 @@ workflows:
           plutil -lint "$ENTITLEMENTS_PATH"
         working_directory: .
 
+      - name: Configure opt-in iOS push notifications
+        script: |
+          set -e
+          node configure-ios-push.cjs
+        working_directory: .
+
       - name: Generate iOS app icons
         script: |
           set -e
