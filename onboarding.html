@@ -803,6 +803,14 @@ try {
         <span class="success-icon">🪶</span>
         <div class="success-title">You're in, <span id="welcome-name">friend</span>!</div>
         <div class="success-sub">Your RAVEN account is ready. Start splitting bills instantly — no one needs to download anything.</div>
+        <div style="margin:0 auto 24px;padding:20px;max-width:320px;background:#14111d;border:1px solid #7c3aed44;border-radius:18px">
+          <img id="success-avatar" alt="Your profile picture" hidden style="width:72px;height:72px;border-radius:50%;object-fit:cover;margin:0 auto 12px;border:2px solid #30d158">
+          <div id="success-full-name" style="font-size:18px;font-weight:700"></div>
+          <div id="success-raven-id" style="color:#c084fc;font-size:14px;margin:8px 0 16px"></div>
+          <input id="success-photo-file" type="file" accept="image/jpeg,image/png,image/webp" hidden onchange="uploadWelcomePhoto(this)">
+          <button id="success-photo-button" type="button" onclick="document.getElementById('success-photo-file').click()" style="padding:11px 16px;background:#7c3aed22;color:#d8b4fe;border:1px solid #a855f755;border-radius:11px;font:inherit;cursor:pointer">Add profile picture</button>
+          <p id="success-photo-status" role="status" style="font-size:12px;color:#9896a8;margin-top:10px">Optional · You can do this later.</p>
+        </div>
         <button class="btn-next" onclick="goToDashboard()" style="max-width:280px;margin:0 auto;display:block">Open Dashboard</button>
       </div>
     </div>
@@ -1081,7 +1089,7 @@ async function submitStep1() {
   // Save to Supabase
   await saveProfile({ first_name: firstName, last_name: lastName, date_of_birth: dob });
 
-  document.getElementById('welcome-name').textContent = firstName + '!';
+  document.getElementById('welcome-name').textContent = firstName;
   goToStep(2);
 }
 
@@ -1199,6 +1207,7 @@ async function saveProfile(data) {
 }
 
 function goToStep(step) {
+  if(step === 'success') void showWelcomeDetails();
   document.querySelectorAll('[id^="step-"]').forEach(s => s.style.display = 'none');
   const el = document.getElementById(`step-${step}`);
   if (el) { el.style.display = 'block'; el.classList.remove('step-anim'); void el.offsetWidth; el.classList.add('step-anim'); }
@@ -1221,6 +1230,25 @@ function goToStep(step) {
   }
 }
 
+async function showWelcomeDetails(){
+  const owner=currentUser?.id;if(!owner)return;
+  const {data,error}=await db.from('profiles').select('first_name,last_name,raven_id,avatar_url').eq('id',owner).single();
+  if(error||currentUser?.id!==owner){document.getElementById('success-photo-status').textContent='Account details could not load. You can still continue.';return}
+  document.getElementById('success-full-name').textContent=[data.first_name,data.last_name].filter(Boolean).join(' ');
+  document.getElementById('success-raven-id').textContent='Raven ID: @'+(data.raven_id||'');
+  if(data.avatar_url){const img=document.getElementById('success-avatar');img.src=data.avatar_url;img.hidden=false;document.getElementById('success-photo-button').textContent='Change profile picture'}
+}
+async function uploadWelcomePhoto(input){
+  const file=input.files[0],owner=currentUser?.id;if(!file||!owner)return;
+  const status=document.getElementById('success-photo-status'),button=document.getElementById('success-photo-button');
+  if(!['image/jpeg','image/png','image/webp'].includes(file.type)||file.size>6291456){status.textContent='Choose a JPG, PNG or WebP under 6 MB.';return}
+  button.disabled=true;const next=document.querySelector('#step-success .btn-next');next.disabled=true;status.textContent='Saving your picture…';
+  try{
+    const bitmap=await createImageBitmap(file);const canvas=document.createElement('canvas');canvas.width=canvas.height=256;const side=Math.min(bitmap.width,bitmap.height);canvas.getContext('2d').drawImage(bitmap,(bitmap.width-side)/2,(bitmap.height-side)/2,side,side,0,0,256,256);bitmap.close();const avatar_url=canvas.toDataURL('image/jpeg',.85);
+    if(currentUser?.id!==owner)return;const {error}=await db.from('profiles').update({avatar_url,updated_at:new Date().toISOString()}).eq('id',owner);if(error)throw error;
+    const cached=JSON.parse(localStorage.getItem('raven_profile')||'{}');if(currentUser?.id!==owner)return;localStorage.setItem('raven_profile',JSON.stringify({...cached,user_id:owner,avatar_url}));await showWelcomeDetails();status.textContent='Profile picture saved.';
+  }catch(e){status.textContent='Could not save that picture. Please try again, or add it later.'}finally{button.disabled=false;next.disabled=false;input.value=''}
+}
 function goToDashboard() {
   // Guarantee the local cache is marked complete so dashboard never loops back
   try {

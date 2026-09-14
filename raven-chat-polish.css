@@ -18,3 +18,11 @@
 #rc-chat .rc-composer button{border:0;background:transparent;color:#c49bff;font-family:inherit;font-size:12px;padding:10px;white-space:nowrap}
 #rc-chat .rc-composer button[type=submit]{background:#8541df;color:#fff;border-radius:50%;width:42px;flex-shrink:0;font-size:20px;padding:8px}
 @media(max-width:600px){#rc-chat{inset:0;width:100%;height:100dvh;max-height:100dvh;max-width:none;border:0;border-radius:0;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom);box-sizing:border-box}#rc-chat .rc-head{padding-top:14px}#rc-chat-title{font-size:15px}#rc-history{padding:16px}#rc-chat .rc-composer{margin-bottom:10px}}
+#rc-chat.rc-enter{animation:rc-enter .6s cubic-bezier(.2,.7,.2,1) both}
+@keyframes rc-enter{from{opacity:0;transform:translateX(38px)}to{opacity:1;transform:translateX(0)}}
+.rc-skeleton{height:48px;width:58%;margin:18px 0;border-radius:18px;background:#ffffff07;animation:rc-breathe 1.8s ease-in-out infinite alternate}
+.rc-skeleton:nth-child(even){margin-left:auto;width:42%}
+@keyframes rc-breathe{to{opacity:.35}}
+.rc-sender{display:flex;align-items:center;gap:7px;margin-bottom:7px;font-size:11px;color:#d4c6e3}
+.rc-sender img{width:22px!important;height:22px!important;object-fit:cover;border-radius:50%!important}
+@media(prefers-reduced-motion:reduce){#rc-chat.rc-enter,.rc-skeleton{animation:none}}
