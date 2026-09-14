@@ -9678,6 +9678,19 @@ async function openTrip(tripId, fallbackUrl) {
   setTimeout(() => {
     if (openTrip._pendingUrl === url) openTrip._pendingUrl = '';
   }, 1500);
+  // Carry only a short-lived, trip-scoped capability across the app/browser origin boundary.
+  try {
+    const target = new URL(url, location.href);
+    if (['https://ravensplit.com','https://raven-backend-production-fb1f.up.railway.app'].includes(target.origin)) {
+      const {data:{session}} = await db.auth.getSession();
+      if (session?.access_token) {
+        const response = await fetch(BACKEND+'/trips/'+encodeURIComponent(id)+'/travel-pass', {method:'POST',headers:{Authorization:'Bearer '+session.access_token},signal:AbortSignal.timeout(5000)});
+        const data = await response.json();
+        if(response.ok && data.pass){ target.hash = 'raven_travel='+encodeURIComponent(data.pass); url=target.href; }
+      }
+    }
+  } catch(e) { /* Trip still opens; travel offers a reconnect action if needed. */ }
+  openTrip._pendingUrl = url;
   try { window.location.assign(url); }
   catch(e) { window.location.href = url; }
 }
@@ -12659,7 +12672,7 @@ body.app-mode #chat-input {
 
 <link rel="stylesheet" href="raven-mobile-fixes.css?v=20260913-1">
 <script src="raven-overview-upgrade.js?v=20260913-2"></script>
-<script src="raven-chat.js?v=20260913-1"></script>
+<script src="raven-chat.js?v=20260913-3"></script>
 <script>cbSetSplitMode("itemized");</script>
 <script src="raven-phone-alerts.js?v=20260912-push1"></script>
 </body>
