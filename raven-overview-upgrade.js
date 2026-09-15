@@ -133,10 +133,11 @@
     if(inboxOwner!==owner){inboxOwner=owner;conversations=[];notifications=[];const badge=byId('raven-inbox-count');badge.hidden=true}
     if(!owner){if(byId('raven-inbox').open)byId('raven-inbox-list').innerHTML='<div class="raven-inbox-empty">Sign in to see your inbox.</div>';return}
     inboxBusy=true;
+    byId('raven-inbox-list').setAttribute('aria-busy','true');
+    const groupsReady=window.ravenPrepareGroups?.();
     if(showLoading)byId('raven-inbox-list').innerHTML='<div class="raven-inbox-empty">Loading your inbox…</div>';
     try {
-      await loadUnreadDMCounts();
-      const nextNotifications=await buildNotifications();
+      const [,nextNotifications]=await Promise.all([loadUnreadDMCounts(),buildNotifications()]);
       if(currentUser?.id!==owner)return;
       notifications=nextNotifications;
       // Only load private message previews when the user opens the inbox.
@@ -151,13 +152,14 @@
         if(currentUser?.id!==owner)return;
         conversations=ids.map(id=>({id,message:latest.get(id),profile:(profiles||[]).find(p=>p.id===id)||{id}}));
       }
+      await groupsReady;
+      if(currentUser?.id!==owner)return;
+      byId('raven-inbox-list').setAttribute('aria-busy','false');
       updateInboxBadge();if(byId('raven-inbox').open)renderInbox();
     } catch(error){if(byId('raven-inbox').open)byId('raven-inbox-list').innerHTML='<div class="raven-inbox-empty">Could not refresh your inbox. Close and reopen to retry.</div>'}
-    finally{inboxBusy=false}
+    finally{inboxBusy=false;byId('raven-inbox-list').setAttribute('aria-busy','false')}
   }
   function renderInbox() {
-    // Notify the group list after the existing DM/notification rows render.
-    setTimeout(()=>window.dispatchEvent(new Event('raven-inbox-rendered')),0);
     const list=byId('raven-inbox-list');if(!list)return;
     const read=new Set(readNotificationIds());
     document.querySelectorAll('[data-inbox-tab]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.inboxTab===inboxTab)));
@@ -177,6 +179,7 @@
         updateInboxBadge();updateNotifBadge();byId('raven-inbox').close();if(n.action)n.action();
       });
     }
+    window.ravenRenderGroups?.();
   }
   window.addEventListener('raven-group-unread',updateInboxBadge);
   for(const name of ['updateDMBadges','updateNotifBadge']) {

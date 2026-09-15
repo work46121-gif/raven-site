@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const polish=document.createElement('link');polish.rel='stylesheet';polish.href='raven-chat-polish.css?v=20260914-1';document.head.append(polish);
+  const polish=document.createElement('link');polish.rel='stylesheet';polish.href='raven-chat-polish.css?v=20260915-1';document.head.append(polish);
   const $=id=>document.getElementById(id);
   const el=(tag,text,cls)=>{const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(cls)n.className=cls;return n};
   const nameOf=p=>[p.first_name,p.last_name].filter(Boolean).join(' ')||('@'+(p.raven_id||'member'));
@@ -35,15 +35,33 @@
     }catch(e){picker.textContent=e.message}
   }
   if($('raven-inbox-compose'))$('raven-inbox-compose').onclick=startChat;
-  async function loadGroups(offset=0) {
-    if(!currentUser?.id)return;const owner=currentUser.id;
-    try{const data=await api('/chats?offset='+offset);if(currentUser?.id!==owner)return;groups=offset?[...groups,...data.chats]:data.chats;window.ravenGroupUnreadCount=groups.filter(g=>g.unread).length;window.dispatchEvent(new Event('raven-group-unread'));
-      const list=$('raven-inbox-list');if(!list||!$('raven-inbox')?.open||document.querySelector('[data-inbox-tab="notifications"]')?.getAttribute('aria-pressed')==='true')return;
-      list.querySelector('.rc-group-list')?.remove();const box=el('div',undefined,'rc-group-list');box.append(el('p','Group chats','rm-muted'));
-      for(const g of groups){const b=el('button',undefined,'raven-inbox-row');b.type='button';const avatar=el('span',g.name.charAt(0).toUpperCase(),'raven-inbox-avatar');if(g.photo_url){const img=el('img');img.src=g.photo_url;img.alt='';img.onerror=()=>img.remove();avatar.append(img)}const text=el('span',g.name+(g.unread?' · New':''));text.append(el('small',g.last_message?.body||'Start the conversation'));b.append(avatar,text);b.onclick=()=>openGroup(g);box.append(b)}
-      if(!groups.length)box.append(el('p','Tap + to start a group.','rm-muted'));if(data.hasMore){const more=el('button','Load more groups');more.onclick=()=>loadGroups(data.nextOffset);box.append(more)}list.prepend(box);
-    }catch(e){/* Existing DMs remain available if the group service is temporarily offline. */}
+  let groupsAccount=null,groupsPending=null,groupsUpdated=0,groupsPage={},groupsError=false;
+  async function prepareGroups(offset=0,force=false) {
+    const owner=currentUser?.id;
+    if(groupsAccount!==owner){groupsAccount=owner;groups=[];groupsPending=null;groupsUpdated=0;groupsPage={};groupsError=false}
+    if(!owner)return;
+    if(!offset&&groupsPending)return groupsPending;
+    if(!offset&&!force&&Date.now()-groupsUpdated<10000)return;
+    const request=(async()=>{
+      try{const data=await api('/chats?offset='+offset);if(currentUser?.id!==owner||groupsAccount!==owner)return;
+        groups=offset?[...groups,...data.chats]:data.chats;groupsPage=data;groupsUpdated=Date.now();groupsError=false;
+        window.ravenGroupUnreadCount=groups.filter(g=>g.unread).length;window.dispatchEvent(new Event('raven-group-unread'));
+      }catch(e){if(groupsAccount===owner)groupsError=true}
+    })();
+    if(!offset)groupsPending=request;
+    await request;if(groupsPending===request)groupsPending=null;
   }
+  function renderGroups() {
+    const list=$('raven-inbox-list');
+    if(groupsAccount!==currentUser?.id||!list||!$('raven-inbox')?.open||list.getAttribute('aria-busy')==='true'||document.querySelector('[data-inbox-tab="notifications"]')?.getAttribute('aria-pressed')==='true')return;
+    list.querySelector('.rc-group-list')?.remove();const box=el('div',undefined,'rc-group-list');box.append(el('p','Group chats','rm-muted'));
+    for(const g of groups){const b=el('button',undefined,'raven-inbox-row');b.type='button';const avatar=el('span',g.name.charAt(0).toUpperCase(),'raven-inbox-avatar');if(g.photo_url){const img=el('img');img.src=g.photo_url;img.alt='';img.onerror=()=>img.remove();avatar.append(img)}const text=el('span',g.name+(g.unread?' · New':''));text.append(el('small',g.last_message?.body||'Start the conversation'));b.append(avatar,text);b.onclick=()=>openGroup(g);box.append(b)}
+    if(!groups.length)box.append(el('p',groupsError?'Group chats are temporarily unavailable.':'Tap + to start a group.','rm-muted'));
+    if(groupsPage.hasMore){const more=el('button','Load more groups');more.onclick=()=>loadGroups(groupsPage.nextOffset);box.append(more)}list.prepend(box);
+  }
+  async function loadGroups(offset=0){await prepareGroups(offset,true);renderGroups()}
+  window.ravenPrepareGroups=prepareGroups;
+  window.ravenRenderGroups=renderGroups;
   window.addEventListener('raven-inbox-rendered',()=>void loadGroups());
   function openGroup(value){$('raven-inbox')?.close();group=value;groupOwner=currentUser?.id;groupEpoch++;messages=[];photos=[];members=[];groupOffset=0;history.replaceChildren();status.textContent='';chat.setAttribute('aria-busy','true');for(let i=0;i<3;i++){const s=el('div',undefined,'rc-skeleton');s.setAttribute('aria-hidden','true');history.append(s)}chat.classList.remove('rc-enter');void chat.offsetWidth;chat.classList.add('rc-enter');$('rc-chat-title').textContent=value.name;groupPhoto.hidden=true;chat.classList.remove('has-photo');chat.showModal();void refreshGroup(false);void updateGroupPhoto(value.id);}
   async function refreshGroup(loadOlder=false){
@@ -78,7 +96,7 @@
       if(data.can_manage){const renameButton=el('button','Rename'),photoButton=el('button','Change group photo'),add=el('button','Add members');
         renameButton.onclick=async()=>{const name=prompt('Group name',data.chat.name);if(name===null)return;try{await api('/chats/'+id,{name},'PATCH');await refreshGroup();await showSettings()}catch(e){note.textContent=e.message}};
         photoButton.onclick=()=>choosePhoto('/chats/'+id+'/photo',async()=>{await updateGroupPhoto(id);await showSettings()},message=>note.textContent=message);
-        add.onclick=async()=>{try{const result=await api('/chats/friends');const list=el('div');const eligible=result.friends.filter(f=>!data.members.some(m=>m.id===f.id));if(!eligible.length)list.append(el('p','All your Raven friends are already in this group.'));for(const f of eligible){const b=el('button','Add '+nameOf(f));b.style.cssText='display:block;width:100%;margin:8px 0';b.onclick=()=>manage('add',f.id);list.append(b)}add.disabled=true;actions.after(list)}catch(e){note.textContent=e.message}};actions.append(renameButton,photoButton,add);
+        add.onclick=async()=>{try{const result=await api('/chats/friends');const list=el('div');const eligible=result.friends.filter(f=>!data.members.some(m=>m.id===f.id));if(!eligible.length)list.append(el('p','All your Raven friends are already in this group.'));for(const f of eligible){const b=el('button',undefined,'rc-add-member');b.type='button';b.setAttribute('aria-label','Add '+nameOf(f));const avatar=el('span',nameOf(f).charAt(0).toUpperCase(),'rc-member-avatar');if(f.avatar_url&&/^(https:\/\/|data:image\/(?:png|jpe?g|webp|gif);base64,)/i.test(f.avatar_url)){const img=el('img');img.src=f.avatar_url;img.alt='';img.onerror=()=>img.remove();avatar.append(img)}const copy=el('span',undefined,'rc-member-copy');copy.append(el('strong',nameOf(f)),el('small',f.raven_id?'@'+f.raven_id:'Raven member'));const plus=el('span','+','rc-member-plus');plus.setAttribute('aria-hidden','true');b.append(avatar,copy,plus);b.onclick=()=>manage('add',f.id);list.append(b)}add.disabled=true;actions.after(list)}catch(e){note.textContent=e.message}};actions.append(renameButton,photoButton,add);
       }
       settingsBody.append(actions,note,el('h3','Members'));
       for(const p of data.members){const row=el('div',undefined,'rc-person'),label=el('span',nameOf(p)+(p.id===currentUser?.id?' · You':''));label.append(el('small','@'+(p.raven_id||'member')+' · '+p.role));row.append(label);

@@ -26,3 +26,8 @@
 .rc-sender{display:flex;align-items:center;gap:7px;margin-bottom:7px;font-size:11px;color:#d4c6e3}
 .rc-sender img{width:22px!important;height:22px!important;object-fit:cover;border-radius:50%!important}
 @media(prefers-reduced-motion:reduce){#rc-chat.rc-enter,.rc-skeleton{animation:none}}
+.rc-dialog .rc-add-member{display:flex;align-items:center;gap:12px;width:100%;margin:0;padding:14px 4px;text-align:left;background:transparent;border:0;border-bottom:1px solid #ffffff0c;border-radius:0}
+.rc-member-avatar{position:relative;display:grid;place-items:center;flex:0 0 44px;height:44px;overflow:hidden;border-radius:50%;background:linear-gradient(135deg,#7735b9,#382051);color:#e8d5ff;font-size:18px}
+.rc-member-avatar img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.rc-member-copy{flex:1;min-width:0}.rc-member-copy strong{display:block;font-size:14px;font-weight:600;color:#f0eef8;overflow-wrap:anywhere}.rc-member-copy small{display:block;font-size:12px;color:#9896a8;margin-top:4px}
+.rc-member-plus{display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:#7c3aed24;color:#c084fc;font-size:20px}.rc-add-member:hover{background:#ffffff05}
