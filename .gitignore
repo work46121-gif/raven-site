@@ -1,0 +1,6 @@
+node_modules/
+dist/
+android/local.properties
+android/**/*.jks
+android/**/*.keystore
+android/**/google-services.json

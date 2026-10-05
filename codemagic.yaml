@@ -16,7 +16,7 @@ workflows:
         XCODE_WORKSPACE: ios/App/App.xcworkspace
         XCODE_SCHEME: App
         DEVELOPER_DIR: /Applications/Xcode-26.4.app/Contents/Developer
-      node: 20.19.0
+      node: 22.21.1
       xcode: 26.4
 
     scripts:
@@ -39,6 +39,7 @@ workflows:
           rsync -a ./ dist/ \
             --exclude dist \
             --exclude ios \
+            --exclude android \
             --exclude node_modules \
             --exclude .git \
             --exclude codemagic \
@@ -57,7 +58,7 @@ workflows:
           ls -la
           node -v
           npm -v
-          npx cap add ios || true
+          npx cap add ios --packagemanager CocoaPods || true
           npx cap sync ios
         working_directory: .
 
@@ -333,3 +334,71 @@ workflows:
       - build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
       - $HOME/Library/Developer/Xcode/DerivedData/**/Build/**/*.dSYM
+
+  raven-android:
+    name: RAVEN Android Play Bundle
+    max_build_duration: 60
+    instance_type: linux_x2
+    environment:
+      # In Codemagic, add the upload key under Code signing identities with
+      # this exact reference. It is deliberately never stored in this repo.
+      android_signing:
+        - raven-android-upload
+      vars:
+        APP_ID: com.ravensplit.app
+        APP_NAME: RAVEN
+        ANDROID_VERSION_NAME: 1.0.0
+      node: 22.21.1
+      java: 21
+
+    scripts:
+      - name: Install Node dependencies
+        script: |
+          set -e
+          npm install
+        working_directory: .
+
+      - name: Stage web assets for Capacitor
+        script: |
+          set -e
+          rm -rf dist
+          mkdir -p dist
+          rsync -a ./ dist/ \
+            --exclude dist \
+            --exclude ios \
+            --exclude android \
+            --exclude node_modules \
+            --exclude .git \
+            --exclude codemagic \
+            --exclude "package*.json" \
+            --exclude "proxy*.js" \
+            --exclude "server*.js" \
+            --exclude README.md
+          cp app.html dist/index.html
+        working_directory: .
+
+      - name: Sync Android web app
+        script: |
+          set -e
+          npx cap sync android
+        working_directory: .
+
+      - name: Set Android version and build signed App Bundle
+        script: |
+          set -e
+          if [ -z "${CM_KEYSTORE_PATH:-}" ] || [ -z "${CM_KEYSTORE_PASSWORD:-}" ] || [ -z "${CM_KEY_ALIAS:-}" ] || [ -z "${CM_KEY_PASSWORD:-}" ]; then
+            echo "Android signing is not configured. Add the raven-android-upload identity in Codemagic before building a Play bundle."
+            exit 1
+          fi
+
+          # Codemagic's build number is monotonic for this workflow and becomes
+          # the Play-required integer versionCode. The human version stays clear.
+          VERSION_CODE="${CM_BUILD_NUMBER:-${BUILD_NUMBER:-1}}"
+          VERSION_NAME="${ANDROID_VERSION_NAME:-1.0.0}"
+          echo "Building RAVEN Android version ${VERSION_NAME} (${VERSION_CODE})"
+          cd android
+          ./gradlew bundleRelease -PversionCode="$VERSION_CODE" -PversionName="$VERSION_NAME"
+        working_directory: .
+
+    artifacts:
+      - android/app/build/outputs/**/*.aab
