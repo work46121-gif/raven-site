@@ -338,7 +338,9 @@ workflows:
   raven-android:
     name: RAVEN Android Play Bundle
     max_build_duration: 60
-    instance_type: linux_x2
+    # Personal Codemagic accounts include macOS M2 minutes, while Linux X2
+    # requires billing. Android builds work on this supported macOS runner.
+    instance_type: mac_mini_m2
     environment:
       # In Codemagic, add the upload key under Code signing identities with
       # this exact reference. It is deliberately never stored in this repo.
