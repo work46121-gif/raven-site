@@ -31,7 +31,11 @@ button,input,textarea{font:inherit}
 /* ── SPLASH ── */
 .intro-splash{position:fixed;inset:0;z-index:50;display:grid;place-items:center;
   background:radial-gradient(ellipse 80% 60% at 50% 40%,rgba(168,85,247,.22),transparent 60%),#06060A;
-  animation:splashOut .8s 1s ease forwards}
+  opacity:1;visibility:visible;pointer-events:auto;
+  transition:opacity .32s ease,visibility 0s linear .32s}
+.intro-splash.is-done{opacity:0;visibility:hidden;pointer-events:none}
+/* Never expose the auth shell while a stored session is still resolving. */
+body.app-booting .app-shell,body.app-booting #app-home,body.app-booting #home-tabs-wrap{visibility:hidden}
 .intro-r{width:min(52vw,240px);aspect-ratio:1;border-radius:32%;display:grid;place-items:center;position:relative;
   background:linear-gradient(145deg,#18182A,#08080E);
   border:1px solid rgba(255,255,255,.12);
@@ -339,7 +343,7 @@ button,input,textarea{font:inherit}
 @media(min-width:760px){.app-shell{max-width:460px;margin:0 auto}.raven-stage{width:220px}}
 </style>
 </head>
-<body>
+<body class="app-booting">
 <div class="intro-splash" id="intro-splash" aria-hidden="true"><div class="intro-r"></div></div>
 
 <!-- ── LOGIN SHELL ── -->
@@ -876,6 +880,17 @@ db.auth.onAuthStateChange((event, session) => {
     showTab('new-password');
   }
 });
+var ravenBootFinished = false;
+function finishAppBoot(){
+  if (ravenBootFinished) return;
+  ravenBootFinished = true;
+  const splash = el('intro-splash');
+  if (splash) splash.classList.add('is-done');
+  try {
+    document.body.classList.remove('app-booting');
+    document.body.classList.add('app-booted');
+  } catch(e) {}
+}
 function showLoading(show){el('loading').classList.toggle('show', !!show)}
 function recoverAuthScreen(message){
   try { document.body.classList.remove('leaving'); document.body.classList.add('ready'); } catch(e) {}
@@ -960,6 +975,7 @@ async function generateUniqueRavenId(base, excludeUserId){
   }
   return (clean + Date.now().toString().slice(-3)).slice(0,20);
 }
+
 async function provisionCreatorWelcome(){
   try {
     const { data: { session } } = await db.auth.getSession();
@@ -1105,6 +1121,7 @@ function showAppHome(profile){
   // Show the status pill for signed-in users
   const pill = el('scan-status-pill');
   if (pill) pill.style.display = 'none';
+  finishAppBoot();
 }
 function showSignedOutHome(){
   showLoading(false);
@@ -1135,6 +1152,7 @@ function showSignedOutHome(){
   const dock = el('app-auth-dock');
   const card = document.querySelector('.auth-card');
   if (dock && card && card.parentElement !== dock) dock.appendChild(card);
+  finishAppBoot();
 }
 function showAuthPanel(tab){
   showSignedOutHome();

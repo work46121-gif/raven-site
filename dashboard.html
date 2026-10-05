@@ -9731,9 +9731,11 @@ function getTripOpenUrl(tripId, fallbackUrl) {
   try {
     const profile = JSON.parse(localStorage.getItem('raven_profile') || '{}');
     const name = (profile.first_name || '').trim();
+    const ravenId = String(profile.raven_id || profile.username || '').trim().replace(/^@/, '');
     const email = getDashboardUserEmail();
     const url = new URL(base, window.location.href);
     if (name && !url.searchParams.has('name')) url.searchParams.set('name', name);
+    if (ravenId && RAVEN_APP_MODE && !url.searchParams.has('ravenid')) url.searchParams.set('ravenid', ravenId);
     if (email && RAVEN_APP_MODE && !url.searchParams.has('acct')) url.searchParams.set('acct', email);
     if (typeof RAVEN_APP_MODE !== 'undefined' && RAVEN_APP_MODE) url.searchParams.set('app', '1');
     return url.href;
@@ -9742,8 +9744,10 @@ function getTripOpenUrl(tripId, fallbackUrl) {
     try {
       const profile = JSON.parse(localStorage.getItem('raven_profile') || '{}');
       const name = (profile.first_name || '').trim();
+      const ravenId = String(profile.raven_id || profile.username || '').trim().replace(/^@/, '');
       const email = getDashboardUserEmail();
       if (name && !/[?&]name=/.test(base)) extras.push('name=' + encodeURIComponent(name));
+      if (ravenId && RAVEN_APP_MODE && !/[?&]ravenid=/.test(base)) extras.push('ravenid=' + encodeURIComponent(ravenId));
       if (email && RAVEN_APP_MODE && !/[?&]acct=/.test(base)) extras.push('acct=' + encodeURIComponent(email));
       if (typeof RAVEN_APP_MODE !== 'undefined' && RAVEN_APP_MODE && !/[?&]app=/.test(base)) extras.push('app=1');
     } catch(inner) {}
