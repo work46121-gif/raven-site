@@ -535,7 +535,7 @@ body.app-booting .app-shell,body.app-booting #app-home,body.app-booting #home-ta
 <div class="loading" id="loading"><div class="loader-mark"><span>R</span></div></div>
 
 <script>
-window.RAVEN_SCAN_URL = 'dashboard.html?app=1&page=create-bill';
+window.RAVEN_SCAN_URL = 'Dashboard.html?app=1&page=create-bill';
 window.animateScanLogo = window.animateScanLogo || function animateScanLogo(source){
   const target = source && source.closest ? source.closest('#home-logo-btn,.scan-logo-button') : null;
   const logo = target || document.querySelector('.scan-logo-button') || document.getElementById('home-logo-btn');
@@ -1041,7 +1041,7 @@ async function routeAfterAuth(user){
       showLoading(false);
       ravenAuthRouting = false;
       clearFreshAuthStart();
-      window.location.href = 'dashboard.html?app=1&page=overview';
+      window.location.href = 'Dashboard.html?app=1&page=overview';
       return;
     }
     const cached = getCachedAppProfile();
@@ -1178,7 +1178,7 @@ window.goScanPage = function goScanPage(source){
   if (window.goScanPage._navigating) return false;
   window.goScanPage._navigating = true;
   localStorage.setItem('raven_native_app','1');
-  const url = window.RAVEN_SCAN_URL || 'dashboard.html?app=1&page=create-bill';
+  const url = window.RAVEN_SCAN_URL || 'Dashboard.html?app=1&page=create-bill';
   window.animateScanLogo(source);
   setTimeout(() => { window.location.href = url; }, 430);
   setTimeout(() => {
@@ -1222,7 +1222,7 @@ async function goDashboard(){
     if (navigationStarted) return;
     navigationStarted = true;
     showLoading(false);
-    navigateWithRavens('dashboard.html?app=1&page=overview');
+  navigateWithRavens('Dashboard.html?app=1&page=overview');
   };
 
   showLoading(true);
@@ -1298,11 +1298,11 @@ function handleCameraCapture(event){
       sessionStorage.setItem('raven_scan_type', file.type || 'image/jpeg');
     } catch(err) { /* sessionStorage full — dashboard will open picker as fallback */ }
     localStorage.setItem('raven_native_app','1');
-    navigateWithFade('dashboard.html?app=1&page=create-bill');
+    navigateWithFade('Dashboard.html?app=1&page=create-bill');
   };
   reader.onerror = function(){
     localStorage.setItem('raven_native_app','1');
-    navigateWithFade('dashboard.html?app=1&page=create-bill');
+    navigateWithFade('Dashboard.html?app=1&page=create-bill');
   };
   reader.readAsDataURL(file);
 }
@@ -1677,7 +1677,7 @@ async function initInner(){
     try { localStorage.removeItem(RAVEN_SIGNED_OUT_KEY); } catch(e) {}
   }
   if (params.get('from') === 'trip') {
-    window.location.replace('dashboard.html?app=1&page=overview');
+    window.location.replace('Dashboard.html?app=1&page=overview');
     return;
   }
   const isPasswordReset = params.get('reset') === '1' || params.get('type') === 'recovery' || (hash && hash.includes('type=recovery'));
