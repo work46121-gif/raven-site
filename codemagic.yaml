@@ -350,6 +350,9 @@ workflows:
         APP_ID: com.ravensplit.app
         APP_NAME: RAVEN
         ANDROID_VERSION_NAME: 1.0.0
+        # Add FIREBASE_GOOGLE_SERVICES_JSON_B64 as a secure variable in
+        # Codemagic when Android phone alerts are configured. It is purposely
+        # not stored in this repository.
       node: 22.21.1
       java: 21
 
@@ -383,6 +386,12 @@ workflows:
         script: |
           set -e
           npx cap sync android
+        working_directory: .
+
+      - name: Configure Android phone alerts
+        script: |
+          set -e
+          node -e "const fs=require('fs');const encoded=process.env.FIREBASE_GOOGLE_SERVICES_JSON_B64||'';if(!encoded){console.log('Firebase Android configuration not supplied; building without Android push delivery.');process.exit(0)}const value=Buffer.from(encoded,'base64').toString('utf8');JSON.parse(value);fs.writeFileSync('android/app/google-services.json',value);console.log('Firebase Android configuration installed.');"
         working_directory: .
 
       - name: Set Android version and build signed App Bundle
