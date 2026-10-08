@@ -3,6 +3,15 @@ workflows:
     name: RAVEN iOS App Store Build
     max_build_duration: 60
     instance_type: mac_mini_m2
+    # Restore the release path: a change pushed to main automatically builds
+    # the iPhone app and publishes the resulting build to TestFlight.
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: main
+          include: true
+      cancel_previous_builds: true
     environment:
       groups:
         - raven-ios
