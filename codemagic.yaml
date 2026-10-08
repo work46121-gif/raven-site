@@ -62,12 +62,6 @@ workflows:
             --exclude "server*.js" \
             --exclude README.md
           cp app.html dist/index.html
-          # iOS bundles are case-sensitive. Keep a lowercase compatibility
-          # copy because historic navigation links used dashboard.html while
-          # the source page is named Dashboard.html.
-          if [ -f dist/Dashboard.html ]; then
-            cp dist/Dashboard.html dist/dashboard.html
-          fi
           ls -la dist
         working_directory: .
 
