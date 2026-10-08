@@ -74,7 +74,7 @@ language sql stable security definer set search_path = public, pg_temp as $$
    lower(coalesce(p.email,'')) = any(public.raven_push_emails(to_jsonb(t.member_emails)))
    or lower(coalesce(p.email,'')) = lower(coalesce(t.creator_email,''))
  )
- where t.id = p_trip and (p_exclude is null or p.id::uuid <> p_exclude);
+ where t.id::uuid = p_trip and (p_exclude is null or p.id::uuid <> p_exclude);
 $$;
 
 create or replace function public.raven_enqueue_phone_alert() returns trigger
