@@ -1205,17 +1205,41 @@ function navigateWithRavens(url){
   setTimeout(() => navigateWithFade(url), 380);
 }
 async function goDashboard(){
-  localStorage.setItem('raven_native_app','1');
+  try { localStorage.setItem('raven_native_app','1'); } catch(e) {}
   if (isRavenSignedOut()) {
     showSignedOutHome();
     showAuthPanel('login');
     showMessage('error', 'Please sign in to open your dashboard.');
     return false;
   }
+
+  // The native home screen already has a trusted, local account snapshot.
+  // Do not hold it behind a live profile request: on some iOS WebViews that
+  // request can remain pending and leave the app on the dark R loading screen.
+  const cached = getCachedAppProfile();
+  let navigationStarted = false;
+  const openDashboard = () => {
+    if (navigationStarted) return;
+    navigationStarted = true;
+    showLoading(false);
+    navigateWithRavens('dashboard.html?app=1&page=overview');
+  };
+
   showLoading(true);
   try {
-    const { data: { session } } = await db.auth.getSession();
+    // A session lookup normally resolves immediately. Give it a short chance,
+    // then use the already-signed-in local identity instead of trapping the
+    // person on the loading screen forever.
+    const sessionResult = await Promise.race([
+      db.auth.getSession(),
+      new Promise(resolve => setTimeout(() => resolve(null), 750))
+    ]);
+    const session = sessionResult?.data?.session || null;
     if (!session?.user) {
+      if (cached) {
+        openDashboard();
+        return false;
+      }
       showLoading(false);
       showSignedOutHome();
       showAuthPanel('login');
@@ -1224,28 +1248,27 @@ async function goDashboard(){
     }
     markRavenSignedIn();
     try { if (session.user.email) localStorage.setItem(APP_DASHBOARD_EMAIL_KEY, session.user.email); } catch(e) {}
-    const { data: profile } = await db.from('profiles').select('onboarding_complete,first_name,last_name,email,raven_id,username,avatar_url').eq('id', session.user.id).maybeSingle();
-    const cached = getCachedAppProfile();
     const cachedMatches = cached && (
       cached.user_id === session.user.id ||
       cached.id === session.user.id ||
       (cached.email && session.user.email && String(cached.email).toLowerCase() === String(session.user.email).toLowerCase())
     );
-    // Always go to dashboard — patch onboarding_complete if needed so it doesn't redirect back
-    if (profile && !profile.onboarding_complete) {
-      try { await db.from('profiles').update({ onboarding_complete: true }).eq('id', session.user.id); } catch(e) {}
-    }
+    // Dashboard.html refreshes the full profile after it is visible. Keep this
+    // handoff local and synchronous so the native app cannot freeze here.
     localStorage.setItem('raven_profile', JSON.stringify({
       ...(cachedMatches ? cached : {}),
-      ...(profile || {}),
       user_id: session.user.id,
-      email: profile?.email || session.user.email || cached?.email || '',
-      username: profile?.username || profile?.raven_id || cached?.username || cached?.raven_id || '',
+      email: session.user.email || cached?.email || '',
+      username: cached?.username || cached?.raven_id || '',
       onboarding_complete: true
     }));
-    navigateWithRavens('dashboard.html?app=1&page=overview');
+    openDashboard();
     return false;
   } catch(e) {
+    if (cached) {
+      openDashboard();
+      return false;
+    }
     showLoading(false);
     showAuthPanel('login');
     showMessage('error', 'Could not verify your session. Please sign in again.');
