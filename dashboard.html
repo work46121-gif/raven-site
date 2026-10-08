@@ -4578,6 +4578,27 @@ async function ensureRavenNotificationWorker() {
 }
 
 async function handlePushNotifToggle(value) {
+  const nativeShell = Boolean(window.Capacitor?.isNativePlatform?.());
+  const phoneAlerts = window.RavenPhoneAlerts;
+  if (nativeShell) {
+    if (!phoneAlerts?.isAvailable?.()) {
+      setPrivacyToggle('push_notif', false);
+      await savePrivacySetting('push_notif', false);
+      showToast('Phone alerts are not ready in this version. Please update RAVEN and try again.', 'error');
+      return;
+    }
+    try {
+      await phoneAlerts.setEnabled(value);
+      await savePrivacySetting('push_notif', value);
+      setPrivacyToggle('push_notif', value);
+      showToast(value ? 'Phone alerts are on.' : 'Phone alerts are off.', 'success');
+    } catch (error) {
+      setPrivacyToggle('push_notif', false);
+      await savePrivacySetting('push_notif', false);
+      showToast(error.message || 'Could not update phone alerts.', 'error');
+    }
+    return;
+  }
   if (!value) {
     await savePrivacySetting('push_notif', false);
     return;
@@ -12734,6 +12755,6 @@ body.app-mode #chat-input {
 <script src="raven-overview-upgrade.js?v=20260915-1"></script>
 <script src="raven-chat.js?v=20260915-3"></script>
 <script>cbSetSplitMode("itemized");</script>
-<script src="raven-phone-alerts.js?v=20261007-trip-alerts1"></script>
+<script src="raven-phone-alerts.js?v=20261008-native-settings1"></script>
 </body>
 </html>

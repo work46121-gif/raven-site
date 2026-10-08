@@ -1,10 +1,6 @@
-// Called by Codemagic after cap sync. Opt-in flag avoids breaking existing signing profiles.
+// Called by Codemagic after cap sync. The Apple App ID and App Store profile now include Push Notifications.
 const fs=require('node:fs');
 const cp=require('node:child_process');
-if(process.env.ENABLE_PUSH_NOTIFICATIONS!=='1'){
- console.log('Push capability disabled: set ENABLE_PUSH_NOTIFICATIONS=1 after updating the Apple provisioning profile.');
- process.exit(0);
-}
 const file='ios/App/App/AppDelegate.swift';let source=fs.readFileSync(file,'utf8');
 if(!source.includes('didRegisterForRemoteNotificationsWithDeviceToken')){
  const end=source.lastIndexOf('}');if(end<0)throw Error('AppDelegate format not recognized');

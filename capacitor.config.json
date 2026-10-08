@@ -2,7 +2,7 @@
   "appId": "com.ravensplit.app",
   "appName": "RAVEN",
   "webDir": "dist",
-  "plugins": { "PushNotifications": { "presentationOptions": ["sound", "alert"] } },
+  "plugins": { "PushNotifications": { "presentationOptions": ["badge", "sound", "banner", "list"] } },
   "ios": {
     "contentInset": "automatic",
     "backgroundColor": "#06060A"
