@@ -11,7 +11,7 @@ workflows:
         # auto-discovery selecting a stale profile after an App ID capability
         # (such as Push Notifications) changes.
         provisioning_profiles:
-          - raven-push-app-store
+          - raven-push-codemagic
         certificates:
           - raven
       vars:
