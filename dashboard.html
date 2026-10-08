@@ -1267,6 +1267,8 @@ body.app-mode .cb-raven-add-icon { width:18px;height:18px;display:block; }
   #page-lifestyle .gauge-number { font-size:58px; }
   #page-lifestyle .chip-row { gap:8px; }
   #page-lifestyle .chip-label { font-size:9px; }
+  #page-lifestyle .flight-metrics { grid-template-columns:1fr; }
+  #page-lifestyle .flight-deck-head { align-items:flex-start; }
 }
 
 .raven-fly-transition { position:fixed; inset:0; z-index:99999; background:radial-gradient(120% 100% at 50% 30%, #14101f, var(--black) 70%); display:none; align-items:center; justify-content:center; overflow:hidden; }
@@ -1528,7 +1530,7 @@ body.app-mode .cb-raven-add-icon { width:18px;height:18px;display:block; }
       <div style="flex:1"></div>
       <button class="nav-item" onclick="showPage('notifications')" style="position:relative"><span class="ni"><svg class="raven-icon"><use href="#icon-notifications"></use></svg></span> Notifications <span id="notif-badge" style="display:none;margin-left:auto;background:#FF4444;color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;min-width:20px;text-align:center"></span></button>
       <button class="nav-item" onclick="showPage('invite')"><span class="ni"><svg class="raven-icon"><use href="#icon-invite"></use></svg></span> Invite Friends</button>
-<button id="raven-admin-nav" class="nav-item" onclick="showPage('admin')" style="display:none;color:#F6C453"><span class="ni">✦</span> Admin mode</button>
+      <button id="raven-admin-nav" class="nav-item" onclick="showPage('admin')" style="display:none;color:#F6C453"><span class="ni">✦</span> Admin mode</button>
     </nav>
     <div class="sidebar-user">
       <button onclick="showPage('settings')" style="width:100%;display:flex;align-items:center;gap:10px;padding:10px 12px;background:transparent;border:none;border-radius:10px;cursor:pointer;transition:background 0.2s;text-align:left" onmouseover="this.style.background='var(--dark3)'" onmouseout="this.style.background='transparent'">
@@ -2011,7 +2013,9 @@ body.app-mode .cb-raven-add-icon { width:18px;height:18px;display:block; }
           <button onclick="showPage('invite');setMobNav('mob-settings')" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:14px 8px;background:var(--dark);border:1px solid var(--border);border-radius:14px;cursor:pointer;-webkit-tap-highlight-color:transparent;text-align:center">
             <span class="mob-quick-glyph"><svg class="raven-icon xl"><use href="#icon-invite"></use></svg></span><span style="font-size:11px;font-weight:600;color:var(--white)">Invite</span>
           </button>
-<button id="raven-admin-mobile" onclick="showPage('admin');setMobNav('mob-settings')" style="display:none;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:14px 8px;background:rgba(246,196,83,0.08);border:1px solid rgba(246,196,83,0.32);border-radius:14px;cursor:pointer;-webkit-tap-highlight-color:transparent;text-align:center">
+          <button id="raven-admin-mobile" onclick="showPage('admin');setMobNav('mob-settings')" style="display:none;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:14px 8px;background:rgba(246,196,83,0.08);border:1px solid rgba(246,196,83,0.32);border-radius:14px;cursor:pointer;-webkit-tap-highlight-color:transparent;text-align:center">
+            <span style="font-size:22px">✦</span><span style="font-size:11px;font-weight:700;color:#F6C453">Admin</span>
+          </button>
           <button onclick="document.getElementById('privacy-section').scrollIntoView({behavior:'smooth'})" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:14px 8px;background:var(--dark);border:1px solid var(--border);border-radius:14px;cursor:pointer;-webkit-tap-highlight-color:transparent;text-align:center">
             <span class="mob-quick-glyph"><svg class="raven-icon xl"><use href="#icon-privacy"></use></svg></span><span style="font-size:11px;font-weight:600;color:var(--white)">Privacy</span>
           </button>
@@ -2281,7 +2285,6 @@ body.app-mode .cb-raven-add-icon { width:18px;height:18px;display:block; }
         </div>
         <div class="flight-deck-foot">Built from the income, bills, and investments you add to RAVEN. It never guesses from a bank account.</div>
       </section>
-
 
       <!-- SCORE HERO -->
       <div class="score-hero" id="score-hero">
@@ -2918,7 +2921,12 @@ const APP_DASHBOARD_EMAIL_KEY = 'raven_app_dashboard_email';
 const RAVEN_SIGNED_OUT_KEY = 'raven_signed_out';
 
 if (RAVEN_APP_MODE) {
-  try { document.body.classList.add('app-mode'); } catch(e) {}
+  try {
+    document.body.classList.add('app-mode');
+    // Never leave the native shell transparent if a remote session/profile
+    // refresh is slow or fails before the dashboard can finish loading.
+    window.setTimeout(() => document.body.classList.add('ready'), 1200);
+  } catch(e) {}
 }
 
 function isRavenSignedOut() {
@@ -3465,6 +3473,22 @@ async function init() {
       showAuth();
       return;
     }
+    // The native app arrives here with an account snapshot that app.html just
+    // saved. Show it immediately instead of hiding both screens while a
+    // WebView session/profile request waits on the network.
+    if (RAVEN_APP_MODE) {
+      // The app shell only routes here after it has a saved account snapshot.
+      // Do not require a live Supabase session before painting the dashboard:
+      // on some iOS WebViews getSession() can stall after a local page change,
+      // leaving both screens hidden and producing a black screen.
+      const cachedAppUser = getAppBootstrapDashboardUser();
+      if (cachedAppUser) {
+        currentUser = cachedAppUser;
+        markRavenSignedIn();
+        void showDashboard();
+        return;
+      }
+    }
     let session = null;
     for (let attempt = 0; attempt < 4; attempt++) {
       try {
@@ -3525,6 +3549,29 @@ function getAppCachedDashboardUser(force = false) {
         id,
         email,
         app_cached: true
+      };
+    }
+  } catch(e) {}
+  return null;
+}
+
+// Unlike getAppCachedDashboardUser(), this deliberately accepts the smaller
+// account snapshot saved by app.html. It is used only to paint the native
+// shell immediately; hydrateAppDashboardIdentity() refreshes it in the
+// background once networking is available.
+function getAppBootstrapDashboardUser() {
+  const full = getAppCachedDashboardUser();
+  if (full) return full;
+  try {
+    const local = JSON.parse(localStorage.getItem('raven_profile') || '{}');
+    const email = String(local.email || localStorage.getItem(APP_DASHBOARD_EMAIL_KEY) || '').trim();
+    const id = String(local.user_id || local.id || '').trim();
+    if (id || email || local.first_name || local.raven_id || local.username || local.avatar_url) {
+      return {
+        id: id || 'raven-app-user',
+        email,
+        app_cached: true,
+        app_bootstrap: true
       };
     }
   } catch(e) {}
@@ -4561,7 +4608,6 @@ async function handlePushNotifToggle(value) {
   showToast('Device notifications are on.', 'success');
 }
 
-
 // ─── PWA INSTALL ──────────────────────────────────────────────────────────────
 
 let _pwaInstallPrompt = null;
@@ -4670,14 +4716,20 @@ async function showDashboard() {
   document.getElementById('auth-screen').style.display = 'none';
   document.getElementById('dashboard-screen').style.display = 'block';
   if (RAVEN_APP_MODE) {
-    localStorage.setItem('raven_native_app','1');
-    await hydrateAppDashboardIdentity();
+    try { localStorage.setItem('raven_native_app','1'); } catch(e) {}
+    // Show the shell before waiting on Supabase. On iOS a stalled refresh used
+    // to keep body.app-mode at opacity: 0, which looked like a black screen.
     try {
       document.body.classList.add('app-mode', 'ready');
       showPage('overview');
       setMobNav('mob-overview');
       renderOverviewEmptyState('Loading dashboard...', 'Your Raven activity will appear here.');
     } catch(e) {}
+    // Identity refresh is helpful but must never hold the native shell back.
+    // A few iOS WebViews can leave this request pending after page navigation.
+    void hydrateAppDashboardIdentity().catch(e => {
+      console.warn('Native dashboard identity refresh failed:', e);
+    });
     document.querySelectorAll('a[href="index.html"], a[href="app.html"]').forEach(a => {
       const isRavenLogo = a.classList.contains('raven-home-link') || a.classList.contains('sidebar-logo');
       a.setAttribute('href', isRavenLogo ? 'dashboard.html?app=1&page=create-bill' : 'dashboard.html?app=1');
@@ -4761,10 +4813,6 @@ async function showDashboard() {
     if (greetingEl) greetingEl.closest('h1').innerHTML = 'Welcome Back <span style="color:var(--green)" class="raven-r-mark"></span>';
   }
   loadAllData();
-  // The backend's exact-email check decides whether the private owner control
-  // is shown; this is only a visibility check, never the authorization itself.
-  void checkRavenAdminAccess();
-  void provisionCreatorWelcomeFromDashboard();
   if (RAVEN_APP_MODE) {
     const appPage = new URLSearchParams(window.location.search).get('page');
     if (appPage) {
@@ -5156,7 +5204,10 @@ async function provisionCreatorWelcomeFromDashboard() {
 }
 
 function showPage(page) {
-
+  if (page === 'admin' && !ravenAdminAccess) {
+    showToast('Admin mode is not available for this account.', 'error');
+    return;
+  }
   if (typeof posthog !== 'undefined') posthog.capture('page_view', { page });
   // Hide all pages, show only the target
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -6031,6 +6082,10 @@ async function saveBillEdits() {
   toggleBillEditPanel();
   openBillModal(currentBillId);
   loadAllData();
+  // The backend's exact-email check decides whether the private owner control
+  // is shown; this is only a visibility check, never the authorization itself.
+  void checkRavenAdminAccess();
+  void provisionCreatorWelcomeFromDashboard();
 }
 
 
@@ -11448,6 +11503,7 @@ function renderScoreHero() {
 
   setWingAngle(res.overall, tier);
 }
+
 function renderFlightDeck() {
   const res = computeMonthScore(currentMonthKey());
   const today = todayISO();
@@ -12678,6 +12734,6 @@ body.app-mode #chat-input {
 <script src="raven-overview-upgrade.js?v=20260915-1"></script>
 <script src="raven-chat.js?v=20260915-3"></script>
 <script>cbSetSplitMode("itemized");</script>
-<script src="raven-phone-alerts.js?v=20260912-push1"></script>
+<script src="raven-phone-alerts.js?v=20261007-trip-alerts1"></script>
 </body>
 </html>
