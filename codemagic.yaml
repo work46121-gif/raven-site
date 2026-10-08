@@ -7,8 +7,13 @@ workflows:
       groups:
         - raven-ios
       ios_signing:
-        distribution_type: app_store
-        bundle_identifier: com.ravensplit.app
+        # Pin the signing assets by their Codemagic reference names. This avoids
+        # auto-discovery selecting a stale profile after an App ID capability
+        # (such as Push Notifications) changes.
+        provisioning_profiles:
+          - raven-push-app-store
+        certificates:
+          - raven
       vars:
         APP_ID: com.ravensplit.app
         APP_NAME: RAVEN
