@@ -4748,9 +4748,11 @@ async function showDashboard() {
     } catch(e) {}
     // Identity refresh is helpful but must never hold the native shell back.
     // A few iOS WebViews can leave this request pending after page navigation.
-    void hydrateAppDashboardIdentity().catch(e => {
-      console.warn('Native dashboard identity refresh failed:', e);
-    });
+    void hydrateAppDashboardIdentity()
+      .then(() => { void scheduleRavenAdminAccessCheck(); })
+      .catch(e => {
+        console.warn('Native dashboard identity refresh failed:', e);
+      });
     document.querySelectorAll('a[href="index.html"], a[href="app.html"]').forEach(a => {
       const isRavenLogo = a.classList.contains('raven-home-link') || a.classList.contains('sidebar-logo');
       a.setAttribute('href', isRavenLogo ? 'dashboard.html?app=1&page=create-bill' : 'dashboard.html?app=1');
@@ -4834,6 +4836,10 @@ async function showDashboard() {
     if (greetingEl) greetingEl.closest('h1').innerHTML = 'Welcome Back <span style="color:var(--green)" class="raven-r-mark"></span>';
   }
   loadAllData();
+  // Admin mode is verified by the backend using the real signed-in account.
+  // In the native shell, that session can arrive just after the dashboard
+  // paints, so retry the visibility check in the background.
+  void scheduleRavenAdminAccessCheck();
   if (RAVEN_APP_MODE) {
     const appPage = new URLSearchParams(window.location.search).get('page');
     if (appPage) {
@@ -5006,9 +5012,17 @@ function goToLifestyleAnimated() {
 
 let ravenAdminAccess = false;
 let ravenAdminProfile = null;
+let ravenAdminCheckScheduled = false;
+let ravenAdminCheckAttempts = 0;
 
 async function ravenAdminRequest(path, options = {}) {
-  const { data: { session } } = await db.auth.getSession();
+  const sessionResult = RAVEN_APP_MODE
+    ? await Promise.race([
+      db.auth.getSession(),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Session is still opening.')), 2200))
+    ])
+    : await db.auth.getSession();
+  const session = sessionResult?.data?.session;
   if (!session?.access_token) throw new Error('Sign in again to use Admin mode.');
   const response = await fetch(BACKEND + path, {
     ...options,
@@ -5038,6 +5052,18 @@ async function checkRavenAdminAccess() {
   } catch (error) {
     // Expected for every non-owner account; never expose an admin hint.
   }
+}
+
+function scheduleRavenAdminAccessCheck() {
+  if (ravenAdminCheckScheduled) return;
+  ravenAdminCheckScheduled = true;
+  void checkRavenAdminAccess().finally(() => {
+    ravenAdminCheckScheduled = false;
+    if (RAVEN_APP_MODE && !ravenAdminAccess && ravenAdminCheckAttempts < 7) {
+      ravenAdminCheckAttempts += 1;
+      setTimeout(scheduleRavenAdminAccessCheck, 900);
+    }
+  });
 }
 
 function setAdminSearchStatus(message, tone) {
