@@ -2,6 +2,8 @@
  'use strict';
  const inbox = document.getElementById('raven-inbox');
  if (!inbox) return;
+ const inboxTabs = inbox.querySelector('.raven-inbox-tabs');
+ if (!inboxTabs) return;
 
  const box = document.createElement('div');
  box.style.cssText = 'padding:10px 20px;border-bottom:1px solid #ffffff12;font-size:12px;color:#aaa1ba';
@@ -12,7 +14,7 @@
  const note = document.createElement('span');
  note.style.marginLeft = '10px';
  box.append(button, note);
- inbox.querySelector('.raven-inbox-tabs').after(box);
+ inboxTabs.after(box);
 
  const cap = window.Capacitor;
  const plugin = cap?.Plugins?.PushNotifications;

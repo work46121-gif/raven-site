@@ -2921,7 +2921,12 @@ const APP_DASHBOARD_EMAIL_KEY = 'raven_app_dashboard_email';
 const RAVEN_SIGNED_OUT_KEY = 'raven_signed_out';
 
 if (RAVEN_APP_MODE) {
-  try { document.body.classList.add('app-mode'); } catch(e) {}
+  try {
+    document.body.classList.add('app-mode');
+    // Never leave the native shell transparent if a remote session/profile
+    // refresh is slow or fails before the dashboard can finish loading.
+    window.setTimeout(() => document.body.classList.add('ready'), 1200);
+  } catch(e) {}
 }
 
 function isRavenSignedOut() {
@@ -4672,14 +4677,20 @@ async function showDashboard() {
   document.getElementById('auth-screen').style.display = 'none';
   document.getElementById('dashboard-screen').style.display = 'block';
   if (RAVEN_APP_MODE) {
-    localStorage.setItem('raven_native_app','1');
-    await hydrateAppDashboardIdentity();
+    try { localStorage.setItem('raven_native_app','1'); } catch(e) {}
+    // Show the shell before waiting on Supabase. On iOS a stalled refresh used
+    // to keep body.app-mode at opacity: 0, which looked like a black screen.
     try {
       document.body.classList.add('app-mode', 'ready');
       showPage('overview');
       setMobNav('mob-overview');
       renderOverviewEmptyState('Loading dashboard...', 'Your Raven activity will appear here.');
     } catch(e) {}
+    try {
+      await hydrateAppDashboardIdentity();
+    } catch(e) {
+      console.warn('Native dashboard identity refresh failed:', e);
+    }
     document.querySelectorAll('a[href="index.html"], a[href="app.html"]').forEach(a => {
       const isRavenLogo = a.classList.contains('raven-home-link') || a.classList.contains('sidebar-logo');
       a.setAttribute('href', isRavenLogo ? 'dashboard.html?app=1&page=create-bill' : 'dashboard.html?app=1');
