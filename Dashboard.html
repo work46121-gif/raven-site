@@ -3473,6 +3473,18 @@ async function init() {
       showAuth();
       return;
     }
+    // The native app arrives here with an account snapshot that app.html just
+    // saved. Show it immediately instead of hiding both screens while a
+    // WebView session/profile request waits on the network.
+    if (RAVEN_APP_MODE) {
+      const cachedAppUser = getAppCachedDashboardUser();
+      if (cachedAppUser) {
+        currentUser = cachedAppUser;
+        markRavenSignedIn();
+        void showDashboard();
+        return;
+      }
+    }
     let session = null;
     for (let attempt = 0; attempt < 4; attempt++) {
       try {
@@ -4686,11 +4698,11 @@ async function showDashboard() {
       setMobNav('mob-overview');
       renderOverviewEmptyState('Loading dashboard...', 'Your Raven activity will appear here.');
     } catch(e) {}
-    try {
-      await hydrateAppDashboardIdentity();
-    } catch(e) {
+    // Identity refresh is helpful but must never hold the native shell back.
+    // A few iOS WebViews can leave this request pending after page navigation.
+    void hydrateAppDashboardIdentity().catch(e => {
       console.warn('Native dashboard identity refresh failed:', e);
-    }
+    });
     document.querySelectorAll('a[href="index.html"], a[href="app.html"]').forEach(a => {
       const isRavenLogo = a.classList.contains('raven-home-link') || a.classList.contains('sidebar-logo');
       a.setAttribute('href', isRavenLogo ? 'dashboard.html?app=1&page=create-bill' : 'dashboard.html?app=1');
