@@ -68,13 +68,13 @@ end $$;
 create or replace function public.raven_push_trip_member_ids(p_trip uuid, p_exclude uuid default null)
 returns table(user_id uuid)
 language sql stable security definer set search_path = public, pg_temp as $$
- select distinct p.id
+ select distinct p.id::uuid
  from public.trips t
  join public.profiles p on (
    lower(coalesce(p.email,'')) = any(public.raven_push_emails(to_jsonb(t.member_emails)))
    or lower(coalesce(p.email,'')) = lower(coalesce(t.creator_email,''))
  )
- where t.id = p_trip and (p_exclude is null or p.id <> p_exclude);
+ where t.id = p_trip and (p_exclude is null or p.id::uuid <> p_exclude);
 $$;
 
 create or replace function public.raven_enqueue_phone_alert() returns trigger
@@ -111,7 +111,7 @@ begin
  elsif tg_table_name = 'participants' then
    if lower(coalesce(n->>'phone','')) = lower(coalesce(o->>'phone','')) then return new; end if;
    -- Only exact, explicitly linked emails; never infer a bill recipient from a name.
-   select id into target from public.profiles where lower(email)=lower(n->>'phone') limit 1;
+   select id::uuid into target from public.profiles where lower(email)=lower(n->>'phone') limit 1;
    if target is null then return new; end if;
    insert into public.raven_push_events(user_id,kind,source_id,event_key)
    values(target,'bill',coalesce(n->>'bill_id',''),'bill:'||coalesce(n->>'id','')||':'||target) on conflict do nothing;
@@ -119,7 +119,7 @@ begin
  elsif tg_table_name = 'trips' then
    if coalesce(n->>'id','') !~* uuid_re then return new; end if;
    insert into public.raven_push_events(user_id,kind,source_id,event_key)
-   select p.id,'trip',n->>'id','trip:'||(n->>'id')||':'||p.id
+   select p.id::uuid,'trip',n->>'id','trip:'||(n->>'id')||':'||p.id
    from public.profiles p
    where lower(coalesce(p.email,''))=any(public.raven_push_emails(n->'member_emails'))
      and not(lower(coalesce(p.email,''))=any(public.raven_push_emails(o->'member_emails')))
@@ -149,9 +149,9 @@ begin
    elsif coalesce(n->>'added_by','') <> '' then
      -- Legacy receipts only carry a display name. Use it solely to suppress a
      -- possible self-alert when it identifies one linked member exactly.
-     select p.id into actor
+     select p.id::uuid into actor
      from public.profiles p
-     join public.raven_push_trip_member_ids((n->>'trip_id')::uuid, null) members on members.user_id=p.id
+     join public.raven_push_trip_member_ids((n->>'trip_id')::uuid, null) members on members.user_id=p.id::uuid
      where lower(coalesce(p.first_name,''))=lower(trim(n->>'added_by'))
      limit 1;
    end if;
@@ -168,7 +168,7 @@ begin
    insert into public.raven_push_events(user_id,kind,source_id,event_key)
    select distinct members.user_id,'trip_assignment',src,'trip_assignment:'||src||':'||members.user_id
    from public.raven_push_trip_member_ids((n->>'trip_id')::uuid, actor) members
-   join public.profiles p on p.id=members.user_id
+   join public.profiles p on p.id::uuid=members.user_id
    join lateral jsonb_each_text(new_splits) share on true
    where share.value ~ number_re
      and trim(share.value)::numeric > 0
