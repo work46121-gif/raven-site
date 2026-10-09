@@ -12,6 +12,18 @@
  let registeringOwner = null;
  let pendingRegistration = null;
  const enabledKey = id => 'raven_phone_alerts_' + platform + '_' + id;
+ const reminderKey = id => 'raven_push_prompt_after_' + id;
+ const reminderInterval = 3 * 24 * 60 * 60 * 1000;
+ const reminderFallback = new Map();
+ function reminderAfter(owner) {
+  try { return Number(localStorage.getItem(reminderKey(owner))) || reminderFallback.get(owner) || 0; }
+  catch (_) { return reminderFallback.get(owner) || 0; }
+ }
+ function snoozeReminder(owner) {
+  const next = Date.now() + reminderInterval;
+  reminderFallback.set(owner, next);
+  try { localStorage.setItem(reminderKey(owner), String(next)); } catch (_) {}
+ }
 
  const inbox = document.getElementById('raven-inbox');
  const inboxTabs = inbox?.querySelector('.raven-inbox-tabs');
@@ -75,15 +87,18 @@
   return promise;
  }
 
- async function register() {
+ async function register(allowPermissionPrompt = true) {
   if (!native) throw Error('Phone alerts are available in the RAVEN iPhone and Android apps.');
   const owner = currentUser?.id;
   if (!owner) throw Error('Sign in to enable alerts.');
   if (pendingRegistration?.owner === owner) return pendingRegistration.promise;
   const status = await api('/push/status');
+  if (currentUser?.id !== owner) throw Error('Your account changed. Please try again.');
   if (!status.platforms?.[platform]) throw Error('Phone alerts are awaiting activation.');
   let permission = await plugin.checkPermissions();
-  if (permission.receive === 'prompt') permission = await plugin.requestPermissions();
+  if (currentUser?.id !== owner) throw Error('Your account changed. Please try again.');
+  if (allowPermissionPrompt && permission.receive === 'prompt') permission = await plugin.requestPermissions();
+  if (currentUser?.id !== owner) throw Error('Your account changed. Please try again.');
   if (permission.receive !== 'granted') {
    await turnOff();
    throw Error('Allow notifications in ' + nativeLabel() + ' to receive alerts.');
@@ -103,12 +118,13 @@
 
  async function turnOff() {
   if (!native) return;
-  const owner = registeredOwner || currentUser?.id;
-  if (deviceToken && owner === currentUser?.id) await api('/push/device', 'DELETE', { token: deviceToken });
+  const owner = currentUser?.id;
+  if (deviceToken && owner && (registeredOwner || registeringOwner) === owner) await api('/push/device', 'DELETE', { token: deviceToken });
   if (owner) localStorage.removeItem(enabledKey(owner));
   registeredOwner = null;
   registeringOwner = null;
   deviceToken = null;
+  if (pendingRegistration?.owner === owner) finishRegistration(owner, Error('Phone alerts were turned off.'));
   await plugin.unregister().catch(() => {});
   await plugin.removeAllDeliveredNotifications().catch(() => {});
   setNote('Phone alerts off');
@@ -129,50 +145,86 @@
   isAvailable: () => native,
   isEnabled: () => native && registeredOwner === currentUser?.id && Boolean(deviceToken),
   setEnabled,
-  maybePromptSignup
+  maybePrompt: maybePromptSignup,
+  maybePromptSignup, // Backward-compatible entry point for older dashboard assets.
+  dismissPrompt: () => closePrompt(false)
  };
 
  let signupDialog = null;
  let signupDialogOwner = null;
+ let promptCheck = null;
+ function closePrompt(snooze = true) {
+  if (!signupDialog) return;
+  if (snooze && signupDialogOwner) snoozeReminder(signupDialogOwner);
+  signupDialog.close(); signupDialog.remove(); signupDialog = null; signupDialogOwner = null;
+ }
  async function maybePromptSignup() {
   const owner = currentUser?.id;
-  if (!native || !owner || !window.ravenDashboardReady || signupDialog) return;
+  const ready = () => (window.ravenDashboardReady || window.ravenPhoneAlertsReady) && !document.hidden;
+  if (!native || !owner || currentUser.app_cached || !ready()) return;
+  if (signupDialog && signupDialogOwner !== owner) closePrompt(false);
+  if (signupDialog || promptCheck?.owner === owner) return;
+  const check = { owner };
+  promptCheck = check;
+  try {
+   const permission = await plugin.checkPermissions();
+   if (currentUser?.id !== owner || !ready() || signupDialog) return;
+   const optedIn = localStorage.getItem(enabledKey(owner)) === '1' || (registeredOwner === owner && deviceToken);
+   if (optedIn && permission.receive === 'granted') {
+    // Restore an existing opt-in quietly; network trouble must not turn into a
+    // reminder or an unsolicited OS permission request.
+    if (registeredOwner !== owner || !deviceToken) {
+     try { await register(false); } catch (error) { setNote(error.message); }
+    }
+    return;
+   }
+   if (optedIn) await turnOff();
+   if (pendingRegistration?.owner === owner || reminderAfter(owner) > Date.now()) return;
+   const status = await api('/push/status');
+   if (!status.platforms?.[platform] || currentUser?.id !== owner || !ready() || signupDialog) return;
+   if (localStorage.getItem(enabledKey(owner)) === '1' || pendingRegistration?.owner === owner) return;
+   showPrompt(owner);
+  } catch (_) {
+   // Optional reminders must never block app startup or claim that an offline
+   // provider can enable notifications. Try again on the next open/resume.
+  } finally {
+   if (promptCheck === check) promptCheck = null;
+  }
+ }
+
+ function showPrompt(owner) {
   const pendingKey = 'raven_push_signup_pending_' + owner;
   const seenKey = 'raven_push_signup_seen_' + owner;
-  if (localStorage.getItem(pendingKey) !== '1') return;
-  if (localStorage.getItem(seenKey) === '1' || localStorage.getItem(enabledKey(owner)) === '1') {
-   localStorage.removeItem(pendingKey); return;
-  }
   const previousFocus = document.activeElement;
   const dialog = document.createElement('dialog');
   signupDialog = dialog;
   signupDialogOwner = owner;
   dialog.id = 'raven-signup-push';
   dialog.setAttribute('aria-labelledby', 'raven-signup-push-title');
-  dialog.style.cssText = 'width:min(360px,calc(100vw - 48px));box-sizing:border-box;padding:26px;border:1px solid #7542a5;border-radius:22px;background:#121019;color:#f4f0fb;box-shadow:0 18px 80px #000b;font-family:inherit';
+  dialog.style.cssText = 'position:fixed;inset:0;margin:auto;width:min(360px,calc(100vw - 48px));max-height:calc(100dvh - 64px);overflow-y:auto;box-sizing:border-box;padding:26px;border:1px solid #7542a5;border-radius:22px;background:#121019;color:#f4f0fb;box-shadow:0 18px 80px #000b;font-family:inherit';
   dialog.innerHTML = '<h2 id="raven-signup-push-title" style="margin:0 0 12px;font-size:23px">Stay in the loop</h2>' +
    '<p style="color:#b8b1c7;line-height:1.6;font-size:14px">Allow RAVEN to notify you about messages, trip comments and unpaid trip bills? Reminders start 3 days after a trip’s bill due date and repeat every 3 days while you still owe. Names and trip names may appear on your lock screen.</p>' +
-   '<p style="color:#b8b1c7;font-size:12px">Optional. Change this anytime in Settings.</p>' +
+   '<p style="color:#b8b1c7;font-size:12px">Optional. Choose Not now and we’ll remind you in 3 days when you next open RAVEN.</p>' +
    '<p id="raven-signup-push-error" role="status" style="font-size:13px;color:#ffb04a"></p>' +
    '<div style="display:flex;gap:10px;margin-top:20px"><button type="button" id="raven-signup-push-later" style="flex:1;padding:13px;border:1px solid #473551;border-radius:12px;background:transparent;color:#e9ddfa;font:inherit">Not now</button><button type="button" id="raven-signup-push-allow" style="flex:1;padding:13px;border:0;border-radius:12px;background:#28ce58;color:#061109;font:inherit;font-weight:800">Allow</button></div>';
   document.body.appendChild(dialog);
   const finish = () => {
-   localStorage.setItem(seenKey, '1');
-   localStorage.removeItem(pendingKey);
-   dialog.close(); dialog.remove(); signupDialog = null; signupDialogOwner = null;
+   if (signupDialog !== dialog) return;
+   try { localStorage.setItem(seenKey, '1'); localStorage.removeItem(pendingKey); } catch (_) {}
+   closePrompt();
    previousFocus?.focus?.();
   };
   dialog.addEventListener('cancel', event => { event.preventDefault(); finish(); });
   dialog.querySelector('#raven-signup-push-later').onclick = finish;
   const allow = dialog.querySelector('#raven-signup-push-allow');
   allow.onclick = async () => {
-   if (owner !== currentUser?.id) { finish(); return; }
+   if (owner !== currentUser?.id) { closePrompt(false); return; }
    allow.disabled = true;
    allow.textContent = 'Enabling…';
    try {
     // Only this explicit tap can start the operating system permission prompt.
     await setEnabled(true);
-    if (owner !== currentUser?.id) { finish(); return; }
+    if (owner !== currentUser?.id) return;
     if (typeof savePrivacySetting === 'function') await savePrivacySetting('push_notif', true);
     finish();
    } catch (error) {
@@ -180,11 +232,18 @@
    } finally { allow.disabled = false; allow.textContent = 'Allow'; }
   };
   dialog.showModal();
+  // Also survive closing/relaunching the app while the dialog is open.
+  snoozeReminder(owner);
  }
 
  function navigateFromAlert(data) {
   if (!currentUser?.id || data?.recipient_id !== currentUser.id) return;
   const kind = data.kind;
+  if (typeof showPage !== 'function') {
+   const page = kind === 'bill' ? 'active-bills' : (kind === 'trip' || String(kind || '').startsWith('trip_')) ? 'trip-hub' : kind === 'friend_request' ? 'friends' : 'overview';
+   window.location.href = 'dashboard.html?app=1&page=' + page;
+   return;
+  }
   if (kind === 'bill') {
    showPage('active-bills');
   } else if (kind === 'trip' || String(kind || '').startsWith('trip_')) {
@@ -226,7 +285,8 @@
   plugin.addListener('pushNotificationActionPerformed', event => navigateFromAlert(event.notification?.data));
   db.auth.onAuthStateChange((_event, session) => {
    setTimeout(async () => {
-    if (signupDialog && session?.user?.id !== signupDialogOwner) { signupDialog.close(); signupDialog.remove(); signupDialog = null; signupDialogOwner = null; }
+    if (session?.user?.id !== currentUser?.id) return;
+    if (signupDialog && session?.user?.id !== signupDialogOwner) closePrompt(false);
     if (registeredOwner !== session?.user?.id) {
      registeredOwner = null;
      registeringOwner = null;
@@ -234,19 +294,13 @@
      label();
      await plugin.removeAllDeliveredNotifications().catch(() => {});
     }
-    if (session?.user?.id && localStorage.getItem(enabledKey(session.user.id)) === '1') {
-     try { await setEnabled(true); } catch (error) { setNote(error.message); }
-    }
+    void maybePromptSignup();
    }, 0);
   });
-  document.addEventListener('visibilitychange', async () => {
-   if (document.hidden || !registeredOwner) return;
-   try {
-    if ((await plugin.checkPermissions()).receive !== 'granted') await turnOff();
-   } catch (_) { /* A transient bridge error is not permission revocation. */ }
-  });
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) void maybePromptSignup(); });
+  cap.Plugins.App?.addListener?.('resume', () => { void maybePromptSignup(); });
   // If the dashboard became visible before this deferred script loaded.
-  if (window.ravenDashboardReady) void maybePromptSignup();
+  if (window.ravenDashboardReady || window.ravenPhoneAlertsReady) void maybePromptSignup();
  }
 
  if (button) {

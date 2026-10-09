@@ -4742,7 +4742,7 @@ async function showDashboard() {
   document.getElementById('dashboard-screen').style.display = 'block';
   window.ravenDashboardReady = true;
   // The notification prompt cannot delay or hide the dashboard shell.
-  setTimeout(() => { void window.RavenPhoneAlerts?.maybePromptSignup?.(); }, 800);
+  setTimeout(() => { void window.RavenPhoneAlerts?.maybePrompt?.(); }, 800);
   if (RAVEN_APP_MODE) {
     try { localStorage.setItem('raven_native_app','1'); } catch(e) {}
     // Show the shell before waiting on Supabase. On iOS a stalled refresh used
@@ -12794,6 +12794,6 @@ body.app-mode #chat-input {
 <script src="raven-overview-upgrade.js?v=20260915-1"></script>
 <script src="raven-chat.js?v=20260915-3"></script>
 <script>cbSetSplitMode("itemized");</script>
-<script src="raven-phone-alerts.js?v=20261009-signup-alerts1"></script>
+<script src="raven-phone-alerts.js?v=20261009-account-reminders1"></script>
 </body>
 </html>

@@ -587,6 +587,7 @@ const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   }
 });
 let pendingConfirmEmail = '';
+let currentUser = null;
 const RAVEN_SIGNED_OUT_KEY = 'raven_signed_out';
 const RAVEN_GOOGLE_AUTH_KEY = 'raven_google_auth_in_progress';
 const RAVEN_APPLE_AUTH_KEY = 'raven_apple_auth_in_progress';
@@ -998,6 +999,7 @@ async function routeAfterAuth(user){
     return;
   }
   if (ravenAuthRouting === user.id) return;
+  currentUser = user;
   ravenAuthRouting = user.id;
   showLoading(true);
   try {
@@ -1128,8 +1130,13 @@ function showAppHome(profile){
   const pill = el('scan-status-pill');
   if (pill) pill.style.display = 'none';
   finishAppBoot();
+  window.ravenPhoneAlertsReady = true;
+  setTimeout(() => { void window.RavenPhoneAlerts?.maybePrompt?.(); }, 800);
 }
 function showSignedOutHome(){
+  currentUser = null;
+  window.ravenPhoneAlertsReady = false;
+  window.RavenPhoneAlerts?.dismissPrompt?.();
   showLoading(false);
   const shell = document.querySelector('.app-shell');
   if (shell) shell.style.display = 'none';
@@ -1807,5 +1814,6 @@ setTimeout(() => {
   } catch(e) {}
 }, 6500);
 </script>
+<script src="raven-phone-alerts.js?v=20261009-account-reminders1"></script>
 </body>
 </html>

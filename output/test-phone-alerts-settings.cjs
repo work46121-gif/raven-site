@@ -73,7 +73,8 @@ assert.ok(start > 0 && end > start);
     await page.setViewportSize({width:390,height:844});
     await page.evaluate(() => { window.ravenDashboardReady=true; });
     await page.evaluate(() => RavenPhoneAlerts.maybePromptSignup());
-    assert.equal(await page.locator('#raven-signup-push').count(),0); // Returning accounts not prompted.
+    assert.equal(await page.locator('#raven-signup-push').isVisible(),true); // Returning accounts are included.
+    await page.getByRole('button',{name:'Not now',exact:true}).click();
     await page.evaluate(() => { currentUser={id:'new-one'};localStorage.setItem('raven_push_signup_pending_new-one','1');permission='prompt'; });
     await page.evaluate(() => RavenPhoneAlerts.maybePromptSignup());
     assert.equal(await page.locator('#raven-signup-push').isVisible(),true);
@@ -97,6 +98,6 @@ assert.ok(start > 0 && end > start);
     await page.waitForFunction(() => !RavenPhoneAlerts.isEnabled());
     assert.equal(await page.evaluate(() => requests.at(-1).options.method),'DELETE');
     assert.deepEqual(errors, []);
-    console.log('PASS: Settings without Inbox; native registration/retry, signup Allow/Not now, no permission before consent, returning accounts not prompted, OS revocation cleanup, saved opt-in/out and safe navigation. Mocked native/Apple delivery only.');
+    console.log('PASS: Settings without Inbox; native registration/retry, optional Allow/Not now for new and returning accounts, no permission before consent, OS revocation cleanup, saved opt-in/out and safe navigation. Mocked native/Apple delivery only.');
   } finally { await browser.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });
