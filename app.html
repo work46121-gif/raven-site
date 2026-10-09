@@ -1017,6 +1017,10 @@ async function routeAfterAuth(user){
       showLoading(false);
       ravenAuthRouting = false;
       clearFreshAuthStart();
+      if (localStorage.getItem('raven_push_signup_pending_' + user.id) === '1') {
+        window.location.href = 'dashboard.html?app=1&page=overview';
+        return;
+      }
       showAppHome(profile);
       return;
     }
@@ -1526,6 +1530,7 @@ async function handleSignup(event){
     return showMessage('error', error.message);
   }
   if (data?.user) {
+    try { localStorage.setItem('raven_push_signup_pending_' + data.user.id, '1'); } catch(e) {}
     markRavenSignedIn();
     try {
       await db.from('profiles').upsert({

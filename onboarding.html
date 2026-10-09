@@ -1255,6 +1255,11 @@ function goToDashboard() {
     const cached = JSON.parse(localStorage.getItem('raven_profile') || '{}');
     cached.onboarding_complete = true;
     if (currentUser?.id) cached.user_id = currentUser.id;
+    // Covers email, Apple and Google account creation after onboarding.
+    // A returning account is not prompted merely for signing in.
+    if (currentUser?.id && Date.now() - Date.parse(currentUser.created_at || '') < 7 * 86400000) {
+      localStorage.setItem('raven_push_signup_pending_' + currentUser.id, '1');
+    }
     if (currentUser?.email) cached.email = currentUser.email;
     localStorage.setItem('raven_profile', JSON.stringify(cached));
   } catch(e) {}

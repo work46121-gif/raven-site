@@ -3903,6 +3903,9 @@ async function handleSignup() {
     }
   });
   if (error) { showAuthError(error.message); btn.textContent = 'Create Account →'; btn.disabled = false; return; }
+  if (data?.user?.id) {
+    try { localStorage.setItem('raven_push_signup_pending_' + data.user.id, '1'); } catch(e) {}
+  }
 
   // Always auto-generate Raven ID on signup — firstName + 3-4 random digits (e.g. mel8472)
   if (data?.session?.user) {
@@ -4544,6 +4547,7 @@ function setPrivacyToggle(key, value) {
 function loadPrivacyToggles() {
   const priv = getPrivacySettings();
   Object.keys(PRIVACY_DEFAULTS).forEach(key => setPrivacyToggle(key, priv[key]));
+  if (window.Capacitor?.isNativePlatform?.()) setPrivacyToggle('push_notif', !!window.RavenPhoneAlerts?.isEnabled?.());
   setPrivacyToggle('ai-consent', getRavenAiConsent());
   setPrivacyToggle('theme-light', getRavenTheme() === 'light');
 }
@@ -4736,6 +4740,9 @@ function showAuth() { document.getElementById('auth-screen').style.display = 'fl
 async function showDashboard() {
   document.getElementById('auth-screen').style.display = 'none';
   document.getElementById('dashboard-screen').style.display = 'block';
+  window.ravenDashboardReady = true;
+  // The notification prompt cannot delay or hide the dashboard shell.
+  setTimeout(() => { void window.RavenPhoneAlerts?.maybePromptSignup?.(); }, 800);
   if (RAVEN_APP_MODE) {
     try { localStorage.setItem('raven_native_app','1'); } catch(e) {}
     // Show the shell before waiting on Supabase. On iOS a stalled refresh used
@@ -5125,6 +5132,12 @@ function renderAdminProfile(data) {
   text.appendChild(adminElement('div', profile.onboarding_complete ? 'Onboarding complete' : 'Onboarding not complete', 'font-size:11px;color:' + (profile.onboarding_complete ? 'var(--green)' : '#FFB04A') + ';margin-top:5px;font-weight:700'));
   top.appendChild(text);
   identity.appendChild(top);
+  const push = profile.push_notifications || { state: 'unavailable' };
+  const pushLabel = push.state === 'enabled' ? 'Enabled (' + push.deviceCount + ' registered device' + (push.deviceCount === 1 ? ')' : 's)')
+    : push.state === 'not_registered' ? 'Not enabled — no registered phone'
+    : push.state === 'service_unavailable' ? 'Registered — delivery service unavailable' : 'Status unavailable';
+  identity.appendChild(adminElement('div', 'Push notifications: ' + pushLabel, 'margin-top:14px;font-size:13px;font-weight:800;color:' + (push.state === 'enabled' ? 'var(--green)' : 'var(--muted2)')));
+  identity.appendChild(adminElement('div', 'Based on saved phone registration, not the PWA toggle. Changes in device Settings are reflected when the app reconnects or Apple reports an invalid device.', 'margin-top:6px;font-size:11px;line-height:1.5;color:var(--muted2)'));
   root.appendChild(identity);
 
   const stats = snapshot.stats || {};
@@ -12781,6 +12794,6 @@ body.app-mode #chat-input {
 <script src="raven-overview-upgrade.js?v=20260915-1"></script>
 <script src="raven-chat.js?v=20260915-3"></script>
 <script>cbSetSplitMode("itemized");</script>
-<script src="raven-phone-alerts.js?v=20261008-native-settings1"></script>
+<script src="raven-phone-alerts.js?v=20261009-signup-alerts1"></script>
 </body>
 </html>
