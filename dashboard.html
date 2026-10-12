@@ -5121,7 +5121,7 @@ async function openRavenStudentsPreview() {
     const close = document.createElement('button');
     close.textContent='← Back to Admin';close.style.cssText='height:48px;padding:10px 20px;background:#191526;color:#e3d9ff;border:0;width:100%;text-align:left;font:inherit';
     const frame = document.createElement('iframe');frame.title='RAVENStudents university pilot';
-    frame.setAttribute('sandbox','allow-scripts allow-popups allow-popups-to-escape-sandbox');
+    frame.setAttribute('sandbox','allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox');
     frame.style.cssText='display:block;width:100%;height:calc(100% - 48px);border:0';frame.srcdoc=result.html;
     const owner=currentUser?.id;let watch;
     const destroy=()=>{clearInterval(watch);dialog.remove();};close.onclick=destroy;
