@@ -4556,10 +4556,12 @@ function loadPrivacyToggles() {
 let newsletterPreferenceLoaded = false;
 let newsletterPreferenceValue = false;
 let newsletterSaving = false;
-async function newsletterRequest(options = {}) {
+async function newsletterRequest(options = {}, endpoint = '/newsletter/preferences') {
+  const owner = typeof currentUser !== 'undefined' ? currentUser?.id : null;
   const { data: { session } } = await db.auth.getSession();
   if (!session?.access_token) throw new Error('Sign in to change newsletter preferences.');
-  const response = await fetch(BACKEND + '/newsletter/preferences', {
+  if (owner && (currentUser?.id !== owner || session.user?.id !== owner)) throw new Error('Your account changed. Please try again.');
+  const response = await fetch(BACKEND + endpoint, {
     ...options, headers: {'Content-Type':'application/json', Authorization:'Bearer '+session.access_token},
     signal: AbortSignal.timeout(12000)
   });
@@ -4594,6 +4596,48 @@ async function saveNewsletterPreference(enabled) {
   setPrivacyToggle('email_marketing', newsletterPreferenceValue);
   checkbox.disabled = false; newsletterSaving = false;
 }
+
+let newsletterPromptBusy = false;
+let newsletterPromptTimer = null;
+async function maybePromptNewsletter() {
+  if (newsletterPromptBusy || !currentUser?.id || document.hidden) return;
+  if (document.getElementById('dashboard-screen')?.style.display === 'none') return;
+  if (document.querySelector('dialog[open]')) {
+    clearTimeout(newsletterPromptTimer);
+    newsletterPromptTimer = setTimeout(() => void maybePromptNewsletter(), 3000);
+    return;
+  }
+  newsletterPromptBusy = true;
+  const owner = currentUser.id;
+  let dialog, accountWatch;
+  const close = () => { clearInterval(accountWatch); dialog?.remove(); newsletterPromptBusy = false; };
+  try {
+    const claim = await newsletterRequest({method:'POST',body:'{}'}, '/newsletter/prompt');
+    if (!claim.show || currentUser?.id !== owner) { close(); return; }
+    const preference = await newsletterRequest();
+    if (preference.enabled || currentUser?.id !== owner || document.hidden) { close(); return; }
+    dialog = document.createElement('dialog');
+    dialog.id = 'raven-newsletter-prompt';
+    dialog.setAttribute('aria-labelledby','newsletter-prompt-title');
+    dialog.style.cssText = 'width:min(430px,calc(100vw - 36px));box-sizing:border-box;padding:26px;border:1px solid #735197;border-radius:22px;background:#13111c;color:#f4efff;max-height:85dvh;overflow:auto;font-family:inherit';
+    dialog.innerHTML = '<h2 id="newsletter-prompt-title" style="margin:0 0 12px;font-size:23px">A little more RAVEN?</h2><p style="color:#bdb6cc;line-height:1.6">Get a weekly email highlighting a RAVEN feature. It’s optional, and you can unsubscribe anytime.</p><p style="font-size:12px;color:#a69bb8">If you skip, we’ll ask again in a month while you’re signed in. Bill and account emails are separate.</p><p role="status" style="font-size:13px;color:#efb068"></p><div style="display:flex;flex-wrap:wrap;gap:10px"><button type="button" data-later style="flex:1;min-width:110px;padding:13px;border-radius:12px;background:#211b2c;color:#ddd;border:1px solid #594469;font:inherit">Not now</button><button type="button" data-enable style="flex:1;min-width:140px;padding:13px;border-radius:12px;background:#30d158;color:#07120a;border:0;font:inherit;font-weight:700">Enable newsletter</button></div>';
+    document.body.appendChild(dialog);
+    dialog.querySelector('[data-later]').onclick = close;
+    dialog.addEventListener('cancel', event => { event.preventDefault(); close(); });
+    dialog.querySelector('[data-enable]').onclick = async () => {
+      if (currentUser?.id !== owner) { close(); return; }
+      const button = dialog.querySelector('[data-enable]'); button.disabled = true;
+      try {
+        await newsletterRequest({method:'PUT',body:JSON.stringify({enabled:true,source:'monthly_prompt'})});
+        if (currentUser?.id === owner) { newsletterPreferenceValue = true; setPrivacyToggle('email_marketing',true); }
+        close();
+      } catch (error) { if (dialog.isConnected) { dialog.querySelector('[role=status]').textContent = error.message; button.disabled = false; } }
+    };
+    accountWatch = setInterval(() => { if (currentUser?.id !== owner) close(); },500);
+    dialog.showModal(); dialog.querySelector('[data-later]').focus();
+  } catch (_) { close(); }
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden) void maybePromptNewsletter(); });
 
 async function savePrivacySetting(key, value) {
   setPrivacyToggle(key, value);
@@ -4786,6 +4830,7 @@ async function showDashboard() {
   window.ravenDashboardReady = true;
   // The notification prompt cannot delay or hide the dashboard shell.
   setTimeout(() => { void window.RavenPhoneAlerts?.maybePrompt?.(); }, 800);
+  setTimeout(() => { void maybePromptNewsletter(); }, 3500);
   if (RAVEN_APP_MODE) {
     try { localStorage.setItem('raven_native_app','1'); } catch(e) {}
     // Show the shell before waiting on Supabase. On iOS a stalled refresh used
