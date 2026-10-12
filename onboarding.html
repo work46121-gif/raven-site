@@ -792,6 +792,10 @@ try {
             By checking this box, I agree to RAVEN's <a href="terms.html" target="_blank">Terms of Service</a> and <a href="privacy.html" target="_blank">Privacy Policy</a>.
           </div>
         </div>
+        <label class="agreement" style="cursor:pointer;align-items:flex-start">
+          <input type="checkbox" id="newsletter-consent" role="switch" aria-label="Weekly RAVEN newsletter">
+          <span class="agreement-text"><strong>Weekly RAVEN newsletter (optional)</strong><br>Email me a RAVEN feature highlight each week. Unsubscribe anytime. This is separate from accepting the terms and from bill or account emails.</span>
+        </label>
         <div id="error-4" class="error-msg"></div>
         <button class="btn-next" onclick="submitStep4()">🪶 Enter RAVEN</button>
       </div>
@@ -1139,6 +1143,15 @@ async function submitStep4() {
   showLoading();
   try {
     await ensureGeneratedRavenId();
+    if (document.getElementById('newsletter-consent').checked) {
+      const { data: { session } } = await db.auth.getSession();
+      if (!session?.access_token) throw new Error('Sign in again to finish setup.');
+      const newsletterResponse = await fetch(BACKEND + '/newsletter/preferences', {
+        method:'PUT', headers:{'Content-Type':'application/json',Authorization:'Bearer '+session.access_token},
+        body:JSON.stringify({enabled:true,source:'onboarding'}),signal:AbortSignal.timeout(12000)
+      });
+      if (!newsletterResponse.ok) throw new Error('Your newsletter choice could not be saved. Try again, or leave it off and subscribe in Settings later.');
+    }
     await saveProfile({
       onboarding_complete: true,
       terms_accepted: true,
@@ -1152,7 +1165,7 @@ async function submitStep4() {
     goToStep('success');
   } catch(e) {
     hideLoading();
-    showError('error-4', 'Could not finish setup. Please try again.');
+    showError('error-4', e.message || 'Could not finish setup. Please try again.');
   }
 }
 
