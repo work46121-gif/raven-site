@@ -1037,7 +1037,7 @@ async function init() {
   const localUserId = String(localProfile.user_id || localProfile.id || '');
   const localEmail = String(localProfile.email || '').toLowerCase();
   const sessionEmail = String(currentUser.email || '').toLowerCase();
-  const localMatchesSession = (localUserId && localUserId === currentUser.id) || (localEmail && sessionEmail && localEmail === sessionEmail);
+  const localMatchesSession = !!localUserId && localUserId === currentUser.id;
   if (localMatchesSession && localProfile.onboarding_complete) {
     window.location.href = dashboardUrl();
     return;

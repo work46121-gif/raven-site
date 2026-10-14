@@ -3607,7 +3607,7 @@ async function checkOnboardingAndShow(userId) {
       const existingEmail = String(existing.email || '').trim().toLowerCase();
       const existingId = String(existing.user_id || existing.id || '').trim();
       const targetId = String(userId || currentUser?.id || '').trim();
-      const existingMatchesUser = (targetId && existingId === targetId) || (realEmail && existingEmail === realEmail.toLowerCase());
+      const existingMatchesUser = !!targetId && existingId === targetId;
       nextProfile = existingMatchesUser
         ? { ...existing, user_id: targetId || existingId, email: realEmail || existing.email || '' }
         : { user_id: targetId, email: realEmail };
@@ -6956,7 +6956,8 @@ async function confirmDeleteTrip(tripId, tripName) {
 // ─── ACCOUNT DELETION (App Store guideline 5.1.1(v)) ───────────────────────
 async function confirmDeleteAccount() {
   const btn = document.getElementById('delete-account-btn');
-  if (!btn) return;
+  if (!btn || btn.disabled) return;
+  const deletingUserId=currentUser?.id;
   if (btn.dataset.confirming !== '1') {
     btn.dataset.confirming = '1';
     btn.textContent = '⚠️ Tap again — PERMANENTLY delete your account?';
@@ -6976,22 +6977,26 @@ async function confirmDeleteAccount() {
   try {
     const { data: sessionData } = await db.auth.getSession();
     const token = sessionData?.session?.access_token;
-    if (!token) {
+    if (!token || !deletingUserId || sessionData?.session?.user?.id!==deletingUserId) {
       showToast('Please sign in again to delete your account', 'error');
       btn.textContent = '🗑 Delete My Account'; btn.disabled = false; btn.dataset.confirming = '';
       return;
     }
     const res = await fetch(BACKEND + '/account/delete', {
       method: 'POST',
-      headers: { 'Authorization': 'Bearer ' + token }
+      headers: { 'Authorization': 'Bearer ' + token },
+      signal: AbortSignal.timeout(30000)
     });
     const result = await res.json().catch(() => ({}));
-    if (!res.ok || !result.success) {
+    if (!res.ok || result.success!==true || result.deleted!==true || result.deleted_user_id!==deletingUserId) {
       showToast('Error: ' + (result.error || 'Could not delete account'), 'error');
       btn.textContent = '🗑 Delete My Account'; btn.disabled = false; btn.dataset.confirming = '';
       return;
     }
-    try { await db.auth.signOut({ scope: 'global' }); } catch(e) { try { await db.auth.signOut(); } catch(_) {} }
+    if(currentUser?.id!==deletingUserId)return;
+    try { sessionStorage.removeItem('raven_pending_bill_save_'+deletingUserId); } catch(e) {}
+    try { Object.keys(sessionStorage).filter(key=>/^raven_trip_access_|^raven_growth_/i.test(key)).forEach(key=>sessionStorage.removeItem(key)); } catch(e) {}
+    try { await db.auth.signOut({ scope: 'local' }); } catch(e) {}
     clearRavenSignedInCache();
     currentUser = null;
     showToast('Account deleted', 'success');

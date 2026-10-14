@@ -1003,7 +1003,8 @@ async function routeAfterAuth(user){
   ravenAuthRouting = user.id;
   showLoading(true);
   try {
-    const { data: profile } = await db.from('profiles').select('onboarding_complete,first_name,raven_id,username,avatar_url').eq('id', user.id).maybeSingle();
+    const { data: profile, error: profileError } = await db.from('profiles').select('onboarding_complete,first_name,raven_id,username,avatar_url').eq('id', user.id).maybeSingle();
+    if (profileError) throw profileError;
     if (profile?.onboarding_complete) {
       await provisionCreatorWelcome();
       try { localStorage.setItem('raven_app_dashboard_email', user.email || ''); } catch(e) {}
@@ -1033,10 +1034,7 @@ async function routeAfterAuth(user){
     if (!profile?.onboarding_complete) {
       try { if (user.email) localStorage.setItem('raven_app_dashboard_email', user.email); } catch(e) {}
       const cached = getCachedAppProfile();
-      const cachedMatchesUser = cached && (
-        (cached.user_id && cached.user_id === user.id) ||
-        (cached.email && user.email && String(cached.email).toLowerCase() === String(user.email).toLowerCase())
-      );
+      const cachedMatchesUser = cached?.user_id === user.id;
       localStorage.setItem('raven_profile', JSON.stringify({
         user_id: user.id,
         email: user.email || '',
@@ -1053,10 +1051,7 @@ async function routeAfterAuth(user){
       return;
     }
     const cached = getCachedAppProfile();
-    const cachedMatchesUser = cached && (
-      (cached.user_id && cached.user_id === user.id) ||
-      (cached.email && user.email && String(cached.email).toLowerCase() === String(user.email).toLowerCase())
-    );
+    const cachedMatchesUser = cached?.user_id === user.id;
     try { if (user.email) localStorage.setItem('raven_app_dashboard_email', user.email); } catch(e) {}
     localStorage.setItem('raven_profile', JSON.stringify({
       ...(cachedMatchesUser ? cached : {}),
@@ -1075,15 +1070,13 @@ async function routeAfterAuth(user){
   } catch(e) {
     showLoading(false);
     ravenAuthRouting = false;
-    // Best-effort: show app home even on error
-    const cached = getCachedAppProfile();
+    // A failed lookup is not proof of completed onboarding.
     localStorage.setItem('raven_profile', JSON.stringify({
-      ...(cached || {}),
       user_id: user.id,
       email: user.email || '',
-      onboarding_complete: true
+      onboarding_complete: false
     }));
-    showAppHome(cached || {});
+    window.location.href = 'onboarding.html?app=1';
   }
 }
 function getCachedAppProfile(){
