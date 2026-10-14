@@ -1047,7 +1047,7 @@ async function routeAfterAuth(user){
       showLoading(false);
       ravenAuthRouting = false;
       clearFreshAuthStart();
-      window.location.href = 'dashboard.html?app=1&page=overview';
+      window.location.href = 'onboarding.html?app=1';
       return;
     }
     const cached = getCachedAppProfile();

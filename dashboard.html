@@ -3186,7 +3186,11 @@ async function hydrateAppDashboardIdentity() {
 
   let local = {};
   try { local = JSON.parse(localStorage.getItem('raven_profile') || '{}'); } catch(e) { local = {}; }
-  const nextLocal = { ...local, onboarding_complete: true };
+  const hydrationUserId = currentUser?.id;
+  const cacheMatchesUser = !!hydrationUserId && String(local.user_id || local.id || '') === hydrationUserId;
+  const nextLocal = cacheMatchesUser
+    ? { ...local, onboarding_complete: local.onboarding_complete === true }
+    : { user_id: hydrationUserId || '', onboarding_complete: false };
   try {
     const params = new URLSearchParams(window.location.search);
     const urlEmail = String(params.get('acct') || params.get('email') || '').trim();
@@ -3200,7 +3204,9 @@ async function hydrateAppDashboardIdentity() {
   const profileUserId = currentUser?.app_cached ? (local.user_id || local.id || '') : (currentUser?.id || local.user_id || local.id || '');
   if (profileUserId && profileUserId !== 'raven-app-user') {
     try {
-      const { data: profile } = await db.from('profiles').select('first_name,last_name,phone,raven_id,username,avatar_url,email,venmo,cashapp,zelle,applepay,onboarding_complete').eq('id', profileUserId).maybeSingle();
+      const { data: profile, error } = await db.from('profiles').select('first_name,last_name,phone,raven_id,username,avatar_url,email,venmo,cashapp,zelle,applepay,onboarding_complete').eq('id', profileUserId).maybeSingle();
+      if (error) throw error;
+      if (!profile) nextLocal.onboarding_complete = false;
       if (profile) {
         if (Object.prototype.hasOwnProperty.call(profile, 'first_name')) nextLocal.first_name = profile.first_name || '';
         if (Object.prototype.hasOwnProperty.call(profile, 'last_name')) nextLocal.last_name = profile.last_name || '';
@@ -3229,7 +3235,14 @@ async function hydrateAppDashboardIdentity() {
     if (isDashboardAccountEmail(remembered)) nextLocal.email = remembered;
   }
 
+  if (currentUser?.id !== hydrationUserId || isRavenSignedOut()) return;
   try { localStorage.setItem('raven_profile', JSON.stringify(nextLocal)); } catch(e) {}
+  if (!nextLocal.onboarding_complete) {
+    const screen = document.getElementById('dashboard-screen');
+    if (screen) screen.style.display = 'none';
+    window.location.href = 'onboarding.html?app=1';
+    return;
+  }
   if (isDashboardAccountEmail(nextLocal.email)) {
     rememberDashboardAccountEmail(nextLocal.email);
     if (currentUser) currentUser.email = nextLocal.email;
@@ -3561,27 +3574,13 @@ function getAppCachedDashboardUser(force = false) {
   return null;
 }
 
-// Unlike getAppCachedDashboardUser(), this deliberately accepts the smaller
-// account snapshot saved by app.html. It is used only to paint the native
-// shell immediately; hydrateAppDashboardIdentity() refreshes it in the
-// background once networking is available.
+// Only completed, identified accounts qualify for the offline fast path.
 function getAppBootstrapDashboardUser() {
-  const full = getAppCachedDashboardUser();
-  if (full) return full;
   try {
-    const local = JSON.parse(localStorage.getItem('raven_profile') || '{}');
-    const email = String(local.email || localStorage.getItem(APP_DASHBOARD_EMAIL_KEY) || '').trim();
-    const id = String(local.user_id || local.id || '').trim();
-    if (id || email || local.first_name || local.raven_id || local.username || local.avatar_url) {
-      return {
-        id: id || 'raven-app-user',
-        email,
-        app_cached: true,
-        app_bootstrap: true
-      };
-    }
-  } catch(e) {}
-  return null;
+    const profile = JSON.parse(localStorage.getItem('raven_profile') || '{}');
+    if (profile.onboarding_complete !== true) return null;
+  } catch(e) { return null; }
+  return getAppCachedDashboardUser();
 }
 
 async function checkOnboardingAndShow(userId) {
