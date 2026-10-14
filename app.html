@@ -1256,17 +1256,16 @@ async function goDashboard(){
     try { if (session.user.email) localStorage.setItem(APP_DASHBOARD_EMAIL_KEY, session.user.email); } catch(e) {}
     const cachedMatches = cached && (
       cached.user_id === session.user.id ||
-      cached.id === session.user.id ||
-      (cached.email && session.user.email && String(cached.email).toLowerCase() === String(session.user.email).toLowerCase())
+      cached.id === session.user.id
     );
     // dashboard.html refreshes the full profile after it is visible. Keep this
     // handoff local and synchronous so the native app cannot freeze here.
     localStorage.setItem('raven_profile', JSON.stringify({
       ...(cachedMatches ? cached : {}),
       user_id: session.user.id,
-      email: session.user.email || cached?.email || '',
-      username: cached?.username || cached?.raven_id || '',
-      onboarding_complete: true
+      email: session.user.email || '',
+      username: cachedMatches ? (cached?.username || cached?.raven_id || '') : '',
+      onboarding_complete: !!(cachedMatches && cached.onboarding_complete)
     }));
     openDashboard();
     return false;
