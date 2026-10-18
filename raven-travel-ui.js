@@ -17,8 +17,9 @@ const h=el('h3','Trip Center'),desc=el('p','One place for stays, flights, vehicl
  function viewPhoto(url,title){viewerImage.src=url;viewerImage.alt=title||'Trip screenshot';viewer.showModal()}
  let previewUrl=null;
  function clearPreview(){if(previewUrl){URL.revokeObjectURL(previewUrl);previewUrl=null}}
- function pending(){clearPreview();content.replaceChildren();status.textContent='';content.setAttribute('aria-busy','true');for(let i=0;i<3;i++){const block=el('div');block.className='travel-placeholder';block.setAttribute('aria-hidden','true');content.append(block)}}
- card.addEventListener('close',()=>{generation++;rows=[];viewer.close();clearPreview();content.replaceChildren()});
+ let album=null;
+ function pending(){album?.destroy();album=null;clearPreview();content.replaceChildren();status.textContent='';content.setAttribute('aria-busy','true');for(let i=0;i<3;i++){const block=el('div');block.className='travel-placeholder';block.setAttribute('aria-hidden','true');content.append(block)}}
+ card.addEventListener('close',()=>{generation++;rows=[];album?.destroy();album=null;viewer.close();clearPreview();content.replaceChildren()});
  let generation=0,selectedOwner=null,offset=0,rows=[],members=[],canAssign=false;
  function reconnect(){content.replaceChildren();const link=el('a','Connect Raven account');link.href='https://ravensplit.com/dashboard.html?app=1&page=trip-hub&trip='+encodeURIComponent(TRIP_ID);link.style.cssText='display:block;text-align:center;text-decoration:none;background:#30d158;color:#041208;font-size:15px;font-weight:700;padding:14px;border-radius:12px;margin-top:16px';content.append(link);status.textContent='This app version opens travel separately. Connect securely to view and upload your trip screenshots.';}
  async function api(path,method='GET',body){const {data:{session}}=await db.auth.getSession();if(!session)throw Object.assign(Error('Connect your Raven account to continue.'),{status:401});const r=await fetch(BACKEND+path,{method,headers:{Authorization:'Bearer '+session.access_token,'Content-Type':'application/json'},...(body?{body:JSON.stringify(body)}:{})});const d=await r.json();if(!r.ok)throw Object.assign(Error(d.error||'Please retry.'),{status:r.status});return d}
@@ -70,5 +71,6 @@ const h=el('h3','Trip Center'),desc=el('p','One place for stays, flights, vehicl
    }content.append(section);
   }
   if(hasMore){const more=el('button','Load more screenshots');more.type='button';more.onclick=()=>load(true);content.append(more)}
+  if(window.RavenTripAlbum)album=window.RavenTripAlbum.mount(content,{tripId:id,api});
  }
 })();
