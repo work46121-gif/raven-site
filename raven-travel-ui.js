@@ -18,7 +18,7 @@ const h=el('h3','Trip Center'),desc=el('p','One place for stays, flights, vehicl
  let previewUrl=null;
  function clearPreview(){if(previewUrl){URL.revokeObjectURL(previewUrl);previewUrl=null}}
  let album=null;
- const mayClose=()=>!album?.isUploading()||confirm('An album upload is still running. Stop it and close Trip Center? You can retry unfinished files.');
+ const mayClose=()=>!album?.isUploading?.()||confirm('An album upload is still running. Stop it and close Trip Center? You can retry unfinished files.');
  close.onclick=()=>{if(mayClose())card.close()};
  card.addEventListener('cancel',event=>{if(!mayClose())event.preventDefault()});
  function pending(){album?.destroy();album=null;clearPreview();content.replaceChildren();status.textContent='';content.setAttribute('aria-busy','true');for(let i=0;i<3;i++){const block=el('div');block.className='travel-placeholder';block.setAttribute('aria-hidden','true');content.append(block)}}
