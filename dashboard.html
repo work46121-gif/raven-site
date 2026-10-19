@@ -905,12 +905,12 @@ body.app-mode .cb-raven-add-icon { width:18px;height:18px;display:block; }
 .trip-open-loader-mark::before, .trip-open-loader-mark::after { content: ""; position: absolute; inset: -28px; border-radius: 42px; border: 1px solid rgba(168,85,247,0.35); animation: ravenTripRing 1.35s ease-out infinite; }
 .trip-open-loader-mark::after { inset: -48px; border-color: rgba(48,209,88,0.18); animation-delay: 0.35s; }
 .trip-open-loader-letter { font-family: 'Bebas Neue', sans-serif; font-size: 92px; line-height: 1; background: linear-gradient(180deg, #F0D7FF, #A855F7 70%, #30D158); -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: 0; }
-.trip-open-loader-dot { position: absolute; width: 24px; height: 24px; border-radius: 50%; background: var(--green); bottom: 22px; right: 34px; box-shadow: 0 0 24px rgba(48,209,88,0.8); animation: ravenTripDot 0.7s ease-in-out infinite alternate; }
+.trip-open-loader-dot { position: absolute; width: 24px; height: 24px; border-radius: 50%; background: var(--green); bottom: 12px; left: 50%; transform: translateX(-50%); box-shadow: 0 0 24px rgba(48,209,88,0.8); animation: ravenTripDot 0.7s ease-in-out infinite alternate; }
 .trip-open-loader-title { font-family: 'Bebas Neue', sans-serif; font-size: 34px; letter-spacing: 0.1em; color: var(--white); text-align: center; }
 .trip-open-loader-sub { color: var(--muted2); font-size: 13px; font-weight: 700; letter-spacing: 0.04em; text-align: center; }
 @keyframes ravenTripFloat { 0%,100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-7px) scale(1.02); } }
 @keyframes ravenTripRing { 0% { transform: scale(0.72); opacity: 0.85; } 100% { transform: scale(1.14); opacity: 0; } }
-@keyframes ravenTripDot { from { transform: scale(0.82); } to { transform: scale(1.14); } }
+@keyframes ravenTripDot { from { transform: translateX(-50%) scale(0.82); } to { transform: translateX(-50%) scale(1.14); } }
 .modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); z-index: 600; display: none; align-items: center; justify-content: center; padding: 20px; }
 .modal-bg.open { display: flex; }
 .modal { background: var(--dark); border: 1px solid var(--border2); border-radius: 20px; padding: 32px; width: 100%; max-width: 520px; max-height: 85vh; overflow-y: auto; position: relative; }
