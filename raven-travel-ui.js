@@ -1,6 +1,7 @@
 (() => {
  // Travel belongs inside the opened trip, never on the dashboard's trip list.
  const root=document.getElementById('trip-travel-action');if(!root)return;
+ const albumRoot=document.getElementById('trip-album-action');
  const currentUser={id:null};
  const passKey='raven_trip_access_'+TRIP_ID;let travelPass='';
  try{const hash=new URLSearchParams(location.hash.slice(1));travelPass=hash.get('raven_travel')||sessionStorage.getItem(passKey)||'';if(hash.has('raven_travel')){sessionStorage.setItem(passKey,travelPass);hash.delete('raven_travel');history.replaceState(null,'',location.pathname+location.search+(hash.size?'#'+hash.toString():''))}}catch{}
@@ -17,7 +18,21 @@ const h=el('h3','Trip Center'),desc=el('p','One place for stays, flights, vehicl
  function viewPhoto(url,title){viewerImage.src=url;viewerImage.alt=title||'Trip screenshot';viewer.showModal()}
  let previewUrl=null;
  function clearPreview(){if(previewUrl){URL.revokeObjectURL(previewUrl);previewUrl=null}}
- let album=null;
+ let album=null,albumLibrary=null;
+ // Download the gallery only on explicit entry. No gallery requests on Trip Hub
+ // or when opening flights/activities; the signed-in session stays in this webview.
+ function albumCode(){
+  if(window.RavenTripAlbum)return Promise.resolve(window.RavenTripAlbum);
+  if(albumLibrary)return albumLibrary;
+  albumLibrary=new Promise((resolve,reject)=>{
+   let finished=false;const script=el('script'),finish=error=>{if(finished)return;finished=true;clearTimeout(timer);if(error){script.remove();albumLibrary=null;reject(error)}else resolve(window.RavenTripAlbum)};
+   const timer=setTimeout(()=>finish(Error('The album took too long to connect. Please retry.')),15000);
+   script.src=BACKEND+'/assets/trip-album-ui.js?v=20261019-lazy-album';script.async=true;
+   script.onload=()=>finish(window.RavenTripAlbum?null:Error('Could not open the album. Please retry.'));
+   script.onerror=()=>finish(Error('Could not load the album. Check your connection and retry.'));
+   document.head.append(script);
+  });return albumLibrary;
+ }
  const mayClose=()=>!album?.isUploading?.()||confirm('An album upload is still running. Stop it and close Trip Center? You can retry unfinished files.');
  close.onclick=()=>{if(mayClose())card.close()};
  card.addEventListener('cancel',event=>{if(!mayClose())event.preventDefault()});
@@ -58,7 +73,22 @@ const h=el('h3','Trip Center'),desc=el('p','One place for stays, flights, vehicl
  function showFlightStatus(target,flight,data,loading=false){target.hidden=false;target.replaceChildren();const line=el('div');line.className='travel-flight-line';const number=el('strong',flight);const state=el('span',loading?'Checking live status…':(data?.label||'Status unavailable'));state.className='travel-flight-state '+(loading?'':String(data?.status||'unavailable'));line.append(number,state);target.append(line);const route=[data?.departure,data?.arrival].filter(Boolean).join(' → ')||data?.route||'';const timing=[data?.departure_time?'Departs '+flightTime(data.departure_time):'',data?.arrival_time?'Arrives '+flightTime(data.arrival_time):'',data?.terminal?'Terminal '+data.terminal:'',data?.gate?'Gate '+data.gate:''].filter(Boolean);const detail=route||timing.length?route+(route&&timing.length?' · ':'')+timing.join(' · '):String(data?.detail||'Live status will appear when the flight is broadcasting.');if(detail){const note=el('p',detail);note.className='travel-flight-detail';target.append(note)}}
  function savedFlightTracker(id,item){const box=el('div');box.className='travel-flight-tracker';box.setAttribute('aria-live','polite');const snapshot=el('div'),refresh=el('button','Refresh status'),checked=el('p');checked.className='travel-flight-detail';refresh.type='button';refresh.className='travel-flight-refresh';box.append(snapshot,checked,refresh);let busy=false;const check=async force=>{if(busy)return;if(force&&!box.isConnected){flightRefreshers.delete(check);return}busy=true;showFlightStatus(snapshot,item.flight_number,null,true);refresh.disabled=true;try{const data=await getFlightStatus(id,item.flight_number,force);if(box.isConnected){showFlightStatus(snapshot,item.flight_number,data);checked.textContent='Checked '+new Date(data.checked_at||Date.now()).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})+' · Auto-refreshes every minute'}}catch(e){if(box.isConnected){showFlightStatus(snapshot,item.flight_number,{status:'unavailable',label:'Could not refresh',detail:e.message||'Please retry.'});checked.textContent='Will retry automatically while Trip Center is open.'}}finally{busy=false;refresh.disabled=false}};flightRefreshers.add(check);refresh.onclick=()=>check(true);void check(false);return box}
  function attachFlightTracker(id,item){const form=el('form'),label=el('label','Track this flight'),input=el('input'),button=el('button','Track'),note=el('p','Add the flight number from this screenshot to see its live route and status.');form.className='travel-flight-tracker travel-flight-attach';input.placeholder='Flight # e.g. AA1777';input.maxLength=8;input.inputMode='text';input.autocomplete='off';input.spellcheck=false;input.setAttribute('aria-label','Flight number for '+(item.title||'this flight'));button.type='submit';form.append(label,input,button,note);form.onsubmit=async event=>{event.preventDefault();const flight=normalizeFlightNumber(input.value);input.value=flight;if(!validFlightNumber(flight)){note.textContent='Enter a flight number like AA1777.';return}button.disabled=true;note.textContent='Adding flight tracking…';try{await api('/trips/'+encodeURIComponent(id)+'/travel/'+encodeURIComponent(item.id)+'/flight','PATCH',{flight_number:flight});flightStatusCache.delete(id+'|'+flight);await load()}catch(e){note.textContent=e.message||'Could not add flight tracking. Please retry.'}finally{button.disabled=false}};return form}
- root.onclick=async()=>{select.replaceChildren(new Option('Trip',TRIP_ID));select.value=TRIP_ID;h.textContent='Trip Center';card.classList.remove('travel-enter');card.showModal();card.scrollTop=0;void card.offsetWidth;card.classList.add('travel-enter');pending();const epoch=generation;try{await db.auth.getSession();if(card.open&&epoch===generation)await load()}catch(e){content.replaceChildren();status.textContent=e.message}};
+ async function openSection(section){
+  if(!mayClose())return;generation++;clearInterval(flightPoll);flightRefreshers.clear();
+  select.replaceChildren(new Option('Trip',TRIP_ID));select.value=TRIP_ID;
+  h.textContent=section==='album'?'Trip Photo Album':'Trip Center';
+  desc.textContent=section==='album'?'Your trip memories. Photos and videos load only here.':'One place for stays, flights, vehicles and activities.';
+  card.classList.remove('travel-enter');if(!card.open)card.showModal();card.scrollTop=0;card.classList.add('travel-enter');pending();const epoch=generation;
+  try{
+   await db.auth.getSession();if(!card.open||epoch!==generation)return;
+   if(section!=='album'){await load();return}
+   const library=await albumCode();if(!card.open||epoch!==generation)return;
+   content.replaceChildren();content.setAttribute('aria-busy','false');
+   const back=el('button','← Trip Center');back.type='button';back.className='travel-text-button';back.onclick=()=>openSection('travel');content.append(back);
+   album=library.mount(content,{tripId:TRIP_ID,api,standalone:true});
+  }catch(e){if(card.open&&epoch===generation){content.replaceChildren();content.setAttribute('aria-busy','false');status.textContent=e.message;const retry=el('button','Retry opening '+(section==='album'?'album':'Trip Center'));retry.type='button';retry.className='travel-text-button';retry.onclick=()=>openSection(section);content.append(retry)}}
+ }
+ root.onclick=()=>openSection('travel');if(albumRoot)albumRoot.onclick=()=>openSection('album');
  async function load(more=false){const id=select.value,owner=currentUser?.id,epoch=++generation;pending();if(!id)return;if(!more){offset=0;rows=[];}
   try{const data=await api('/trips/'+encodeURIComponent(id)+'/travel?offset='+offset);if(generation!==epoch||currentUser?.id!==owner||select.value!==id)return;rows.push(...data.media);offset=data.nextOffset;members=data.members;canAssign=data.can_assign;render(id,data.hasMore);status.textContent='Shared with linked trip members only. Hide booking codes, boarding-pass barcodes and personal details before uploading.';}catch(e){if(epoch===generation){content.replaceChildren();content.setAttribute('aria-busy','false');if(e.status===401){travelPass='';sessionStorage.removeItem(passKey);reconnect()}else status.textContent=e.message;}}
  }
@@ -94,6 +124,6 @@ const h=el('h3','Trip Center'),desc=el('p','One place for stays, flights, vehicl
    }content.append(section);
   }
   if(hasMore){const more=el('button','Load more screenshots');more.type='button';more.onclick=()=>load(true);content.append(more)}
-  if(window.RavenTripAlbum)album=window.RavenTripAlbum.mount(content,{tripId:id,api});
+  const albumLink=el('button','Trip Photo Album  →');albumLink.type='button';albumLink.className='travel-text-button';albumLink.style.cssText='display:block;width:100%;text-align:left;padding:18px 0;margin-top:18px;border-top:1px solid #ffffff18;font-size:14px;font-weight:600';albumLink.onclick=()=>openSection('album');content.append(albumLink);
  }
 })();
