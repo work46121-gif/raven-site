@@ -28,6 +28,7 @@
 <link rel="apple-touch-icon" sizes="152x152" href="/icon-152.png">
 <link rel="apple-touch-icon" sizes="192x192" href="/icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Epilogue:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="/raven-plus-badge.js?v=20261020-wingcheck1"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -4210,6 +4211,7 @@ async function loadSettings() {
       else if (profile.first_name) renderAvatar(null, profile.first_name);
       const displayName = [profile.first_name, profile.last_name].filter(Boolean).join(' ') || currentUser.email;
       document.getElementById('profile-display-name').textContent = displayName;
+      window.RavenPlusBadge?.mount(document.getElementById('profile-display-name'), profile, 'profile');
       try {
         const existing = JSON.parse(localStorage.getItem('raven_profile') || '{}');
         localStorage.setItem('raven_profile', JSON.stringify({ ...existing, ...profile, user_id: profile.id || existing.user_id || currentUser?.id || '', username: profile.username || profile.raven_id || existing.username || '', email: profile.email || effectiveEmail || existing.email || '' }));
@@ -4914,7 +4916,8 @@ async function showDashboard() {
         const greetingEl = document.getElementById('greeting-name');
         if (greetingEl) greetingEl.textContent = fn;
         const sidebarName = document.getElementById('sidebar-name');
-        if (sidebarName) sidebarName.textContent = fn + ' (me)';
+        if (sidebarName) { sidebarName.textContent = fn + ' (me)'; window.RavenPlusBadge?.mount(sidebarName, profile); }
+        window.RavenPlusBadge?.mount(greetingEl, profile);
         if (!avatarUrl) {
           document.getElementById('sidebar-avatar').textContent = firstName[0].toUpperCase();
           if (mobAvatar) mobAvatar.textContent = firstName[0].toUpperCase();
@@ -6132,7 +6135,7 @@ async function openBillModal(billId) {
     const removeBtn = '<button class="mark-paid-btn" style="background:rgba(255,68,68,0.08);border:1px solid rgba(255,68,68,0.2);color:#FF6B6B" onclick="removeParticipantFromBillPreview(\'' + billId + '\', \'' + String(p.name || '').replace(/'/g, "\\'") + '\')">Remove</button>';
     const paymentMethod = p.paid && !isBillPayer && p.payment_method ? '<div style="font-size:11px;color:var(--muted);margin-top:3px">via ' + p.payment_method + '</div>' : '';
     const identity = hasRavenProfile
-      ? '<button type="button" class="bill-participant-profile" data-bill-profile-index="' + index + '" aria-label="View RAVEN profile">' + participantAvatar + '<span><span class="participant-name">@' + escapeHtml(participantProfile.raven_id) + '</span>' + paymentMethod + '</span></button>'
+      ? '<span class="raven-plus-identity"><button type="button" class="bill-participant-profile" data-bill-profile-index="' + index + '" aria-label="View RAVEN profile">' + participantAvatar + '<span><span class="participant-name">@' + escapeHtml(participantProfile.raven_id) + '</span>' + paymentMethod + '</span></button>' + (window.RavenPlusBadge?.html(participantProfile) || '') + '</span>'
       : '<div style="display:flex;align-items:center;gap:10px">' + participantAvatar + '<div><div class="participant-name">' + escapeHtml(p.name) + '</div><div style="font-size:11px;color:var(--muted)">Unlinked guest</div>' + paymentMethod + '</div></div>';
     return '<div class="participant-row">' + identity + '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end">' + badge + action + ((String(bill.creator_phone || '').toLowerCase() === String(currentUser?.email || '').toLowerCase() || ravenAdminAccess) && !p._guest ? '<button type="button" class="mark-paid-btn" data-assign-raven-index="' + index + '">' + (hasRavenProfile ? 'Change Raven ID' : 'Assign Raven ID') + '</button>' : '') + removeBtn + '</div></div>';
   }).join('');
@@ -7468,7 +7471,7 @@ async function loadFriendsList() {
       const unreadBadgeHtml = '<div id="dm-unread-' + p.id + '" style="display:' + (unreadCount > 0 ? 'flex' : 'none') + ';align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 5px;background:var(--purple);border-radius:9px;font-size:10px;font-weight:700;color:#fff">' + (unreadCount > 9 ? '9+' : unreadCount) + '</div>';
       row.innerHTML = friendAvatar(name, p.avatar_url, 42)
         + '<div style="flex:1;min-width:0">'
-        + '<div style="font-size:14px;font-weight:600;display:flex;align-items:center;gap:6px">' + name + '<span id="online-dot-' + p.id + '" style="display:none;width:7px;height:7px;border-radius:50%;background:#30D158;flex-shrink:0" title="Online"></span></div>'
+        + '<div style="font-size:14px;font-weight:600;display:flex;align-items:center;gap:6px">' + name + (window.RavenPlusBadge?.html(p) || '') + '<span id="online-dot-' + p.id + '" style="display:none;width:7px;height:7px;border-radius:50%;background:#30D158;flex-shrink:0" title="Online"></span></div>'
         + (p.raven_id ? '<div style="font-size:12px;color:var(--purple3)">@' + p.raven_id + '</div>' : '')
         + (methods.length ? '<div style="font-size:11px;color:var(--muted);margin-top:2px">' + methods.join(' · ') + ' set up</div>' : '')
         + '</div>'
@@ -7636,7 +7639,7 @@ function openProfileModal(p) {
   const av = document.getElementById('pm-avatar');
   if (av) { if (p.avatar_url) { av.innerHTML = '<img src="' + p.avatar_url + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'; av.style.background = 'transparent'; } else { av.textContent = name[0].toUpperCase(); av.style.background = avatarGradients[name.charCodeAt(0) % avatarGradients.length]; } }
   const el = id => document.getElementById(id);
-  if (el('pm-name')) el('pm-name').textContent = name;
+  if (el('pm-name')) { el('pm-name').textContent = name; window.RavenPlusBadge?.mount(el('pm-name'), p, 'profile'); }
   if (el('pm-raven-id')) el('pm-raven-id').textContent = p.raven_id ? '@' + p.raven_id : '';
   if (el('pm-raven-score')) {
     const isCreator = String(p.raven_id || '').trim().toLowerCase() === 'melad';
@@ -7740,7 +7743,7 @@ function openProfileModal(p) {
     }
   }
   const el = id => document.getElementById(id);
-  if (el('pm-name')) el('pm-name').textContent = name;
+  if (el('pm-name')) { el('pm-name').textContent = name; window.RavenPlusBadge?.mount(el('pm-name'), p, 'profile'); }
   if (el('pm-raven-id')) el('pm-raven-id').textContent = p.raven_id ? '@' + p.raven_id : '';
   if (el('pm-raven-score')) {
     const isCreator = String(p.raven_id || '').trim().toLowerCase() === 'melad';
