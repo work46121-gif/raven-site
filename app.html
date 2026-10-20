@@ -6,8 +6,7 @@
 <title>RAVEN App</title>
 <meta name="theme-color" content="#06060A">
 <link rel="icon" type="image/png" href="icon-1024.png">
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Epilogue:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Epilogue:wght@400;500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -345,6 +344,33 @@ body.app-booting .app-shell,body.app-booting #app-home,body.app-booting #home-ta
 </head>
 <body class="app-booting">
 <div class="intro-splash" id="intro-splash" aria-hidden="true"><div class="intro-r"></div></div>
+<script id="raven-boot-guard">
+// Runs before the auth SDK: slow connections must never leave a logo-only screen.
+window.RavenBoot = (() => {
+  let timer;
+  function recover(message) {
+    const splash=document.getElementById('intro-splash');
+    if(!splash)return;
+    document.body.classList.add('ready');document.body.classList.remove('leaving');
+    splash.classList.remove('is-done');splash.setAttribute('aria-hidden','false');
+    let panel=document.getElementById('raven-boot-retry');
+    if(!panel){
+      panel=document.createElement('div');panel.id='raven-boot-retry';
+      panel.style.cssText='position:absolute;top:calc(50% + 150px);left:24px;right:24px;text-align:center;color:#c4b5d6;font:14px/1.6 system-ui';
+      const text=document.createElement('p');text.setAttribute('role','status');
+      const retry=document.createElement('button');retry.type='button';retry.textContent='Retry loading RAVEN';
+      retry.style.cssText='margin-top:12px;padding:12px 20px;border:1px solid #30d15866;border-radius:12px;background:#30d158;color:#07120a;font:600 15px system-ui';
+      retry.onclick=()=>location.reload();panel.append(text,retry);splash.append(panel);
+    }
+    panel.querySelector('p').textContent=message||'Taking longer than expected. Check your connection and try again.';
+    const loading=document.getElementById('loading');if(loading)loading.classList.remove('show');
+  }
+  async function wait(task,ms=10000){let timeout;try{return await Promise.race([task,new Promise((_,reject)=>{timeout=setTimeout(()=>reject(Error('Loading timed out. Please retry.')),ms)})])}finally{clearTimeout(timeout)}}
+  timer=setTimeout(()=>{if(document.body.classList.contains('app-booting'))recover()},12000);
+  return {recover,wait,finish(){clearTimeout(timer);document.getElementById('raven-boot-retry')?.remove()}};
+})();
+requestAnimationFrame(()=>document.body.classList.add('ready'));
+</script>
 
 <!-- ── LOGIN SHELL ── -->
 <div class="app-shell">
@@ -534,6 +560,7 @@ body.app-booting .app-shell,body.app-booting #app-home,body.app-booting #home-ta
 
 <div class="loading" id="loading"><div class="loader-mark"><span>R</span></div></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 // Keep this lowercase. The iOS build runs on a case-insensitive macOS disk,
 // so one canonical dashboard filename prevents it from bundling a stale twin.
@@ -885,7 +912,7 @@ db.auth.onAuthStateChange((event, session) => {
 });
 var ravenBootFinished = false;
 function finishAppBoot(){
-  if (ravenBootFinished) return;
+  window.RavenBoot?.finish();
   ravenBootFinished = true;
   const splash = el('intro-splash');
   if (splash) splash.classList.add('is-done');
@@ -1003,10 +1030,10 @@ async function routeAfterAuth(user){
   ravenAuthRouting = user.id;
   showLoading(true);
   try {
-    const { data: profile, error: profileError } = await db.from('profiles').select('onboarding_complete,first_name,raven_id,username,avatar_url').eq('id', user.id).maybeSingle();
+    const { data: profile, error: profileError } = await RavenBoot.wait(db.from('profiles').select('onboarding_complete,first_name,raven_id,username,avatar_url').eq('id', user.id).maybeSingle(),8000);
     if (profileError) throw profileError;
     if (profile?.onboarding_complete) {
-      await provisionCreatorWelcome();
+      void provisionCreatorWelcome();
       try { localStorage.setItem('raven_app_dashboard_email', user.email || ''); } catch(e) {}
       localStorage.setItem('raven_profile', JSON.stringify({
         user_id: user.id,
@@ -1070,13 +1097,9 @@ async function routeAfterAuth(user){
   } catch(e) {
     showLoading(false);
     ravenAuthRouting = false;
-    // A failed lookup is not proof of completed onboarding.
-    localStorage.setItem('raven_profile', JSON.stringify({
-      user_id: user.id,
-      email: user.email || '',
-      onboarding_complete: false
-    }));
-    window.location.href = 'onboarding.html?app=1';
+    // A network failure is neither a completed profile nor a new account.
+    // Preserve the session and offer retry without changing onboarding state.
+    RavenBoot.recover('Could not load your account. Check your connection and retry.');
   }
 }
 function getCachedAppProfile(){
@@ -1645,15 +1668,13 @@ async function handleSetNewPassword(event){
 
 (async function init(){
   try {
-    await initInner();
+    await RavenBoot.wait(initInner(),12000);
   } catch(e) {
     // Last-resort safety net: whatever went wrong deep in the auth/routing
     // chain above, never leave the screen silently black with no way
     // forward. Surface it and drop back to a recoverable state.
     console.error('init() failed:', e);
-    try { showSignedOutHome(); } catch(_) {}
-    try { showAuthPanel('login'); } catch(_) {}
-    try { showMessage('error', 'Something went wrong loading RAVEN. Please try signing in again.'); } catch(_) {}
+    RavenBoot.recover('Could not finish loading RAVEN. Check your connection and retry.');
   }
 })();
 async function initInner(){

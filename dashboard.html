@@ -908,6 +908,7 @@ body.app-mode .cb-raven-add-icon { width:18px;height:18px;display:block; }
 .trip-open-loader-dot { position: absolute; width: 24px; height: 24px; border-radius: 50%; background: var(--green); bottom: 12px; left: 50%; transform: translateX(-50%); box-shadow: 0 0 24px rgba(48,209,88,0.8); animation: ravenTripDot 0.7s ease-in-out infinite alternate; }
 .trip-open-loader-title { font-family: 'Bebas Neue', sans-serif; font-size: 34px; letter-spacing: 0.1em; color: var(--white); text-align: center; }
 .trip-open-loader-sub { color: var(--muted2); font-size: 13px; font-weight: 700; letter-spacing: 0.04em; text-align: center; }
+.trip-open-loader-actions{display:flex;gap:10px;justify-content:center;margin-top:16px}.trip-open-loader-actions[hidden]{display:none}.trip-open-loader-actions button{font:600 14px inherit;color:var(--white);background:var(--dark2);border:1px solid var(--border2);padding:12px 18px;border-radius:12px}.trip-open-loader-actions button:first-child{color:#07120a;background:var(--green)}
 @keyframes ravenTripFloat { 0%,100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-7px) scale(1.02); } }
 @keyframes ravenTripRing { 0% { transform: scale(0.72); opacity: 0.85; } 100% { transform: scale(1.14); opacity: 0; } }
 @keyframes ravenTripDot { from { transform: translateX(-50%) scale(0.82); } to { transform: translateX(-50%) scale(1.14); } }
@@ -1498,6 +1499,7 @@ body.app-mode .cb-raven-add-icon { width:18px;height:18px;display:block; }
     <div>
       <div class="trip-open-loader-title">Opening trip...</div>
       <div class="trip-open-loader-sub">Syncing receipts and chat</div>
+      <div class="trip-open-loader-actions" hidden><button type="button" onclick="window.stop();openTrip._busy=false;openTrip(...openTrip._lastArgs)">Retry opening trip</button><button type="button" onclick="window.stop();hideTripOpenLoader()">Back to trips</button></div>
     </div>
   </div>
 </div>
@@ -9883,6 +9885,8 @@ async function createTrip() {
 }
 
 async function openTrip(tripId, fallbackUrl) {
+  if(openTrip._busy)return;
+  openTrip._busy=true;openTrip._lastArgs=[tripId,fallbackUrl];
   const id = String(tripId || '').trim();
   const tripName = String(tripDataMap[id]?.name || tripDataMap[tripId]?.name || 'Trip Hub').trim();
   showTripOpenLoader(tripName);
@@ -9903,20 +9907,18 @@ async function openTrip(tripId, fallbackUrl) {
     try { loadTrips(); } catch(e) {}
     return;
   }
-  if (openTrip._pendingUrl === url) return;
-  openTrip._pendingUrl = url;
-  setTimeout(() => {
-    if (openTrip._pendingUrl === url) openTrip._pendingUrl = '';
-  }, 1500);
   // Carry only a short-lived, trip-scoped capability across the app/browser origin boundary.
   try {
     const target = new URL(url, location.href);
     if (['https://ravensplit.com','https://raven-backend-production-fb1f.up.railway.app'].includes(target.origin)) {
-      const {data:{session}} = await db.auth.getSession();
+      const sessionResult = await tripOpenWait(db.auth.getSession(),1200);
+      const session=sessionResult?.data?.session;
       if (session?.access_token) {
-        const response = await fetch(BACKEND+'/trips/'+encodeURIComponent(id)+'/travel-pass', {method:'POST',headers:{Authorization:'Bearer '+session.access_token},signal:AbortSignal.timeout(5000)});
-        const data = await response.json();
-        if(response.ok && data.pass){ target.hash = 'raven_travel='+encodeURIComponent(data.pass); url=target.href; }
+        const controller=new AbortController();const abort=setTimeout(()=>controller.abort(),2500);
+        try{
+          const data=await tripOpenWait(fetch(BACKEND+'/trips/'+encodeURIComponent(id)+'/travel-pass', {method:'POST',headers:{Authorization:'Bearer '+session.access_token},signal:controller.signal}).then(async response=>response.ok?response.json():null),2500);
+          if(data?.pass){ target.hash = 'raven_travel='+encodeURIComponent(data.pass); url=target.href; }
+        }finally{clearTimeout(abort);controller.abort()}
       }
     }
   } catch(e) { /* Trip still opens; travel offers a reconnect action if needed. */ }
@@ -9925,19 +9927,28 @@ async function openTrip(tripId, fallbackUrl) {
   catch(e) { window.location.href = url; }
 }
 
+async function tripOpenWait(task,ms){let timer;try{return await Promise.race([task,new Promise(resolve=>{timer=setTimeout(()=>resolve(null),ms)})])}finally{clearTimeout(timer)}}
+
 function showTripOpenLoader(tripName) {
   const loader = document.getElementById('trip-open-loader');
   if (!loader) return;
   const title = loader.querySelector('.trip-open-loader-title');
   if (title) title.textContent = 'Opening ' + (tripName || 'trip') + '...';
+  loader.querySelector('.trip-open-loader-sub').textContent='Syncing receipts and chat';
+  loader.querySelector('.trip-open-loader-actions').hidden=true;
   loader.style.display = 'flex';
   loader.setAttribute('aria-hidden', 'false');
   requestAnimationFrame(() => loader.classList.add('show'));
   clearTimeout(showTripOpenLoader._timer);
-  showTripOpenLoader._timer = setTimeout(hideTripOpenLoader, 9000);
+  showTripOpenLoader._timer = setTimeout(()=>{
+    loader.querySelector('.trip-open-loader-sub').textContent='Taking longer than expected. Check your connection and retry.';
+    loader.querySelector('.trip-open-loader-actions').hidden=false;
+    openTrip._busy=false;
+  }, 9000);
 }
 
 function hideTripOpenLoader() {
+  openTrip._busy=false;openTrip._pendingUrl='';
   const loader = document.getElementById('trip-open-loader');
   if (!loader) return;
   loader.classList.remove('show');
