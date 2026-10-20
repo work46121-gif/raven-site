@@ -27,7 +27,7 @@ const h=el('h3','Trip Center'),desc=el('p','One place for stays, flights, vehicl
   albumLibrary=new Promise((resolve,reject)=>{
    let finished=false;const script=el('script'),finish=error=>{if(finished)return;finished=true;clearTimeout(timer);if(error){script.remove();albumLibrary=null;reject(error)}else resolve(window.RavenTripAlbum)};
    const timer=setTimeout(()=>finish(Error('The album took too long to connect. Please retry.')),15000);
-   script.src=BACKEND+'/assets/trip-album-ui.js?v=20261019-video-preview';script.async=true;
+   script.src=BACKEND+'/assets/trip-album-ui.js?v=20261020-photo-50mb';script.async=true;
    script.onload=()=>finish(window.RavenTripAlbum?null:Error('Could not open the album. Please retry.'));
    script.onerror=()=>finish(Error('Could not load the album. Check your connection and retry.'));
    document.head.append(script);
@@ -54,7 +54,7 @@ const h=el('h3','Trip Center'),desc=el('p','One place for stays, flights, vehicl
    xhr.upload.onprogress=event=>{if(event.lengthComputable)onProgress?.(Math.min(100,Math.round(event.loaded/event.total*100)))};
    xhr.onload=()=>{let body;try{body=JSON.parse(xhr.responseText)}catch{}
     if(xhr.status>=200&&xhr.status<300&&body?.success)finish(null,body);
-    else finish(Object.assign(Error(body?.error||(xhr.status===413?'This file is too large. Videos can be up to 50 MB; photos up to 6 MB.':'Upload could not finish. Please retry.')),{status:xhr.status}));
+    else finish(Object.assign(Error(body?.error||(xhr.status===413?'This file is too large. Photos and videos can be up to 50 MB each.':'Upload could not finish. Please retry.')),{status:xhr.status}));
    };
    xhr.onerror=()=>finish(Error('Connection interrupted. Keep Trip Center open and retry.'));
    xhr.ontimeout=()=>finish(Error('Upload timed out. Check your connection and retry.'));
