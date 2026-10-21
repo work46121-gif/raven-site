@@ -2471,6 +2471,11 @@ body.app-mode .cb-raven-add-icon { width:18px;height:18px;display:block; }
     <!-- PRIVATE ADMIN PAGE — revealed only after server-side verification -->
     <div id="page-admin" class="page">
       <div class="page-header"><h1 class="page-title">RAVEN <span>Admin</span></h1></div>
+      <section aria-labelledby="newsletter-admin-heading" style="max-width:820px;padding:8px 0 24px;margin-bottom:22px;border-bottom:1px solid var(--border)">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:16px"><h2 id="newsletter-admin-heading" style="font-size:19px;margin:0">Weekly newsletter</h2><button type="button" onclick="loadNewsletterAdminStatus()" class="btn-secondary" style="padding:8px 12px">Refresh</button></div>
+        <p style="font-size:13px;color:var(--muted2);margin:10px 0">Mondays · 10 AM Eastern · Opted-in members only</p>
+        <div id="newsletter-admin-status" aria-live="polite" style="font-size:13px;line-height:1.6;overflow-wrap:anywhere">Open this workspace to check the scheduler.</div>
+      </section>
       <div style="max-width:820px;padding:22px;margin-bottom:18px;border:1px solid #655089;border-radius:18px;background:linear-gradient(120deg,#25213c,#132c28)">
         <div style="font-size:11px;color:#99f3ce;letter-spacing:1px">PRIVATE PILOT · NOT LAUNCHED</div>
         <h2 style="margin:8px 0">RAVEN<span style="color:#99f3ce">Students</span></h2>
@@ -5166,6 +5171,22 @@ function goToLifestyleAnimated() {
 }
 
 let ravenAdminAccess = false;
+async function loadNewsletterAdminStatus() {
+  const container=document.getElementById('newsletter-admin-status'),owner=currentUser?.id;
+  if(!container||!owner||!ravenAdminAccess)return;
+  container.textContent='Checking newsletter schedule…';
+  try{
+    const data=await ravenAdminRequest('/admin/newsletter/status');
+    if(currentUser?.id!==owner||!ravenAdminAccess){container.replaceChildren();return;}
+    const schedule=data.schedule||{},stamp=value=>{const date=new Date(value);return value&&Number.isFinite(date.getTime())?date.toLocaleString('en-US',{timeZone:'America/New_York',month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit',timeZoneName:'short'}):'Not recorded'};
+    const errors={no_approved_content:'No approved issue is ready.',invalid_content:'The scheduled content needs review.',missed_send_window:'A Monday send window was missed. No backlog was sent.',daily_quota_exceeded:'The email service’s daily limit was reached.',monthly_quota_exceeded:'The email service’s monthly limit was reached.',send_window_expired:'The send window expired before all emails were confirmed.'};
+    const active=schedule.enabled&&data.configured,stale=schedule.enabled&&(!schedule.last_checked_at||Date.now()-new Date(schedule.last_checked_at).getTime()>300000);
+    container.innerHTML='<strong style="color:'+(active?'var(--green)':'var(--muted2)')+'">'+(active?'Enabled':schedule.enabled?'Email configuration required':'Paused')+'</strong><div>Next: '+escapeHtml(stamp(schedule.next_run_at))+'</div><div style="color:var(--muted2)">'+Number(data.eligible_subscribers||0)+' eligible subscribers · '+(data.approved_issues||[]).length+' approved topics</div>'+
+      (stale?'<p style="color:#ffb26c">Worker heartbeat is missing or delayed. Check the backend before relying on the next send.</p>':'')+
+      (schedule.last_error?'<p style="color:#ffb26c">'+escapeHtml(errors[schedule.last_error]||'A delivery issue needs review: '+schedule.last_error)+'</p>':'')+
+      '<div style="margin-top:16px">'+(data.runs||[]).map(run=>'<div style="padding:12px 0;border-top:1px solid var(--border)"><strong>'+escapeHtml(run.subject||'Weekly issue')+'</strong><div style="color:var(--muted2)">'+escapeHtml(stamp(run.scheduled_at))+' · '+escapeHtml(run.status.replaceAll('_',' '))+'</div><div>'+Number(run.accepted||0)+' accepted · '+Number(run.pending||0)+' pending · '+Number(run.failed||0)+' failed · '+Number(run.skipped||0)+' skipped</div>'+(run.note?'<div>'+escapeHtml(run.note)+'</div>':'')+(run.errors?.length?'<div style="color:#ffb26c">'+run.errors.map(e=>escapeHtml(errors[e]||e)).join(' · ')+'</div>':'')+'</div>').join('')+'</div><small style="display:block;color:var(--muted);margin-top:10px">Accepted means the email service accepted the send, not confirmed inbox delivery. No subscriptions or emails are changed by refreshing.</small>';
+  }catch{if(currentUser?.id===owner&&ravenAdminAccess)container.textContent='Newsletter status is unavailable. The setup may still be pending deployment; refresh after it is ready.';}
+}
 async function openRavenStudentsPreview() {
   try {
     const result = await ravenAdminRequest('/admin/students-preview');
@@ -5473,6 +5494,7 @@ function showPage(page) {
   const qn = document.getElementById('mob-quick-nav');
   if (qn) qn.style.display = (RAVEN_APP_MODE && page === 'settings') ? 'block' : (page === 'settings' && window.innerWidth <= 768 ? 'block' : 'none');
   if (page === 'notifications') loadNotifications();
+  if (page === 'admin')         loadNewsletterAdminStatus();
   if (page === 'invite')        loadInvitePage();
   if (page === 'trip-hub')      loadTrips();
   if (page === 'roommates')     loadHouses();
