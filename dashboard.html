@@ -11154,9 +11154,27 @@ async function cbCreateFinalBill() {
 let _allNotifs = [];
 let _notifsLoaded = false;
 
+async function buildAlbumNotifications(owner, readIds) {
+  if (!owner) return [];
+  const controller = new AbortController(); let timer;
+  try {
+    const load = async () => {
+      const {data:{session}} = await db.auth.getSession();
+      if (!session || currentUser?.id !== owner || controller.signal.aborted) return [];
+      const response = await fetch(BACKEND + '/me/trip-album-notifications', {headers:{Authorization:'Bearer ' + session.access_token},signal:controller.signal});
+      if (!response.ok) return [];
+      const data = await response.json();
+      if (currentUser?.id !== owner || !data.success || !Array.isArray(data.notifications)) return [];
+      return data.notifications.map(n => ({id:'album-' + n.id,type:'trip',icon:'<svg class="raven-icon"><use href="#icon-trip-hub"></use></svg>',iconBg:'rgba(124,58,237,0.12)',title:'New photos added in a trip',sub:n.trip_name,time:n.created_at,unread:!readIds.has('album-' + n.id),action:()=>openTrip(n.trip_id)}));
+    };
+    return await Promise.race([load(),new Promise(resolve=>{timer=setTimeout(()=>{controller.abort();resolve([])},5000)})]);
+  } catch { return []; } finally { clearTimeout(timer); }
+}
+
 async function buildNotifications() {
   let _rids=new Set(); try{_rids=new Set(JSON.parse(localStorage.getItem('rr_'+(currentUser?.id||'u'))||'[]'));}catch(e){}
   const notifs = [];
+  const albumNotifs = buildAlbumNotifications(currentUser?.id, _rids);
   try {
     // Friend requests
     const { data: reqs } = await db.from('raven_friends')
@@ -11212,6 +11230,7 @@ async function buildNotifications() {
     }
   } catch(e) {}
 
+  notifs.push(...await albumNotifs);
   // Sort by time desc
   notifs.sort((a, b) => new Date(b.time) - new Date(a.time));
   return notifs;
@@ -11245,8 +11264,8 @@ function renderNotifList(list) {
     return `<div class="notif-item ${n.unread ? 'unread' : ''}" data-type="${n.type}" onclick="_notifAction('${n.id}')">
       <div class="notif-icon" style="background:${n.iconBg}">${n.icon}</div>
       <div style="flex:1;min-width:0">
-        <div style="font-size:14px;font-weight:${n.unread ? '700' : '500'};color:${n.unread ? 'var(--white)' : 'var(--muted2)'};margin-bottom:3px">${n.title}</div>
-        <div style="font-size:12px;color:var(--muted)">${n.sub}</div>
+        <div style="font-size:14px;font-weight:${n.unread ? '700' : '500'};color:${n.unread ? 'var(--white)' : 'var(--muted2)'};margin-bottom:3px">${escapeHtml(n.title)}</div>
+        <div style="font-size:12px;color:var(--muted)">${escapeHtml(n.sub)}</div>
       </div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0">
         <span style="font-size:11px;color:var(--muted);white-space:nowrap">${timeAgo}</span>

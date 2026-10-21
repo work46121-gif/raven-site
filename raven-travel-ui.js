@@ -27,7 +27,7 @@ const h=el('h3','Trip Center'),desc=el('p','One place for stays, flights, vehicl
   albumLibrary=new Promise((resolve,reject)=>{
    let finished=false;const script=el('script'),finish=error=>{if(finished)return;finished=true;clearTimeout(timer);if(error){script.remove();albumLibrary=null;reject(error)}else resolve(window.RavenTripAlbum)};
    const timer=setTimeout(()=>finish(Error('The album took too long to connect. Please retry.')),15000);
-   script.src=BACKEND+'/assets/trip-album-ui.js?v=20261020-photo-50mb';script.async=true;
+   script.src=BACKEND+'/assets/trip-album-ui.js?v=20261021-uploader';script.async=true;
    script.onload=()=>finish(window.RavenTripAlbum?null:Error('Could not open the album. Please retry.'));
    script.onerror=()=>finish(Error('Could not load the album. Check your connection and retry.'));
    document.head.append(script);
@@ -42,7 +42,7 @@ const h=el('h3','Trip Center'),desc=el('p','One place for stays, flights, vehicl
  function reconnect(){content.replaceChildren();const link=el('a','Connect Raven account');link.href='https://ravensplit.com/dashboard.html?app=1&page=trip-hub&trip='+encodeURIComponent(TRIP_ID);link.style.cssText='display:block;text-align:center;text-decoration:none;background:#30d158;color:#041208;font-size:15px;font-weight:700;padding:14px;border-radius:12px;margin-top:16px';content.append(link);status.textContent='This app version opens travel separately. Connect securely to view and upload your trip screenshots.';}
  async function bounded(task,ms=12000){let timer;try{return await Promise.race([task,new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('Connection took too long. Please retry.')),ms)})])}finally{clearTimeout(timer)}}
  async function api(path,method='GET',body){const {data:{session}}=await bounded(db.auth.getSession());if(!session)throw Object.assign(Error('Connect your Raven account to continue.'),{status:401});const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),15000);try{const r=await fetch(BACKEND+path,{method,signal:controller.signal,headers:{Authorization:'Bearer '+session.access_token,'Content-Type':'application/json'},...(body?{body:JSON.stringify(body)}:{})});const d=await r.json();if(!r.ok)throw Object.assign(Error(d.error||'Please retry.'),{status:r.status});return d}catch(e){if(e.name==='AbortError')throw Error('Connection took too long. Close and reopen to retry.');throw e}finally{clearTimeout(timer)}}
- api.upload=async(path,file,{type,id,caption,signal,onProgress})=>{
+ api.upload=async(path,file,{type,id,batchId,caption,signal,onProgress})=>{
   const {data:{session}}=await bounded(db.auth.getSession());if(!session)throw Error('Reconnect your Raven account before uploading.');
   if(signal?.aborted)throw new DOMException('Upload stopped.','AbortError');
   return new Promise((resolve,reject)=>{
@@ -51,6 +51,7 @@ const h=el('h3','Trip Center'),desc=el('p','One place for stays, flights, vehicl
    xhr.open('POST',BACKEND+path);xhr.timeout=180000;
    xhr.setRequestHeader('Authorization','Bearer '+session.access_token);xhr.setRequestHeader('Content-Type',type);
    xhr.setRequestHeader('X-Raven-Upload-Id',id);xhr.setRequestHeader('X-Raven-Upload-Caption',encodeURIComponent(caption||''));
+   if(batchId)xhr.setRequestHeader('X-Raven-Upload-Batch',batchId);
    xhr.upload.onprogress=event=>{if(event.lengthComputable)onProgress?.(Math.min(100,Math.round(event.loaded/event.total*100)))};
    xhr.onload=()=>{let body;try{body=JSON.parse(xhr.responseText)}catch{}
     if(xhr.status>=200&&xhr.status<300&&body?.success)finish(null,body);
