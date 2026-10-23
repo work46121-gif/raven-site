@@ -350,6 +350,7 @@ body.app-booting .app-shell,body.app-booting #app-home,body.app-booting #home-ta
 .home-entry-options .scan-mark span{font-size:clamp(54px,10vh,80px)}
 .home-entry-options .scan-mark::after{width:14%;min-width:10px;height:auto;aspect-ratio:1}
 .home-entry-options .scan-instruction{margin-top:0;max-width:300px;font-size:12px}
+.home-entry-options #trips-home-instruction{width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .trips-hero::before{content:"";position:absolute;top:0;left:12%;right:12%;height:1px;background:linear-gradient(90deg,transparent,rgba(192,132,252,.28),transparent);z-index:2}
 .trips-hero .scan-card::after{background:radial-gradient(circle at 50% 50%,rgba(168,85,247,.15),transparent 45%),radial-gradient(circle at 60% 75%,rgba(48,209,88,.07),transparent 42%);animation-delay:-3.5s}
 .trips-logo-button{position:relative;display:grid;place-items:center;width:86%;aspect-ratio:1;padding:8px;border:0;border-radius:50%;background:transparent;color:var(--violet);cursor:pointer;pointer-events:auto;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
@@ -383,10 +384,36 @@ body.app-booting .app-shell,body.app-booting #app-home,body.app-booting #home-ta
 @media(prefers-reduced-motion:reduce){
   .home-entry-options *,.home-entry-options *::before,.home-entry-options *::after{animation:none!important;transition:none!important}
 }
+.trips-title-action{border:0;padding:0;background:none;color:inherit;font:inherit;letter-spacing:inherit;line-height:inherit;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.trips-title-action:focus-visible{outline:2px solid var(--green);outline-offset:5px;border-radius:4px}
+.home-trip-opening{position:fixed;inset:0;z-index:90;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;padding:calc(env(safe-area-inset-top,0px) + 28px) 24px calc(env(safe-area-inset-bottom,0px) + 28px);background:radial-gradient(ellipse at 50% 40%,rgba(124,58,237,.25),#06060A 65%),#06060A;text-align:center;overflow:auto}
+.home-trip-opening[hidden]{display:none}
+.home-trip-opening .intro-r{width:118px;min-height:118px;flex-shrink:0;margin:35px;animation:homeTripFloat 1.4s ease-in-out infinite}
+.home-trip-opening .intro-r::before{font-size:92px}
+.home-trip-opening .intro-r::after{left:50%;transform:translateX(-50%)}
+.home-trip-opening .home-trip-ring{position:absolute;inset:-28px;border:1px solid rgba(192,132,252,.3);border-radius:42px;animation:homeTripRing 1.35s ease-out infinite}
+.home-trip-opening .home-trip-ring:nth-child(2){inset:-46px;border-color:rgba(48,209,88,.2);animation-delay:.35s}
+.home-trip-opening h2{font-family:'Bebas Neue',sans-serif;font-size:clamp(28px,7vw,40px);letter-spacing:.06em;line-height:1.15;overflow-wrap:anywhere}
+.home-trip-opening p{font-size:13px;line-height:1.6;color:var(--muted);max-width:340px;margin-top:10px}
+.home-trip-opening-actions{display:flex;flex-wrap:wrap;justify-content:center;gap:10px}
+.home-trip-opening-actions button{min-height:44px;padding:12px 18px;border:1px solid var(--line2);border-radius:12px;background:var(--panel);color:var(--white);font:600 12px Epilogue,sans-serif;cursor:pointer}
+.home-trip-opening-actions #home-trip-retry{background:var(--green);color:#07120a}
+.home-trip-close{position:absolute;top:calc(env(safe-area-inset-top,0px) + 20px);right:20px;width:44px;height:44px;border:1px solid var(--line2);border-radius:50%;background:var(--panel);color:var(--white);font-size:22px;cursor:pointer}
+@keyframes homeTripFloat{50%{transform:translateY(-6px)}}
+@keyframes homeTripRing{from{opacity:.8;transform:scale(.88)}to{opacity:0;transform:scale(1.12)}}
+@media(prefers-reduced-motion:reduce){.home-trip-opening *{animation:none!important}}
+@media(max-height:650px){.home-trip-opening{gap:16px;justify-content:safe center}.home-trip-opening .intro-r{width:92px;min-height:92px;margin:22px}.home-trip-opening .intro-r::before{font-size:72px}.home-trip-opening h2{font-size:28px}}
 </style>
+<script src="/raven-trip-pin.js?v=20261023-1"></script>
 </head>
 <body class="app-booting">
 <div class="intro-splash" id="intro-splash" aria-hidden="true"><div class="intro-r"></div></div>
+<div id="home-trip-opening" class="home-trip-opening" role="dialog" aria-modal="true" aria-labelledby="home-trip-opening-title" hidden>
+  <button type="button" class="home-trip-close" aria-label="Cancel opening trip" onclick="resetTripsHomeAction()">×</button>
+  <div class="intro-r" aria-hidden="true"><span class="home-trip-ring"></span><span class="home-trip-ring"></span></div>
+  <div role="status" aria-live="polite"><h2 id="home-trip-opening-title">Opening trip…</h2><p id="home-trip-opening-sub">Checking secure trip access…</p></div>
+  <div class="home-trip-opening-actions"><button type="button" id="home-trip-retry" onclick="openTripsFromHome(event)" hidden>Retry opening trip</button><button type="button" onclick="openAllTripsFromHome(event)">View all trips</button></div>
+</div>
 <script id="raven-boot-guard">
 // Runs before the auth SDK: slow connections must never leave a logo-only screen.
 window.RavenBoot = (() => {
@@ -586,7 +613,7 @@ requestAnimationFrame(()=>document.body.classList.add('ready'));
           </svg>
         </button>
       </div>
-      <h2 class="scan-title" id="trips-home-title">RAVEN Trips</h2>
+      <h2 class="scan-title" id="trips-home-title"><button class="trips-title-action" id="home-trips-title-action" type="button" onclick="return openTripsFromHome(event)">RAVEN Trips</button></h2>
       <p class="scan-instruction" id="trips-home-instruction">Access trips by pressing wings</p>
       <p id="trips-home-status" class="trips-status" role="status" aria-live="polite"></p>
     </div>
@@ -1175,6 +1202,7 @@ function getCachedAppProfile(){
   return null;
 }
 function showAppHome(profile){
+  refreshHomeTripPin();
   document.querySelector('.app-shell').style.display = 'none';
   el('app-home').classList.add('active');
   el('app-home').classList.remove('signed-out','auth-visible');
@@ -1215,6 +1243,7 @@ function showAppHome(profile){
 }
 function showSignedOutHome(){
   currentUser = null;
+  resetTripsHomeAction();
   window.ravenPhoneAlertsReady = false;
   window.RavenPhoneAlerts?.dismissPrompt?.();
   showLoading(false);
@@ -1399,15 +1428,44 @@ function handleCameraCapture(event){
   reader.readAsDataURL(file);
 }
 
-// Trips uses the existing authenticated dashboard route, never a cached identity
-// alone. No trip, receipt or album requests run on this opening screen.
+// A pin is only a shortcut: resolve membership and a fresh trip link on tap.
+// No trip, receipt or album requests run while the opening screen is idle.
 let tripsHomeOpening = false;
-function resetTripsHomeAction(){
-  tripsHomeOpening = false;
-  const button = el('home-trips-btn');
-  if (button) { button.disabled = false; button.removeAttribute('aria-busy'); button.classList.remove('is-launching'); }
+let tripsHomeAttempt = 0, tripsHomeAbort = null, tripsHomeTimer = null;
+function refreshHomeTripPin(){
+  const pin=currentUser?.id&&!isRavenSignedOut()?window.RavenTripPin?.read(currentUser.id):null;
+  const instruction=el('trips-home-instruction');
+  if(instruction)instruction.textContent=pin?'Pinned · '+pin.name:'Access trips by pressing wings';
+  el('home-trips-btn')?.setAttribute('aria-label',pin?'Open pinned trip: '+pin.name:'Open RAVEN Trips');
 }
-async function openTripsFromHome(event){
+function setTripsHomeBusy(busy){
+  tripsHomeOpening=busy;
+  for(const id of ['home-trips-btn','home-trips-title-action','home-trip-retry']){
+    const button=el(id);if(button){button.disabled=busy;button.setAttribute('aria-busy',String(busy));if(!busy)button.classList.remove('is-launching')}
+  }
+}
+function resetTripsHomeAction(){
+  tripsHomeAttempt++;tripsHomeAbort?.abort();tripsHomeAbort=null;clearTimeout(tripsHomeTimer);
+  setTripsHomeBusy(false);
+  const overlay=el('home-trip-opening'),wasOpen=overlay&&!overlay.hidden;
+  if(overlay)overlay.hidden=true;
+  if(el('app-home'))el('app-home').inert=false;
+  refreshHomeTripPin();
+  if(wasOpen)el('home-trips-btn')?.focus();
+}
+function showHomeTripOpening(name){
+  el('home-trip-opening-title').textContent='Opening '+name+'…';
+  el('home-trip-opening-sub').textContent='Checking secure trip access…';
+  el('home-trip-retry').hidden=true;
+  el('home-trip-opening').hidden=false;el('app-home').inert=true;
+  el('home-trip-opening').querySelector('.home-trip-close').focus();
+}
+function showHomeTripError(message){
+  el('home-trip-opening-sub').textContent=message;
+  el('home-trip-retry').hidden=false;setTripsHomeBusy(false);
+}
+function openAllTripsFromHome(event){resetTripsHomeAction();return openTripsFromHome(event,{skipPin:true})}
+async function openTripsFromHome(event,options={}){
   event?.preventDefault();
   if (tripsHomeOpening) return false;
   const status = el('trips-home-status');
@@ -1418,17 +1476,45 @@ async function openTripsFromHome(event){
     return false;
   }
   const openingUserId = currentUser.id;
+  const pin=options.skipPin?null:window.RavenTripPin?.read(openingUserId);
+  const attempt=++tripsHomeAttempt;
+  const active=()=>attempt===tripsHomeAttempt&&!isRavenSignedOut()&&currentUser?.id===openingUserId;
+  tripsHomeAbort?.abort();tripsHomeAbort=new AbortController();clearTimeout(tripsHomeTimer);
   const button = el('home-trips-btn');
-  tripsHomeOpening = true;
-  if (button) { button.disabled = true; button.setAttribute('aria-busy', 'true'); }
+  setTripsHomeBusy(true);
+  if(pin)showHomeTripOpening(pin.name);
   let navigating = false;
   try {
     const result = await RavenBoot.wait(db.auth.getSession(), 3000);
-    if (isRavenSignedOut() || currentUser?.id !== openingUserId) return false;
+    if (!active()) return false;
     if (result?.error) throw result.error;
     if (result?.data?.session?.user?.id !== openingUserId) {
+      resetTripsHomeAction();
       showAuthPanel('login');
       showMessage('error', 'Please sign in again to open your trips.');
+      return false;
+    }
+    if(pin){
+      const destination=await window.RavenTripPin.resolve({pin,session:result.data.session,db,backend:BACKEND,signal:tripsHomeAbort.signal});
+      if(!active())return false;
+      if(!destination){
+        window.RavenTripPin.clear(openingUserId,pin.id);
+        resetTripsHomeAction();
+        if(status)status.textContent='That pinned trip is no longer available. Opening Trip Hub.';
+        return openTripsFromHome(null,{skipPin:true});
+      }
+      // Refresh renamed trips without letting another tab's new pin get replaced.
+      try{if(window.RavenTripPin.read(openingUserId)?.id===pin.id)window.RavenTripPin.set(openingUserId,destination)}catch{}
+      el('home-trip-opening-title').textContent='Opening '+destination.name+'…';
+      el('home-trip-opening-sub').textContent='Syncing receipts and chat';
+      const target=new URL(destination.url),profile=getCachedAppProfile();
+      if(profile?.user_id===openingUserId){
+        if(profile.first_name)target.searchParams.set('name',profile.first_name);
+        if(profile.raven_id)target.searchParams.set('ravenid',profile.raven_id);
+      }
+      if(result.data.session.user.email)target.searchParams.set('acct',result.data.session.user.email);
+      window.location.assign(target.href);navigating=true;
+      tripsHomeTimer=setTimeout(()=>{if(active())showHomeTripError('Taking longer than expected. Retry or view all trips.')},9000);
       return false;
     }
     button?.classList.add('is-launching');
@@ -1438,17 +1524,30 @@ async function openTripsFromHome(event){
     else navigateWithRavens(url);
     navigating = true;
     // Back navigation or a cancelled page transition must leave a usable button.
-    setTimeout(resetTripsHomeAction, 1400);
+    tripsHomeTimer=setTimeout(resetTripsHomeAction, 1400);
   } catch (error) {
-    if (currentUser?.id === openingUserId && !isRavenSignedOut() && status) {
-      status.textContent = 'Could not verify your session. Tap the wings to retry.';
+    if (active()) {
+      if(error?.status===401){resetTripsHomeAction();showAuthPanel('login');showMessage('error','Please sign in again to open your trip.')}
+      else if(pin)showHomeTripError('Could not open your pinned trip. Check your connection and retry.');
+      else if(status)status.textContent = 'Could not verify your session. Tap the wings to retry.';
     }
   } finally {
-    if (!navigating) resetTripsHomeAction();
+    if (!navigating&&attempt===tripsHomeAttempt)setTripsHomeBusy(false);
   }
   return false;
 }
 window.addEventListener('pageshow', resetTripsHomeAction);
+window.addEventListener('storage',refreshHomeTripPin);
+document.addEventListener('keydown',event=>{
+  const overlay=el('home-trip-opening');if(!overlay||overlay.hidden)return;
+  if(event.key==='Escape'){event.preventDefault();resetTripsHomeAction()}
+  if(event.key==='Tab'){
+    const buttons=[...overlay.querySelectorAll('button')].filter(b=>!b.hidden&&!b.disabled);
+    const first=buttons[0],last=buttons[buttons.length-1];
+    if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus()}
+    else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus()}
+  }
+});
 function openAppPage(page, options){
   if (isRavenSignedOut()) {
     showAuthPanel('login');

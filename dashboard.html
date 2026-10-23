@@ -31,6 +31,7 @@
 <script src="/raven-plus-badge.js?v=20261021-preview3"></script>
 <script src="/raven-guest-payments.js?v=20261021-1"></script>
 <script src="/raven-guest-payments-client.js?v=20261023-options"></script>
+<script src="/raven-trip-pin.js?v=20261023-1"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -750,6 +751,18 @@ body.app-mode .cb-raven-add-icon { width:18px;height:18px;display:block; }
 .bill-card { background: var(--dark); border: 1px solid var(--border); border-radius: 14px; padding: 20px 24px; display: grid; grid-template-columns: 1fr auto auto auto; align-items: center; gap: 20px; transition: all 0.2s; cursor: pointer; }
 .bill-card:hover { border-color: var(--border2); background: var(--dark2); transform: translateX(2px); }
 .bill-name { font-weight: 600; font-size: 15px; margin-bottom: 4px; }
+.trip-card-top{display:flex;align-items:flex-start;gap:12px}
+.trip-card-top>.trip-open-hit{flex:1;min-width:0}
+.trip-card-top .bill-name{overflow-wrap:anywhere}
+.trip-home-pin{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;flex:0 0 46px;min-width:46px;min-height:54px;padding:4px;border:1px solid transparent;border-radius:13px;background:transparent;color:var(--muted2);cursor:pointer;font:inherit;touch-action:manipulation}
+.trip-home-pin svg{width:28px;height:28px}
+.trip-home-pin span{font-size:9px;font-weight:700;letter-spacing:.03em}
+.trip-home-pin:hover{color:var(--purple3);background:rgba(168,85,247,.07)}
+.trip-home-pin[aria-pressed="true"]{color:var(--green);background:rgba(48,209,88,.08);border-color:rgba(48,209,88,.2)}
+.trip-home-pin:focus-visible{outline:2px solid var(--purple3);outline-offset:3px}
+.trip-home-pin:disabled{opacity:.5;cursor:wait}
+.bill-card.trip-home-pinned{border-color:rgba(48,209,88,.3)}
+.trip-pin-hint{font-size:11px;line-height:1.5;color:var(--muted2);margin:4px 0 14px}
 .bill-meta { font-size: 12px; color: var(--muted); display: flex; gap: 12px; }
 .bill-id { font-family: 'JetBrains Mono', monospace; font-size: 11px; background: var(--dark3); padding: 2px 8px; border-radius: 4px; color: var(--purple3); }
 .bill-amount { font-family: 'Bebas Neue', sans-serif; font-size: 26px; letter-spacing: 0.03em; text-align: right; }
@@ -9724,6 +9737,27 @@ async function saveCreateHouse() {
 
 
 
+async function toggleHomeTripPin(event) {
+  const button=event.currentTarget;
+  event.preventDefault();event.stopPropagation();
+  if(button.disabled)return;
+  const actor=currentUser?.id,trip=tripDataMap[button.dataset.homePin];
+  if(!actor||!trip||!window.RavenTripPin?.hasAccess(trip,currentUser))return;
+  const attempt=toggleHomeTripPin.attempt=(toggleHomeTripPin.attempt||0)+1;
+  button.disabled=true;button.setAttribute('aria-busy','true');
+  try {
+    const result=await tripOpenWait(db.auth.getSession(),3000);
+    if(attempt!==toggleHomeTripPin.attempt)return; // The latest pin tap wins.
+    if(result?.error||isRavenSignedOut()||currentUser?.id!==actor||result?.data?.session?.user?.id!==actor)throw Error('Sign in again to save your trip pin.');
+    const selected=window.RavenTripPin.read(actor)?.id===trip.id;
+    if(selected)window.RavenTripPin.clear(actor,trip.id);else window.RavenTripPin.set(actor,trip);
+    window.RavenTripPin.sync(document.getElementById('trips-list'),actor,tripDataMap);
+    showToast(selected?'Trip unpinned. Home opens Trip Hub.':trip.name+' pinned. RAVEN Trips on Home opens it directly.','success');
+  } catch(error){showToast(error.message||'Could not save your pin. Try again.','error')}
+  finally{button.disabled=false;button.removeAttribute('aria-busy')}
+}
+window.addEventListener('storage',()=>{const list=document.getElementById('trips-list');if(list)window.RavenTripPin?.sync(list,currentUser?.id,tripDataMap)});
+
 async function loadTrips() {
   const container = document.getElementById('trips-list');
   container.innerHTML = '<div class="loading"><div class="spinner"></div> Loading...</div>';
@@ -9804,7 +9838,7 @@ async function loadTrips() {
     return;
   }
 
-  container.innerHTML = trips.map(t => {
+  container.innerHTML = '<p class="trip-pin-hint">Pin one trip to open it directly from Home · saved on this device.</p>' + trips.map(t => {
     const people = Array.isArray(t.people) ? t.people : JSON.parse(t.people || '[]');
     const tripUrl = FRONTEND + '/trip/' + encodeURIComponent(t.id) + '?t=' + encodeURIComponent(t.share_token || '');
     const tripUrlReceipt = tripUrl + '&action=receipt' + (RAVEN_APP_MODE ? '&app=1' : '');
@@ -9830,7 +9864,7 @@ async function loadTrips() {
     })();
     const tripStatusLabel = isCompletedTrip ? 'Completed' : 'Active';
     const adminBadge = isCreator ? ' <span style="font-size:10px;color:#30D158;background:rgba(48,209,88,0.08);border:1px solid rgba(48,209,88,0.2);padding:2px 7px;border-radius:8px">admin</span>' : isCoAdmin ? ' <span style="font-size:10px;color:#A855F7;background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.2);padding:2px 7px;border-radius:8px">co-admin</span>' : ' <span style="font-size:10px;color:#A855F7;background:rgba(124,58,237,0.1);border:1px solid rgba(124,58,237,0.2);padding:2px 7px;border-radius:8px">member</span>';
-    return '<div class="bill-card">'
+    return '<div class="bill-card"><div class="trip-card-top">'
       + '<div class="trip-open-hit" data-tripid="' + safeAttrId + '" data-tripurl="' + safeAttrTripUrl + '" style="cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent" onpointerdown="warmTrip(\'' + safeId + '\')" onclick="openTrip(\'' + safeId + '\', this.getAttribute(\'data-tripurl\') || \'\')"><div class="bill-name"><svg class="trip-title-icon"><use href="#icon-trip-hub"></use></svg>' + t.name.replace(/</g,'&lt;') + ' <span class="bill-id">' + t.id + '</span>' + adminBadge + '</div>'
       + '<div class="bill-meta"><span>' + people.length + ' people</span><span>' + (t.receipt_count || 0) + ' receipts</span>' + (function() {
           // Use server-computed settled_count/debtor_count when available (accurate)
@@ -9858,6 +9892,7 @@ async function loadTrips() {
           if (settledPeople >= totalPeople) return '';
           return '<span style="color:#FF9A3C;font-weight:600">' + settledPeople + '/' + totalPeople + ' settled</span>';
         })() + (parseFloat(t.total||0) <= 0 ? '<span style="color:var(--green)">All settled ✓</span>' : '') + '</div></div>'
+      + (window.RavenTripPin?.button(t,currentUser?.id)||'') + '</div>'
       + '<div class="bill-amount trip-open-hit" data-tripid="' + safeAttrId + '" data-tripurl="' + safeAttrTripUrl + '" style="cursor:pointer;color:' + (parseFloat(t.total||0)>0?'#FF9A3C':'var(--green)') + ';touch-action:manipulation;-webkit-tap-highlight-color:transparent" onpointerdown="warmTrip(\'' + safeId + '\')" onclick="openTrip(\'' + safeId + '\', this.getAttribute(\'data-tripurl\') || \'\')">$' + parseFloat(t.total || 0).toFixed(2) + '</div>'
       + '<div class="bill-progress-wrap"><div class="bill-progress-label">' + tripStatusLabel + '</div><div class="bill-progress"><div class="bill-progress-fill" style="width:100%"></div></div></div>'
       + '<div class="bill-actions" onclick="event.stopPropagation()">'
@@ -9869,6 +9904,8 @@ async function loadTrips() {
   }).join('') + renderSampleTripTutorial();
 
   // Wire admin buttons directly after rendering — bypasses stopPropagation on parent
+  container.querySelectorAll('[data-home-pin]').forEach(button=>button.addEventListener('click',toggleHomeTripPin));
+  window.RavenTripPin?.sync(container,currentUser?.id,tripDataMap);
   container.querySelectorAll('.admin-btn').forEach(btn => {
     btn.addEventListener('click', function(e) {
       e.stopPropagation();
