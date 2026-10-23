@@ -340,6 +340,49 @@ body.app-booting .app-shell,body.app-booting #app-home,body.app-booting #home-ta
 @media(max-height:600px){.hero .raven-stage,.spark{display:none}.hero h1{font-size:32px}}
 @media(min-height:900px){.scan-orbit{width:clamp(180px,26vh,250px)}.scan-title{font-size:clamp(56px,11vh,88px)}}
 @media(min-width:760px){.app-shell{max-width:460px;margin:0 auto}.raven-stage{width:220px}}
+
+/* Two open, animated destinations; keep the auth form full-height when needed. */
+.home-entry-options{flex:1;min-height:0;display:grid;grid-template-rows:repeat(2,minmax(200px,1fr));overflow:auto;overscroll-behavior:contain}
+.home-entry-options .scan-hero{position:relative;min-width:0}
+.home-entry-options .scan-card{padding:18px 20px}
+.home-entry-options .scan-orbit{width:clamp(104px,17vh,152px);margin-bottom:14px}
+.home-entry-options .scan-title{font-size:clamp(34px,5.4vh,48px);margin-bottom:9px}
+.home-entry-options .scan-mark span{font-size:clamp(54px,10vh,80px)}
+.home-entry-options .scan-mark::after{width:14%;min-width:10px;height:auto;aspect-ratio:1}
+.home-entry-options .scan-instruction{margin-top:0;max-width:300px;font-size:12px}
+.trips-hero::before{content:"";position:absolute;top:0;left:12%;right:12%;height:1px;background:linear-gradient(90deg,transparent,rgba(192,132,252,.28),transparent);z-index:2}
+.trips-hero .scan-card::after{background:radial-gradient(circle at 50% 50%,rgba(168,85,247,.15),transparent 45%),radial-gradient(circle at 60% 75%,rgba(48,209,88,.07),transparent 42%);animation-delay:-3.5s}
+.trips-logo-button{position:relative;display:grid;place-items:center;width:86%;aspect-ratio:1;padding:8px;border:0;border-radius:50%;background:transparent;color:var(--violet);cursor:pointer;pointer-events:auto;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.trips-logo-button:focus-visible{outline:2px solid var(--violet);outline-offset:5px}
+.trips-logo-button:disabled{cursor:wait}
+.trips-wings{display:block;width:100%;overflow:visible;filter:drop-shadow(0 9px 22px rgba(168,85,247,.4));transition:transform .15s}
+.trips-logo-button:active .trips-wings{transform:scale(.94)}
+.trips-wing-left,.trips-wing-right{transform-origin:80px 68px;animation:tripWingLeft 3s ease-in-out infinite}
+.trips-wing-right{animation-name:tripWingRight}
+.trips-logo-button.is-launching .trips-wings{animation:scanLogoLaunch .42s ease-out both}
+.trips-logo-button.is-launching::after{content:"";position:absolute;inset:0;border:1px solid rgba(48,209,88,.5);border-radius:50%;animation:scanLogoRipple .46s ease-out both}
+.trips-status{position:relative;z-index:1;font-size:11px;line-height:1.5;color:var(--soft);max-width:290px;margin:7px 0 0}
+.trips-status:empty{display:none}
+.app-home.auth-visible .home-entry-options{display:flex;overflow:hidden}
+.app-home.auth-visible .trips-hero{display:none}
+.app-home.auth-visible .home-entry-options .scan-orbit{width:clamp(108px,16vh,148px);margin-bottom:8px}
+.app-home.auth-visible .home-entry-options .scan-title{font-size:clamp(30px,5.5vh,44px);margin-bottom:6px}
+@keyframes tripWingLeft{0%,100%{transform:rotate(-3deg)}50%{transform:rotate(6deg)}}
+@keyframes tripWingRight{0%,100%{transform:rotate(3deg)}50%{transform:rotate(-6deg)}}
+@media(max-height:700px){
+  .home-entry-options{grid-template-rows:repeat(2,minmax(184px,1fr))}
+  .home-entry-options .scan-card{padding:14px 18px}
+  .home-entry-options .scan-orbit{width:clamp(92px,16vh,112px);margin-bottom:11px}
+  .home-entry-options .scan-title{font-size:32px;margin-bottom:7px}
+  .home-entry-options .scan-instruction{font-size:11px}
+}
+@media(min-width:760px) and (max-height:600px){
+  .home-entry-options{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:minmax(210px,1fr)}
+  .trips-hero::before{top:14%;bottom:14%;left:0;right:auto;width:1px;height:auto;background:linear-gradient(transparent,rgba(192,132,252,.28),transparent)}
+}
+@media(prefers-reduced-motion:reduce){
+  .home-entry-options *,.home-entry-options *::before,.home-entry-options *::after{animation:none!important;transition:none!important}
+}
 </style>
 </head>
 <body class="app-booting">
@@ -513,21 +556,42 @@ requestAnimationFrame(()=>document.body.classList.add('ready'));
       style="width:36px;height:36px;border-radius:50%;border:1px solid rgba(255,255,255,.16);background:linear-gradient(145deg,rgba(168,85,247,.24),rgba(124,58,237,.14));color:var(--white);font-size:15px;font-weight:800;cursor:pointer;-webkit-tap-highlight-color:transparent;display:grid;place-items:center;font-family:Epilogue,sans-serif;box-shadow:0 8px 20px rgba(0,0,0,.28)">?</button>
   </div>
 
-  <div class="scan-hero">
+  <div class="home-entry-options">
+  <section class="scan-hero" aria-labelledby="scan-home-title">
     <div class="scan-card">
       <div class="scan-orbit">
         <button class="scan-logo-button" type="button" aria-label="Scan receipt" onclick="return scanLogoAction(event)">
           <span class="scan-mark" aria-hidden="true"><span>R</span></span>
         </button>
       </div>
-      <h1 class="scan-title">Scan Receipt</h1>
-      <p class="scan-instruction">Tap the logo to scan a receipt and split it instantly</p>
+      <h1 class="scan-title" id="scan-home-title">Scan Receipt</h1>
+      <p class="scan-instruction">Tap the logo to scan and split.</p>
       <div class="scan-status-pill" id="scan-status-pill">
         <span class="scan-status-dot"></span>Ready to scan
       </div>
       <div class="app-auth-dock" id="app-auth-dock"></div>
     </div>
-  </div>
+  </section>
+
+  <section class="scan-hero trips-hero" aria-labelledby="trips-home-title">
+    <div class="scan-card">
+      <div class="scan-orbit">
+        <button id="home-trips-btn" class="trips-logo-button" type="button" aria-label="Open RAVEN Trips" aria-describedby="trips-home-instruction" onclick="return openTripsFromHome(event)">
+          <svg class="trips-wings" viewBox="0 0 160 110" fill="none" aria-hidden="true">
+            <defs><linearGradient id="home-trips-wing" x1="80" y1="82" x2="80" y2="14" gradientUnits="userSpaceOnUse"><stop stop-color="#8B5CF6"/><stop offset=".6" stop-color="#C084FC"/><stop offset="1" stop-color="#F1DCFF"/></linearGradient></defs>
+            <g class="trips-wing-left"><path d="M79 63C59 55 31 36 10 16L17 43 36 51 25 51 42 65 56 67 47 70 65 78 80 76Z" fill="url(#home-trips-wing)"/><path d="M21 33 76 67M38 55 76 71" stroke="#F1DCFF" stroke-opacity=".24" stroke-width="1.4" stroke-linecap="round"/></g>
+            <g class="trips-wing-right"><g transform="translate(160 0) scale(-1 1)"><path d="M79 63C59 55 31 36 10 16L17 43 36 51 25 51 42 65 56 67 47 70 65 78 80 76Z" fill="url(#home-trips-wing)"/><path d="M21 33 76 67M38 55 76 71" stroke="#F1DCFF" stroke-opacity=".24" stroke-width="1.4" stroke-linecap="round"/></g></g>
+            <path d="m75 64 5-5 5 5-5 17Z" fill="#C084FC"/>
+            <circle cx="80" cy="88" r="4.5" fill="#30D158"/>
+          </svg>
+        </button>
+      </div>
+      <h2 class="scan-title" id="trips-home-title">RAVEN Trips</h2>
+      <p class="scan-instruction" id="trips-home-instruction">Access trips by pressing wings</p>
+      <p id="trips-home-status" class="trips-status" role="status" aria-live="polite"></p>
+    </div>
+  </section>
+  </div><!-- home-entry-options -->
 
   <!-- Legacy fallback input. The main scan action routes to the dashboard scan page. -->
   <input id="app-camera-input" type="file" accept="image/*" capture="environment" style="position:fixed;left:-9999px;top:-9999px;opacity:0;pointer-events:none" onchange="handleCameraCapture(event)">
@@ -1334,6 +1398,57 @@ function handleCameraCapture(event){
   };
   reader.readAsDataURL(file);
 }
+
+// Trips uses the existing authenticated dashboard route, never a cached identity
+// alone. No trip, receipt or album requests run on this opening screen.
+let tripsHomeOpening = false;
+function resetTripsHomeAction(){
+  tripsHomeOpening = false;
+  const button = el('home-trips-btn');
+  if (button) { button.disabled = false; button.removeAttribute('aria-busy'); button.classList.remove('is-launching'); }
+}
+async function openTripsFromHome(event){
+  event?.preventDefault();
+  if (tripsHomeOpening) return false;
+  const status = el('trips-home-status');
+  if (status) status.textContent = '';
+  if (isRavenSignedOut() || !currentUser?.id) {
+    showAuthPanel('login');
+    showMessage('error', 'Sign in to open your trips.');
+    return false;
+  }
+  const openingUserId = currentUser.id;
+  const button = el('home-trips-btn');
+  tripsHomeOpening = true;
+  if (button) { button.disabled = true; button.setAttribute('aria-busy', 'true'); }
+  let navigating = false;
+  try {
+    const result = await RavenBoot.wait(db.auth.getSession(), 3000);
+    if (isRavenSignedOut() || currentUser?.id !== openingUserId) return false;
+    if (result?.error) throw result.error;
+    if (result?.data?.session?.user?.id !== openingUserId) {
+      showAuthPanel('login');
+      showMessage('error', 'Please sign in again to open your trips.');
+      return false;
+    }
+    button?.classList.add('is-launching');
+    localStorage.setItem('raven_native_app', '1');
+    const url = 'dashboard.html?app=1&page=trip-hub';
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) navigateWithFade(url);
+    else navigateWithRavens(url);
+    navigating = true;
+    // Back navigation or a cancelled page transition must leave a usable button.
+    setTimeout(resetTripsHomeAction, 1400);
+  } catch (error) {
+    if (currentUser?.id === openingUserId && !isRavenSignedOut() && status) {
+      status.textContent = 'Could not verify your session. Tap the wings to retry.';
+    }
+  } finally {
+    if (!navigating) resetTripsHomeAction();
+  }
+  return false;
+}
+window.addEventListener('pageshow', resetTripsHomeAction);
 function openAppPage(page, options){
   if (isRavenSignedOut()) {
     showAuthPanel('login');

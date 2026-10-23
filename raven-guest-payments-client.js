@@ -53,7 +53,7 @@
         const input=document.createElement('input');input.className='form-input ph-no-capture';input.type=key==='applepay'?'tel':'text';input.maxLength=80;input.autocomplete='off';input.spellcheck=false;input.placeholder=placeholder;input.value=data.methods[key]||'';input.setAttribute('aria-label',data.participant.name+' '+title);
         label.append(input);form.append(label);fields[key]=input;
       }
-      const note=document.createElement('p');note.className='bill-guest-note';note.textContent='For this bill only. Add with their permission; shared with people using this bill’s payment link. Apple Pay opens Messages—it does not send money.';
+      const note=document.createElement('p');note.className='bill-guest-note';note.textContent='Saved for this bill only. When this guest paid the bill, these options appear on the bill page. Add with their permission; anyone with the payment link can see them. Apple Pay opens Messages—it does not send money.';
       const saveButton=document.createElement('button');saveButton.type='submit';saveButton.className='mark-paid-btn';saveButton.textContent='Save payment details';
       status.textContent='';form.append(note,saveButton,status);panel.replaceChildren(form);
       form.addEventListener('input',()=>{saveButton.disabled=false;status.textContent=''});

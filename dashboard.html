@@ -30,7 +30,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Epilogue:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="/raven-plus-badge.js?v=20261021-preview3"></script>
 <script src="/raven-guest-payments.js?v=20261021-1"></script>
-<script src="/raven-guest-payments-client.js?v=20261021-preview2"></script>
+<script src="/raven-guest-payments-client.js?v=20261023-options"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -942,7 +942,14 @@ body.app-mode .cb-raven-add-icon { width:18px;height:18px;display:block; }
 .bill-preview-person-actions{display:flex;align-items:flex-start;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-top:10px}
 .bill-preview-person-actions:empty{display:none}
 .bill-preview-person-actions .mark-paid-btn{min-height:36px;padding:8px 12px;font-size:12px;border-radius:9px}
-.bill-preview-person-actions .bill-guest-toggle{color:var(--purple3);background:rgba(124,58,237,.08);border-color:rgba(192,132,252,.2)}
+.bill-guest-toggle{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;min-height:54px;margin-top:12px;padding:12px 0 0;border:0;border-top:1px solid var(--border);background:transparent;color:var(--purple3);font:inherit;text-align:left;cursor:pointer}
+.bill-guest-toggle strong{display:block;font-size:12px;font-weight:600}
+.bill-guest-toggle small{display:block;margin-top:4px;font-size:10px;line-height:1.6;color:var(--muted2)}
+.bill-guest-toggle::after{content:'+';font-size:20px;flex-shrink:0}
+.bill-guest-toggle[aria-expanded="true"]::after{content:'−'}
+.bill-guest-toggle:focus-visible,.bill-preview-tools>summary:focus-visible{outline:2px solid var(--purple3);outline-offset:3px;border-radius:6px}
+.bill-preview-tools{margin-top:12px;border-top:1px solid var(--border)}
+.bill-preview-tools>summary{padding:14px 0;min-height:44px;font-size:12px;color:var(--muted2);cursor:pointer}
 .bill-preview-manage{min-width:0}
 .bill-preview-manage>summary{list-style:none;padding:10px 8px;min-height:36px;color:var(--muted2);font-size:12px;cursor:pointer;text-align:right}
 .bill-preview-manage>summary::-webkit-details-marker{display:none}
@@ -2877,12 +2884,17 @@ body.app-mode .cb-raven-add-icon { width:18px;height:18px;display:block; }
     <div class="modal-actions">
       <button class="modal-btn modal-btn-view" id="modal-view-btn"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" style="vertical-align:middle;margin-right:4px"><path d="M6 3H3a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1v-3M10 2h4v4M14 2l-6 6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg> Open Bill Page</button>
       <button class="modal-btn" id="modal-share-btn" style="background:rgba(0,140,255,0.1);border:1px solid rgba(0,140,255,0.25);color:#4DB8FF">📤 Share Link</button>
+    </div>
+    <details class="bill-preview-tools" id="bill-preview-tools">
+      <summary>More bill options</summary>
+      <div class="modal-actions">
       <button class="modal-btn" id="modal-view-only-share-btn" style="background:rgba(124,58,237,0.1);border:1px solid rgba(168,85,247,0.28);color:var(--purple3)">👁 Copy View-Only Link</button>
       <button class="modal-btn modal-btn-remind" id="modal-remind-btn"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" style="vertical-align:middle;margin-right:4px"><path d="M8 2a4 4 0 0 0-4 4v3l-1 1.5h10L12 9V6a4 4 0 0 0-4-4z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M6.5 12.5a1.5 1.5 0 0 0 3 0" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg> Remind Unpaid</button>
       <button class="modal-btn" id="modal-edit-toggle-btn" style="background:rgba(48,209,88,0.08);border:1px solid rgba(48,209,88,0.2);color:var(--green)" onclick="toggleBillEditPanel()">✏️ Edit Bill</button>
       <button class="modal-btn" id="modal-add-person-btn" style="background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.2);color:var(--purple3)">👤 Add Person</button>
       <button class="modal-btn modal-btn-delete" id="modal-delete-btn">Remove from Bill Page</button>
-    </div>
+      </div>
+    </details>
 
     <!-- Edit Bill panel -->
     <div id="modal-edit-panel" style="display:none;margin-top:14px;padding:16px;background:var(--dark2);border:1px solid rgba(48,209,88,0.15);border-radius:12px">
@@ -6238,9 +6250,9 @@ async function openBillModal(billId) {
       : '<div class="raven-plus-identity bill-preview-identity">' + participantAvatar + '<div class="bill-preview-copy"><div class="bill-preview-name-line"><span class="participant-name" title="' + escapeHtml(p.name) + '">' + escapeHtml(p.name) + '</span></div><div class="bill-preview-secondary">Guest</div>' + paymentMethod + '</div></div>';
     const assign = (canManageBill || ravenAdminAccess) && !p._guest ? '<button type="button" class="mark-paid-btn" data-assign-raven-index="' + index + '">' + (hasRavenProfile ? 'Change RAVEN ID' : 'Assign RAVEN ID') + '</button>' : '';
     const guestEditor = canManageBill && !p._guest && window.RavenGuestPayments?.isGuest(p);
-    const paymentButton = guestEditor ? '<button type="button" class="mark-paid-btn bill-guest-toggle" data-guest-payment-index="' + index + '" aria-expanded="false" aria-controls="bill-guest-editor-' + index + '">Payment details</button>' : '';
+    const paymentButton = guestEditor ? '<button type="button" class="bill-guest-toggle" data-guest-payment-index="' + index + '" aria-label="Payment options for ' + escapeHtml(p.name) + '" aria-expanded="false" aria-controls="bill-guest-editor-' + index + '"><span><strong>Payment options</strong><small>Venmo · Cash App · Apple Pay</small></span></button>' : '';
     const manage = '<details class="bill-preview-manage"><summary aria-label="Manage ' + escapeHtml(p.name) + '">Manage</summary><div class="bill-preview-manage-controls">' + assign + removeBtn + '</div>' + (assign ? '<p>RAVEN IDs can be assigned to accepted friends.</p>' : '') + '</details>';
-    return '<div class="participant-row bill-preview-person"><div class="bill-preview-top">' + identity + '<div class="bill-preview-status">' + badge + '</div></div><div class="bill-preview-person-actions">' + action + paymentButton + manage + '</div>' + (guestEditor ? '<div class="bill-guest-editor" id="bill-guest-editor-' + index + '" hidden></div>' : '') + '</div>';
+    return '<div class="participant-row bill-preview-person"><div class="bill-preview-top">' + identity + '<div class="bill-preview-status">' + badge + '</div></div><div class="bill-preview-person-actions">' + action + manage + '</div>' + paymentButton + (guestEditor ? '<div class="bill-guest-editor" id="bill-guest-editor-' + index + '" hidden></div>' : '') + '</div>';
   }).join('');
   document.querySelectorAll('#modal-participants [data-bill-profile-index]').forEach(button => {
     button.addEventListener('click', event => {
@@ -6264,7 +6276,6 @@ async function openBillModal(billId) {
     button.addEventListener('click', () => {
       const index = Number(button.dataset.guestPaymentIndex), panel = document.getElementById('bill-guest-editor-' + index);
       const opening = panel.hidden; panel.hidden = !opening; button.setAttribute('aria-expanded', String(opening));
-      button.textContent = opening ? 'Close details' : 'Payment details';
       if (opening) window.RavenGuestPaymentUI.editGuest(panel, {billId, token:bill.share_token, participantId:parts[index].id});
     });
   });
@@ -6274,6 +6285,7 @@ async function openBillModal(billId) {
   document.getElementById('modal-view-only-share-btn').onclick = () => shareViewOnlyBillLink(billId, bill.name, bill.share_token);
   document.getElementById('modal-remind-btn').onclick = () => sendReminder(billId);
   document.getElementById('modal-delete-btn').onclick = () => deleteBill(billId);
+  document.getElementById('bill-preview-tools').open = false;
 
   // Pre-fill edit panel
   const editNameEl = document.getElementById('modal-edit-name');
