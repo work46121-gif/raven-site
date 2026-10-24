@@ -17,11 +17,14 @@ window.testUser={id:'11111111-1111-4111-8111-111111111111',email:'member@example
 window.testProfile={first_name:'Member',raven_id:'member',onboarding_complete:true};
 window.testTrip={id:'TRIP1',name:'Scottsdale 2026',type:'trip',creator_email:'member@example.invalid',member_emails:'[]',share_token:'synthetic-share'};
 window.testTripError=false;
+window.testPasswordCalls=[];window.testOAuthCalls=[];
 window.supabase={createClient(){return {
   auth:{
     async getSession(){window.testSessionCalls++;if(testSessionMode==='pending')return new Promise(resolve=>window.releaseSession=resolve);if(testSessionMode==='error')throw Error('offline');return {data:{session:testSessionMode==='none'?null:{user:testUser,access_token:'synthetic-only'}}};},
     onAuthStateChange(){return {data:{subscription:{unsubscribe(){}}}};},
-    async signOut(){return {error:null};}
+    async signOut(){return {error:null};},
+    async signInWithPassword(value){testPasswordCalls.push(value);return {data:null,error:{message:'Synthetic invalid credentials'}};},
+    async signInWithOAuth(value){testOAuthCalls.push(value);return {data:null,error:{message:'Synthetic OAuth response'}};}
   },
   from(table){const q={select(){return q;},eq(){return q;},abortSignal(){return q;},async maybeSingle(){return {data:table==='trips'?window.testTrip:window.testProfile,error:table==='trips'&&window.testTripError?{message:'offline'}:null};}};return q;}
 }}};`;
@@ -108,6 +111,40 @@ window.supabase={createClient(){return {
     await signedOut.page.locator('#app-home.auth-visible').waitFor();
     assert.equal(signedOut.navigations.length,0,'cached identity never grants trips entry');
     assert.equal(await signedOut.page.locator('.trips-hero').isVisible(),false,'auth gets full-height layout');
+    // Keep email/password submit first in both the visual and keyboard order.
+    const login=signedOut.page.locator('#login-form');
+    assert.deepEqual(await login.locator('input,button').evaluateAll(nodes=>nodes.map(n=>n.id||n.className)),['login-email','login-password','remember-email','link-btn','login-button','resend-confirm-button','google-btn','apple-btn']);
+    for(const [width,height] of [[320,568],[390,844],[430,932],[768,1024],[390,430]]){
+      await signedOut.page.setViewportSize({width,height});
+      const geometry=await login.evaluate(el=>{
+        const box=s=>{const r=el.querySelector(s).getBoundingClientRect();return {top:r.top,bottom:r.bottom,left:r.left,right:r.right,height:r.height};};
+        return {submit:box('#login-button'),google:box('.google-btn'),apple:box('.apple-btn'),overflow:document.documentElement.scrollWidth>innerWidth};
+      });
+      assert.equal(geometry.overflow,false,'sign-in fits '+width+'x'+height);
+      assert.ok(geometry.submit.bottom<geometry.google.top&&geometry.google.bottom<geometry.apple.top,'email action comes before OAuth');
+      for(const b of [geometry.submit,geometry.google,geometry.apple])assert.ok(b.left>=0&&b.right<=width&&b.height>=44,'button fits and retains tap target '+width+'x'+height+' '+JSON.stringify(b));
+      for(const selector of ['#login-button','.google-btn','.apple-btn']){await login.locator(selector).scrollIntoViewIfNeeded();assert.equal(await login.locator(selector).isVisible(),true);}
+    }
+    await signedOut.page.setViewportSize({width:390,height:844});
+    await signedOut.page.evaluate(()=>document.fonts.ready);
+    await login.screenshot({path:'output/sign-in-email-first-mobile.png'});
+    await signedOut.page.locator('#login-password').focus();
+    for(const selector of ['#remember-email','#login-form .link-btn','#login-button','#login-form .google-btn','#login-form .apple-btn']){
+      await signedOut.page.keyboard.press('Tab');assert.equal(await signedOut.page.locator(selector).evaluate(el=>el===document.activeElement),true,'keyboard order '+selector);
+    }
+    await signedOut.page.locator('#login-email').fill('member@example.invalid');
+    await signedOut.page.locator('#login-password').fill('synthetic-only-password');
+    await signedOut.page.locator('#login-password').press('Enter');
+    await signedOut.page.waitForFunction(()=>testPasswordCalls.length===1);
+    assert.equal(await signedOut.page.evaluate(()=>testOAuthCalls.length),0,'Enter uses email/password, not OAuth');
+    await signedOut.page.locator('#login-email').fill('');await signedOut.page.locator('#login-password').fill('');
+    await login.locator('.google-btn').click();
+    await signedOut.page.waitForFunction(()=>testOAuthCalls.length===1);
+    await login.locator('.apple-btn').click();
+    await signedOut.page.waitForFunction(()=>testOAuthCalls.length===2);
+    assert.deepEqual(await signedOut.page.evaluate(()=>testOAuthCalls.map(x=>x.provider)),['google','apple'],'original provider handlers still work without password fields');
+    assert.equal(await signedOut.page.evaluate(()=>testPasswordCalls.length),1,'OAuth buttons never submit password form');
+    assert.equal(signedOut.navigations.length,0,'failed auth never opens authenticated destination');
     for(const tab of ['login','signup','reset']){
       await signedOut.page.evaluate(tab=>showAuthPanel(tab),tab);
       const action=signedOut.page.locator('#'+({login:'login-button',signup:'signup-button',reset:'reset-button'}[tab]));
